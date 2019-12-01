@@ -1,0 +1,22 @@
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\bin\Debug\netcoreapp2.1\compile\src\program.txt
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.deps.json
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.runtimeconfig.json
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.runtimeconfig.dev.json
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.dll
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.pdb
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.csprojAssemblyReference.cache
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.AssemblyInfoInputs.cache
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.AssemblyInfo.cs
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.dll
+C:\Users\mwkea\Source\Repos\Parser Experiment\ParserExperiment\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.pdb
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\bin\Debug\netcoreapp2.1\compile\src\program.txt
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.deps.json
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.runtimeconfig.json
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.runtimeconfig.dev.json
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.dll
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\bin\Debug\netcoreapp2.1\Attempt15.pdb
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.csprojAssemblyReference.cache
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.AssemblyInfoInputs.cache
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.AssemblyInfo.cs
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.dll
+C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1\Attempt15.pdb

@@ -1,0 +1,13 @@
+﻿3 * -(1 + 2) + {
+	let x = if true
+		then 6
+		else {
+			let y = 9
+			if (false) then y 
+			else if true then 100 + y
+			else 2*y
+
+		}
+
+	4*x + 1
+}

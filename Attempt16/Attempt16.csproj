@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>Attempt15</RootNamespace>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Language.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Language.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="compile\src\program.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="compile\build\" />
+  </ItemGroup>
+
+</Project>

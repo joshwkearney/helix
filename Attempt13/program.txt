@@ -1,0 +1,35 @@
+﻿{
+	define | { true = 1 }
+	define | { false = 0 }
+
+	macro | increment { function | data {
+		define | { var = get | data increment 1 }
+
+		if   | = | 
+			1 
+			count | get | data increment
+		]
+		then | @ | {
+			set | {$| var } to + | 1 {$| var }
+		}]
+		else | @ | {
+			set | {$| var } to + | 
+				{$| var } 
+				{$| get | data increment 3 }
+		}]
+	}}
+
+	define | {
+		fib = function | index {
+			if   | < | index 2 ]
+			then | index ]
+			else | + | 
+				{ recurse | - | index 1 }
+				{ recurse | - | index 2 }
+		}]
+
+		x = 4
+	}
+
+	get | some other at 3
+} 

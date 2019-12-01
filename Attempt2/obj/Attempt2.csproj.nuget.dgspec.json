@@ -1,0 +1,56 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt2\\Attempt2.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt2\\Attempt2.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt2\\Attempt2.csproj",
+        "projectName": "Attempt2",
+        "projectPath": "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt2\\Attempt2.csproj",
+        "packagesPath": "C:\\Users\\mwkea\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt2\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\mwkea\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net472": {
+          "dependencies": {
+            "LLVMSharp": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win7-x86": {
+          "#import": []
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+﻿{
+	##
+	type point = struct {
+		private member int64 x;
+		private member int64 y;
+
+		member foo = function () -> {
+			this.some();
+		};
+	}; 	
+	##
+
+	type long = int64;
+
+	5.add(8).multiply(10)
+}

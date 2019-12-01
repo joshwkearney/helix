@@ -1,0 +1,14 @@
+﻿{
+	let z = box 4;
+	let y = unbox z;
+
+	let x = 8 + {
+		let otherBox = z;
+
+		if (0) then 89 + unbox otherBox
+		else if 0 then 76
+		else 6
+	};
+		
+	x
+}

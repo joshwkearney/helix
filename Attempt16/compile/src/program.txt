@@ -1,0 +1,24 @@
+﻿function main () => int: {	
+	f(new Point { x <- 0 y <- 1 })
+	
+	9
+}
+
+function f (Point p) => Point: {
+	 p
+}
+
+struct Point {
+	var int x
+	var int y
+
+	# function sum () => int: this.x + this.y
+}
+
+struct A {
+	var B b
+}
+
+struct B {
+	var A a
+}

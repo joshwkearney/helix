@@ -1,0 +1,10 @@
+﻿Todo:
+	- Add ITypeAbstractor
+	- Add Unify(AnalyzeResult, AnalyzeResult) to ITypeUnifier
+	- Change ITypeUnifier to a class
+	- Add ITypeCodeGenerator (Should work off TrophyTypeKind)
+	- Remove code generation methods from ITrophyType
+	- Fix escape analysis for mutable variables
+	- Fix reference counting for mutable variables
+	- Organize classes for TrophyCompiler better
+	- Add generic inference
