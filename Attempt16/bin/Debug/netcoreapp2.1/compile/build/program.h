@@ -16,7 +16,11 @@ struct Point {
     int y;
 };
 
-Point f(Point p);
+int sum(Point p);
+
+void mutate(int* some);
+
+int fib(int n);
 
 struct A {
     B* b;

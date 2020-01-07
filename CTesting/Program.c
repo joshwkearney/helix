@@ -1,28 +1,50 @@
+typedef short main;
 
-typedef struct Point Point;
+typedef short some;
 
-typedef struct A A;
+typedef short a;
 
-typedef struct B B;
+typedef short b;
 
-int main();
+short $func$main();
 
-int f(int* x);
+long long $func$some(long long x);
 
-struct Point {
-	int x;
-	int y;
-};
+b $func$a();
 
-struct A {
-	B* b;
-};
+a $func$b();
 
-struct B {
-	A a;
-};
+short $func$main() {
+    long long foo = 1LL;
 
-int main() {
-	return 0;
+    long long $invoke_result_0 = $func$some(5LL);
+
+    long long test = $invoke_result_0;
+
+    test = (3LL + 2LL);
+
+    return 0;
 }
+
+long long $func$some(long long x) {
+    long long $if_result_0;
+
+    if (x) {
+        $if_result_0 = 4LL;
+    }
+    else {
+        $if_result_0 = 2LL;
+    }
+
+    return $if_result_0;
+}
+
+b $func$a() {
+    return 0;
+}
+
+a $func$b() {
+    return 0;
+}
+
 

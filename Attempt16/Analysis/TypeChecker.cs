@@ -311,7 +311,7 @@ namespace Attempt16.Analysis {
             }
 
             if (info.Source == VariableSource.ValueParameter) {
-                throw new Exception();
+               // throw new Exception();
             }
 
             syntax.ReturnType = new VariableType(info.Type);

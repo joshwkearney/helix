@@ -118,6 +118,7 @@
     <ClCompile Include="Program.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Testing.h" />
     <ClInclude Include="Trophy.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

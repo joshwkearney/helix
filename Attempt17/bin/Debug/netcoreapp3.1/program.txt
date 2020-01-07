@@ -1,0 +1,18 @@
+﻿function main () => void: {
+	var foo <- 1;
+
+	var test <- some(5);
+
+	@test <- 3 + 2;
+
+	{ };
+};
+
+function some (int x) => int: {
+	if x then: 4
+		 else: 2;
+};
+
+function a () => b: b;
+
+function b () => a: a;

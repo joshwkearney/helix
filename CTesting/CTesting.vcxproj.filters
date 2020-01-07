@@ -23,5 +23,8 @@
     <ClInclude Include="Trophy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Testing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

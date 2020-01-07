@@ -8,3 +8,14 @@ C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1
 C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1\Attempt16.AssemblyInfo.cs
 C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1\Attempt16.dll
 C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt 15\obj\Debug\netcoreapp2.1\Attempt16.pdb
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\bin\Debug\netcoreapp2.1\compile\src\program.txt
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\bin\Debug\netcoreapp2.1\Attempt16.deps.json
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\bin\Debug\netcoreapp2.1\Attempt16.runtimeconfig.json
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\bin\Debug\netcoreapp2.1\Attempt16.runtimeconfig.dev.json
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\bin\Debug\netcoreapp2.1\Attempt16.dll
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\bin\Debug\netcoreapp2.1\Attempt16.pdb
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\obj\Debug\netcoreapp2.1\Attempt16.AssemblyInfoInputs.cache
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\obj\Debug\netcoreapp2.1\Attempt16.AssemblyInfo.cs
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\obj\Debug\netcoreapp2.1\Attempt16.dll
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\obj\Debug\netcoreapp2.1\Attempt16.pdb
+C:\Users\mwkea\source\repos\Blue0500\Compiler\Attempt16\obj\Debug\netcoreapp2.1\Attempt16.csprojAssemblyReference.cache

@@ -1,0 +1,2 @@
+﻿  Program.c
+LINK : fatal error LNK1561: entry point must be defined
