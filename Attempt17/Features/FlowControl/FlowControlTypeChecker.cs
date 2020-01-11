@@ -13,12 +13,12 @@ namespace Attempt17.Features.FlowControl {
             this.blockId.Push(0);
         }
 
-        public ISyntax<TypeCheckTag> CheckWhileSyntax(WhileSyntax<ParseTag> syntax, Scope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckWhileSyntax(WhileSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             var cond = checker.Check(syntax.Condition, scope);
             var body = checker.Check(syntax.Body, scope);
             var tag = new TypeCheckTag(VoidType.Instance);
 
-            if (cond.Tag.ReturnType != IntType.Instance) {
+            if (cond.Tag.ReturnType != BoolType.Instance) {
                 throw TypeCheckingErrors.UnexpectedType(
                     syntax.Condition.Tag.Location, 
                     IntType.Instance, cond.Tag.ReturnType);
@@ -27,13 +27,13 @@ namespace Attempt17.Features.FlowControl {
             return new WhileSyntax<TypeCheckTag>(tag, cond, body);
         }
 
-        public ISyntax<TypeCheckTag> CheckIfSyntax(IfSyntax<ParseTag> syntax, Scope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckIfSyntax(IfSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             var cond = checker.Check(syntax.Condition, scope);
             var affirm = checker.Check(syntax.Affirmative, scope);
             var neg = syntax.Negative.Select(x => checker.Check(x, scope));
 
             // Make sure that the condition is an integet (later a boolean)
-            if (cond.Tag.ReturnType != IntType.Instance) {
+            if (cond.Tag.ReturnType != BoolType.Instance) {
                 throw TypeCheckingErrors.UnexpectedType(syntax.Condition.Tag.Location, IntType.Instance, cond.Tag.ReturnType);
             }
 
@@ -61,7 +61,7 @@ namespace Attempt17.Features.FlowControl {
             return new IfSyntax<TypeCheckTag>(tag, syntax.Kind, cond, affirm, neg);
         }
 
-        public ISyntax<TypeCheckTag> CheckBlockSyntax(BlockSyntax<ParseTag> syntax, Scope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckBlockSyntax(BlockSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             // Get the id for this scope
             var id = this.blockId.Pop();
             var blockPath = scope.Path.Append("block" + id);
@@ -73,7 +73,7 @@ namespace Attempt17.Features.FlowControl {
             this.blockId.Push(0);
 
             // Get a new scope for analyzing the statements
-            var blockScope = scope.GetFrame(x => x.Append("block" + id));
+            var blockScope = new BlockScope(scope.Path.Append("block" + id), scope);
 
             // Analyze the statements
             var stats = ImmutableList<ISyntax<TypeCheckTag>>.Empty;
@@ -89,9 +89,9 @@ namespace Attempt17.Features.FlowControl {
             if (stats.Any()) {
                 var last = stats.Last();
 
-                foreach (var var in last.Tag.CapturedVariables) {
-                    if (var.StartsWith(blockPath)) {
-                        throw TypeCheckingErrors.VariableScopeExceeded(syntax.Statements.Last().Tag.Location, var);
+                foreach (var path in last.Tag.CapturedVariables.Select(x => x.Path)) {
+                    if (path.StartsWith(blockPath)) {
+                        throw TypeCheckingErrors.VariableScopeExceeded(syntax.Statements.Last().Tag.Location, path);
                     }
                 }
 

@@ -1,22 +1,35 @@
 ﻿using Attempt17.Features.Functions;
+using Attempt17.Features.Primitives;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Attempt17.Features.Variables {
     public class VariablesTypeChecker {
-        public ISyntax<TypeCheckTag> CheckVariableAccess(VariableAccessParseSyntax syntax, Scope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckVariableAccess(VariableAccessParseSyntax syntax, IScope scope, ITypeChecker checker) {
             if (scope.FindVariable(syntax.VariableName).TryGetValue(out var info)) {
-                if (syntax.Kind == VariableAccessKind.ValueAccess) {
-                    ImmutableHashSet<IdentifierPath> captured;
+                // Check that we're not accessing moved variables
+                if (scope.IsVariableMoved(info.Path)) {
+                    throw TypeCheckingErrors.AccessedMovedVariable(syntax.Tag.Location, info.Path);
+                }
 
-                    // TODO - Make this more robust
-                    if (info.Type is IntType || info.Type is VoidType) {
-                        captured = ImmutableHashSet<IdentifierPath>.Empty;
+                if (syntax.Kind == VariableAccessKind.ValueAccess) {
+                    var copiability = checker.GetTypeCopiability(info.Type, scope);
+                    ImmutableHashSet<VariableCapture> captured;
+
+                    if (copiability == TypeCopiability.Unconditional) {
+                        captured = ImmutableHashSet<VariableCapture>.Empty;
+                    }
+                    else if (copiability == TypeCopiability.Conditional) {
+                        var cap = new VariableCapture(VariableCaptureKind.ValueCapture, info.Path);
+                        captured = new[] { cap }.ToImmutableHashSet();
                     }
                     else {
-                        captured = new[] { info.Path }.ToImmutableHashSet();
+                        throw TypeCheckingErrors.TypeNotCopiable(syntax.Tag.Location, info.Type);
                     }
 
                     var tag = new TypeCheckTag(info.Type, captured);
@@ -24,9 +37,10 @@ namespace Attempt17.Features.Variables {
                     return new VariableAccessSyntax(tag, syntax.Kind, info);
                 }
                 else {
+                    var cap = new VariableCapture(VariableCaptureKind.IdentityCapture, info.Path);
                     var tag = new TypeCheckTag(
                         new VariableType(info.Type), 
-                        new[] { info.Path }.ToImmutableHashSet());
+                        new[] { cap }.ToImmutableHashSet());
 
                     return new VariableAccessSyntax(tag, syntax.Kind, info);
                 }
@@ -41,7 +55,7 @@ namespace Attempt17.Features.Variables {
             }
         }
 
-        public ISyntax<TypeCheckTag> CheckVariableInit(VariableInitSyntax<ParseTag> syntax, Scope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckVariableInit(VariableInitSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             if (scope.IsNameTaken(syntax.VariableName)) {
                 throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.VariableName);
             }
@@ -59,18 +73,28 @@ namespace Attempt17.Features.Variables {
 
                 info = new VariableInfo(
                     varType.InnerType,
-                    VariableSource.Alias,
+                    VariableDefinitionKind.Alias,
                     path);
             }
             else {
                 info = new VariableInfo(
                     value.Tag.ReturnType,
-                    VariableSource.Local,
+                    VariableDefinitionKind.Local,
                     path);
             }
 
             // Add this variable to the current scope
-            scope.Variables.Add(path, info);
+            scope.SetVariable(path, info);
+
+            // Add this variable as a capturing variable to the other variables in this scope
+            foreach (var cap in value.Tag.CapturedVariables) {
+                scope.SetCapturingVariable(new VariableCapture(cap.Kind, path), cap.Path);
+            }
+
+            // Add the move-ability to the scope
+            if (value is AllocSyntax<TypeCheckTag> || value.Tag.ReturnType is ArrayType) {
+                scope.SetVariableMovable(info.Path, true);
+            }
 
             var tag = new TypeCheckTag(VoidType.Instance);
 
@@ -81,7 +105,7 @@ namespace Attempt17.Features.Variables {
                 value);
         }
 
-        public ISyntax<TypeCheckTag> CheckStore(StoreSyntax<ParseTag> syntax, Scope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckStore(StoreSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             var target = checker.Check(syntax.Target, scope);
             var value = checker.Check(syntax.Value, scope);
 
@@ -100,9 +124,26 @@ namespace Attempt17.Features.Variables {
             // Variables captured by the target collectively define the lifetime of 
             // the variable that is being stored into
 
+            // Make sure that the variable being stored into was not value-captured
+            // by something else, because that would allow the store to corrupt memory
+            foreach (var capturedPath in target.Tag.CapturedVariables.Select(x => x.Path)) {
+                var capturing = scope
+                    .GetCapturingVariables(capturedPath)
+                    .Where(x => x.Kind == VariableCaptureKind.ValueCapture)
+                    .Select(x => x.Path)
+                    .ToArray();
+
+                if (capturing.Any()) {
+                    throw TypeCheckingErrors.StoredToCapturedVariable(
+                        syntax.Tag.Location, 
+                        capturedPath, 
+                        capturing.First());
+                }
+            }
+
             // Make sure the thing being stored will outlive these captured variables           
-            foreach (var targetPath in target.Tag.CapturedVariables) {
-                foreach (var valuePath in value.Tag.CapturedVariables) {
+            foreach (var targetPath in target.Tag.CapturedVariables.Select(x => x.Path)) {
+                foreach (var valuePath in value.Tag.CapturedVariables.Select(x => x.Path)) {
                     var targetScope = targetPath.Pop();
                     var valueScope = valuePath.Pop();
 
@@ -112,9 +153,70 @@ namespace Attempt17.Features.Variables {
                 }
             }
 
+            // Reset the move-ability of this variable to reflect the new value
+            foreach (var targetPath in target.Tag.CapturedVariables.Select(x => x.Path)) {
+                if (!(value is AllocSyntax<TypeCheckTag>)) {
+                    scope.SetVariableMovable(targetPath, false);
+                }
+            }            
+
             var tag = new TypeCheckTag(VoidType.Instance);
 
             return new StoreSyntax<TypeCheckTag>(tag, target, value);
+        }
+
+        public ISyntax<TypeCheckTag> CheckMove(MoveSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+            if (!scope.FindVariable(syntax.VariableName).TryGetValue(out var info)) {
+                throw TypeCheckingErrors.VariableUndefined(syntax.Tag.Location, syntax.VariableName);
+            }
+
+            // Make sure the variable is movable
+            if (!scope.IsVariableMovable(info.Path)) {
+                throw TypeCheckingErrors.MovedUnmovableVariable(syntax.Tag.Location, info.Path);
+            }
+
+            // Make sure the variable is not already moved
+            if (scope.IsVariableMoved(info.Path)) {
+                throw TypeCheckingErrors.AccessedMovedVariable(syntax.Tag.Location, info.Path);
+            }
+
+            // Variables must not be captured to be moved
+            var capturing = scope
+                .GetCapturingVariables(info.Path)
+                .Where(x => x.Kind == VariableCaptureKind.ValueCapture)
+                .Select(x => x.Path)
+                .ToArray();
+
+            if (capturing.Any()) {
+                throw TypeCheckingErrors.MovedCapturedVariable(syntax.Tag.Location, info.Path, capturing.First());
+            }
+
+            if (info.DefinitionKind == VariableDefinitionKind.Local) {               
+                if (syntax.Kind != MovementKind.ValueMove) {
+                    throw TypeCheckingErrors.MovedUnmovableVariable(syntax.Tag.Location, info.Path);
+                }
+
+                scope.SetVariableMoved(info.Path, true);
+
+                var tag = new TypeCheckTag(info.Type);
+
+                return new MoveSyntax<TypeCheckTag>(tag, MovementKind.ValueMove, syntax.VariableName);
+            }
+            else if (info.DefinitionKind == VariableDefinitionKind.Alias) {
+                if (syntax.Kind != MovementKind.LiteralMove) {
+                    throw TypeCheckingErrors.MovedUnmovableVariable(syntax.Tag.Location, info.Path);
+                }
+
+                // Set the variable to moved
+                scope.SetVariableMoved(info.Path, true);
+
+                var tag = new TypeCheckTag(new VariableType(info.Type));
+
+                return new MoveSyntax<TypeCheckTag>(tag, MovementKind.LiteralMove, syntax.VariableName);
+            }
+            else {
+                throw new Exception("This should never happen");
+            }
         }
     }
 }

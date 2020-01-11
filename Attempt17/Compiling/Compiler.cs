@@ -1,5 +1,6 @@
 ﻿using Attempt17.CodeGeneration;
 using Attempt17.Features;
+using Attempt17.Features.Arrays;
 using Attempt17.Features.FlowControl;
 using Attempt17.Features.Functions;
 using Attempt17.Features.Primitives;
@@ -7,6 +8,7 @@ using Attempt17.Features.Variables;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -17,7 +19,8 @@ namespace Attempt17.Compiling {
             new FlowControlFeature(),
             new FunctionsFeature(),
             new PrimitivesFeature(),
-            new VariablesFeature()
+            new VariablesFeature(),
+            new ArraysFeature()
         };
 
         public CompilerResult Compile(string input) {
@@ -25,7 +28,7 @@ namespace Attempt17.Compiling {
             var tokens = new Lexer(input).GetTokens();
             var decls = new Parser(tokens).Parse();
             var codegen = new CodeGenerator(registry);
-            var scope = new Scope();
+            var scope = new OuterScope();
 
             // Make sure all the declarations can add to the scope
             foreach (var decl in decls) {
@@ -41,12 +44,19 @@ namespace Attempt17.Compiling {
 
             // Generate everything
             var lines = checkedDecls
-                .Select(codegen.Generate)
+                .Select(x => codegen.Generate(x, null))
                 .SelectMany(x => x.SourceLines)
-                .ToArray();
+                .Prepend("")
+                .Prepend("#include <stdlib.h>")
+                .Prepend("#include <stdint.h>")
+                .ToImmutableList();
 
             // Get the header text
             var header = new StringBuilder();
+
+            header.AppendLine("#include <stdlib.h>");
+            header.AppendLine("#include <stdint.h>");
+            header.AppendLine("");
 
             foreach (var line in codegen.Header1Writer.ToLines()) {
                 header.AppendLine(line);

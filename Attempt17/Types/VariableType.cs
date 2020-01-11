@@ -25,5 +25,9 @@
         public override T Accept<T>(ITypeVisitor<T> visitor) {
             return visitor.VisitVariableType(this);
         }
+
+        public override string ToFriendlyString() {
+            return "var_" + this.InnerType.ToFriendlyString();
+        }
     }
 }

@@ -10,8 +10,12 @@ namespace Attempt17.CodeGeneration {
 
         ICodeWriter Header3Writer { get; }
 
-        CBlock Generate(ISyntax<TypeCheckTag> syntax);
+        CBlock Generate(ISyntax<TypeCheckTag> syntax, ICScope scope);
 
         string Generate(LanguageType type);
+
+        IOption<string> GetDestructor(LanguageType type);
+
+        CBlock CopyValue(string value, LanguageType type, ICScope scope);
     }
 }

@@ -13,5 +13,7 @@
         public override T Accept<T>(ITypeVisitor<T> visitor) {
             return visitor.VisitIntType(this);
         }
+
+        public override string ToFriendlyString() => "int";
     }
 }

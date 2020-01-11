@@ -2,16 +2,22 @@
     public enum TokenKind {
         OpenParenthesis, CloseParenthesis,
         OpenBrace, CloseBrace,
+        OpenBracket, CloseBracket,
 
-        EqualSign, LeftArrow, LiteralSign, YieldSign,
+        AssignmentSign, LeftArrow, LiteralSign, YieldSign,
+        NotSign, EqualSign, NotEqualSign, GreaterThanSign, LessThanSign,
+        LessThanOrEqualToSign, GreaterThanOrEqualToSign,
         Comma, Colon, Dot, Semicolon,
 
         VarKeyword, RefKeyword, IntKeyword, VoidKeyword,
-        AllocKeyword, FreeKeyword, CopyKeyword,
+        MoveKeyword, AllocKeyword,
         IfKeyword, ThenKeyword, ElseKeyword, WhileKeyword, DoKeyword,
         FunctionKeyword, NewKeyword, StructKeyword,
+        TrueKeyword, FalseKeyword,
+        AndKeyword, OrKeyword, XorKeyword,
 
-        Identifier, Whitespace, IntLiteral,
+        Identifier, Whitespace, 
+        IntLiteral, BoolLiteral,
 
         MultiplySign, AddSign, SubtractSign
     }

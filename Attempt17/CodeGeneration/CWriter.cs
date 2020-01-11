@@ -1,26 +1,43 @@
-﻿using System.Collections.Generic;
+﻿using Attempt17.Types;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Attempt17.CodeGeneration {
     public class CWriter : ICodeWriter {
         private ImmutableList<string> lines = ImmutableList<string>.Empty;
 
-        public static string Dereference(string expression) {
-            if (expression.StartsWith("&")) {
-                return expression.Substring(1);
+        public static string MaskPointer(string value) {
+            if (value.EndsWith(" & ~1")) {
+                return value;
             }
             else {
-                return "*" + expression;
+                return value + " & ~1";
+            }
+        }
+
+        public static string Dereference(string expression, string valueType) {
+            var reg = new Regex(@"\(uintptr_t\)\(&(.+)\)");
+            var match = reg.Match(expression);
+
+            if (match.Success) {
+                return match.Groups[1].Value;
+            }
+            else {
+                return $"*({valueType}*)({MaskPointer(expression)})";
             }
         }
 
         public static string AddressOf(string expression) {
-            if (expression.StartsWith("*")) {
-                return expression.Substring(1);
+            var reg = new Regex(@"\*\(.+\)\((.+) & ~1\)");
+            var match = reg.Match(expression);
+
+            if (match.Success) {
+                return match.Groups[1].Value;
             }
             else {
-                return "&" + expression;
+                return "(uintptr_t)(&" + expression + ")";
             }
         }
 
@@ -29,7 +46,17 @@ namespace Attempt17.CodeGeneration {
         }
 
         public static ImmutableList<string> Indent(params string[] code) {
-            return code.Select(x => "    " + x).ToImmutableList();
+            return Indent((IEnumerable<string>)code);
+        }
+
+        public static ImmutableList<string> Indent(int count, IEnumerable<string> code) {
+            var spaces = new string(Enumerable.Repeat(' ', count * 4).ToArray());
+
+            return code.Select(x => spaces + x).ToImmutableList();
+        }
+
+        public static ImmutableList<string> Indent(int count, params string[] code) {
+            return Indent(count, (IEnumerable<string>)code);
         }
 
         public static ImmutableList<string> Trim(ImmutableList<string> code) {

@@ -7,11 +7,11 @@ using System.Collections.Generic;
 
 namespace Attempt17.Compiling {
     public partial class Compiler {
-        private delegate ISyntax<TypeCheckTag> GeneralTypeChecker(ISyntax<ParseTag> syntax, Scope scope, ITypeChecker checker);
+        private delegate ISyntax<TypeCheckTag> GeneralTypeChecker(ISyntax<ParseTag> syntax, IScope scope, ITypeChecker checker);
 
-        private delegate CBlock GeneralCodeGenerator(ISyntax<TypeCheckTag> syntax, ICodeGenerator gen);
+        private delegate CBlock GeneralCodeGenerator(ISyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen);
 
-        private delegate void GeneralScopeModifier(ISyntax<ParseTag> syntax, Scope scope);
+        private delegate void GeneralScopeModifier(ISyntax<ParseTag> syntax, IScope scope);
 
         private class SyntaxRegistry : ISyntaxRegistry {
             public Dictionary<Type, GeneralTypeChecker> parseTrees =
@@ -32,7 +32,7 @@ namespace Attempt17.Compiling {
             }
 
             public void RegisterSyntaxTree<T>(SyntaxCodeGenerator<T> codeGen) where T : ISyntax<TypeCheckTag> {
-                this.syntaxTrees.Add(typeof(T), (syntax, gen) => codeGen((T)syntax, gen));
+                this.syntaxTrees.Add(typeof(T), (syntax, scope, gen) => codeGen((T)syntax, scope, gen));
             }
         }
     }

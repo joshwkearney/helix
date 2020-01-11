@@ -1,19 +1,35 @@
 ﻿using Attempt17.CodeGeneration;
 using Attempt17.TypeChecking;
+using Attempt17.Types;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Attempt17.Features.Functions {
     public class FunctionsCodeGenerator {
         private int invokeTempCounter = 0;
 
-        public CBlock GenerateFunctionDeclaration(FunctionDeclarationSyntax syntax, ICodeGenerator gen) {
+        public CBlock GenerateFunctionDeclaration(FunctionDeclarationSyntax syntax, ICScope scope, ICodeGenerator gen) {
+            scope = new FunctionCScope();
+
+            // Add the parameters to the scope
+            foreach (var par in syntax.Info.Signature.Parameters) {
+                scope.SetVariableUndestructed(par.Name, par.Type);
+            }
+
             var writer = new CWriter();
-            var body = gen.Generate(syntax.Body);
+            var body = gen.Generate(syntax.Body, scope);
+            var returnType = gen.Generate(syntax.Info.Signature.ReturnType);
             var line = this.GenerateSignature(syntax.Info, gen) + " {";
+            var varsToCleanUp = scope
+                .GetUndestructedVariables()
+                .ToImmutableDictionary(x => x.Key, x => x.Value);
 
             writer.Line(line);
             writer.Lines(CWriter.Indent(body.SourceLines));
-            writer.Lines(CWriter.Indent("return " + body.Value + ";"));
+            writer.Lines(CWriter.Indent("// Function cleanup"));
+            writer.Lines(CWriter.Indent($"{returnType} $func_return = {body.Value};"));
+            writer.Lines(CWriter.Indent(ScopeHelper.CleanupScope(varsToCleanUp, gen)));
+            writer.Lines(CWriter.Indent("return $func_return;"));
             writer.Line("}");
             writer.EmptyLine();
 
@@ -28,8 +44,8 @@ namespace Attempt17.Features.Functions {
             return writer.ToBlock("0");
         }
 
-        public CBlock GenerateInvoke(InvokeSyntax syntax, ICodeGenerator gen) {
-            var args = syntax.Arguments.Select(gen.Generate).ToArray();
+        public CBlock GenerateInvoke(InvokeSyntax syntax, ICScope scope, ICodeGenerator gen) {
+            var args = syntax.Arguments.Select(x => gen.Generate(x, scope)).ToArray();
             var targetName = "$func$" + syntax.Target.Path.ToCName();
             var tempName = "$invoke_result_" + this.invokeTempCounter++;
             var tempType = gen.Generate(syntax.Tag.ReturnType);
@@ -44,12 +60,16 @@ namespace Attempt17.Features.Functions {
             invoke = invoke.TrimEnd(',', ' ');
             invoke += ")";
 
+            writer.Line("// Function invoke");
             writer.VariableInit(tempType, tempName, invoke);
+            writer.EmptyLine();
+
+            scope.SetVariableUndestructed(tempName, syntax.Target.Signature.ReturnType);
 
             return writer.ToBlock(tempName);
         }
 
-        public CBlock GenerateFunctionLiteral(FunctionLiteralSyntax syntax, ICodeGenerator gen) {
+        public CBlock GenerateFunctionLiteral(FunctionLiteralSyntax syntax, ICScope scope, ICodeGenerator gen) {
             return new CBlock("0");
         }
 

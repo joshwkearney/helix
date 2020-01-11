@@ -16,15 +16,15 @@ namespace Attempt17.CodeGeneration {
 
         public static ICodeWriter VariableInit(this ICodeWriter writer, string type, string name, string value = null) {
             if (value == null) {
-                return writer.Line($"{type} {name};").EmptyLine();
+                return writer.Line($"{type} {name};");
             }
             else {
-                return writer.Line($"{type} {name} = {value};").EmptyLine();
+                return writer.Line($"{type} {name} = {value};");
             }
         }
 
         public static ICodeWriter VariableAssignment(this ICodeWriter writer, string target, string value) {
-            return writer.Line($"{target} = {value};").EmptyLine();
+            return writer.Line($"{target} = {value};");
         }
     }
 }

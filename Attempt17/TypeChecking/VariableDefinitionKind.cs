@@ -1,5 +1,5 @@
 ﻿namespace Attempt17.TypeChecking {
-    public enum VariableSource {
+    public enum VariableDefinitionKind {
         Local, Alias
     }
 }

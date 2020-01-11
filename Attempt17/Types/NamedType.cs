@@ -27,5 +27,9 @@ namespace Attempt17.Types {
         public override T Accept<T>(ITypeVisitor<T> visitor) {
             return visitor.VisitNamedType(this);
         }
+
+        public override string ToFriendlyString() {
+            return this.Path.ToCName();
+        }
     }
 }

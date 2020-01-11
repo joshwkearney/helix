@@ -14,7 +14,7 @@ namespace Attempt17.Parsing {
             this.text = text;
         }
 
-        private IToken GetLessThanOrArrow() {
+        private IToken GetLessThanOrArrowOrLessThanOrEqualTo() {
 
             if (pos + 1 < this.text.Length) {
                 if (text[pos + 1] == '-') {
@@ -22,10 +22,13 @@ namespace Attempt17.Parsing {
 
                     return new Token(TokenKind.LeftArrow, new TokenLocation(pos - 1, 2));
                 }
+                if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(TokenKind.LessThanOrEqualToSign, new TokenLocation(pos - 1, 2));
+                }
                 else {
-                    throw ParsingErrors.UnexpectedCharacter(
-                        new TokenLocation(pos + 1, 1), 
-                        text[pos + 1]);
+                    return new Token(TokenKind.LessThanSign, location);
                 }
             }
             else {
@@ -33,16 +36,59 @@ namespace Attempt17.Parsing {
             }
         }
 
-        private IToken GetEqualsOrYields() {
-            if (pos + 1 < text.Length && text[pos+1] == '>') {
-                pos++;
-                return new Token(TokenKind.YieldSign, new TokenLocation(pos - 1, 2));
+        private IToken GetEqualsOrYieldsOrAssignment() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '>') {
+                    pos++;
+
+                    return new Token(TokenKind.YieldSign, new TokenLocation(pos - 1, 2));
+                }
+                if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(TokenKind.EqualSign, new TokenLocation(pos - 1, 2));
+                }
+                else {
+                    return new Token(TokenKind.AssignmentSign, location);
+                }
             }
             else {
-                return new Token(TokenKind.EqualSign, location);
+                throw ParsingErrors.EndOfFile(new TokenLocation(pos, 1));
             }
         }
-    
+
+        private IToken GetGreaterThanOrGreaterThanOrEqualTo() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(TokenKind.GreaterThanOrEqualToSign, new TokenLocation(pos - 1, 2));
+                }
+                else {
+                    return new Token(TokenKind.GreaterThanSign, location);
+                }
+            }
+            else {
+                throw ParsingErrors.EndOfFile(new TokenLocation(pos, 1));
+            }
+        }
+
+        private IToken GetNotOrNotEqual() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(TokenKind.NotEqualSign, new TokenLocation(pos - 1, 2));
+                }
+                else {
+                    return new Token(TokenKind.NotSign, location);
+                }
+            }
+            else {
+                throw ParsingErrors.EndOfFile(new TokenLocation(pos, 1));
+            }
+        }
+
         private IToken GetNumber() {
             int start = pos;
             string strNum = "";
@@ -68,7 +114,7 @@ namespace Attempt17.Parsing {
             int start = pos;
             string id = "";
 
-            while (pos < this.text.Length && char.IsLetterOrDigit(current)) {
+            while (pos < this.text.Length && (char.IsLetterOrDigit(current) || current == '_')) {
                 id += this.text[pos];
                 pos++;
             }
@@ -88,12 +134,6 @@ namespace Attempt17.Parsing {
             }
             else if (id == "alloc") {
                 return new Token(TokenKind.AllocKeyword, location);
-            }
-            else if (id == "free") {
-                return new Token(TokenKind.FreeKeyword, location);
-            }
-            else if (id == "valueof") {
-                return new Token(TokenKind.CopyKeyword, location);
             }
             else if (id == "if") {
                 return new Token(TokenKind.IfKeyword, location);
@@ -121,6 +161,24 @@ namespace Attempt17.Parsing {
             }
             else if (id == "ref") {
                 return new Token(TokenKind.RefKeyword, location);
+            }
+            else if (id == "move") {
+                return new Token(TokenKind.MoveKeyword, location);
+            }
+            else if (id == "true") {
+                return new Token<bool>(true, TokenKind.BoolLiteral, location);
+            }
+            else if (id == "false") {
+                return new Token<bool>(false, TokenKind.BoolLiteral, location);
+            }
+            else if (id == "and") {
+                return new Token(TokenKind.AndKeyword, location);
+            }
+            else if (id == "xor") {
+                return new Token(TokenKind.XorKeyword, location);
+            }
+            else if (id == "or") {
+                return new Token(TokenKind.OrKeyword, location);
             }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);
@@ -157,6 +215,12 @@ namespace Attempt17.Parsing {
             else if (current == '}') {
                 return new Token(TokenKind.CloseBrace, location);
             }
+            else if (current == '[') {
+                return new Token(TokenKind.OpenBracket, location);
+            }
+            else if (current == ']') {
+                return new Token(TokenKind.CloseBracket, location);
+            }
             else if (current == '@') {
                 return new Token(TokenKind.LiteralSign, location);
             }
@@ -173,10 +237,16 @@ namespace Attempt17.Parsing {
                 return new Token(TokenKind.Semicolon, location);
             }
             else if (current == '=') {
-                return this.GetEqualsOrYields();
+                return this.GetEqualsOrYieldsOrAssignment();
             }
             else if (current == '<') {
-                return this.GetLessThanOrArrow();
+                return this.GetLessThanOrArrowOrLessThanOrEqualTo();
+            }
+            else if (current == '>') {
+                return this.GetGreaterThanOrGreaterThanOrEqualTo();
+            }
+            else if (current == '!') {
+                return this.GetNotOrNotEqual();
             }
             else if (current == '*') {
                 return new Token(TokenKind.MultiplySign, location);

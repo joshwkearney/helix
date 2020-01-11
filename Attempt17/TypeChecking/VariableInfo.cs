@@ -2,15 +2,15 @@
 
 namespace Attempt17.TypeChecking {
     public class VariableInfo {
-        public VariableSource Source { get; }
+        public VariableDefinitionKind DefinitionKind { get; }
 
         public LanguageType Type { get; }
 
         public IdentifierPath Path { get; }
 
-        public VariableInfo(LanguageType type, VariableSource source, IdentifierPath path) {
+        public VariableInfo(LanguageType type, VariableDefinitionKind kind, IdentifierPath path) {
             this.Type = type;
-            this.Source = source;
+            this.DefinitionKind = kind;
             this.Path = path;
         }
     }

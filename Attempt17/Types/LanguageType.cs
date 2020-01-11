@@ -8,6 +8,8 @@
 
         public abstract override string ToString();
 
+        public abstract string ToFriendlyString();
+
         public static bool operator ==(LanguageType type1, LanguageType type2) {
             return type1.Equals(type2);
         }

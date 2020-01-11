@@ -13,8 +13,14 @@ namespace Attempt17.Features.Primitives {
             registry.RegisterParseTree<VoidLiteralSyntax<ParseTag>>(this.typeChecker.CheckVoidLiteral);
             registry.RegisterSyntaxTree<VoidLiteralSyntax<TypeCheckTag>>(this.codeGen.GenerateVoidLiteral);
 
+            registry.RegisterParseTree<BoolLiteralSyntax<ParseTag>>(this.typeChecker.CheckBoolLiteral);
+            registry.RegisterSyntaxTree<BoolLiteralSyntax<TypeCheckTag>>(this.codeGen.GenerateBoolLiteral);
+
             registry.RegisterParseTree<BinarySyntax<ParseTag>>(this.typeChecker.CheckBinarySyntax);
             registry.RegisterSyntaxTree<BinarySyntax<TypeCheckTag>>(this.codeGen.GenerateBinarySyntax);
+
+            registry.RegisterParseTree<AllocSyntax<ParseTag>>(this.typeChecker.CheckAlloc);
+            registry.RegisterSyntaxTree<AllocSyntax<TypeCheckTag>>(this.codeGen.GenerateAlloc);
         }
     }
 }

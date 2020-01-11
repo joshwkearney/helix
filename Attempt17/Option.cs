@@ -8,6 +8,14 @@ namespace Attempt17 {
     }
 
     public static class Option {
+        public static IOption<TValue> GetValueOption<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dict, TKey key) {
+            if (dict.TryGetValue(key, out var value)) {
+                return Some(value);
+            }
+
+            return None<TValue>();
+        }
+
         public static IOption<T> Some<T>(T value) => new OptionSome<T>(value);
 
         public static IOption<T> None<T>() => OptionNone<T>.Instance;
@@ -45,6 +53,24 @@ namespace Attempt17 {
             }
             else {
                 throw new Exception();
+            }
+        }
+
+        public static T GetValueOr<T>(this IOption<T> option, Func<T> or) {
+            if (option.TryGetValue(out T t)) {
+                return t;
+            }
+            else {
+                return or();
+            }
+        }
+
+        public static IOption<T> GetValueOr<T>(this IOption<T> option, Func<IOption<T>> or) {
+            if (option.TryGetValue(out T t)) {
+                return Some(t);
+            }
+            else {
+                return or();
             }
         }
 

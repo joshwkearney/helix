@@ -15,6 +15,9 @@ namespace Attempt17.Features.Variables {
 
             registry.RegisterParseTree<StoreSyntax<ParseTag>>(this.typeChecker.CheckStore);
             registry.RegisterSyntaxTree<StoreSyntax<TypeCheckTag>>(this.codeGen.GenerateStore);
+
+            registry.RegisterParseTree<MoveSyntax<ParseTag>>(this.typeChecker.CheckMove);
+            registry.RegisterSyntaxTree<MoveSyntax<TypeCheckTag>>(this.codeGen.GenerateMove);
         }
     }
 }

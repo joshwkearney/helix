@@ -1,6 +1,10 @@
 ﻿namespace Attempt17.Features.Primitives {
     public enum BinarySyntaxKind {
-        Add, Subtract, Multiply
+        Add, Subtract, Multiply, 
+        And, Or, Xor,
+        EqualTo, NotEqualTo,
+        GreaterThan, LessThan,
+        GreaterThanOrEqualTo, LessThanOrEqualTo
     }
 
     public class BinarySyntax<T> : ISyntax<T> {

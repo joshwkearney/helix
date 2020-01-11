@@ -7,6 +7,7 @@ namespace Attempt17.Compiling {
         private class CodeGenerator : ICodeGenerator {
             private readonly SyntaxRegistry registry;
             private readonly TypeGenerator typegen;
+            private readonly TypeDestructorGenerator destructGen;
 
             public CWriter Header1Writer { get; } = new CWriter();
 
@@ -23,14 +24,23 @@ namespace Attempt17.Compiling {
             public CodeGenerator(SyntaxRegistry registry) {
                 this.registry = registry;
                 this.typegen = new TypeGenerator(this.Header2Writer);
+                this.destructGen = new TypeDestructorGenerator(this.Header3Writer, this);
             }
 
-            public CBlock Generate(ISyntax<TypeCheckTag> syntax) {
-                return this.registry.syntaxTrees[syntax.GetType()](syntax, this);
+            public CBlock Generate(ISyntax<TypeCheckTag> syntax, ICScope scope) {
+                return this.registry.syntaxTrees[syntax.GetType()](syntax, scope, this);
             }
 
             public string Generate(LanguageType type) {
                 return type.Accept(this.typegen);
+            }
+
+            public IOption<string> GetDestructor(LanguageType type) {
+                return type.Accept(this.destructGen);
+            }
+
+            public CBlock CopyValue(string value, LanguageType type, ICScope scope) {
+                return type.Accept(new ValueCopyVisitor(value, this, scope));
             }
         }
     }

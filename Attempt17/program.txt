@@ -1,18 +1,80 @@
 ﻿function main () => void: {
-	var foo <- 1;
+	#var array <- [5, 8, 6, 2, 7, 3, 9];
 
-	var test <- some(5);
+	#selection_sort(array);
 
-	@test <- 3 + 2;
+	var a <- 4;
+	var b <- @a;
+	
+	{
+		var c <- 9;
 
-	{ };
+  		@b <- @c;
+
+		thisisbad(@b, @c);
+	};
+
+	void;
 };
 
-function some (int x) => int: {
-	if x then: 4
-		 else: 2;
+function thisisbad (var var int cap, var int other) => void: {
+	@cap <- @other;
 };
 
-function a () => b: b;
+function selection_sort (int[] array) => void: {
+	var i <- 0;
 
-function b () => a: a;
+	while i + 1 < array.size do: {
+		var j <- i;
+		var smallest <- j;
+
+		while j + 1 < array.size do: {
+			@j <- j + 1;
+
+			if array[j] < array[smallest] do: {
+				@smallest <- j;
+			};
+		};
+
+		var temp <- array[i];
+
+		array[i] = array[smallest];
+		array[smallest] = temp;
+
+		@i <- i + 1;
+	};
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fib_linear (int n) => int: {
+	var first <- 0;
+	var second <- 0;
+	var i <- n;
+
+	while n > 0 do: {
+		var third <- first + second;
+
+		@first <- second;
+		@second <- third;
+		@n <- n - 1;
+	};
+
+	first;
+};
+
+function fib_recursive (int n) => int: {
+	if n <= 1 
+	then: n
+	else: fib_recursive(n - 1) + fib_recursive(n - 2);
+};

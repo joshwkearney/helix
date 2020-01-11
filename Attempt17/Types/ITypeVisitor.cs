@@ -8,8 +8,12 @@ namespace Attempt17.Types {
 
         T VisitVoidType(VoidType type);
 
+        T VisitBoolType(BoolType type);
+
         T VisitVariableType(VariableType type);
 
         T VisitNamedType(NamedType type);
+
+        T VisitArrayType(ArrayType type);
     }
 }

@@ -4,12 +4,18 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace Attempt17.TypeChecking {
-    public class TypeDefinitionChecker : ITypeVisitor<bool> {
-        private readonly Scope scope;
+    public class TypeDefinitionVisitor : ITypeVisitor<bool> {
+        private readonly IScope scope;
 
-        public TypeDefinitionChecker(Scope scope) {
+        public TypeDefinitionVisitor(IScope scope) {
             this.scope = scope;
         }
+
+        public bool VisitArrayType(ArrayType type) {
+            return type.ElementType.Accept(this);
+        }
+
+        public bool VisitBoolType(BoolType type) => true;
 
         public bool VisitIntType(IntType type) => true;
 

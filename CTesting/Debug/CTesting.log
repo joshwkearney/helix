@@ -1,2 +1,3 @@
 ﻿  Program.c
-LINK : fatal error LNK1561: entry point must be defined
+C:\Users\mwkea\source\repos\Blue0500\Compiler\CTesting\Program.c(39,64): warning C4020: 'malloc': too many actual parameters
+  CTesting.vcxproj -> C:\Users\mwkea\source\repos\Blue0500\Compiler\Debug\CTesting.exe

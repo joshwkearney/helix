@@ -30,6 +30,13 @@ namespace Attempt17.Parsing {
                 $"Unexpected character '{c}'");
         }
 
+        public static Exception UnexpectedSequence(TokenLocation loc) {
+            return new CompilerException(
+                loc,
+                "Unexpected Sequence",
+                $"Unexpected sequence of characters");
+        }
+
         public static Exception InvalidNumber(TokenLocation loc, string num) {
             return new CompilerException(
                 loc,

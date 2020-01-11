@@ -13,5 +13,7 @@
         public override T Accept<T>(ITypeVisitor<T> visitor) {
             return visitor.VisitVoidType(this);
         }
+
+        public override string ToFriendlyString() => "void";
     }
 }
