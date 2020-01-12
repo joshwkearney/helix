@@ -2,6 +2,7 @@
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -97,14 +98,17 @@ namespace Attempt17.Features.Functions {
                 .Select(x => checker.Check(x, scope))
                 .ToImmutableList();
 
+            // Make sure the target is a named type
             if (!(target.Tag.ReturnType is NamedType namedType)) {
                 throw TypeCheckingErrors.ExpectedFunctionType(syntax.Target.Tag.Location, target.Tag.ReturnType);
             }
 
+            // Make sure that named type is a function
             if (!scope.FindFunction(namedType.Path).TryGetValue(out var info)) {
                 throw TypeCheckingErrors.ExpectedFunctionType(syntax.Target.Tag.Location, target.Tag.ReturnType);
             }
 
+            // Make sure the parameter counts match
             if (info.Signature.Parameters.Count != args.Count) {
                 throw TypeCheckingErrors.ParameterCountMismatch(syntax.Tag.Location, info.Signature.Parameters.Count, args.Count);
             }
@@ -113,16 +117,63 @@ namespace Attempt17.Features.Functions {
                 .Zip(info.Signature.Parameters, (x, y) => new {
                     ExpectedType = y.Type,
                     ActualType = x.Tag.ReturnType,
+                    y.Name,
+                    Value = x
                 })
                 .Zip(syntax.Arguments, (x, y) => new {
                     x.ActualType,
                     x.ExpectedType,
-                    y.Tag.Location
-                });
+                    y.Tag.Location,
+                    x.Name,
+                    x.Value
+                })
+                .ToArray();
 
+            // Make sure the parameter types match
             foreach (var item in zipped) {
                 if (item.ExpectedType != item.ActualType) {
                     throw TypeCheckingErrors.UnexpectedType(item.Location, item.ExpectedType, item.ActualType);
+                }
+            }
+            
+            // Make sure that one variable might not be mutated by another into an invalid state
+            foreach (var outerPar in zipped) {
+                foreach (var innerPar in zipped) {
+                    if (outerPar.ActualType == innerPar.ActualType) {
+                        continue;
+                    }
+
+                    var outerCaptured = outerPar.Value.Tag.CapturedVariables;
+                    var innerCaptured = innerPar.Value.Tag.CapturedVariables;
+
+                    // Will be set to true if there are any variables in innerCaptured
+                    // that could be destructed before any in outerCaptured
+                    bool isScopeProblematic = false;
+
+                    foreach (var outer in outerCaptured) {
+                        if (isScopeProblematic) {
+                            break;
+                        }
+
+                        foreach (var inner in innerCaptured) {
+                            var outerScope = outer.Path.Pop();
+                            var innerScope = inner.Path.Pop();
+
+                            if (outerScope != innerScope && innerScope.StartsWith(outerScope)) {
+                                isScopeProblematic = true;
+                                break;
+                            }
+                        }
+                    }                 
+                    
+                    // Now if scoping could be an issue, make sure that outer is not dependend on inner
+                    if (isScopeProblematic) {
+                        var visitor = new TypeDependencyVisitor(innerPar.ActualType, scope);
+
+                        if (outerPar.ActualType.Accept(visitor)) {
+                           throw new Exception();
+                        }
+                    }
                 }
             }
 

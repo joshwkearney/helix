@@ -1,24 +1,27 @@
 ﻿function main () => void: {
-	#var array <- [5, 8, 6, 2, 7, 3, 9];
+	var array <- [5, 8, 6, 2, 7, 3, 9];
+
+	ref some <- array;
 
 	#selection_sort(array);
 
 	var a <- 4;
 	var b <- @a;
+
+	ref d = @a;
 	
 	{
 		var c <- 9;
+		var other <- new int[1];
 
-  		@b <- @c;
-
-		thisisbad(@b, @c);
+		thisisbad(@array, other);
 	};
 
 	void;
 };
 
-function thisisbad (var var int cap, var int other) => void: {
-	@cap <- @other;
+function thisisbad (var int[] cap, int[] other) => void: {
+	#@cap <- @other;
 };
 
 function selection_sort (int[] array) => void: {

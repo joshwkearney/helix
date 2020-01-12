@@ -20,16 +20,16 @@ namespace Attempt17.TypeChecking {
             return type.ElementType.Accept(this);
         }
 
-        public bool VisitBoolType(BoolType type) {
-            return type == this.testType;
-        }
+        public bool VisitBoolType(BoolType type) => false;
 
-        public bool VisitIntType(IntType type) {
-            return type == this.testType;
-        }
+        public bool VisitIntType(IntType type) => false;
 
         public bool VisitNamedType(NamedType type) {
-            return type == this.testType;
+            if (this.scope.FindFunction(type.Path).Any()) {
+                return false;
+            }
+
+            return true;
         }
 
         public bool VisitVariableType(VariableType type) {
@@ -40,8 +40,6 @@ namespace Attempt17.TypeChecking {
             return this.testType.Accept(this);
         }
 
-        public bool VisitVoidType(VoidType type) {
-            return type == this.testType;
-        }
+        public bool VisitVoidType(VoidType type) => false;
     }
 }
