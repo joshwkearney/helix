@@ -3,6 +3,8 @@
 
 This repository contains my compiler project, a personal project that I have been working on since 2015. I've always liked the idea of creating my own programming language, so years ago I started to experiment with building interpreters and compilers. I had no idea what I was doing at first, but eventually I began to make steady progress. There were many attempts where I experimented and refined my design; this repo documents 16 of these attempts but I suspect there were over 30 in total. 
 
+My compiler is written in C# and compiles my language (name pending) to C. Later, I will probably change this to LLVM IR but I needed to learn C anyway, and this seemed like a good way to do it.
+
 ### Design Principles
 
 A few years ago, I noticed that most langauges that are simple to use (Python, Javascript, ect) are also very abstracted from the machine's hardware and will naturally have lower performance. Conversely, languages that are close to the hardware (C, C++, Fortran, ect) are very performant, but are often type unsafe, memory unsafe, and are unpleasant to use when performance is not absolutely critical. Therefore, I wanted to see if I could design a language with the following goals in mind (in no particular order):
