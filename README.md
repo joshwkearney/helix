@@ -38,7 +38,7 @@ So how did I manage to pull all of this together to make a coherent language? Be
 ### Flow Control
 Every language needs it, and this language is no exception. So far, I've added if statements, if expressions, and while statements.
 
-```
+```javascript
 function main () => int: {
     # If statements use an "if do" or "if do else" structure
     if true do: {
@@ -60,7 +60,7 @@ function main () => int: {
 ### Variables
 Variables in my language are first-class values: you can either choose to access with a variable's value or the variable itself. Under the hood variables compile to both locals and pointers depending on the situation, and the programmer is presented a much simpler interface for both concepts.
 
-```
+```javascript
 function main () => int: {
     # This creates a local variable. The type is implicit.
     # "<-" means that you are storing a value inside of a variable.
@@ -95,7 +95,7 @@ function mutate_variable (var int w) => void: {
 ### Arrays
 The challenge of designing arrays was that there are no nullable types in my language. If I instantiate an array with 10 integers, what should happen? That's easy, it should be zeroed out. If I instantiate an array with 10 arrays, what should happen? That's less straighforward. What I decided to do was create a concept of types that have a void value, meaning that if their memory is zeroed out they are still safe to access. Variables types do not have a void value, so you cannot create an empty array of 10 variables (but you can create arrays of variables in other ways). However, in order for 2D arrays to make sense, this meant that arrays themselves must have a void value. The solution I came up with is to make arrays compile to 16 bytes values: 8 bytes for the length and 8 bytes for the pointer to the data. The advantage of this is that if I instantiate a zeroed-out array, the length with be zero and bounds-checking will ensure that I never access the null pointer to the data. The downside is a larger stack size for arrays, but I think that is acceptable. Arrays are currently only heap-allocated, but later I want to add a pass that stack-allocates them if it's possible and reasonable.
 
-```
+```javascript
 function main () => int: {
     # Array can be instantiated in the traditional way.
     # Gives an array of 10 zeroes.
@@ -123,7 +123,7 @@ New scopes in my language are introduced with curly braces, and all variables de
 #### How does scoping interact with variable values?
 In my language there is a concept called "variable capturing", which occurs whenever the compiler detects that one variable could access the value stored inside of another variable. To make sure that improper memory accesses don't occur, the capturing variable is then bound to the same scope as the captured variable. Below are examples.
 
-```
+```javascript
 function main () => int: {
     # x is bound to this function's scope. 
     var x <- 5;
@@ -152,7 +152,7 @@ function main () => int: {
 #### How does scoping interact with function calls?
 These scoping rules set up an interesting contract between functions and their callers: functions themselves don't need to worry about the scope of the arguments because the callers always handle the lifetimes of arguments and return values. This will be easier to demonstrate than explain.
 
-```
+```javascript
 function main () => int: {
     # Bound to the scope of this function
     var array <- [1, 2, 3, 4];
@@ -191,7 +191,7 @@ function wrap (int[] array) => int[][]: {
 #### How do I ever pass a reference type to an outer scope?
 There are two cases for returning values from scopes: is the type a value type or a reference type? If the type is a value type like `int` or `bool`, then the value can be trivially copied out of a variable without capturing the variable itself. 
 
-```
+```javascript
 function demo () => int: {
     # x is bound to the current scope
     var x <- 56;
@@ -207,7 +207,7 @@ However, for reference types the story is more complicated. For this, we will ne
 References types, like `var int` and `int[]` are interesting in my language because they are both strictly bound to their containing scope, but can also be freely passed to and from functions. Their ownership is tightly controlled but they can be shared with other code, almost in the same way as references in C++ (but not quite; you can't return references). This model is sufficient for many tasks and doesn't introduce a lot of the headaches that Rust's borrowing system does (nevertheless, this system does come with headaches, that is unavoidable). However, this model completely fails whenever ownership of a reference type needs to be transferred between scopes, which is where move semantics come in. Move semantics allow this ownership transfer to occur with complete transparency and also preserves the automatic memory management from the scoping rules.
 
 #### Move semantics and variables
-```
+```javascript
 function main () => int: {
     var x <- 56;
     var y = @x;
@@ -259,7 +259,7 @@ function test (var int x) => var int: {
 ```
 
 #### Move semantics and arrays
-```
+```javascript
 function main () => int: {
     # Unlike variables, you can move all arrays because all arrays are allocated on the heap. Otherwise, it works in much the same way.
     var array <- [1, 2, 3, 4];
