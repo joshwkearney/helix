@@ -11,7 +11,7 @@ A few years ago, I noticed that most langauges that are simple to use (Python, J
 - Performance. I don't need my language to be as fast as C in all situations, but I also don't want the programmer to worry about the penalty of the abstractions. All language features should compile to something fast and efficient with as much transparency as possible. This might limit expressiveness in some situations
 - Intuitiveness. The language should be easy to learn and use. There shouldn't be any constructions that do weird or unexpected things that are seemingly not consistent with other language features. This might also limit expressiveness. 
 
-In essence, I want a fast, simple language that is easy to learn and use. It will be much more tightly locked down than something like C, but should also significantly outperform languages like Python and Java because of the reduced overhead. Because of these principles, certain elements of the language design became locked-in:
+In essence, I want a fast, simple language that is easy to learn and use. It will be much more locked down than something like C, but should also significantly outperform languages like Python and Java because of the reduced overhead. Because of these principles, certain elements of the language design became locked-in:
 
 ### Consequences of Design Principles
 
