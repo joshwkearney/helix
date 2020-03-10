@@ -7,7 +7,7 @@ namespace Attempt17.CodeGeneration {
     public class ValueMoveVisitor : ITypeVisitor<CBlock> {
         private readonly string value;
         private readonly ICodeGenerator gen;
-        private int moveTemp = 0;
+        private static int moveTemp = 0;
 
         public ValueMoveVisitor(string value, ICodeGenerator gen) {
             this.value = value;
@@ -15,7 +15,7 @@ namespace Attempt17.CodeGeneration {
         }
 
         public CBlock VisitArrayType(ArrayType type) {
-            var varName = "$move_temp_" + this.moveTemp++;
+            var varName = "$move_temp_" + moveTemp++;
             var varType = this.gen.Generate(type);
             var writer = new CWriter();
 
@@ -41,7 +41,7 @@ namespace Attempt17.CodeGeneration {
         }
 
         public CBlock VisitVariableType(VariableType type) {
-            var varName = "$move_temp_" + this.moveTemp++;
+            var varName = "$move_temp_" + moveTemp++;
             var varType = this.gen.Generate(type);
             var writer = new CWriter();
 
