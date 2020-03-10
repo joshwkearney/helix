@@ -11,7 +11,7 @@ namespace Attempt17.Features.Arrays {
     public class ArraysTypeChecker {
         public ISyntax<TypeCheckTag> CheckArrayRangeLiteral(ArrayRangeLiteralSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             // Make sure the element type has a default value
-            if (!syntax.ElementType.Accept(new TypeDefaultValueVisitor())) {
+            if (!syntax.ElementType.Accept(new TypeDefaultValueVisitor(scope))) {
                 throw TypeCheckingErrors.TypeWithoutDefaultValue(syntax.Tag.Location, syntax.ElementType);
             }
 

@@ -47,7 +47,7 @@ namespace Attempt17.Features.Functions {
                 }
 
                 // Add the variable to the scope
-                funcScope.SetVariable(path, parInfo);
+                funcScope.SetTypeInfo(path, parInfo);
 
                 if (par.Type is VariableType || par.Type is ArrayType) {
                     funcScope.SetVariableMovable(path, true);

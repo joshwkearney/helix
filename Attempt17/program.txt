@@ -5,8 +5,6 @@
 
 	var a <- 4;
 
-    var p <- void as selection_sort;
-
 	void;
 };
 

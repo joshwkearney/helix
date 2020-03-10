@@ -97,7 +97,7 @@ namespace Attempt17.Features.Primitives {
             return new AllocSyntax<TypeCheckTag>(tag, target);
         }
 
-        public IOption<ISyntax<TypeCheckTag>> UnifyVoidToTypes(ISyntax<TypeCheckTag> syntax, LanguageType type) {
+        public IOption<ISyntax<TypeCheckTag>> UnifyVoidToTypes(ISyntax<TypeCheckTag> syntax, IScope scope, LanguageType type) {
             if (syntax.Tag.ReturnType != VoidType.Instance) {
                 return Option.None<ISyntax<TypeCheckTag>>();
             }
@@ -121,7 +121,7 @@ namespace Attempt17.Features.Primitives {
             }
             else if (type is ArrayType arrType) {
                 // Make sure the elements have a default value
-                if (arrType.ElementType.Accept(new TypeDefaultValueVisitor())) {
+                if (arrType.ElementType.Accept(new TypeDefaultValueVisitor(scope))) {
                     return Option.Some(
                         new ArrayLiteralSyntax<TypeCheckTag>(
                             new TypeCheckTag(arrType),
