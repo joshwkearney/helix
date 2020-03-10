@@ -140,58 +140,61 @@ namespace Attempt17.Features.Functions {
             // Make sure that one variable might not be mutated by another into an invalid state
             foreach (var outerPar in zipped) {
                 foreach (var innerPar in zipped) {
-                    if (outerPar.ActualType == innerPar.ActualType) {
-                        continue;
-                    }
-
                     var outerCaptured = outerPar.Value.Tag.CapturedVariables;
                     var innerCaptured = innerPar.Value.Tag.CapturedVariables;
 
-                    // Will be set to true if there are any variables in innerCaptured
-                    // that could be destructed before any in outerCaptured
-                    bool isScopeProblematic = false;
-                    IdentifierPath capturingPath = default;
-                    IdentifierPath capturedPath = default;
-
                     foreach (var outer in outerCaptured) {
-                        if (isScopeProblematic) {
-                            break;
-                        }
-
                         foreach (var inner in innerCaptured) {
                             var outerScope = outer.Path.Pop();
                             var innerScope = inner.Path.Pop();
 
-                            if (outerScope != innerScope && innerScope.StartsWith(outerScope)) {
-                                isScopeProblematic = true;
+                            // Outer is not actually outside of inner
+                            if (outerScope == innerScope || !innerScope.StartsWith(outerScope)) {
+                                continue;
+                            }
 
-                                capturingPath = outer.Path;
-                                capturedPath = inner.Path;
+                            // Now that we know that inner will be destructed before outer, we have to
+                            // confirm that outer cannot be mutated by something within inner
 
-                                break;
+                            var mutators = outerPar.ActualType.Accept(new TypeMutatorsVisitor(scope));
+                            var accessableTypes = innerPar.ActualType.Accept(new AccessibleTypesVisitor(scope));
+
+                            // Outer can be mutated by inner, so throw
+                            if (mutators.Intersect(accessableTypes).Any()) {
+                                throw TypeCheckingErrors.PossibleInvalidParamMutation(
+                                    syntax.Tag.Location,
+                                    outer.Path,
+                                    inner.Path);
                             }
                         }
                     }                 
-                    
-                    // Now if scoping could be an issue, make sure that outer is not dependend on inner
-                    if (isScopeProblematic) {
-                        var visitor = new TypeDependencyVisitor(innerPar.ActualType, scope);
-
-                        if (outerPar.ActualType.Accept(visitor)) {
-                            throw TypeCheckingErrors.PossibleInvalidParamMutation(
-                                syntax.Tag.Location,
-                                capturingPath,
-                                capturedPath);
-                        }
-                    }
                 }
             }
 
+            // To figure out which parameters the return type is dependent on, we need to
+            // get all the types that are accessible from the return type. However, we
+            // don't care about any types that are unconditionally copiable, these can
+            // come from anywhere. Only conditionally copiable and non-copiable types
+            // might include the parameters
+
+            var returnAccessible = info.Signature
+                .ReturnType
+                .Accept(new AccessibleTypesVisitor(scope))
+                .Where(x => x.Accept(new TypeCopiabilityVisitor(scope)) != TypeCopiability.Unconditional)
+                .ToImmutableHashSet();
+
+            // Now, capture all paths from any paramter that could be included in the
+            // return type
+
             var captured = args
-                .Where(x => info.Signature.ReturnType.Accept(new TypeDependencyVisitor(x.Tag.ReturnType, scope)))
-                .Aggregate(
-                    ImmutableHashSet<VariableCapture>.Empty,
-                    (x, y) => x.Union(y.Tag.CapturedVariables));
+                .Where(x => {
+                    var parAccessible = x.Tag.ReturnType.Accept(new AccessibleTypesVisitor(scope));
+
+                    return returnAccessible.Intersect(parAccessible).Any();
+                })
+                .Select(x => x.Tag.CapturedVariables)
+                .Aggregate(ImmutableHashSet<VariableCapture>.Empty, (x, y) => x.Union(y));
+
             var tag = new TypeCheckTag(info.Signature.ReturnType, captured);
 
             return new InvokeSyntax(tag, info, args);

@@ -158,7 +158,7 @@ namespace Attempt17.TypeChecking {
                 loc,
                 "Possible Invalid Parameter Mutation",
                 $"A function parameter capturing the variable '{mutableVar.Segments.Last()}' could potentially be mutated by another " +
-                $"parameter capturing the variable'{capturedVar.Segments.Last()}', which would lead to an invalid memory state when " +
+                $"parameter capturing the variable' {capturedVar.Segments.Last()}', which would lead to an invalid memory state when " +
                 $"'{capturedVar.Segments.Last()}' is destructed prematurely. Please ensure that these variables are destructed at the " +
                 "same time, or modify the function's parameter types.");
         }
