@@ -37,24 +37,22 @@ namespace Attempt17.Features.Functions {
                         varType.InnerType, 
                         VariableDefinitionKind.Alias, 
                         path);
-
-                    scope.SetVariableMovable(path, true);
                 }
                 else {
                     parInfo = new VariableInfo(
                         par.Type,
                         VariableDefinitionKind.Local,
                         path);
-
-                    if (par.Type is ArrayType) {
-                        scope.SetVariableMovable(path, true);
-                    }
                 }
 
                 // Add the variable to the scope
                 funcScope.SetVariable(path, parInfo);
-            }
 
+                if (par.Type is VariableType || par.Type is ArrayType) {
+                    funcScope.SetVariableMovable(path, true);
+                }
+            }
+            
             var body = checker.Check(syntax.Body, funcScope);
 
             // Return types have to match
@@ -149,6 +147,8 @@ namespace Attempt17.Features.Functions {
                     // Will be set to true if there are any variables in innerCaptured
                     // that could be destructed before any in outerCaptured
                     bool isScopeProblematic = false;
+                    IdentifierPath capturingPath = default;
+                    IdentifierPath capturedPath = default;
 
                     foreach (var outer in outerCaptured) {
                         if (isScopeProblematic) {
@@ -161,6 +161,10 @@ namespace Attempt17.Features.Functions {
 
                             if (outerScope != innerScope && innerScope.StartsWith(outerScope)) {
                                 isScopeProblematic = true;
+
+                                capturingPath = outer.Path;
+                                capturedPath = inner.Path;
+
                                 break;
                             }
                         }
@@ -171,7 +175,10 @@ namespace Attempt17.Features.Functions {
                         var visitor = new TypeDependencyVisitor(innerPar.ActualType, scope);
 
                         if (outerPar.ActualType.Accept(visitor)) {
-                           throw new Exception();
+                            throw TypeCheckingErrors.PossibleInvalidParamMutation(
+                                syntax.Tag.Location,
+                                capturingPath,
+                                capturedPath);
                         }
                     }
                 }
