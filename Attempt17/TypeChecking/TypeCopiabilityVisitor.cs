@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace Attempt17.TypeChecking {
     public class TypeCopiabilityVisitor : ITypeVisitor<TypeCopiability> {
@@ -20,8 +21,28 @@ namespace Attempt17.TypeChecking {
         public TypeCopiability VisitIntType(IntType type) => TypeCopiability.Unconditional;
 
         public TypeCopiability VisitNamedType(NamedType type) {
-            if (this.scope.FindFunction(type.Path).TryGetValue(out var _)) {
-                return TypeCopiability.Unconditional;
+            if (scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
+                return info.Match(
+                    varInfo => throw new InvalidOperationException(),
+                    funcInfo => TypeCopiability.Unconditional,
+                    structInfo => {
+                        var memCopiability = structInfo
+                            .Signature
+                            .Members
+                            .Select(x => x.Type)
+                            .Select(x => x.Accept(this))
+                            .ToArray();
+
+                        if (memCopiability.Any(x => x == TypeCopiability.None)) {
+                            return TypeCopiability.None;
+                        }
+                        else if (memCopiability.All(x => x == TypeCopiability.Unconditional)) {
+                            return TypeCopiability.Unconditional;
+                        }
+                        else {
+                            return TypeCopiability.Conditional;
+                        }
+                    });
             }
 
             throw new Exception("This should never happen");

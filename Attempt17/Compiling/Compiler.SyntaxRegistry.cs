@@ -23,6 +23,8 @@ namespace Attempt17.Compiling {
             public Dictionary<Type, GeneralScopeModifier> declarations =
                 new Dictionary<Type, GeneralScopeModifier>();
 
+            public HashSet<TypeUnifier> unifiers = new HashSet<TypeUnifier>();
+
             public void RegisterDeclaration<T>(DeclarationScopeModifier<T> scopeModifier) where T : ISyntax<ParseTag> {
                 this.declarations.Add(typeof(T), (syntax, scope) => scopeModifier((T)syntax, scope));
             }
@@ -33,6 +35,10 @@ namespace Attempt17.Compiling {
 
             public void RegisterSyntaxTree<T>(SyntaxCodeGenerator<T> codeGen) where T : ISyntax<TypeCheckTag> {
                 this.syntaxTrees.Add(typeof(T), (syntax, scope, gen) => codeGen((T)syntax, scope, gen));
+            }
+
+            public void RegisterTypeUnifier(TypeUnifier unifier) {
+                this.unifiers.Add(unifier);
             }
         }
     }

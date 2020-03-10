@@ -6,9 +6,7 @@ namespace Attempt17.TypeChecking {
     public interface IScope {
         IdentifierPath Path { get; }
 
-        void SetVariable(IdentifierPath path, VariableInfo info);
-
-        void SetFunction(IdentifierPath path, FunctionInfo info);
+        void SetTypeInfo(IdentifierPath path, TypeInfo info);
 
         void SetCapturingVariable(VariableCapture capturing, IdentifierPath captured);
 
@@ -16,9 +14,7 @@ namespace Attempt17.TypeChecking {
 
         void SetVariableMoved(IdentifierPath path, bool isMoved);
 
-        IOption<VariableInfo> FindVariable(IdentifierPath path);
-
-        IOption<FunctionInfo> FindFunction(IdentifierPath path);
+        IOption<TypeInfo> FindTypeInfo(IdentifierPath path);
 
         ImmutableHashSet<VariableCapture> GetCapturingVariables(IdentifierPath path);
 

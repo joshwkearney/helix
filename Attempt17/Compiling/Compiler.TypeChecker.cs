@@ -22,6 +22,18 @@ namespace Attempt17.Compiling {
             public bool IsTypeDefined(LanguageType type, IScope scope) {
                 return type.Accept(new TypeDefinitionVisitor(scope));
             }
+
+            public IOption<ISyntax<TypeCheckTag>> Unify(ISyntax<TypeCheckTag> syntax, LanguageType type) {
+                foreach (var unifier in registry.unifiers) {
+                    var opt = unifier(syntax, type);
+
+                    if (opt.Any()) {
+                        return opt;
+                    }
+                }
+
+                return Option.None<ISyntax<TypeCheckTag>>();
+            }
         }
     }
 }

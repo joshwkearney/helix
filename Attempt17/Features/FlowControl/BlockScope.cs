@@ -8,11 +8,8 @@ namespace Attempt17.Features.FlowControl {
     public class BlockScope : IScope {
         private readonly IScope head;
 
-        private readonly Dictionary<IdentifierPath, VariableInfo> variables 
-            = new Dictionary<IdentifierPath, VariableInfo>();
-
-        private readonly Dictionary<IdentifierPath, FunctionInfo> functions
-            = new Dictionary<IdentifierPath, FunctionInfo>();
+        private readonly Dictionary<IdentifierPath, TypeInfo> typeInfo 
+            = new Dictionary<IdentifierPath, TypeInfo>();
 
         private readonly Dictionary<IdentifierPath, ImmutableHashSet<VariableCapture>> capturingVariables
             = new Dictionary<IdentifierPath, ImmutableHashSet<VariableCapture>>();
@@ -28,16 +25,10 @@ namespace Attempt17.Features.FlowControl {
             this.head = head;
         }
 
-        public IOption<FunctionInfo> FindFunction(IdentifierPath path) {
-            return this.functions
+        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+            return this.typeInfo
                 .GetValueOption(path)
-                .GetValueOr(() => this.head.FindFunction(path));
-        }
-
-        public IOption<VariableInfo> FindVariable(IdentifierPath path) {
-            return this.variables
-                .GetValueOption(path)
-                .GetValueOr(() => this.head.FindVariable(path));
+                .GetValueOr(() => this.head.FindTypeInfo(path));
         }
 
         public ImmutableHashSet<VariableCapture> GetCapturingVariables(IdentifierPath path) {
@@ -65,16 +56,17 @@ namespace Attempt17.Features.FlowControl {
             this.capturingVariables[captured] = this.capturingVariables[captured].Add(capturing);
         }
 
-        public void SetFunction(IdentifierPath path, FunctionInfo info) {
-            this.functions[path] = info;
-        }
-
-        public void SetVariable(IdentifierPath path, VariableInfo info) {
-            this.variables[path] = info;
+        public void SetTypeInfo(IdentifierPath path, TypeInfo info) {
+            this.typeInfo[path] = info;
         }
 
         public void SetVariableMovable(IdentifierPath path, bool isMovable) {
-            if (this.variables.ContainsKey(path)) {
+            bool containsVar = this.typeInfo
+                .GetValueOption(path)
+                .SelectMany(x => x.AsVariableInfo())
+                .Any();
+
+            if (containsVar) {
                 if (isMovable) {
                     this.movableVariables.Add(path);
                 }
@@ -88,7 +80,12 @@ namespace Attempt17.Features.FlowControl {
         }
 
         public void SetVariableMoved(IdentifierPath path, bool isMoved) {
-            if (this.variables.ContainsKey(path)) {
+            bool containsVar = this.typeInfo
+                .GetValueOption(path)
+                .SelectMany(x => x.AsVariableInfo())
+                .Any();
+
+            if (containsVar) {
                 if (isMoved) {
                     this.movedVariables.Add(path);
                 }

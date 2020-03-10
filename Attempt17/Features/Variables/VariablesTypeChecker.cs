@@ -84,7 +84,7 @@ namespace Attempt17.Features.Variables {
             }
 
             // Add this variable to the current scope
-            scope.SetVariable(path, info);
+            scope.SetTypeInfo(path, info);
 
             // Add this variable as a capturing variable to the other variables in this scope
             foreach (var cap in value.Tag.CapturedVariables) {

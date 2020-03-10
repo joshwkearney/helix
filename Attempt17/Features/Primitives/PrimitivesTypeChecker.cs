@@ -1,7 +1,9 @@
-﻿using Attempt17.Parsing;
+﻿using Attempt17.Features.Arrays;
+using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Attempt17.Features.Primitives {
     public class PrimitivesTypeChecker {
@@ -93,6 +95,41 @@ namespace Attempt17.Features.Primitives {
                 target.Tag.CapturedVariables);
 
             return new AllocSyntax<TypeCheckTag>(tag, target);
+        }
+
+        public IOption<ISyntax<TypeCheckTag>> UnifyVoidToTypes(ISyntax<TypeCheckTag> syntax, LanguageType type) {
+            if (syntax.Tag.ReturnType != VoidType.Instance) {
+                return Option.None<ISyntax<TypeCheckTag>>();
+            }
+
+            if (type == IntType.Instance) {
+                return Option.Some(
+                    new IntLiteralSyntax<TypeCheckTag>(
+                        new TypeCheckTag(type),
+                        0L));
+            }
+            else if (type == VoidType.Instance) {
+                return Option.Some(
+                    new VoidLiteralSyntax<TypeCheckTag>(
+                        new TypeCheckTag(type)));
+            }
+            else if (type == BoolType.Instance) {
+                return Option.Some(
+                    new BoolLiteralSyntax<TypeCheckTag>(
+                        new TypeCheckTag(type),
+                        false));
+            }
+            else if (type is ArrayType arrType) {
+                // Make sure the elements have a default value
+                if (arrType.ElementType.Accept(new TypeDefaultValueVisitor())) {
+                    return Option.Some(
+                        new ArrayLiteralSyntax<TypeCheckTag>(
+                            new TypeCheckTag(arrType),
+                            ImmutableList<ISyntax<TypeCheckTag>>.Empty));
+                }
+            }
+
+            return Option.None<ISyntax<TypeCheckTag>>();
         }
     }
 }

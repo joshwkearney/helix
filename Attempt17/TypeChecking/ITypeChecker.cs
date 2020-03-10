@@ -8,5 +8,7 @@ namespace Attempt17.TypeChecking {
         bool IsTypeDefined(LanguageType type, IScope scope);
 
         TypeCopiability GetTypeCopiability(LanguageType type, IScope scope);
+
+        IOption<ISyntax<TypeCheckTag>> Unify(ISyntax<TypeCheckTag> syntax, LanguageType type);
     }
 }

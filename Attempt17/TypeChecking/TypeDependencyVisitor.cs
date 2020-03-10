@@ -2,8 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace Attempt17.TypeChecking {
+    // Returns true or false depending on whether the visited type is dependent on
+    // the given type.
     public class TypeDependencyVisitor : ITypeVisitor<bool> {
         private readonly LanguageType testType;
         private readonly IScope scope;
@@ -17,7 +20,15 @@ namespace Attempt17.TypeChecking {
                 return true;
             }
 
-            return type.ElementType.Accept(this);
+            if (type.ElementType.Accept(this)) {
+                return true;
+            }
+
+            if (this.testType.Accept(new TypeDependencyVisitor(type.ElementType, this.scope))) {
+                return true;
+            }
+
+            return false;
         }
 
         public bool VisitBoolType(BoolType type) => false;
@@ -25,11 +36,25 @@ namespace Attempt17.TypeChecking {
         public bool VisitIntType(IntType type) => false;
 
         public bool VisitNamedType(NamedType type) {
-            if (this.scope.FindFunction(type.Path).Any()) {
-                return false;
+            if (this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
+                return info.Match(
+                    varInfo => throw new InvalidOperationException(),
+                    funcInfo => false,
+                    structInfo => {
+                        bool membersDependent = structInfo
+                            .Signature
+                            .Members
+                            .Select(x => x.Type)
+                            .Select(x => x.Accept(this))
+                            .Any(x => x);
+
+                        if (type == structInfo.StructType) { }
+
+                        return true;
+                    });
             }
 
-            return true;
+            throw new Exception("This should never happen");
         }
 
         public bool VisitVariableType(VariableType type) {
@@ -37,7 +62,7 @@ namespace Attempt17.TypeChecking {
                 return true;
             }
 
-            return this.testType.Accept(this);
+            return type.InnerType.Accept(this);
         }
 
         public bool VisitVoidType(VoidType type) => false;

@@ -2,6 +2,7 @@
 using Attempt17.Features.FlowControl;
 using Attempt17.Features.Functions;
 using Attempt17.Features.Primitives;
+using Attempt17.Features.Structs;
 using Attempt17.Features.Variables;
 using Attempt17.Types;
 using System.Collections.Generic;
@@ -157,9 +158,37 @@ namespace Attempt17.Parsing {
                 body);
         }
 
+        private ISyntax<ParseTag> StructDeclaration() {
+            var first = this.Advance(TokenKind.StructKeyword);
+
+            var name = this.Advance<string>();
+            this.Advance(TokenKind.OpenBrace);
+
+            var mems = ImmutableList<StructMember>.Empty;
+
+            while (!this.TryAdvance(TokenKind.CloseBrace)) {
+                var memType = this.TypeExpression();
+                var memName = this.Advance<string>();
+
+                this.Advance(TokenKind.Semicolon);
+
+                mems = mems.Add(new StructMember(memName, memType));
+            }
+
+            var last = this.Advance(TokenKind.Semicolon);
+            var loc = first.Location.Span(last.Location);
+            var tag = new ParseTag(loc);
+            var sig = new StructSignature(name, mems);
+
+            return new StructDeclarationParseTree(tag, sig);
+        }
+
         private ISyntax<ParseTag> Declaration() {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
+            }
+            else if (this.Peek(TokenKind.StructKeyword)) {
+                return this.StructDeclaration();
             }
 
             throw ParsingErrors.UnexpectedToken(this.Advance());
@@ -200,6 +229,12 @@ namespace Attempt17.Parsing {
                 }
             }
         }
+
+      /*  private ISyntax<ParseTag> AsExpression() {
+            var target = this.AllocExpression();
+
+            while (this.Peek(TokenKind.as))
+        }*/
 
         private ISyntax<ParseTag> AllocExpression() {
             if (this.Peek(TokenKind.AllocKeyword)) {

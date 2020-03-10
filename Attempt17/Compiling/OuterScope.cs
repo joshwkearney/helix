@@ -6,17 +6,13 @@ using System.Text;
 
 namespace Attempt17.Compiling {
     public class OuterScope : IScope {
-        private readonly Dictionary<IdentifierPath, FunctionInfo> functions
-            = new Dictionary<IdentifierPath, FunctionInfo>();
+        private readonly Dictionary<IdentifierPath, TypeInfo> typeInfo
+            = new Dictionary<IdentifierPath, TypeInfo>();
 
         public IdentifierPath Path => new IdentifierPath();
 
-        public IOption<FunctionInfo> FindFunction(IdentifierPath path) {
-            return this.functions.GetValueOption(path);
-        }
-
-        public IOption<VariableInfo> FindVariable(IdentifierPath path) {
-            return Option.None<VariableInfo>();
+        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+            return this.typeInfo.GetValueOption(path);
         }
 
         public ImmutableHashSet<VariableCapture> GetCapturingVariables(IdentifierPath path) {
@@ -29,8 +25,8 @@ namespace Attempt17.Compiling {
 
         public void SetCapturingVariable(VariableCapture capturing, IdentifierPath captured) { }
 
-        public void SetFunction(IdentifierPath path, FunctionInfo info) {
-            this.functions[path] = info;
+        public void SetTypeInfo(IdentifierPath path, TypeInfo info) {
+            this.typeInfo[path] = info;
         }
 
         public void SetVariable(IdentifierPath path, VariableInfo info) { }

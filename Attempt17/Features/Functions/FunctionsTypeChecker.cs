@@ -1,4 +1,4 @@
-﻿using Attempt17.Features.FlowControl;
+using Attempt17.Features.FlowControl;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
@@ -9,6 +9,7 @@ using System.Linq;
 namespace Attempt17.Features.Functions {
     public class FunctionsTypeChecker {
         public ISyntax<TypeCheckTag> CheckFunctionDeclaration(FunctionDeclarationParseSyntax syntax, IScope scope, ITypeChecker checker) {
+            // Make sure the return type is defined
             if (!checker.IsTypeDefined(syntax.Signature.ReturnType, scope)) {
                 throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location, syntax.Signature.ReturnType.ToString());
             }
@@ -81,13 +82,13 @@ namespace Attempt17.Features.Functions {
         }
 
         public void ModifyDeclarationScope(FunctionDeclarationParseSyntax syntax, IScope scope) {
-            if (scope.IsNameTaken(syntax.Signature.Name)) {
+            var path = scope.Path.Append(syntax.Signature.Name);
+
+            if (scope.IsPathTaken(path)) {
                 throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.Signature.Name);
             }
 
-            var path = scope.Path.Append(syntax.Signature.Name);
-
-            scope.SetFunction(path, new FunctionInfo(path, syntax.Signature));
+            scope.SetTypeInfo(path, new FunctionInfo(path, syntax.Signature));
         }
 
         public ISyntax<TypeCheckTag> CheckInvoke(InvokeParseSyntax syntax, IScope scope, ITypeChecker checker) {

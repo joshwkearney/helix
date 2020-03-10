@@ -40,9 +40,7 @@ namespace Attempt17.CodeGeneration {
         }
 
         public CBlock VisitNamedType(NamedType type) {
-            // TODO - Fix this
-
-            return new CBlock(this.value);
+            throw new NotImplementedException();
         }
 
         public CBlock VisitVariableType(VariableType type) {

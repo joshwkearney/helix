@@ -20,7 +20,13 @@ namespace Attempt17.TypeChecking {
         public bool VisitIntType(IntType type) => true;
 
         public bool VisitNamedType(NamedType type) {
-            return this.scope.FindFunction(type.Path).Any();
+            var opt = this.scope.FindTypeInfo(type);
+
+            if (!opt.Any() || opt.GetValue().AsVariableInfo().Any()) {
+                return false;
+            }
+
+            return true;
         }
 
         public bool VisitVariableType(VariableType type) {

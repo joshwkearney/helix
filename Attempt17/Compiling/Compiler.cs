@@ -4,6 +4,7 @@ using Attempt17.Features.Arrays;
 using Attempt17.Features.FlowControl;
 using Attempt17.Features.Functions;
 using Attempt17.Features.Primitives;
+using Attempt17.Features.Structs;
 using Attempt17.Features.Variables;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
@@ -20,7 +21,8 @@ namespace Attempt17.Compiling {
             new FunctionsFeature(),
             new PrimitivesFeature(),
             new VariablesFeature(),
-            new ArraysFeature()
+            new ArraysFeature(),
+            new StructsFeature()
         };
 
         public CompilerResult Compile(string input) {
