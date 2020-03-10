@@ -162,5 +162,12 @@ namespace Attempt17.TypeChecking {
                 $"'{capturedVar.Segments.Last()}' is destructed prematurely. Please ensure that these variables are destructed at the " +
                 "same time, or modify the function's parameter types.");
         }
+
+        public static Exception AccessedFunctionParameterLikeVariable(TokenLocation loc, string par) {
+            return new CompilerException(
+                loc,
+                "Invalid Variable Access",
+                $"The function parameter '{par}' cannot be accessed as if it were a variable type.");
+        }
     }
 }

@@ -60,10 +60,13 @@ namespace Attempt17.TypeChecking {
 
         public IdentifierPath Path { get; }
 
-        public VariableInfo(LanguageType type, VariableDefinitionKind kind, IdentifierPath path) {
+        public bool IsFunctionParameter { get; }
+
+        public VariableInfo(LanguageType type, VariableDefinitionKind kind, IdentifierPath path, bool isFuncParameter = false) {
             this.Type = type;
             this.DefinitionKind = kind;
             this.Path = path;
+            this.IsFunctionParameter = isFuncParameter;
         }
 
         public override T Match<T>(

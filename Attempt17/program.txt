@@ -42,12 +42,12 @@ function fib_linear (int n) => int: {
 	var second <- 0;
 	var i <- n;
 
-	while n > 0 do: {
+	while i > 0 do: {
 		var third <- first + second;
 
 		@first <- second;
 		@second <- third;
-		@n <- n - 1;
+		@i <- n - 1;
 	};
 
 	first;

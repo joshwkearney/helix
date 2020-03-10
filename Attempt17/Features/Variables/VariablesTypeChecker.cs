@@ -42,6 +42,10 @@ namespace Attempt17.Features.Variables {
                         new VariableType(info.Type), 
                         new[] { cap }.ToImmutableHashSet());
 
+                    if (info.IsFunctionParameter) {
+                        throw TypeCheckingErrors.AccessedFunctionParameterLikeVariable(syntax.Tag.Location, syntax.VariableName);
+                    }
+
                     return new VariableAccessSyntax(tag, syntax.Kind, info);
                 }
             }

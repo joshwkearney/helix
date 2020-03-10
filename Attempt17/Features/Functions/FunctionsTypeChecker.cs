@@ -37,13 +37,15 @@ namespace Attempt17.Features.Functions {
                     parInfo = new VariableInfo(
                         varType.InnerType, 
                         VariableDefinitionKind.Alias, 
-                        path);
+                        path,
+                        true);
                 }
                 else {
                     parInfo = new VariableInfo(
                         par.Type,
                         VariableDefinitionKind.Local,
-                        path);
+                        path,
+                        true);
                 }
 
                 // Add the variable to the scope
