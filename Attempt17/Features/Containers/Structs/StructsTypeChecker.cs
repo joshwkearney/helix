@@ -27,6 +27,12 @@ namespace Attempt17.Features.Containers.Structs {
                 }
             }
 
+            // Check to make sure the struct isn't circular
+            var detector = new CircularValueObjectDetector(syntax.StructInfo.StructType, scope);
+            if (syntax.StructInfo.StructType.Accept(detector)) {
+                throw TypeCheckingErrors.CircularValueObject(syntax.Tag.Location, syntax.StructInfo.StructType);
+            }
+
             // Check to make sure that all member types are defined
             foreach (var mem in syntax.StructInfo.Signature.Members) {
                 if (!checker.IsTypeDefined(mem.Type, scope)) {

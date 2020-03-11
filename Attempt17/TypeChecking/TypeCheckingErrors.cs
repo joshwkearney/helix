@@ -203,5 +203,12 @@ namespace Attempt17.TypeChecking {
                 "Extraneous Fields Present in Object Instantiation",
                 $"The following extraneous fields are present in the instantiation of an object of type '{typeName.ToString()}': {extra}");
         }
+
+        public static Exception CircularValueObject(TokenLocation loc, LanguageType typeName) {
+            return new CompilerException(
+                loc,
+                "Invalid Circular Object",
+                $"The type '{typeName}' is directly circular, which is invalid in this context. Try using a layer of indirection for circular objects.");
+        }
     }
 }

@@ -37,7 +37,7 @@ namespace Attempt17.Compiling {
                 .SelectMany(x => x.Accept(declFlattener))
                 .ToArray();
 
-            // Make sure all thedeclarations can add to the scope
+            // Make sure all the declarations can add to the scope
             foreach (var decl in decls) {
                 registry.declarations[decl.GetType()](decl, scope);
             }

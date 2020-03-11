@@ -28,7 +28,7 @@ namespace Attempt17.Compiling {
             return decl
                 .Declarations
                 .SelectMany(x => x.Accept(transformer).Accept(this))
-                .Append(newDecl)
+                .Prepend(newDecl)
                 .ToArray();
         }
     }
@@ -52,8 +52,7 @@ namespace Attempt17.Compiling {
                 decl.FunctionInfo.Signature.Parameters.Insert(0, firstParam));
 
             var newInfo = new FunctionInfo(
-                this.containingStruct.Append(decl.FunctionInfo.Path),
-                newSig);
+                this.containingStruct.Append(decl.FunctionInfo.Path), newSig);
 
             this.scope.SetMethod(structType, decl.FunctionInfo.Signature.Name, newInfo.Path);
 
