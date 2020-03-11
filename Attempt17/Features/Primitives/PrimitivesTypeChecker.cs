@@ -115,34 +115,7 @@ namespace Attempt17.Features.Primitives {
                 return Option.None<ISyntax<TypeCheckTag>>();
             }
 
-            if (type == IntType.Instance) {
-                return Option.Some(
-                    new IntLiteralSyntax<TypeCheckTag>(
-                        new TypeCheckTag(type),
-                        0L));
-            }
-            else if (type == VoidType.Instance) {
-                return Option.Some(
-                    new VoidLiteralSyntax<TypeCheckTag>(
-                        new TypeCheckTag(type)));
-            }
-            else if (type == BoolType.Instance) {
-                return Option.Some(
-                    new BoolLiteralSyntax<TypeCheckTag>(
-                        new TypeCheckTag(type),
-                        false));
-            }
-            else if (type is ArrayType arrType) {
-                // Make sure the elements have a default value
-                if (arrType.ElementType.Accept(new TypeDefaultValueVisitor(scope))) {
-                    return Option.Some(
-                        new ArrayLiteralSyntax<TypeCheckTag>(
-                            new TypeCheckTag(arrType),
-                            ImmutableList<ISyntax<TypeCheckTag>>.Empty));
-                }
-            }
-
-            return Option.None<ISyntax<TypeCheckTag>>();
+            return type.Accept(new TypeVoidValueVisitor(scope));
         }
     }
 }
