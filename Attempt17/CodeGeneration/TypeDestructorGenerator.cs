@@ -72,7 +72,7 @@ namespace Attempt17.CodeGeneration {
 
             if (type.InnerType.Accept(this).TryGetValue(out string innerDestructor)) {
                 this.headerWriter.Lines(
-                    CWriter.Indent(2, $"{innerDestructor}(*({innerType}*)obj);"));
+                    CWriter.Indent(2, $"{innerDestructor}(*({innerType}*)(obj & ~1));"));
             }
 
             this.headerWriter
