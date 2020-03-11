@@ -11,21 +11,28 @@ namespace Attempt17.Features.Containers.Structs {
         public CBlock GenerateStructDeclaration(StructDeclarationSyntax<TypeCheckTag>  syntax, ICScope scope, ICodeGenerator gen) {
             string name = syntax.StructInfo.Path.ToCName();
 
-            // Generate forward declaration
-            gen.Header1Writer.Line($"typedef struct {name} {name};");
-            gen.Header1Writer.EmptyLine();
+            if (syntax.StructInfo.Signature.Members.Any()) {
+                // Generate forward declaration
+                gen.Header1Writer.Line($"typedef struct {name} {name};");
+                gen.Header1Writer.EmptyLine();
 
-            // Generate struct definition
-            gen.Header2Writer.Line($"struct {name} {{");
+                // Generate struct definition
+                gen.Header2Writer.Line($"struct {name} {{");
 
-            foreach (var mem in syntax.StructInfo.Signature.Members) {
-                var memType = gen.Generate(mem.Type);
+                foreach (var mem in syntax.StructInfo.Signature.Members) {
+                    var memType = gen.Generate(mem.Type);
 
-                gen.Header2Writer.Lines(CWriter.Indent($"{memType} {mem.Name};"));
+                    gen.Header2Writer.Lines(CWriter.Indent($"{memType} {mem.Name};"));
+                }
+
+                gen.Header2Writer.Line($"}}");
+                gen.Header2Writer.EmptyLine();
             }
-
-            gen.Header2Writer.Line($"}}");
-            gen.Header2Writer.EmptyLine();
+            else {
+                // Generate forward declaration
+                gen.Header1Writer.Line($"typedef uint16_t {name};");
+                gen.Header1Writer.EmptyLine();
+            }
 
             return new CBlock("0");
         }
