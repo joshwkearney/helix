@@ -7,11 +7,11 @@ using System.Collections.Generic;
 
 namespace Attempt17.Compiling {
     public partial class Compiler {
-        private delegate ISyntax<TypeCheckTag> GeneralTypeChecker(ISyntax<ParseTag> syntax, IScope scope, ITypeChecker checker);
+        private delegate ISyntax<TypeCheckTag> GeneralTypeChecker(ISyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker);
 
         private delegate CBlock GeneralCodeGenerator(ISyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen);
 
-        private delegate void GeneralScopeModifier(ISyntax<ParseTag> syntax, IScope scope);
+        private delegate void GeneralScopeModifier(ISyntax<ParseTag> syntax, ITypeCheckScope scope);
 
         private class SyntaxRegistry : ISyntaxRegistry {
             public Dictionary<Type, GeneralTypeChecker> parseTrees =

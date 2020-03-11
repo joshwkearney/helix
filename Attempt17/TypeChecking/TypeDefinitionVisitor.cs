@@ -5,9 +5,9 @@ using System.Text;
 
 namespace Attempt17.TypeChecking {
     public class TypeDefinitionVisitor : ITypeVisitor<bool> {
-        private readonly IScope scope;
+        private readonly ITypeCheckScope scope;
 
-        public TypeDefinitionVisitor(IScope scope) {
+        public TypeDefinitionVisitor(ITypeCheckScope scope) {
             this.scope = scope;
         }
 

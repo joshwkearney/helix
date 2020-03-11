@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Attempt17.Features.Functions {
     public class FunctionsTypeChecker {
-        public ISyntax<TypeCheckTag> CheckFunctionDeclaration(FunctionDeclarationSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckFunctionDeclaration(FunctionDeclarationSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             // Make sure the return type is defined
             if (!checker.IsTypeDefined(syntax.FunctionInfo.Signature.ReturnType, scope)) {
                 throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location, syntax.FunctionInfo.Signature.ReturnType.ToString());
@@ -83,7 +83,7 @@ namespace Attempt17.Features.Functions {
                 body);
         }
 
-        public void ModifyDeclarationScope(FunctionDeclarationSyntax<ParseTag> syntax, IScope scope) {
+        public void ModifyDeclarationScope(FunctionDeclarationSyntax<ParseTag> syntax, ITypeCheckScope scope) {
             // Make sure this path isn't taken
             if (scope.IsPathTaken(syntax.FunctionInfo.Path)) {
                 throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.FunctionInfo.Signature.Name);
@@ -92,7 +92,7 @@ namespace Attempt17.Features.Functions {
             scope.SetTypeInfo(syntax.FunctionInfo.Path, syntax.FunctionInfo);
         }
 
-        public ISyntax<TypeCheckTag> CheckInvoke(InvokeParseSyntax syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckInvoke(InvokeParseSyntax syntax, ITypeCheckScope scope, ITypeChecker checker) {
             var target = checker.Check(syntax.Target, scope);
             var args = syntax.Arguments
                 .Select(x => checker.Check(x, scope))
@@ -101,7 +101,7 @@ namespace Attempt17.Features.Functions {
             return CheckFunctionInvoke(syntax.Tag.Location, target, args, scope);
         }
 
-        public static ISyntax<TypeCheckTag> CheckFunctionInvoke(TokenLocation loc, ISyntax<TypeCheckTag> target, ImmutableList<ISyntax<TypeCheckTag>> args, IScope scope) {
+        public static ISyntax<TypeCheckTag> CheckFunctionInvoke(TokenLocation loc, ISyntax<TypeCheckTag> target, ImmutableList<ISyntax<TypeCheckTag>> args, ITypeCheckScope scope) {
             // Make sure the target is a named type
             if (!(target.Tag.ReturnType is NamedType namedType)) {
                 throw TypeCheckingErrors.ExpectedFunctionType(loc, target.Tag.ReturnType);

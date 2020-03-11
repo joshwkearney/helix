@@ -21,7 +21,7 @@ namespace Attempt17.TypeChecking {
         public TypeCopiability VisitIntType(IntType type) => TypeCopiability.Unconditional;
 
         public TypeCopiability VisitNamedType(NamedType type) {
-            if (scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
+            if (this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
                 return info.Match(
                     varInfo => throw new InvalidOperationException(),
                     funcInfo => TypeCopiability.Unconditional,

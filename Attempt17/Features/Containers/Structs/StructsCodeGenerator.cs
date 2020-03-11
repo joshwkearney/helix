@@ -25,7 +25,7 @@ namespace Attempt17.Features.Containers.Structs {
                     gen.Header2Writer.Lines(CWriter.Indent($"{memType} {mem.Name};"));
                 }
 
-                gen.Header2Writer.Line($"}}");
+                gen.Header2Writer.Line($"}};");
                 gen.Header2Writer.EmptyLine();
             }
             else {

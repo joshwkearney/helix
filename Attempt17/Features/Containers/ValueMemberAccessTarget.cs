@@ -12,10 +12,10 @@ using Attempt17.Types;
 namespace Attempt17.Features.Containers {
     public class ValueMemberAccessTarget : IMemberAccessTarget {
         private readonly ISyntax<TypeCheckTag> value;
-        private readonly IScope scope;
+        private readonly ITypeCheckScope scope;
         private readonly TokenLocation loc;
 
-        public ValueMemberAccessTarget(ISyntax<TypeCheckTag> value, TokenLocation loc, IScope scope) {
+        public ValueMemberAccessTarget(ISyntax<TypeCheckTag> value, TokenLocation loc, ITypeCheckScope scope) {
             this.value = value;
             this.scope = scope;
             this.loc = loc;
@@ -49,11 +49,11 @@ namespace Attempt17.Features.Containers {
 
         private class MemberAccessVisitor : ITypeVisitor<ISyntax<TypeCheckTag>> {
             private readonly string memberName;
-            private readonly IScope scope;
+            private readonly ITypeCheckScope scope;
             private readonly TokenLocation location;
             private readonly ISyntax<TypeCheckTag> target;
 
-            public MemberAccessVisitor(string name, TokenLocation loc, ISyntax<TypeCheckTag> target, IScope scope) {
+            public MemberAccessVisitor(string name, TokenLocation loc, ISyntax<TypeCheckTag> target, ITypeCheckScope scope) {
                 this.memberName = name;
                 this.scope = scope;
                 this.location = loc;

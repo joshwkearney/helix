@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Text;
 
 namespace Attempt17.CodeGeneration {
-    public interface ICScope {
+    public interface ICScope : IScope {
         public void SetVariableUndestructed(string name, LanguageType type);
 
         public void SetVariableDestructed(string name);
@@ -13,7 +13,5 @@ namespace Attempt17.CodeGeneration {
         public void SetVariableMoved(string name);
 
         public ImmutableDictionary<string, LanguageType> GetUndestructedVariables();
-
-        IOption<TypeInfo> FindTypeInfo(IdentifierPath path);
     }
 }

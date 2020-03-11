@@ -8,7 +8,7 @@ using Attempt17.Types;
 
 namespace Attempt17.Features.Containers {
     public class ContainersTypeChecker {
-        public ISyntax<TypeCheckTag> CheckNew(NewSyntax syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckNew(NewSyntax syntax, ITypeCheckScope scope, ITypeChecker checker) {
             // Make sure the type is a namedType
             if (!(syntax.Type is NamedType namedType)) {
                 throw TypeCheckingErrors.ExpectedStructType(syntax.Tag.Location, syntax.Type);
@@ -21,7 +21,7 @@ namespace Attempt17.Features.Containers {
             throw TypeCheckingErrors.UnexpectedType(syntax.Tag.Location, namedType);
         }
 
-        public ISyntax<TypeCheckTag> CheckMemberUsage(MemberUsageParseSyntax syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckMemberUsage(MemberUsageParseSyntax syntax, ITypeCheckScope scope, ITypeChecker checker) {
             IMemberAccessTarget initial = new ValueMemberAccessTarget(
                 checker.Check(syntax.Target, scope),
                 syntax.Tag.Location,

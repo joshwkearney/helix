@@ -97,7 +97,7 @@ namespace Attempt17.Features.Arrays {
                 writer.Line("// Array initialization");
                 writer.VariableInit(carrayType, tempName);
                 writer.Line($"{tempName}.size = {syntax.Elements.Count}LL;");
-                writer.Line($"{tempName}.data = (uintptr_t)malloc({syntax.Elements.Count}LL, sizeof({elemType}));");
+                writer.Line($"{tempName}.data = (uintptr_t)malloc({syntax.Elements.Count}LL * sizeof({elemType}));");
 
                 for (int i = 0; i < syntax.Elements.Count; i++) {
                     writer.Line($"(({elemType}*)({tempName}.data))[{i}] = {elems[i].Value};");

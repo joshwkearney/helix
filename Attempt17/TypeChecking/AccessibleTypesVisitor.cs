@@ -5,9 +5,9 @@ using Attempt17.Types;
 
 namespace Attempt17.TypeChecking {
     public class AccessibleTypesVisitor : ITypeVisitor<ImmutableHashSet<LanguageType>> {
-        private readonly IScope scope;
+        private readonly ITypeCheckScope scope;
 
-        public AccessibleTypesVisitor(IScope scope) {
+        public AccessibleTypesVisitor(ITypeCheckScope scope) {
             this.scope = scope;
         }
 

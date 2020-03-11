@@ -3,12 +3,12 @@ using Attempt17.Types;
 
 namespace Attempt17.TypeChecking {
     public interface ITypeChecker {
-        ISyntax<TypeCheckTag> Check(ISyntax<ParseTag> syntax, IScope scope);
+        ISyntax<TypeCheckTag> Check(ISyntax<ParseTag> syntax, ITypeCheckScope scope);
 
-        bool IsTypeDefined(LanguageType type, IScope scope);
+        bool IsTypeDefined(LanguageType type, ITypeCheckScope scope);
 
-        TypeCopiability GetTypeCopiability(LanguageType type, IScope scope);
+        TypeCopiability GetTypeCopiability(LanguageType type, ITypeCheckScope scope);
 
-        IOption<ISyntax<TypeCheckTag>> Unify(ISyntax<TypeCheckTag> syntax, IScope scope, LanguageType type);
+        IOption<ISyntax<TypeCheckTag>> Unify(ISyntax<TypeCheckTag> syntax, ITypeCheckScope scope, LanguageType type);
     }
 }

@@ -21,7 +21,7 @@ namespace Attempt17.CodeGeneration {
 
             writer.Line("// Array move");
             writer.Line($"{varType} {varName} = {this.value};");
-            writer.Line($"{this.value}.length = 0LL;");
+            writer.Line($"{this.value}.size = 0LL;");
             writer.Line($"{this.value}.data = 0LL;");
             writer.EmptyLine();
 

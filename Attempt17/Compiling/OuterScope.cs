@@ -6,7 +6,7 @@ using System.Collections.Immutable;
 using System.Text;
 
 namespace Attempt17.Compiling {
-    public class OuterScope : IScope {
+    public class OuterScope : ITypeCheckScope {
         public Dictionary<IdentifierPath, TypeInfo> TypeInfo { get; }
             = new Dictionary<IdentifierPath, TypeInfo>();
 

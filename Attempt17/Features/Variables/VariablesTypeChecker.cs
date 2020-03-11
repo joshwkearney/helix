@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Attempt17.Features.Variables {
     public class VariablesTypeChecker {
-        public ISyntax<TypeCheckTag> CheckVariableAccess(VariableAccessParseSyntax syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckVariableAccess(VariableAccessParseSyntax syntax, ITypeCheckScope scope, ITypeChecker checker) {
             if (scope.FindVariable(syntax.VariableName).TryGetValue(out var info)) {
                 // Check that we're not accessing moved variables
                 if (scope.IsVariableMoved(info.Path)) {
@@ -59,7 +59,7 @@ namespace Attempt17.Features.Variables {
             }
         }
 
-        public ISyntax<TypeCheckTag> CheckVariableInit(VariableInitSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckVariableInit(VariableInitSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             if (scope.IsNameTaken(syntax.VariableName)) {
                 throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.VariableName);
             }
@@ -109,7 +109,7 @@ namespace Attempt17.Features.Variables {
                 value);
         }
 
-        public ISyntax<TypeCheckTag> CheckStore(StoreSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckStore(StoreSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             var target = checker.Check(syntax.Target, scope);
             var value = checker.Check(syntax.Value, scope);
 
@@ -169,7 +169,7 @@ namespace Attempt17.Features.Variables {
             return new StoreSyntax<TypeCheckTag>(tag, target, value);
         }
 
-        public ISyntax<TypeCheckTag> CheckMove(MoveSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckMove(MoveSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             if (!scope.FindVariable(syntax.VariableName).TryGetValue(out var info)) {
                 throw TypeCheckingErrors.VariableUndefined(syntax.Tag.Location, syntax.VariableName);
             }

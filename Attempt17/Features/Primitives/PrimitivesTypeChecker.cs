@@ -18,29 +18,29 @@ namespace Attempt17.Features.Primitives {
 
         private readonly Dictionary<BinarySyntaxKind, LanguageType> boolOperations = new Dictionary<BinarySyntaxKind, LanguageType>() {
             { BinarySyntaxKind.And, BoolType.Instance },
-            { BinarySyntaxKind.Or, BoolType.Instance }, { BinarySyntaxKind.Xor, BoolType.Instance },            
+            { BinarySyntaxKind.Or, BoolType.Instance }, { BinarySyntaxKind.Xor, BoolType.Instance },
             { BinarySyntaxKind.EqualTo, BoolType.Instance }, { BinarySyntaxKind.NotEqualTo, BoolType.Instance },
         };
 
-        public ISyntax<TypeCheckTag> CheckIntLiteral(IntLiteralSyntax<ParseTag> literal, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckIntLiteral(IntLiteralSyntax<ParseTag> literal, ITypeCheckScope scope, ITypeChecker checker) {
             var tag = new TypeCheckTag(IntType.Instance);
 
             return new IntLiteralSyntax<TypeCheckTag>(tag, literal.Value);
         }
 
-        public ISyntax<TypeCheckTag> CheckVoidLiteral(VoidLiteralSyntax<ParseTag> literal, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckVoidLiteral(VoidLiteralSyntax<ParseTag> literal, ITypeCheckScope scope, ITypeChecker checker) {
             var tag = new TypeCheckTag(VoidType.Instance);
 
             return new VoidLiteralSyntax<TypeCheckTag>(tag);
         }
 
-        public ISyntax<TypeCheckTag> CheckBoolLiteral(BoolLiteralSyntax<ParseTag> literal, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckBoolLiteral(BoolLiteralSyntax<ParseTag> literal, ITypeCheckScope scope, ITypeChecker checker) {
             var tag = new TypeCheckTag(BoolType.Instance);
 
             return new BoolLiteralSyntax<TypeCheckTag>(tag, literal.Value);
         }
 
-        public ISyntax<TypeCheckTag> CheckBinarySyntax(BinarySyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckBinarySyntax(BinarySyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             var left = checker.Check(syntax.Left, scope);
             var right = checker.Check(syntax.Right, scope);
 
@@ -51,8 +51,8 @@ namespace Attempt17.Features.Primitives {
 
                 if (!intOperations.TryGetValue(syntax.Kind, out var returnType)) {
                     throw TypeCheckingErrors.InvalidBinaryOperator(
-                        syntax.Tag.Location, 
-                        syntax.Kind, 
+                        syntax.Tag.Location,
+                        syntax.Kind,
                         left.Tag.ReturnType);
                 }
 
@@ -82,13 +82,13 @@ namespace Attempt17.Features.Primitives {
             }
             else {
                 throw TypeCheckingErrors.UnexpectedType(
-                    syntax.Left.Tag.Location, 
-                    IntType.Instance, 
+                    syntax.Left.Tag.Location,
+                    IntType.Instance,
                     left.Tag.ReturnType);
-            }            
+            }
         }
 
-        public ISyntax<TypeCheckTag> CheckAlloc(AllocSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckAlloc(AllocSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             var target = checker.Check(syntax.Target, scope);
             var tag = new TypeCheckTag(
                 new VariableType(target.Tag.ReturnType),
@@ -97,7 +97,7 @@ namespace Attempt17.Features.Primitives {
             return new AllocSyntax<TypeCheckTag>(tag, target);
         }
 
-        public ISyntax<TypeCheckTag> CheckAs(AsSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckAs(AsSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             var target = checker.Check(syntax.Target, scope);
 
             if (!checker.Unify(target, scope, syntax.TargetType).TryGetValue(out var result)) {
@@ -110,7 +110,7 @@ namespace Attempt17.Features.Primitives {
             return result;
         }
 
-        public IOption<ISyntax<TypeCheckTag>> UnifyVoidToTypes(ISyntax<TypeCheckTag> syntax, IScope scope, LanguageType type) {
+        public IOption<ISyntax<TypeCheckTag>> UnifyVoidToTypes(ISyntax<TypeCheckTag> syntax, ITypeCheckScope scope, LanguageType type) {
             if (syntax.Tag.ReturnType != VoidType.Instance) {
                 return Option.None<ISyntax<TypeCheckTag>>();
             }

@@ -7,9 +7,9 @@ using System.Collections.Immutable;
 
 namespace Attempt17.TypeChecking {
     public class TypeMutatorsVisitor : ITypeVisitor<ImmutableHashSet<LanguageType>> {
-        private readonly IScope scope;
+        private readonly ITypeCheckScope scope;
 
-        public TypeMutatorsVisitor(IScope scope) {
+        public TypeMutatorsVisitor(ITypeCheckScope scope) {
             this.scope = scope;
         }
 

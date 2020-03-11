@@ -8,9 +8,9 @@ using Attempt17.Types;
 
 namespace Attempt17.Compiling {
     public class DeclarationFlattener : IParseDeclarationVisitor<IEnumerable<ISyntax<ParseTag>>> {
-        private readonly IScope scope;
+        private readonly ITypeCheckScope scope;
 
-        public DeclarationFlattener(IScope scope) {
+        public DeclarationFlattener(ITypeCheckScope scope) {
             this.scope = scope;
         }
 
@@ -35,9 +35,9 @@ namespace Attempt17.Compiling {
 
     public class StructDeclarationTransformer : IParseDeclarationVisitor<IParseDeclaration> {
         private readonly IdentifierPath containingStruct;
-        private readonly IScope scope;
+        private readonly ITypeCheckScope scope;
 
-        public StructDeclarationTransformer(IdentifierPath containingStruct, IScope scope) {
+        public StructDeclarationTransformer(IdentifierPath containingStruct, ITypeCheckScope scope) {
             this.containingStruct = containingStruct;
             this.scope = scope;
         }

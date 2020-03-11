@@ -8,7 +8,7 @@ using Attempt17.Types;
 
 namespace Attempt17.Features.Containers.Structs {
     public class StructsTypeChecker {
-        public void ModifyScopeForStructDeclaration(StructDeclarationSyntax<ParseTag> syntax, IScope scope) {
+        public void ModifyScopeForStructDeclaration(StructDeclarationSyntax<ParseTag> syntax, ITypeCheckScope scope) {
             // Check to make sure the name isn't taken
             if (scope.IsPathTaken(syntax.StructInfo.Path)) {
                 throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.StructInfo.Signature.Name);
@@ -17,7 +17,7 @@ namespace Attempt17.Features.Containers.Structs {
             scope.SetTypeInfo(syntax.StructInfo.Path, syntax.StructInfo);
         }
 
-        public ISyntax<TypeCheckTag> CheckStructDeclaration(StructDeclarationSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckStructDeclaration(StructDeclarationSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             // Check to make sure that there are no duplicate member names
             foreach (var mem1 in syntax.StructInfo.Signature.Members) {
                 foreach (var mem2 in syntax.StructInfo.Signature.Members) {
@@ -47,7 +47,7 @@ namespace Attempt17.Features.Containers.Structs {
                 syntax.StructInfo);
         }
 
-        public ISyntax<TypeCheckTag> CheckNewStruct(NewStructSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckNewStruct(NewStructSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             // Make sure we're instantiating all of the members
             var instMembers = syntax.Instantiations.Select(x => x.MemberName).ToHashSet();
             var requiredMembers = syntax.StructInfo.Signature.Members.Select(x => x.Name).ToHashSet();

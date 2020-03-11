@@ -49,11 +49,11 @@ namespace Attempt17.CodeGeneration {
                 varInfo => throw new InvalidOperationException(),
                 funcInfo => new CBlock(this.value),
                 structInfo => {
-                    var destructorGen = new TypeDestructorGenerator(this.gen.Header3Writer, this.gen, this.scope);
+                    var copiabilityVisitor = new TypeCopiabilityVisitor(this.scope);
 
                     // If all of the struct's members are unconditionally copiable,
                     // let C handle the copy implicitly
-                    if (structInfo.Signature.Members.All(x => !x.Type.Accept(destructorGen).Any())) {
+                    if (structInfo.Signature.Members.All(x => x.Type.Accept(copiabilityVisitor) == TypeCopiability.Unconditional)) {
                         return new CBlock(this.value);
                     }
 

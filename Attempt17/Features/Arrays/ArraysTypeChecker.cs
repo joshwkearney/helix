@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Attempt17.Features.Arrays {
     public class ArraysTypeChecker {
-        public ISyntax<TypeCheckTag> CheckArrayRangeLiteral(ArrayRangeLiteralSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckArrayRangeLiteral(ArrayRangeLiteralSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             // Make sure the element type has a default value
             if (!syntax.ElementType.Accept(new TypeVoidValueVisitor(scope)).Any()) {
                 throw TypeCheckingErrors.TypeWithoutDefaultValue(syntax.Tag.Location, syntax.ElementType);
@@ -23,23 +23,23 @@ namespace Attempt17.Features.Arrays {
             }
 
             var tag = new TypeCheckTag(
-                new ArrayType(syntax.ElementType), 
+                new ArrayType(syntax.ElementType),
                 count.Tag.CapturedVariables);
 
             return new ArrayRangeLiteralSyntax<TypeCheckTag>(
-                tag, 
-                syntax.ElementType, 
+                tag,
+                syntax.ElementType,
                 count);
         }
 
-        public ISyntax<TypeCheckTag> CheckArrayIndex(ArrayIndexSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckArrayIndex(ArrayIndexSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             var target = checker.Check(syntax.Target, scope);
             var index = checker.Check(syntax.Index, scope);
 
             // Make sure the target is an array
             if (!(target.Tag.ReturnType is ArrayType arrType)) {
                 throw TypeCheckingErrors.ExpectedArrayType(
-                    syntax.Target.Tag.Location, 
+                    syntax.Target.Tag.Location,
                     target.Tag.ReturnType);
             }
 
@@ -75,7 +75,7 @@ namespace Attempt17.Features.Arrays {
             return new ArrayIndexSyntax<TypeCheckTag>(tag, target, index);
         }
 
-        public ISyntax<TypeCheckTag> CheckArrayStore(ArrayStoreSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckArrayStore(ArrayStoreSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             var target = checker.Check(syntax.Target, scope);
             var index = checker.Check(syntax.Index, scope);
             var value = checker.Check(syntax.Value, scope);
@@ -83,7 +83,7 @@ namespace Attempt17.Features.Arrays {
             // Make sure we've got an array
             if (!(target.Tag.ReturnType is ArrayType arrType)) {
                 throw TypeCheckingErrors.ExpectedArrayType(
-                    syntax.Target.Tag.Location, 
+                    syntax.Target.Tag.Location,
                     target.Tag.ReturnType);
             }
 
@@ -124,7 +124,7 @@ namespace Attempt17.Features.Arrays {
             return new ArrayStoreSyntax<TypeCheckTag>(tag, target, index, value);
         }
 
-        public ISyntax<TypeCheckTag> CheckArrayLiteral(ArrayLiteralSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckArrayLiteral(ArrayLiteralSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
             var elements = syntax.Elements
                 .Select(x => checker.Check(x, scope))
                 .ToImmutableList();

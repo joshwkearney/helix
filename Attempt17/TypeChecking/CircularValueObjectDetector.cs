@@ -4,9 +4,9 @@ using Attempt17.Types;
 namespace Attempt17.TypeChecking {
     public class CircularValueObjectDetector : ITypeVisitor<bool> {
         private readonly LanguageType containingType;
-        private readonly IScope scope;
+        private readonly ITypeCheckScope scope;
 
-        public CircularValueObjectDetector(LanguageType containingType, IScope scope) {
+        public CircularValueObjectDetector(LanguageType containingType, ITypeCheckScope scope) {
             this.containingType = containingType;
             this.scope = scope;
         }

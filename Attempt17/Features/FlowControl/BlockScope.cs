@@ -6,8 +6,8 @@ using System.Collections.Immutable;
 using System.Text;
 
 namespace Attempt17.Features.FlowControl {
-    public class BlockScope : IScope {
-        private readonly IScope head;
+    public class BlockScope : ITypeCheckScope {
+        private readonly ITypeCheckScope head;
 
         private readonly Dictionary<IdentifierPath, ImmutableHashSet<VariableCapture>> capturingVariables
             = new Dictionary<IdentifierPath, ImmutableHashSet<VariableCapture>>();
@@ -23,7 +23,7 @@ namespace Attempt17.Features.FlowControl {
 
         public IdentifierPath Path { get; }
 
-        public BlockScope(IdentifierPath path, IScope head) {
+        public BlockScope(IdentifierPath path, ITypeCheckScope head) {
             this.Path = path;
             this.head = head;
         }

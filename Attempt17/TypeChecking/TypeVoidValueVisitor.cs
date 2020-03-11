@@ -8,9 +8,9 @@ using Attempt17.Types;
 
 namespace Attempt17.TypeChecking {
     public class TypeVoidValueVisitor : ITypeVisitor<IOption<ISyntax<TypeCheckTag>>> {
-        private readonly IScope scope;
+        private readonly ITypeCheckScope scope;
 
-        public TypeVoidValueVisitor(IScope scope) {
+        public TypeVoidValueVisitor(ITypeCheckScope scope) {
             this.scope = scope;
         }
 

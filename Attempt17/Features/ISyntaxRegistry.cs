@@ -4,13 +4,13 @@ using Attempt17.TypeChecking;
 using Attempt17.Types;
 
 namespace Attempt17.Features {
-    public delegate ISyntax<TypeCheckTag> SyntaxTypeChecker<T>(T syntax, IScope scope, ITypeChecker checker) where T : ISyntax<ParseTag>;
+    public delegate ISyntax<TypeCheckTag> SyntaxTypeChecker<T>(T syntax, ITypeCheckScope scope, ITypeChecker checker) where T : ISyntax<ParseTag>;
 
     public delegate CBlock SyntaxCodeGenerator<T>(T syntax, ICScope scope, ICodeGenerator gen) where T : ISyntax<TypeCheckTag>;
 
-    public delegate void DeclarationScopeModifier<T>(T syntax, IScope scope) where T : ISyntax<ParseTag>;
+    public delegate void DeclarationScopeModifier<T>(T syntax, ITypeCheckScope scope) where T : ISyntax<ParseTag>;
 
-    public delegate IOption<ISyntax<TypeCheckTag>> TypeUnifier(ISyntax<TypeCheckTag> syntax, IScope scope, LanguageType type);
+    public delegate IOption<ISyntax<TypeCheckTag>> TypeUnifier(ISyntax<TypeCheckTag> syntax, ITypeCheckScope scope, LanguageType type);
 
     public interface ISyntaxRegistry {
         void RegisterParseTree<T>(SyntaxTypeChecker<T> typeChecker) where T : ISyntax<ParseTag>;
