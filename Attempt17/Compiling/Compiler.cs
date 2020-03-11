@@ -44,9 +44,11 @@ namespace Attempt17.Compiling {
                 .Select(x => typeChecker.Check(x, scope))
                 .ToArray();
 
+            var cscope = new OuterCScope(scope.TypeInfo);
+
             // Generate everything
             var lines = checkedDecls
-                .Select(x => codegen.Generate(x, null))
+                .Select(x => codegen.Generate(x, cscope))
                 .SelectMany(x => x.SourceLines)
                 .Prepend("")
                 .Prepend("#include <stdlib.h>")

@@ -9,7 +9,7 @@ namespace Attempt17.Features.Functions {
         private int invokeTempCounter = 0;
 
         public CBlock GenerateFunctionDeclaration(FunctionDeclarationSyntax syntax, ICScope scope, ICodeGenerator gen) {
-            scope = new FunctionCScope();
+            scope = new FunctionCScope(scope);
 
             // Add the parameters to the scope
             foreach (var par in syntax.Info.Signature.Parameters) {

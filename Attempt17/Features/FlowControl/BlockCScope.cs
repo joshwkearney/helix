@@ -1,4 +1,5 @@
 ﻿using Attempt17.CodeGeneration;
+using Attempt17.TypeChecking;
 using Attempt17.Types;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -10,6 +11,10 @@ namespace Attempt17.Features.FlowControl {
 
         public BlockCScope(ICScope head) {
             this.head = head;
+        }
+
+        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+            return this.head.FindTypeInfo(path);
         }
 
         public ImmutableDictionary<string, LanguageType> GetUndestructedVariables() {

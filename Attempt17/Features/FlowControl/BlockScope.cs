@@ -8,11 +8,10 @@ namespace Attempt17.Features.FlowControl {
     public class BlockScope : IScope {
         private readonly IScope head;
 
-        private readonly Dictionary<IdentifierPath, TypeInfo> typeInfo 
-            = new Dictionary<IdentifierPath, TypeInfo>();
-
         private readonly Dictionary<IdentifierPath, ImmutableHashSet<VariableCapture>> capturingVariables
             = new Dictionary<IdentifierPath, ImmutableHashSet<VariableCapture>>();
+
+        private readonly HashSet<IdentifierPath> declaredVariables = new HashSet<IdentifierPath>();
 
         private readonly HashSet<IdentifierPath> movableVariables = new HashSet<IdentifierPath>();
 
@@ -26,9 +25,7 @@ namespace Attempt17.Features.FlowControl {
         }
 
         public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
-            return this.typeInfo
-                .GetValueOption(path)
-                .GetValueOr(() => this.head.FindTypeInfo(path));
+            return this.head.FindTypeInfo(path);
         }
 
         public ImmutableHashSet<VariableCapture> GetCapturingVariables(IdentifierPath path) {
@@ -57,16 +54,15 @@ namespace Attempt17.Features.FlowControl {
         }
 
         public void SetTypeInfo(IdentifierPath path, TypeInfo info) {
-            this.typeInfo[path] = info;
+            this.head.SetTypeInfo(path, info);
+
+            if (info.AsVariableInfo().TryGetValue(out var varinfo)) {
+                this.declaredVariables.Add(varinfo.Path);
+            }
         }
 
         public void SetVariableMovable(IdentifierPath path, bool isMovable) {
-            bool containsVar = this.typeInfo
-                .GetValueOption(path)
-                .SelectMany(x => x.AsVariableInfo())
-                .Any();
-
-            if (containsVar) {
+            if (this.declaredVariables.Contains(path)) {
                 if (isMovable) {
                     this.movableVariables.Add(path);
                 }
@@ -80,12 +76,7 @@ namespace Attempt17.Features.FlowControl {
         }
 
         public void SetVariableMoved(IdentifierPath path, bool isMoved) {
-            bool containsVar = this.typeInfo
-                .GetValueOption(path)
-                .SelectMany(x => x.AsVariableInfo())
-                .Any();
-
-            if (containsVar) {
+            if (this.declaredVariables.Contains(path)) {
                 if (isMoved) {
                     this.movedVariables.Add(path);
                 }

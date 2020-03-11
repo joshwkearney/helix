@@ -1,4 +1,5 @@
 ﻿using Attempt17.CodeGeneration;
+using Attempt17.TypeChecking;
 using Attempt17.Types;
 using System;
 using System.Collections.Generic;
@@ -29,6 +30,10 @@ namespace Attempt17.Features.FlowControl {
 
         public void SetVariableUndestructed(string name, LanguageType type) {
             this.head.SetVariableUndestructed(name, type);
+        }
+
+        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+            return this.head.FindTypeInfo(path);
         }
     }
 }

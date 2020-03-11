@@ -6,13 +6,13 @@ using System.Text;
 
 namespace Attempt17.Compiling {
     public class OuterScope : IScope {
-        private readonly Dictionary<IdentifierPath, TypeInfo> typeInfo
+        public Dictionary<IdentifierPath, TypeInfo> TypeInfo { get; }
             = new Dictionary<IdentifierPath, TypeInfo>();
 
         public IdentifierPath Path => new IdentifierPath();
 
         public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
-            return this.typeInfo.GetValueOption(path);
+            return this.TypeInfo.GetValueOption(path);
         }
 
         public ImmutableHashSet<VariableCapture> GetCapturingVariables(IdentifierPath path) {
@@ -23,16 +23,14 @@ namespace Attempt17.Compiling {
 
         public bool IsVariableMoved(IdentifierPath path) => false;
 
-        public void SetCapturingVariable(VariableCapture capturing, IdentifierPath captured) { }
+        public void SetCapturingVariable(VariableCapture capturing, IdentifierPath captured) { throw new InvalidOperationException(); }
 
         public void SetTypeInfo(IdentifierPath path, TypeInfo info) {
-            this.typeInfo[path] = info;
+            this.TypeInfo[path] = info;
         }
 
-        public void SetVariable(IdentifierPath path, VariableInfo info) { }
+        public void SetVariableMovable(IdentifierPath path, bool isMovable) { throw new InvalidOperationException(); }
 
-        public void SetVariableMovable(IdentifierPath path, bool isMovable) { }
-
-        public void SetVariableMoved(IdentifierPath path, bool isMoved) { }
+        public void SetVariableMoved(IdentifierPath path, bool isMoved) { throw new InvalidOperationException(); }
     }
 }
