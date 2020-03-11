@@ -15,11 +15,7 @@ namespace Attempt17 {
                 var comp = new Compiler();
                 var result = comp.Compile(input);
 
-                Console.WriteLine("Header Text ==============================");                
-                Console.WriteLine(result.HeaderText);
-
-                Console.WriteLine("Source Text ==============================");
-                Console.WriteLine(result.SourceText);
+                Console.WriteLine(result);
             }
             catch (CompilerException ex) {
                 var loc = ex.Location;

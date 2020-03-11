@@ -33,10 +33,6 @@ namespace Attempt17.Features.Functions {
             writer.Line("}");
             writer.EmptyLine();
 
-            gen.Header1Writer
-                .Line("typedef short " + syntax.FunctionInfo.Path.ToCName() + ";")
-                .EmptyLine();
-
             gen.Header2Writer
                 .Line(this.GenerateSignature(syntax.FunctionInfo, gen) + ";")
                 .EmptyLine();
@@ -46,7 +42,7 @@ namespace Attempt17.Features.Functions {
 
         public CBlock GenerateInvoke(InvokeSyntax syntax, ICScope scope, ICodeGenerator gen) {
             var args = syntax.Arguments.Select(x => gen.Generate(x, scope)).ToArray();
-            var targetName = "$func$" + syntax.Target.Path.ToCName();
+            var targetName = syntax.Target.Path.ToCName();
             var tempName = "$invoke_result_" + this.invokeTempCounter++;
             var tempType = gen.Generate(syntax.Tag.ReturnType);
             var writer = new CWriter();
@@ -77,7 +73,7 @@ namespace Attempt17.Features.Functions {
             var line = "";
 
             line += gen.Generate(info.Signature.ReturnType) + " ";
-            line += "$func$" + info.Path.ToCName();
+            line += info.Path.ToCName();
             line += "(";
 
             foreach (var par in info.Signature.Parameters) {

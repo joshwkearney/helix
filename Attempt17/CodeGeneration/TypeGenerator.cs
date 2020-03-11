@@ -6,9 +6,11 @@ using System.Text;
 namespace Attempt17.CodeGeneration {
     public class TypeGenerator : ITypeVisitor<string> {
         private readonly ICodeWriter headerWriter;
+        private readonly ICScope scope;
         private bool arrayGenerated = false;
 
-        public TypeGenerator(ICodeWriter headerWriter) {
+        public TypeGenerator(ICScope scope, ICodeWriter headerWriter) {
+            this.scope = scope;
             this.headerWriter = headerWriter;
         }
 
@@ -37,7 +39,14 @@ namespace Attempt17.CodeGeneration {
         }
 
         public string VisitNamedType(NamedType type) {
-            return type.Path.ToCName();
+            if (!this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
+                throw new Exception("This isn't supposed to happen");
+            }
+
+            return info.Match(
+                varInfo => throw new InvalidOperationException(),
+                funcInfo => "uint16_t",
+                structInfo => structInfo.Path.ToCName());
         }
 
         public string VisitVariableType(VariableType type) {

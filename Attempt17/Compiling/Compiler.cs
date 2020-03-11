@@ -25,7 +25,7 @@ namespace Attempt17.Compiling {
             new ContainersFeature()
         };
 
-        public CompilerResult Compile(string input) {
+        public string Compile(string input) {
             var registry = this.GetRegistry();
             var tokens = new Lexer(input).GetTokens();
 
@@ -57,38 +57,33 @@ namespace Attempt17.Compiling {
             var lines = checkedDecls
                 .Select(x => codegen.Generate(x, cscope))
                 .SelectMany(x => x.SourceLines)
-                .Prepend("")
-                .Prepend("#include <stdlib.h>")
-                .Prepend("#include <stdint.h>")
                 .ToImmutableList();
 
-            // Get the header text
-            var header = new StringBuilder();
-
-            header.AppendLine("#include <stdlib.h>");
-            header.AppendLine("#include <stdint.h>");
-            header.AppendLine("");
-
-            foreach (var line in codegen.Header1Writer.ToLines()) {
-                header.AppendLine(line);
-            }
-
-            foreach (var line in codegen.Header2Writer.ToLines()) {
-                header.AppendLine(line);
-            }
-
-            foreach (var line in codegen.Header3Writer.ToLines()) {
-                header.AppendLine(line);
-            }
 
             // Get the source text
             var source = new StringBuilder();
+
+            source.AppendLine("#include <stdlib.h>");
+            source.AppendLine("#include <stdint.h>");
+            source.AppendLine("");
+
+            foreach (var line in codegen.Header1Writer.ToLines()) {
+                source.AppendLine(line);
+            }
+
+            foreach (var line in codegen.Header2Writer.ToLines()) {
+                source.AppendLine(line);
+            }
+
+            foreach (var line in codegen.Header3Writer.ToLines()) {
+                source.AppendLine(line);
+            }
 
             foreach (var line in lines) {
                 source.AppendLine(line);
             }
 
-            return new CompilerResult(header.ToString(), source.ToString());
+            return source.ToString();
         }
 
         private SyntaxRegistry GetRegistry() {
