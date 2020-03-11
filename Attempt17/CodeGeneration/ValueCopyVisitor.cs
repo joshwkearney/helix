@@ -1,4 +1,5 @@
-﻿using Attempt17.Types;
+﻿using Attempt17.TypeChecking;
+using Attempt17.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,6 +49,14 @@ namespace Attempt17.CodeGeneration {
                 varInfo => throw new InvalidOperationException(),
                 funcInfo => new CBlock(this.value),
                 structInfo => {
+                    var destructorGen = new TypeDestructorGenerator(this.gen.Header3Writer, this.gen, this.scope);
+
+                    // If all of the struct's members are unconditionally copiable,
+                    // let C handle the copy implicitly
+                    if (structInfo.Signature.Members.All(x => !x.Type.Accept(destructorGen).Any())) {
+                        return new CBlock(this.value);
+                    }
+
                     var tempName = "$struct_copy_" + structCopyTemp++;
                     var tempType = this.gen.Generate(type);
                     var writer = new CWriter();
