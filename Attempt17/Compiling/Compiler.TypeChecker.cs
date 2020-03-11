@@ -23,9 +23,9 @@ namespace Attempt17.Compiling {
                 return type.Accept(new TypeDefinitionVisitor(scope));
             }
 
-            public IOption<ISyntax<TypeCheckTag>> Unify(ISyntax<TypeCheckTag> syntax, LanguageType type) {
+            public IOption<ISyntax<TypeCheckTag>> Unify(ISyntax<TypeCheckTag> syntax, IScope scope, LanguageType type) {
                 foreach (var unifier in registry.unifiers) {
-                    var opt = unifier(syntax, type);
+                    var opt = unifier(syntax, scope, type);
 
                     if (opt.Any()) {
                         return opt;

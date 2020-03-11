@@ -9,6 +9,6 @@ namespace Attempt17.TypeChecking {
 
         TypeCopiability GetTypeCopiability(LanguageType type, IScope scope);
 
-        IOption<ISyntax<TypeCheckTag>> Unify(ISyntax<TypeCheckTag> syntax, LanguageType type);
+        IOption<ISyntax<TypeCheckTag>> Unify(ISyntax<TypeCheckTag> syntax, IScope scope, LanguageType type);
     }
 }

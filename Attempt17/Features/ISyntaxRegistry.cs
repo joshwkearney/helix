@@ -10,7 +10,7 @@ namespace Attempt17.Features {
 
     public delegate void DeclarationScopeModifier<T>(T syntax, IScope scope) where T : ISyntax<ParseTag>;
 
-    public delegate IOption<ISyntax<TypeCheckTag>> TypeUnifier(ISyntax<TypeCheckTag> syntax, LanguageType type);
+    public delegate IOption<ISyntax<TypeCheckTag>> TypeUnifier(ISyntax<TypeCheckTag> syntax, IScope scope, LanguageType type);
 
     public interface ISyntaxRegistry {
         void RegisterParseTree<T>(SyntaxTypeChecker<T> typeChecker) where T : ISyntax<ParseTag>;

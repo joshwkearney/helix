@@ -97,6 +97,19 @@ namespace Attempt17.Features.Primitives {
             return new AllocSyntax<TypeCheckTag>(tag, target);
         }
 
+        public ISyntax<TypeCheckTag> CheckAs(AsSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
+            var target = checker.Check(syntax.Target, scope);
+
+            if (!checker.Unify(target, scope, syntax.TargetType).TryGetValue(out var result)) {
+                throw TypeCheckingErrors.UnexpectedType(
+                    syntax.Tag.Location,
+                    syntax.TargetType,
+                    target.Tag.ReturnType);
+            }
+
+            return result;
+        }
+
         public IOption<ISyntax<TypeCheckTag>> UnifyVoidToTypes(ISyntax<TypeCheckTag> syntax, IScope scope, LanguageType type) {
             if (syntax.Tag.ReturnType != VoidType.Instance) {
                 return Option.None<ISyntax<TypeCheckTag>>();

@@ -13,6 +13,7 @@
         MoveKeyword, AllocKeyword,
         IfKeyword, ThenKeyword, ElseKeyword, WhileKeyword, DoKeyword,
         FunctionKeyword, NewKeyword, StructKeyword,
+        AsKeyword,
         TrueKeyword, FalseKeyword,
         AndKeyword, OrKeyword, XorKeyword,
 

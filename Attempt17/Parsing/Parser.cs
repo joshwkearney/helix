@@ -197,7 +197,7 @@ namespace Attempt17.Parsing {
         private ISyntax<ParseTag> TopExpression() => this.StoreExpression();
 
         private ISyntax<ParseTag> StoreExpression() {
-            var target = this.AllocExpression();
+            var target = this.AsExpression();
 
             while (true) {
                 if (this.TryAdvance(TokenKind.LeftArrow)) {
@@ -230,11 +230,21 @@ namespace Attempt17.Parsing {
             }
         }
 
-      /*  private ISyntax<ParseTag> AsExpression() {
+        private ISyntax<ParseTag> AsExpression() {
             var target = this.AllocExpression();
 
-            while (this.Peek(TokenKind.as))
-        }*/
+            while (this.TryAdvance(TokenKind.AsKeyword)) {
+                var type = this.TypeExpression();
+                var end = this.tokens[this.pos - 1].Location;
+
+                var loc = target.Tag.Location.Span(end);
+                var tag = new ParseTag(loc);
+
+                target = new AsSyntax<ParseTag>(tag, target, type);
+            }
+
+            return target;
+        }
 
         private ISyntax<ParseTag> AllocExpression() {
             if (this.Peek(TokenKind.AllocKeyword)) {

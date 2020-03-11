@@ -21,6 +21,10 @@ namespace Attempt17.Features.Primitives {
 
             registry.RegisterParseTree<AllocSyntax<ParseTag>>(this.typeChecker.CheckAlloc);
             registry.RegisterSyntaxTree<AllocSyntax<TypeCheckTag>>(this.codeGen.GenerateAlloc);
+
+            registry.RegisterParseTree<AsSyntax<ParseTag>>(this.typeChecker.CheckAs);
+
+            registry.RegisterTypeUnifier(this.typeChecker.UnifyVoidToTypes);
         }
     }
 }

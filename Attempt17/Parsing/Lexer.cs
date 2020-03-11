@@ -180,6 +180,9 @@ namespace Attempt17.Parsing {
             else if (id == "or") {
                 return new Token(TokenKind.OrKeyword, location);
             }
+            else if (id == "as") {
+                return new Token(TokenKind.AsKeyword, location);
+            }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);
             }

@@ -1,6 +1,7 @@
 ﻿using Attempt17.CodeGeneration;
 using Attempt17.Features.Variables;
 using Attempt17.TypeChecking;
+using Attempt17.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,26 +82,35 @@ namespace Attempt17.Features.Arrays {
         }
 
         public CBlock GenerateArrayLiteral(ArrayLiteralSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
-            var arrayType = gen.Generate(syntax.Tag.ReturnType);
+            var arrayType = (ArrayType)syntax.Tag.ReturnType;
+            var carrayType = gen.Generate(syntax.Tag.ReturnType);
             var tempName = "$array_init_" + this.arrayLiteralCounter++;
-            var elemType = gen.Generate(syntax.Elements.First().Tag.ReturnType);
+            var elemType = gen.Generate(arrayType.ElementType);
             var elems = syntax.Elements.Select(x => gen.Generate(x, scope)).ToArray();
             var writer = new CWriter();
 
             foreach (var elem in elems) {
                 writer.Lines(elem.SourceLines);
             }
-            
-            writer.Line("// Array initialization");
-            writer.VariableInit(arrayType, tempName);
-            writer.Line($"{tempName}.size = {syntax.Elements.Count}LL;");
-            writer.Line($"{tempName}.data = (uintptr_t)malloc({syntax.Elements.Count}LL, sizeof({elemType}));");
 
-            for (int i = 0; i < syntax.Elements.Count; i++) {
-                writer.Line($"(({elemType}*)({tempName}.data))[{i}] = {elems[i].Value};");
+            if (syntax.Elements.Any()) {
+                writer.Line("// Array initialization");
+                writer.VariableInit(carrayType, tempName);
+                writer.Line($"{tempName}.size = {syntax.Elements.Count}LL;");
+                writer.Line($"{tempName}.data = (uintptr_t)malloc({syntax.Elements.Count}LL, sizeof({elemType}));");
+
+                for (int i = 0; i < syntax.Elements.Count; i++) {
+                    writer.Line($"(({elemType}*)({tempName}.data))[{i}] = {elems[i].Value};");
+                }
+
+                writer.Line($"{tempName}.data |= 1;");
             }
-
-            writer.Line($"{tempName}.data |= 1;");
+            else {
+                writer.Line("// Array initialization");
+                writer.VariableInit(carrayType, tempName);
+                writer.Line($"{tempName}.size = 0;");
+                writer.Line($"{tempName}.data = 0;");
+            }
 
             writer.EmptyLine();
 
