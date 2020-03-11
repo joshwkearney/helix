@@ -92,7 +92,13 @@ namespace Attempt17.Features.Structs {
             foreach (var seg in syntax.UsageSegments) {
                 initial = seg.Match(
                     access => initial.AccessMember(access.MemberName),
-                    invoke => throw new NotImplementedException());
+                    invoke => {
+                        var args = invoke.Arguments
+                            .Select(x => checker.Check(x, scope))
+                            .ToImmutableList();
+
+                        return initial.InvokeMember(invoke.MemberName, args);
+                    });
             }
 
             return initial.ToSyntax();

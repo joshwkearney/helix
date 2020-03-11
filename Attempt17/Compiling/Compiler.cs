@@ -28,21 +28,25 @@ namespace Attempt17.Compiling {
         public CompilerResult Compile(string input) {
             var registry = this.GetRegistry();
             var tokens = new Lexer(input).GetTokens();
-            var decls = new Parser(tokens).Parse();
-            var scope = new OuterScope();
 
-            // Make sure all the declarations can add to the scope
+            var scope = new OuterScope();
+            var declFlattener = new DeclarationFlattener(scope);
+
+            var decls = new Parser(tokens)
+                .Parse()
+                .SelectMany(x => x.Accept(declFlattener))
+                .ToArray();
+
+            // Make sure all thedeclarations can add to the scope
             foreach (var decl in decls) {
                 registry.declarations[decl.GetType()](decl, scope);
             }
 
             var typeChecker = new TypeChecker(registry, scope);
-            var declFlattener = new DeclarationFlattener();
 
             // Type check everything
 
             var checkedDecls = decls
-                .SelectMany(x => x.Accept(declFlattener))
                 .Select(x => typeChecker.Check(x, scope))
                 .ToArray();
 

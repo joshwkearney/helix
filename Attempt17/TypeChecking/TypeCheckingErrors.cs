@@ -155,11 +155,11 @@ namespace Attempt17.TypeChecking {
                 $"Array literals cannot be of zero length. Try using 'new T[0]' instead.");
         }
 
-        public static Exception MemberUndefined(TokenLocation loc, LanguageType type, string memberName) {
+        public static Exception MemberUndefined(TokenLocation loc, LanguageType containingType, string memberName) {
             return new CompilerException(
                 loc,
                 "Member Name Undefined",
-                $"The member '{memberName}' is undefined on the type '{type}'");
+                $"The member '{memberName}' is undefined on the type '{containingType}'");
         }
 
         public static Exception PossibleInvalidParamMutation(TokenLocation loc, IdentifierPath mutableVar, IdentifierPath capturedVar) {

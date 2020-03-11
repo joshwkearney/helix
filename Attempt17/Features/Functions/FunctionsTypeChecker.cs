@@ -98,19 +98,23 @@ namespace Attempt17.Features.Functions {
                 .Select(x => checker.Check(x, scope))
                 .ToImmutableList();
 
+            return CheckFunctionInvoke(syntax.Tag.Location, target, args, scope);
+        }
+
+        public static ISyntax<TypeCheckTag> CheckFunctionInvoke(TokenLocation loc, ISyntax<TypeCheckTag> target, ImmutableList<ISyntax<TypeCheckTag>> args, IScope scope) {
             // Make sure the target is a named type
             if (!(target.Tag.ReturnType is NamedType namedType)) {
-                throw TypeCheckingErrors.ExpectedFunctionType(syntax.Target.Tag.Location, target.Tag.ReturnType);
+                throw TypeCheckingErrors.ExpectedFunctionType(loc, target.Tag.ReturnType);
             }
 
             // Make sure that named type is a function
             if (!scope.FindFunction(namedType.Path).TryGetValue(out var info)) {
-                throw TypeCheckingErrors.ExpectedFunctionType(syntax.Target.Tag.Location, target.Tag.ReturnType);
+                throw TypeCheckingErrors.ExpectedFunctionType(loc, target.Tag.ReturnType);
             }
 
             // Make sure the parameter counts match
             if (info.Signature.Parameters.Count != args.Count) {
-                throw TypeCheckingErrors.ParameterCountMismatch(syntax.Tag.Location, info.Signature.Parameters.Count, args.Count);
+                throw TypeCheckingErrors.ParameterCountMismatch(loc, info.Signature.Parameters.Count, args.Count);
             }
 
             var zipped = args
@@ -120,19 +124,12 @@ namespace Attempt17.Features.Functions {
                     y.Name,
                     Value = x
                 })
-                .Zip(syntax.Arguments, (x, y) => new {
-                    x.ActualType,
-                    x.ExpectedType,
-                    y.Tag.Location,
-                    x.Name,
-                    x.Value
-                })
                 .ToArray();
 
             // Make sure the parameter types match
             foreach (var item in zipped) {
                 if (item.ExpectedType != item.ActualType) {
-                    throw TypeCheckingErrors.UnexpectedType(item.Location, item.ExpectedType, item.ActualType);
+                    throw TypeCheckingErrors.UnexpectedType(loc, item.ExpectedType, item.ActualType);
                 }
             }
 
@@ -161,7 +158,7 @@ namespace Attempt17.Features.Functions {
                             // Outer can be mutated by inner, so throw
                             if (mutators.Intersect(accessableTypes).Any()) {
                                 throw TypeCheckingErrors.PossibleInvalidParamMutation(
-                                    syntax.Tag.Location,
+                                    loc,
                                     outer.Path,
                                     inner.Path);
                             }

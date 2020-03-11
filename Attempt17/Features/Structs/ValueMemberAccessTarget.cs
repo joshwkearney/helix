@@ -2,6 +2,8 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Attempt17.Features.Arrays;
+using Attempt17.Features.Functions;
+using Attempt17.Features.Variables;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
@@ -25,7 +27,19 @@ namespace Attempt17.Features.Structs {
         }
 
         public IMemberAccessTarget InvokeMember(string name, ImmutableList<ISyntax<TypeCheckTag>> arguments) {
-            throw new NotImplementedException();
+            if (!this.scope.FindMethod(this.value.Tag.ReturnType, name).TryGetValue(out var info)) {
+                throw TypeCheckingErrors.MemberUndefined(this.loc, this.value.Tag.ReturnType, name);
+            }
+
+            var target = new FunctionLiteralSyntax(new TypeCheckTag(info.FunctionType));
+
+            var access = FunctionsTypeChecker.CheckFunctionInvoke(
+                this.loc,
+                target,
+                arguments.Insert(0, this.value),
+                this.scope);
+
+            return new ValueMemberAccessTarget(access, this.loc, this.scope);
         }
 
         public ISyntax<TypeCheckTag> ToSyntax() {

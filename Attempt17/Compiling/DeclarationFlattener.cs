@@ -9,12 +9,18 @@ using Attempt17.Types;
 
 namespace Attempt17.Compiling {
     public class DeclarationFlattener : IParseDeclarationVisitor<IEnumerable<IParseDeclaration>> {
+        private readonly IScope scope;
+
+        public DeclarationFlattener(IScope scope) {
+            this.scope = scope;
+        }
+
         public IEnumerable<IParseDeclaration> VisitFunctionDeclaration(ParseFunctionDeclaration decl) {
             return new[] { decl };
         }
 
         public IEnumerable<IParseDeclaration> VisitStructDeclaration(ParseStructDeclaration decl) {
-            var transformer = new StructDeclarationTransformer(decl.StructInfo.Path);
+            var transformer = new StructDeclarationTransformer(decl.StructInfo.Path, this.scope);
 
             var newDecl = new ParseStructDeclaration(
                 decl.Tag,
@@ -31,13 +37,16 @@ namespace Attempt17.Compiling {
 
     public class StructDeclarationTransformer : IParseDeclarationVisitor<IParseDeclaration> {
         private readonly IdentifierPath containingStruct;
+        private readonly IScope scope;
 
-        public StructDeclarationTransformer(IdentifierPath containingStruct) {
+        public StructDeclarationTransformer(IdentifierPath containingStruct, IScope scope) {
             this.containingStruct = containingStruct;
+            this.scope = scope;
         }
 
         public IParseDeclaration VisitFunctionDeclaration(ParseFunctionDeclaration decl) {
-            var firstParam = new FunctionParameter("this", new NamedType(this.containingStruct));
+            var structType = new NamedType(this.containingStruct);
+            var firstParam = new FunctionParameter("this", structType);
 
             var newSig = new FunctionSignature(
                 decl.FunctionInfo.Signature.Name,
@@ -47,6 +56,8 @@ namespace Attempt17.Compiling {
             var newInfo = new FunctionInfo(
                 this.containingStruct.Append(decl.FunctionInfo.Path),
                 newSig);
+
+            this.scope.SetMethod(structType, decl.FunctionInfo.Signature.Name, newInfo.Path);
 
             return new ParseFunctionDeclaration(decl.Tag, newInfo, decl.Body);
         }
