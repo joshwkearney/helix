@@ -2,9 +2,8 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Attempt17.Features.Arrays;
+using Attempt17.Features.Containers;
 using Attempt17.Features.Primitives;
-using Attempt17.Features.Structs;
-using Attempt17.Features.Variables;
 using Attempt17.Types;
 
 namespace Attempt17.TypeChecking {
@@ -68,7 +67,7 @@ namespace Attempt17.TypeChecking {
 
                     var tag = new TypeCheckTag(structInfo.StructType);
 
-                    return Option.Some(new NewSyntax<TypeCheckTag>(tag, structInfo.StructType, insts));
+                    return Option.Some(new NewStructSyntax<TypeCheckTag>(tag, structInfo, insts));
                 });
         }
 

@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Attempt17.Features.Containers.Structs;
 using Attempt17.Features.Functions;
-using Attempt17.Features.Structs;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;

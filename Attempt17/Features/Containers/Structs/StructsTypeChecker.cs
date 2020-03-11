@@ -6,7 +6,7 @@ using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers.Structs {
     public class StructsTypeChecker {
         public void ModifyScopeForStructDeclaration(StructDeclarationSyntax<ParseTag> syntax, IScope scope) {
             // Check to make sure the name isn't taken
@@ -41,32 +41,22 @@ namespace Attempt17.Features.Structs {
                 syntax.StructInfo);
         }
 
-        public ISyntax<TypeCheckTag> CheckNew(NewSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
-            // Make sure the type is a namedType
-            if (!(syntax.Type is NamedType namedType)) {
-                throw TypeCheckingErrors.ExpectedStructType(syntax.Tag.Location, syntax.Type);
-            }
-
-            // Make sure the type is a struct type
-            if (!scope.FindStruct(namedType.Path).TryGetValue(out var structInfo)) {
-                throw TypeCheckingErrors.ExpectedStructType(syntax.Tag.Location, syntax.Type);
-            }
-
+        public ISyntax<TypeCheckTag> CheckNewStruct(NewStructSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             // Make sure we're instantiating all of the members
             var instMembers = syntax.Instantiations.Select(x => x.MemberName).ToHashSet();
-            var requiredMembers = structInfo.Signature.Members.Select(x => x.Name).ToHashSet();
+            var requiredMembers = syntax.StructInfo.Signature.Members.Select(x => x.Name).ToHashSet();
 
             var missing = requiredMembers.Except(instMembers);
             var extra = instMembers.Except(requiredMembers);
 
             // Make sure there are no missing fields
             if (missing.Any()) {
-                throw TypeCheckingErrors.NewObjectMissingFields(syntax.Tag.Location, structInfo.StructType, missing);
+                throw TypeCheckingErrors.NewObjectMissingFields(syntax.Tag.Location, syntax.StructInfo.StructType, missing);
             }
 
             // Make sure there are no extra fields
             if (extra.Any()) {
-                throw TypeCheckingErrors.NewObjectHasExtraneousFields(syntax.Tag.Location, structInfo.StructType, extra);
+                throw TypeCheckingErrors.NewObjectHasExtraneousFields(syntax.Tag.Location, syntax.StructInfo.StructType, extra);
             }
 
             // Type check all the instantiations
@@ -78,30 +68,9 @@ namespace Attempt17.Features.Structs {
                 .Select(x => x.Value.Tag.CapturedVariables)
                 .Aggregate(ImmutableHashSet<VariableCapture>.Empty, (x, y) => x.Union(y));
 
-            var tag = new TypeCheckTag(structInfo.StructType, captured);
+            var tag = new TypeCheckTag(syntax.StructInfo.StructType, captured);
 
-            return new NewSyntax<TypeCheckTag>(tag, syntax.Type, insts);
-        }
-
-        public ISyntax<TypeCheckTag> CheckMemberUsage(MemberUsageParseSyntax syntax, IScope scope, ITypeChecker checker) {
-            IMemberAccessTarget initial = new ValueMemberAccessTarget(
-                checker.Check(syntax.Target, scope),
-                syntax.Tag.Location,
-                scope);
-
-            foreach (var seg in syntax.UsageSegments) {
-                initial = seg.Match(
-                    access => initial.AccessMember(access.MemberName),
-                    invoke => {
-                        var args = invoke.Arguments
-                            .Select(x => checker.Check(x, scope))
-                            .ToImmutableList();
-
-                        return initial.InvokeMember(invoke.MemberName, args);
-                    });
-            }
-
-            return initial.ToSyntax();
+            return new NewStructSyntax<TypeCheckTag>(tag, syntax.StructInfo, insts);
         }
     }
 }

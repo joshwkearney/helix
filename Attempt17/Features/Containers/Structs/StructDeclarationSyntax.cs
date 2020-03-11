@@ -1,7 +1,7 @@
 ﻿using System;
 using Attempt17.TypeChecking;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers.Structs {
     public class StructDeclarationSyntax<T> : ISyntax<T> {
         public T Tag { get; }
 

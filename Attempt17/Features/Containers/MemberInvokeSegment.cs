@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using Attempt17.Parsing;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers {
     public class MemberInvokeSegment : IMemberUsageSegment {
         public string MemberName { get; }
 

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using Attempt17.TypeChecking;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers {
     public interface IMemberAccessTarget {
         public IMemberAccessTarget AccessMember(string name);
 

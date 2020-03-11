@@ -12,4 +12,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Containers\" />
+    <Folder Include="Features\Containers\Structs\" />
+  </ItemGroup>
 </Project>

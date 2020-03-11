@@ -2,7 +2,7 @@
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers.Structs {
     public class StructsFeature : ILanguageFeature {
         private readonly StructsTypeChecker typeChecker = new StructsTypeChecker();
         private readonly StructsCodeGenerator codeGen = new StructsCodeGenerator();
@@ -12,10 +12,8 @@ namespace Attempt17.Features.Structs {
             registry.RegisterParseTree<StructDeclarationSyntax<ParseTag>>(this.typeChecker.CheckStructDeclaration);
             registry.RegisterSyntaxTree<StructDeclarationSyntax<TypeCheckTag>>(this.codeGen.GenerateStructDeclaration);
 
-            registry.RegisterParseTree<NewSyntax<ParseTag>>(this.typeChecker.CheckNew);
-            registry.RegisterSyntaxTree<NewSyntax<TypeCheckTag>>(this.codeGen.GenerateNewSyntax);
-
-            registry.RegisterParseTree<MemberUsageParseSyntax>(this.typeChecker.CheckMemberUsage);
+            registry.RegisterParseTree<NewStructSyntax<ParseTag>>(this.typeChecker.CheckNewStruct);
+            registry.RegisterSyntaxTree<NewStructSyntax<TypeCheckTag>>(this.codeGen.GenerateNewStructSyntax);
 
             registry.RegisterSyntaxTree<StructMemberAccessSyntax>(this.codeGen.GenerateStructMemberAccess);
         }

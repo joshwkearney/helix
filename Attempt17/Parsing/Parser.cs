@@ -1,8 +1,8 @@
 ﻿using Attempt17.Features.Arrays;
+using Attempt17.Features.Containers;
 using Attempt17.Features.FlowControl;
 using Attempt17.Features.Functions;
 using Attempt17.Features.Primitives;
-using Attempt17.Features.Structs;
 using Attempt17.Features.Variables;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
@@ -712,7 +712,7 @@ namespace Attempt17.Parsing {
                 var loc = start.Location.Span(end.Location);
                 var tag = new ParseTag(loc);
 
-                return new NewSyntax<ParseTag>(tag, type, insts);
+                return new NewSyntax(tag, type, insts);
             }
             else {
                 throw ParsingErrors.UnexpectedToken(this.Advance());

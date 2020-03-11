@@ -4,7 +4,7 @@ using Attempt17.CodeGeneration;
 using Attempt17.Features.Variables;
 using Attempt17.TypeChecking;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers.Structs {
     public class StructsCodeGenerator {
         private static int newCounter = 0;
 
@@ -30,7 +30,7 @@ namespace Attempt17.Features.Structs {
             return new CBlock("0");
         }
 
-        public CBlock GenerateNewSyntax(NewSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
+        public CBlock GenerateNewStructSyntax(NewStructSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
             var writer = new CWriter();
             var tempName = "$struct_new_" + newCounter++;
             var structType = gen.Generate(syntax.Tag.ReturnType);

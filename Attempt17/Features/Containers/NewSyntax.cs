@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
+using Attempt17.Parsing;
 using Attempt17.Types;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers {
     public class MemberInstantiation<T> {
         public string MemberName { get; }
 
@@ -14,14 +15,14 @@ namespace Attempt17.Features.Structs {
         }
     }
 
-    public class NewSyntax<T> : ISyntax<T> {
-        public T Tag { get; }
+    public class NewSyntax : ISyntax<ParseTag> {
+        public ParseTag Tag { get; }
 
         public LanguageType Type { get; }
 
-        public ImmutableList<MemberInstantiation<T>> Instantiations { get; }
+        public ImmutableList<MemberInstantiation<ParseTag>> Instantiations { get; }
 
-        public NewSyntax(T tag, LanguageType type, ImmutableList<MemberInstantiation<T>> insts) {
+        public NewSyntax(ParseTag tag, LanguageType type, ImmutableList<MemberInstantiation<ParseTag>> insts) {
             this.Tag = tag;
             this.Type = type;
             this.Instantiations = insts;

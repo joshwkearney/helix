@@ -15,6 +15,13 @@ namespace Attempt17.TypeChecking {
                 $"Expected type '{expected}', recieved type '{actual}'");
         }
 
+        public static Exception UnexpectedType(TokenLocation location, LanguageType actual) {
+            return new CompilerException(
+                location,
+                "Unexpected type",
+                $"Unexpected type '{actual}'");
+        }
+
         public static Exception VariableScopeExceeded(TokenLocation location, IdentifierPath variable) {
             return new CompilerException(
                 location,

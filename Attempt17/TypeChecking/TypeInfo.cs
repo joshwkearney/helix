@@ -1,6 +1,4 @@
 ﻿using System;
-using Attempt17.Features.Functions;
-using Attempt17.Features.Structs;
 using Attempt17.Types;
 
 namespace Attempt17.TypeChecking {

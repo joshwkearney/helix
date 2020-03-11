@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers {
     public class MemberAccessSegment : IMemberUsageSegment {
         public string MemberName { get; }
 

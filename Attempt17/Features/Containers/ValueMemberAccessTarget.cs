@@ -2,13 +2,14 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Attempt17.Features.Arrays;
+using Attempt17.Features.Containers.Structs;
 using Attempt17.Features.Functions;
 using Attempt17.Features.Variables;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Features.Containers {
     public class ValueMemberAccessTarget : IMemberAccessTarget {
         private readonly ISyntax<TypeCheckTag> value;
         private readonly IScope scope;
