@@ -95,8 +95,13 @@ namespace Attempt17.Features.Variables {
                 scope.SetCapturingVariable(new VariableCapture(cap.Kind, path), cap.Path);
             }
 
-            // Add the move-ability to the scope
-            if (value is AllocSyntax<TypeCheckTag> || value.Tag.ReturnType is ArrayType) {
+            // Allocated variables are movable
+            if (value is AllocSyntax<TypeCheckTag>) {
+                scope.SetVariableMovable(info.Path, true);
+            }
+
+            // Normally movable variables are also movable
+            if (value.Tag.ReturnType.Accept(new TypeMovabilityVisitor(scope))) {
                 scope.SetVariableMovable(info.Path, true);
             }
 
@@ -158,6 +163,7 @@ namespace Attempt17.Features.Variables {
             }
 
             // Reset the move-ability of this variable to reflect the new value
+            // TODO: Figure out what this does exactly
             foreach (var targetPath in target.Tag.CapturedVariables.Select(x => x.Path)) {
                 if (!(value is AllocSyntax<TypeCheckTag>)) {
                     scope.SetVariableMovable(targetPath, false);

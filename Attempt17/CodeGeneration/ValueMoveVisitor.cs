@@ -54,7 +54,7 @@ namespace Attempt17.CodeGeneration {
 
                     writer.Line("// Class move");
                     writer.Line($"{varType} {varName} = {this.value};");
-                    writer.Line($"{this.value} = NULL;");
+                    writer.Line($"{this.value} = 0;");
                     writer.EmptyLine();
 
                     return writer.ToBlock(varName);
@@ -68,7 +68,7 @@ namespace Attempt17.CodeGeneration {
 
             writer.Line("// Variable move");
             writer.Line($"{varType} {varName} = {this.value};");
-            writer.Line($"{this.value} = ({varType})NULL;");
+            writer.Line($"{this.value} = 0;");
             writer.EmptyLine();
 
             return writer.ToBlock(varName);

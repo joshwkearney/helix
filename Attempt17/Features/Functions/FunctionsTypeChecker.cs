@@ -51,7 +51,13 @@ namespace Attempt17.Features.Functions {
                 // Add the variable to the scope
                 funcScope.SetTypeInfo(path, parInfo);
 
-                if (par.Type is VariableType || par.Type is ArrayType) {
+                // All parameter variables are movable
+                if (par.Type is VariableType) {
+                    funcScope.SetVariableMovable(path, true);
+                }
+
+                // All normally movable variables are also movable
+                if (par.Type.Accept(new TypeMovabilityVisitor(funcScope))) {
                     funcScope.SetVariableMovable(path, true);
                 }
             }
