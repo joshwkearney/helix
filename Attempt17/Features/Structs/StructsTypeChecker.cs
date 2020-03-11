@@ -8,24 +8,19 @@ using Attempt17.Types;
 
 namespace Attempt17.Features.Structs {
     public class StructsTypeChecker {
-        public void ModifyScopeForStructDeclaration(StructDeclarationParseTree syntax, IScope scope) {
-            var path = scope.Path.Append(syntax.Signature.Name);
-
+        public void ModifyScopeForStructDeclaration(ParseStructDeclaration syntax, IScope scope) {
             // Check to make sure the name isn't taken
-            if (scope.IsPathTaken(path)) {
-                throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.Signature.Name);
+            if (scope.IsPathTaken(syntax.StructInfo.Path)) {
+                throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.StructInfo.Signature.Name);
             }
 
-            scope.SetTypeInfo(path, new StructInfo(syntax.Signature, path));
+            scope.SetTypeInfo(syntax.StructInfo.Path, syntax.StructInfo);
         }
 
-        public ISyntax<TypeCheckTag> CheckStructDeclaration(StructDeclarationParseTree syntax, IScope scope, ITypeChecker checker) {
-            var path = scope.Path.Append(syntax.Signature.Name);
-            var info = scope.FindStruct(path).GetValue();
-
+        public ISyntax<TypeCheckTag> CheckStructDeclaration(ParseStructDeclaration syntax, IScope scope, ITypeChecker checker) {
             // Check to make sure that there are no duplicate member names
-            foreach (var mem1 in syntax.Signature.Members) {
-                foreach (var mem2 in syntax.Signature.Members) {
+            foreach (var mem1 in syntax.StructInfo.Signature.Members) {
+                foreach (var mem2 in syntax.StructInfo.Signature.Members) {
                     if (mem1 != mem2 && mem1.Name == mem2.Name) {
                         throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, mem1.Name);
                     }
@@ -33,7 +28,7 @@ namespace Attempt17.Features.Structs {
             }
 
             // Check to make sure that all member types are defined
-            foreach (var mem in syntax.Signature.Members) {
+            foreach (var mem in syntax.StructInfo.Signature.Members) {
                 if (!checker.IsTypeDefined(mem.Type, scope)) {
                     throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location, mem.Type.ToFriendlyString());
                 }
@@ -43,7 +38,7 @@ namespace Attempt17.Features.Structs {
 
             return new StructDeclarationSyntaxTree(
                 tag,
-                info);
+                syntax.StructInfo);
         }
 
         public ISyntax<TypeCheckTag> CheckNew(NewSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
@@ -86,6 +81,21 @@ namespace Attempt17.Features.Structs {
             var tag = new TypeCheckTag(structInfo.StructType, captured);
 
             return new NewSyntax<TypeCheckTag>(tag, syntax.Type, insts);
+        }
+
+        public ISyntax<TypeCheckTag> CheckMemberUsage(MemberUsageParseSyntax syntax, IScope scope, ITypeChecker checker) {
+            IMemberAccessTarget initial = new ValueMemberAccessTarget(
+                checker.Check(syntax.Target, scope),
+                syntax.Tag.Location,
+                scope);
+
+            foreach (var seg in syntax.UsageSegments) {
+                initial = seg.Match(
+                    access => initial.AccessMember(access.MemberName),
+                    invoke => throw new NotImplementedException());
+            }
+
+            return initial.ToSyntax();
         }
     }
 }

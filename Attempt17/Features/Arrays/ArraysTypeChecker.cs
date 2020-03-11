@@ -151,26 +151,5 @@ namespace Attempt17.Features.Arrays {
 
             return new ArrayLiteralSyntax<TypeCheckTag>(tag, elements);
         }
-
-        public ISyntax<TypeCheckTag> CheckMemberAccess(MemberAccessSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
-            var target = checker.Check(syntax.Target, scope);
-
-            if (!(target.Tag.ReturnType is ArrayType)) {
-                throw TypeCheckingErrors.ExpectedArrayType(
-                    syntax.Target.Tag.Location,
-                    target.Tag.ReturnType);
-            }
-
-            if (syntax.MemberName != "size") {
-                throw TypeCheckingErrors.MemberUndefined(
-                    syntax.Tag.Location,
-                    target.Tag.ReturnType,
-                    "size");
-            }
-
-            var tag = new TypeCheckTag(IntType.Instance);
-
-            return new MemberAccessSyntax<TypeCheckTag>(tag, target, syntax.MemberName);
-        }
     }
 }

@@ -22,8 +22,7 @@ namespace Attempt17.Features.Arrays {
             registry.RegisterParseTree<ArrayLiteralSyntax<ParseTag>>(this.typeChecker.CheckArrayLiteral);
             registry.RegisterSyntaxTree<ArrayLiteralSyntax<TypeCheckTag>>(this.codeGen.GenerateArrayLiteral);
 
-            registry.RegisterParseTree<MemberAccessSyntax<ParseTag>>(this.typeChecker.CheckMemberAccess);
-            registry.RegisterSyntaxTree<MemberAccessSyntax<TypeCheckTag>>(this.codeGen.GenerateMemberAccess);
+            registry.RegisterSyntaxTree<ArraySizeAccessSyntax>(this.codeGen.GenerateSizeAccess);
         }
     }
 }

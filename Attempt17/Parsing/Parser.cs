@@ -4,6 +4,7 @@ using Attempt17.Features.Functions;
 using Attempt17.Features.Primitives;
 using Attempt17.Features.Structs;
 using Attempt17.Features.Variables;
+using Attempt17.TypeChecking;
 using Attempt17.Types;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -18,8 +19,8 @@ namespace Attempt17.Parsing {
             this.tokens = tokens;
         }
 
-        public ImmutableList<ISyntax<ParseTag>> Parse() {
-            var list = ImmutableList<ISyntax<ParseTag>>.Empty;
+        public ImmutableList<IParseDeclaration> Parse() {
+            var list = ImmutableList<IParseDeclaration>.Empty;
 
             while (this.pos < tokens.Count) {
                 list = list.Add(this.Declaration());
@@ -122,7 +123,7 @@ namespace Attempt17.Parsing {
             }
         }
 
-        private ISyntax<ParseTag> FunctionDeclaration() {
+        private IParseDeclaration FunctionDeclaration() {
             var start = this.Advance(TokenKind.FunctionKeyword);
 
             string funcName = this.Advance<string>();
@@ -152,27 +153,33 @@ namespace Attempt17.Parsing {
 
             this.Advance(TokenKind.Semicolon);
 
-            return new FunctionDeclarationParseSyntax(
-                new ParseTag(loc), 
-                sig, 
+            return new ParseFunctionDeclaration(
+                new ParseTag(loc),
+                new FunctionInfo(new IdentifierPath(funcName), sig),
                 body);
         }
 
-        private ISyntax<ParseTag> StructDeclaration() {
+        private IParseDeclaration StructDeclaration() {
             var first = this.Advance(TokenKind.StructKeyword);
 
             var name = this.Advance<string>();
             this.Advance(TokenKind.OpenBrace);
 
             var mems = ImmutableList<StructMember>.Empty;
+            var decls = ImmutableList<IParseDeclaration>.Empty;
 
             while (!this.TryAdvance(TokenKind.CloseBrace)) {
-                var memType = this.TypeExpression();
-                var memName = this.Advance<string>();
+                if (this.Peek(TokenKind.FunctionKeyword) || this.Peek(TokenKind.StructKeyword)) {
+                    decls = decls.Add(this.Declaration());
+                }
+                else {
+                    var memType = this.TypeExpression();
+                    var memName = this.Advance<string>();
 
-                this.Advance(TokenKind.Semicolon);
+                    this.Advance(TokenKind.Semicolon);
 
-                mems = mems.Add(new StructMember(memName, memType));
+                    mems = mems.Add(new StructMember(memName, memType));
+                }
             }
 
             var last = this.Advance(TokenKind.Semicolon);
@@ -180,10 +187,13 @@ namespace Attempt17.Parsing {
             var tag = new ParseTag(loc);
             var sig = new StructSignature(name, mems);
 
-            return new StructDeclarationParseTree(tag, sig);
+            return new ParseStructDeclaration(
+                tag,
+                new StructInfo(sig, new IdentifierPath(name)),
+                decls);
         }
 
-        private ISyntax<ParseTag> Declaration() {
+        private IParseDeclaration Declaration() {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
@@ -220,8 +230,8 @@ namespace Attempt17.Parsing {
 
                     target = new ArrayStoreSyntax<ParseTag>(
                         tag,
-                        syntax.Target, 
-                        syntax.Index, 
+                        syntax.Target,
+                        syntax.Index,
                         value);
                 }
                 else {
@@ -264,7 +274,7 @@ namespace Attempt17.Parsing {
             }
             else {
                 return this.OrExpression();
-            }            
+            }
         }
 
         private ISyntax<ParseTag> OrExpression() {
@@ -306,7 +316,7 @@ namespace Attempt17.Parsing {
             var comparators = new Dictionary<TokenKind, BinarySyntaxKind>() {
                 { TokenKind.EqualSign, BinarySyntaxKind.EqualTo }, { TokenKind.NotEqualSign, BinarySyntaxKind.NotEqualTo },
                 { TokenKind.LessThanSign, BinarySyntaxKind.LessThan }, { TokenKind.GreaterThanSign, BinarySyntaxKind.GreaterThan },
-                { TokenKind.LessThanOrEqualToSign, BinarySyntaxKind.LessThanOrEqualTo }, 
+                { TokenKind.LessThanOrEqualToSign, BinarySyntaxKind.LessThanOrEqualTo },
                 { TokenKind.GreaterThanOrEqualToSign, BinarySyntaxKind.GreaterThanOrEqualTo }
             };
 
@@ -366,9 +376,9 @@ namespace Attempt17.Parsing {
                 var loc = first.Tag.Location.Span(second.Tag.Location);
 
                 first = new BinarySyntax<ParseTag>(
-                    new ParseTag(loc), 
-                    op, 
-                    first, 
+                    new ParseTag(loc),
+                    op,
+                    first,
                     second);
             }
 
@@ -376,7 +386,7 @@ namespace Attempt17.Parsing {
         }
 
         private ISyntax<ParseTag> MultiplyExpression() {
-            var first = this.InvokeExpression();
+            var first = this.MemberUsageSyntax();
 
             while (true) {
                 if (!this.Peek(TokenKind.MultiplySign)) {
@@ -385,7 +395,7 @@ namespace Attempt17.Parsing {
 
                 var tok = this.Advance().Kind;
                 var op = tok == TokenKind.MultiplySign ? BinarySyntaxKind.Multiply : BinarySyntaxKind.Multiply;
-                var second = this.InvokeExpression();
+                var second = this.MemberUsageSyntax();
                 var loc = first.Tag.Location.Span(second.Tag.Location);
 
                 first = new BinarySyntax<ParseTag>(
@@ -396,6 +406,48 @@ namespace Attempt17.Parsing {
             }
 
             return first;
+        }
+
+        private ISyntax<ParseTag> MemberUsageSyntax() {
+            var first = InvokeExpression();
+
+            if (this.Peek(TokenKind.Dot)) {
+                var segs = ImmutableList<IMemberUsageSegment>.Empty;
+
+                while (true) {
+                    if (this.TryAdvance(TokenKind.Dot)) {
+                        var name = this.Advance<string>();
+
+                        if (this.TryAdvance(TokenKind.OpenParenthesis)) {
+                            var args = ImmutableList<ISyntax<ParseTag>>.Empty;
+
+                            while (!this.TryAdvance(TokenKind.CloseParenthesis)) {
+                                args = args.Add(this.TopExpression());
+
+                                if (!this.Peek(TokenKind.CloseParenthesis)) {
+                                    this.Advance(TokenKind.Comma);
+                                }
+                            }
+
+                            segs = segs.Add(new MemberInvokeSegment(name, args));
+                        }
+                        else {
+                            segs = segs.Add(new MemberAccessSegment(name));
+                        }
+                    }
+                    else {
+                        break;
+                    }
+                }
+
+                var loc = first.Tag.Location.Span(this.tokens[this.pos - 1].Location);
+                var tag = new ParseTag(loc);
+
+                return new MemberUsageParseSyntax(tag, first, segs);
+            }
+            else {
+                return first;
+            }
         }
 
         private ISyntax<ParseTag> InvokeExpression() {
@@ -429,20 +481,13 @@ namespace Attempt17.Parsing {
 
                     first = new ArrayIndexSyntax<ParseTag>(tag, first, inner);
                 }
-                else if (this.TryAdvance(TokenKind.Dot)) {
-                    var name = (Token<string>)this.Advance(TokenKind.Identifier);
-                    var loc = first.Tag.Location.Span(name.Location);
-                    var tag = new ParseTag(loc);
-
-                    first = new MemberAccessSyntax<ParseTag>(tag, first, name.Value);
-                }
                 else {
                     return first;
                 }
             }
         }
 
-        private ISyntax<ParseTag> VariableDeclarationStatement() {            
+        private ISyntax<ParseTag> VariableDeclarationStatement() {
             var tok = this.Advance(TokenKind.VarKeyword);
             var name = this.Advance<string>();
             var op = this.Advance();
@@ -465,7 +510,7 @@ namespace Attempt17.Parsing {
             return new VariableInitSyntax<ParseTag>(
                 new ParseTag(loc),
                 name,
-                kind, 
+                kind,
                 value);
         }
 
@@ -480,8 +525,8 @@ namespace Attempt17.Parsing {
             var loc = start.Location.Span(body.Tag.Location);
 
             return new WhileSyntax<ParseTag>(
-                new ParseTag(loc), 
-                cond, 
+                new ParseTag(loc),
+                cond,
                 body);
         }
 
@@ -502,10 +547,10 @@ namespace Attempt17.Parsing {
                 var loc = start.Location.Span(neg.Tag.Location);
 
                 return new IfSyntax<ParseTag>(
-                    new ParseTag(loc), 
-                    IfKind.Expression, 
-                    cond, 
-                    affirm, 
+                    new ParseTag(loc),
+                    IfKind.Expression,
+                    cond,
+                    affirm,
                     Option.Some(neg));
             }
             else if (next.Kind == TokenKind.DoKeyword) {
@@ -520,20 +565,20 @@ namespace Attempt17.Parsing {
                     var loc = start.Location.Span(neg.Tag.Location);
 
                     return new IfSyntax<ParseTag>(
-                        new ParseTag(loc), 
-                        IfKind.Statement, 
-                        cond, 
-                        affirm, 
+                        new ParseTag(loc),
+                        IfKind.Statement,
+                        cond,
+                        affirm,
                         Option.Some(neg));
                 }
                 else {
                     var loc = start.Location.Span(affirm.Tag.Location);
 
                     return new IfSyntax<ParseTag>(
-                        new ParseTag(loc), 
-                        IfKind.Statement, 
-                        cond, 
-                        affirm, 
+                        new ParseTag(loc),
+                        IfKind.Statement,
+                        cond,
+                        affirm,
                         Option.None<ISyntax<ParseTag>>());
                 }
             }
@@ -567,7 +612,7 @@ namespace Attempt17.Parsing {
             var tok = (Token<long>)this.Advance(TokenKind.IntLiteral);
 
             return new IntLiteralSyntax<ParseTag>(
-                new ParseTag(tok.Location), 
+                new ParseTag(tok.Location),
                 tok.Value);
         }
 
@@ -583,7 +628,7 @@ namespace Attempt17.Parsing {
             var loc = start.Location.Span(end.Location);
 
             return new BlockSyntax<ParseTag>(
-                new ParseTag(loc), 
+                new ParseTag(loc),
                 list);
         }
 

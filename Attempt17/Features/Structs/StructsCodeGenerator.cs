@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Attempt17.CodeGeneration;
+using Attempt17.Features.Variables;
 using Attempt17.TypeChecking;
 
 namespace Attempt17.Features.Structs {
@@ -8,12 +9,14 @@ namespace Attempt17.Features.Structs {
         private static int newCounter = 0;
 
         public CBlock GenerateStructDeclaration(StructDeclarationSyntaxTree syntax, ICScope scope, ICodeGenerator gen) {
+            string name = syntax.Info.Path.ToCName();
+
             // Generate forward declaration
-            gen.Header1Writer.Line($"typedef struct {syntax.Info.Signature.Name} {syntax.Info.Signature.Name};");
+            gen.Header1Writer.Line($"typedef struct {name} {name};");
             gen.Header1Writer.EmptyLine();
 
             // Generate struct definition
-            gen.Header2Writer.Line($"struct {syntax.Info.Signature.Name} {{");
+            gen.Header2Writer.Line($"struct {name} {{");
 
             foreach (var mem in syntax.Info.Signature.Members) {
                 var memType = gen.Generate(mem.Type);
@@ -60,6 +63,27 @@ namespace Attempt17.Features.Structs {
             writer.EmptyLine();
 
             return writer.ToBlock(tempName);
+        }
+
+        public CBlock GenerateStructMemberAccess(StructMemberAccessSyntax syntax, ICScope scope, ICodeGenerator gen) {
+            var target = gen.Generate(syntax.Target, scope);
+            var writer = new CWriter();
+
+            // Optimization: If the target is a variable access, don't force a copy
+            // of the entire struct
+            if (syntax.Target is VariableAccessSyntax access) {
+                if (access.Kind == VariableAccessKind.ValueAccess) {
+                    // This would have produced another variable to clean up, so remove
+                    // that from the scope
+                    scope.SetVariableDestructed(target.Value);
+
+                    target = new CBlock(access.VariableInfo.Path.Segments.Last());
+                }
+            }
+
+            writer.Lines(target.SourceLines);
+
+            return writer.ToBlock($"({target.Value}.{syntax.MemberName})");
         }
     }
 }

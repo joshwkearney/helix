@@ -1,4 +1,5 @@
 ﻿using Attempt17.TypeChecking;
+using Attempt17.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -8,6 +9,9 @@ namespace Attempt17.Compiling {
     public class OuterScope : IScope {
         public Dictionary<IdentifierPath, TypeInfo> TypeInfo { get; }
             = new Dictionary<IdentifierPath, TypeInfo>();
+
+        private Dictionary<(LanguageType type, string methodName), IdentifierPath> methods
+            = new Dictionary<(LanguageType type, string methodName), IdentifierPath>();
 
         public IdentifierPath Path => new IdentifierPath();
 
@@ -32,5 +36,15 @@ namespace Attempt17.Compiling {
         public void SetVariableMovable(IdentifierPath path, bool isMovable) { throw new InvalidOperationException(); }
 
         public void SetVariableMoved(IdentifierPath path, bool isMoved) { throw new InvalidOperationException(); }
+
+        public void SetMethod(LanguageType type, string methodName, IdentifierPath methodLocation) {
+            this.methods[(type, methodName)] = methodLocation;
+        }
+
+        public IOption<FunctionInfo> FindMethod(LanguageType type, string methodName) {
+            return this.methods
+                .GetValueOption((type, methodName))
+                .SelectMany(this.FindFunction);
+        }
     }
 }

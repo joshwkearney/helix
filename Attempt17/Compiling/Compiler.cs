@@ -37,9 +37,12 @@ namespace Attempt17.Compiling {
             }
 
             var typeChecker = new TypeChecker(registry, scope);
+            var declFlattener = new DeclarationFlattener();
 
             // Type check everything
+
             var checkedDecls = decls
+                .SelectMany(x => x.Accept(declFlattener))
                 .Select(x => typeChecker.Check(x, scope))
                 .ToArray();
 

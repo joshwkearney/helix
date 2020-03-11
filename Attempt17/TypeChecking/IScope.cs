@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Attempt17.Types;
 
 namespace Attempt17.TypeChecking {
     public interface IScope {
@@ -21,5 +22,9 @@ namespace Attempt17.TypeChecking {
         bool IsVariableMoved(IdentifierPath path);
 
         bool IsVariableMovable(IdentifierPath path);
+
+        void SetMethod(LanguageType type, string methodName, IdentifierPath methodLocation);
+
+        IOption<FunctionInfo> FindMethod(LanguageType type, string methodName);
     }
 }

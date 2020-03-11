@@ -1,4 +1,5 @@
 ﻿using Attempt17.TypeChecking;
+using Attempt17.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -16,6 +17,9 @@ namespace Attempt17.Features.FlowControl {
         private readonly HashSet<IdentifierPath> movableVariables = new HashSet<IdentifierPath>();
 
         private readonly HashSet<IdentifierPath> movedVariables = new HashSet<IdentifierPath>();
+
+        private readonly Dictionary<(LanguageType type, string methodName), IdentifierPath> methods
+            = new Dictionary<(LanguageType type, string methodName), IdentifierPath>();
 
         public IdentifierPath Path { get; }
 
@@ -87,6 +91,17 @@ namespace Attempt17.Features.FlowControl {
             else {
                 this.head.SetVariableMoved(path, isMoved);
             }
+        }
+
+        public void SetMethod(LanguageType type, string methodName, IdentifierPath methodLocation) {
+            this.methods[(type, methodName)] = methodLocation;
+        }
+
+        public IOption<FunctionInfo> FindMethod(LanguageType type, string methodName) {
+            return this.methods
+                .GetValueOption((type, methodName))
+                .SelectMany(this.FindFunction)
+                .GetValueOr(() => this.head.FindMethod(type, methodName));
         }
     }
 }

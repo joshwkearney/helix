@@ -8,17 +8,17 @@ using System.Linq;
 
 namespace Attempt17.Features.Functions {
     public class FunctionsTypeChecker {
-        public ISyntax<TypeCheckTag> CheckFunctionDeclaration(FunctionDeclarationParseSyntax syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckFunctionDeclaration(ParseFunctionDeclaration syntax, IScope scope, ITypeChecker checker) {
             // Make sure the return type is defined
-            if (!checker.IsTypeDefined(syntax.Signature.ReturnType, scope)) {
-                throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location, syntax.Signature.ReturnType.ToString());
+            if (!checker.IsTypeDefined(syntax.FunctionInfo.Signature.ReturnType, scope)) {
+                throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location, syntax.FunctionInfo.Signature.ReturnType.ToString());
             }
 
             // Get a new scope for the function body
-            var funcScope = new BlockScope(scope.Path.Append(syntax.Signature.Name), scope);
+            var funcScope = new BlockScope(syntax.FunctionInfo.Path, scope);
 
             // Add each parameter to the scope
-            foreach (var par in syntax.Signature.Parameters) {
+            foreach (var par in syntax.FunctionInfo.Signature.Parameters) {
                 // Make sure the name is availible
                 if (funcScope.IsNameTaken(par.Name)) {
                     throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, par.Name);
@@ -35,8 +35,8 @@ namespace Attempt17.Features.Functions {
                 // Get the correct variable type, based on if it's a var type or not
                 if (par.Type is VariableType varType) {
                     parInfo = new VariableInfo(
-                        varType.InnerType, 
-                        VariableDefinitionKind.Alias, 
+                        varType.InnerType,
+                        VariableDefinitionKind.Alias,
                         path,
                         true);
                 }
@@ -55,14 +55,14 @@ namespace Attempt17.Features.Functions {
                     funcScope.SetVariableMovable(path, true);
                 }
             }
-            
+
             var body = checker.Check(syntax.Body, funcScope);
 
             // Return types have to match
-            if (body.Tag.ReturnType != syntax.Signature.ReturnType) {
+            if (body.Tag.ReturnType != syntax.FunctionInfo.Signature.ReturnType) {
                 throw TypeCheckingErrors.UnexpectedType(
-                    syntax.Tag.Location, 
-                    syntax.Signature.ReturnType, 
+                    syntax.Tag.Location,
+                    syntax.FunctionInfo.Signature.ReturnType,
                     body.Tag.ReturnType);
             }
 
@@ -75,22 +75,21 @@ namespace Attempt17.Features.Functions {
             }
 
             var tag = new TypeCheckTag(VoidType.Instance);
-            var info = new FunctionInfo(funcScope.Path, syntax.Signature);
+            var info = new FunctionInfo(funcScope.Path, syntax.FunctionInfo.Signature);
 
             return new FunctionDeclarationSyntax(
-                tag, 
-                info, 
+                tag,
+                info,
                 body);
         }
 
-        public void ModifyDeclarationScope(FunctionDeclarationParseSyntax syntax, IScope scope) {
-            var path = scope.Path.Append(syntax.Signature.Name);
-
-            if (scope.IsPathTaken(path)) {
-                throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.Signature.Name);
+        public void ModifyDeclarationScope(ParseFunctionDeclaration syntax, IScope scope) {
+            // Make sure this path isn't taken
+            if (scope.IsPathTaken(syntax.FunctionInfo.Path)) {
+                throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.FunctionInfo.Signature.Name);
             }
 
-            scope.SetTypeInfo(path, new FunctionInfo(path, syntax.Signature));
+            scope.SetTypeInfo(syntax.FunctionInfo.Path, syntax.FunctionInfo);
         }
 
         public ISyntax<TypeCheckTag> CheckInvoke(InvokeParseSyntax syntax, IScope scope, ITypeChecker checker) {
@@ -136,7 +135,7 @@ namespace Attempt17.Features.Functions {
                     throw TypeCheckingErrors.UnexpectedType(item.Location, item.ExpectedType, item.ActualType);
                 }
             }
-            
+
             // Make sure that one variable might not be mutated by another into an invalid state
             foreach (var outerPar in zipped) {
                 foreach (var innerPar in zipped) {
@@ -167,7 +166,7 @@ namespace Attempt17.Features.Functions {
                                     inner.Path);
                             }
                         }
-                    }                 
+                    }
                 }
             }
 

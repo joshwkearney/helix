@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using Attempt17.Types;
 
-namespace Attempt17.Features.Structs {
+namespace Attempt17.Types {
     public class StructMember {
         public string Name { get; }
 

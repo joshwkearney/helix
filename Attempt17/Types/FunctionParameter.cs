@@ -1,6 +1,6 @@
 ﻿using Attempt17.Types;
 
-namespace Attempt17.Features.Functions {
+namespace Attempt17.Types {
     public class FunctionParameter {
         public string Name { get; }
 

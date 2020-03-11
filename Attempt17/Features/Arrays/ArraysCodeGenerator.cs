@@ -117,7 +117,7 @@ namespace Attempt17.Features.Arrays {
             return writer.ToBlock(tempName);
         }
 
-        public CBlock GenerateMemberAccess(MemberAccessSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
+        public CBlock GenerateSizeAccess(ArraySizeAccessSyntax syntax, ICScope scope, ICodeGenerator gen) {
             var target = gen.Generate(syntax.Target, scope);
             var writer = new CWriter();
 

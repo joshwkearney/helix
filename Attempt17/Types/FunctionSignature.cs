@@ -1,7 +1,7 @@
 ﻿using Attempt17.Types;
 using System.Collections.Immutable;
 
-namespace Attempt17.Features.Functions {
+namespace Attempt17.Types {
     public class FunctionSignature {
         public LanguageType ReturnType { get; }
 
