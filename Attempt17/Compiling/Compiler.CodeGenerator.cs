@@ -21,10 +21,10 @@ namespace Attempt17.Compiling {
 
             ICodeWriter ICodeGenerator.Header3Writer => this.Header3Writer;
 
-            public CodeGenerator(SyntaxRegistry registry) {
+            public CodeGenerator(SyntaxRegistry registry, ICScope outerScope) {
                 this.registry = registry;
                 this.typegen = new TypeGenerator(this.Header2Writer);
-                this.destructGen = new TypeDestructorGenerator(this.Header3Writer, this);
+                this.destructGen = new TypeDestructorGenerator(this.Header3Writer, this, outerScope);
             }
 
             public CBlock Generate(ISyntax<TypeCheckTag> syntax, ICScope scope) {

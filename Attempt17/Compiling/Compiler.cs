@@ -29,7 +29,6 @@ namespace Attempt17.Compiling {
             var registry = this.GetRegistry();
             var tokens = new Lexer(input).GetTokens();
             var decls = new Parser(tokens).Parse();
-            var codegen = new CodeGenerator(registry);
             var scope = new OuterScope();
 
             // Make sure all the declarations can add to the scope
@@ -45,6 +44,7 @@ namespace Attempt17.Compiling {
                 .ToArray();
 
             var cscope = new OuterCScope(scope.TypeInfo);
+            var codegen = new CodeGenerator(registry, cscope);
 
             // Generate everything
             var lines = checkedDecls

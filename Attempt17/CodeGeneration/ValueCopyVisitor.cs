@@ -1,6 +1,7 @@
 ﻿using Attempt17.Types;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Attempt17.CodeGeneration {
@@ -8,7 +9,8 @@ namespace Attempt17.CodeGeneration {
         private readonly string value;
         private readonly ICodeGenerator gen;
         private readonly ICScope scope;
-        private int arrayCopyTemp = 0;
+        private static int arrayCopyTemp = 0;
+        private static int structCopyTemp = 0;
 
         public ValueCopyVisitor(string value, ICodeGenerator gen, ICScope scope) {
             this.value = value;
@@ -17,7 +19,7 @@ namespace Attempt17.CodeGeneration {
         }
 
         public CBlock VisitArrayType(ArrayType type) {
-            var tempName = "$array_copy_" + this.arrayCopyTemp++;
+            var tempName = "$array_copy_" + arrayCopyTemp++;
             var tempType = this.gen.Generate(type);
             var writer = new CWriter();
 
@@ -40,7 +42,50 @@ namespace Attempt17.CodeGeneration {
         }
 
         public CBlock VisitNamedType(NamedType type) {
-            throw new NotImplementedException();
+            if (!this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
+                throw new Exception("This is no supposed to happen");
+            }
+
+            return info.Match(
+                varInfo => throw new InvalidOperationException(),
+                funcInfo => new CBlock(this.value),
+                structInfo => {
+                    var tempName = "$struct_copy_" + structCopyTemp++;
+                    var tempType = this.gen.Generate(type);
+                    var writer = new CWriter();
+
+                    // Copy all of the struct's members
+                    var copies = structInfo
+                        .Signature
+                        .Members
+                        .Select(x => {
+                            var visitor = new ValueCopyVisitor($"{this.value}.{x.Name}", this.gen, this.scope);
+                            var copy = x.Type.Accept(visitor);
+
+                            return new {
+                                MemberName = x.Name,
+                                CopyValue = copy
+                            };
+                        })
+                        .ToArray();
+
+                    // Write out all of the copying code
+                    foreach (var copy in copies) {
+                        writer.Lines(copy.CopyValue.SourceLines);
+                    }
+
+                    // Write out the new struct
+                    writer.Line("// Struct copy");
+                    writer.VariableInit(tempType, tempName);
+
+                    foreach (var mem in copies) {
+                        writer.VariableAssignment($"{tempName}.{mem.MemberName}", mem.CopyValue.Value);
+                    }
+
+                    writer.EmptyLine();
+
+                    return writer.ToBlock(tempName);
+                });
         }
 
         public CBlock VisitVariableType(VariableType type) {
