@@ -48,12 +48,18 @@ namespace Attempt17.CodeGeneration {
             return info.Match(
                 varInfo => throw new InvalidOperationException(),
                 funcInfo => new CBlock(this.value),
-                structInfo => {
+                compositeInfo => {
+                    // If this is a class, just mask the pointer
+                    if (compositeInfo.Kind == CompositeKind.Class) {
+                        return new CBlock(CWriter.MaskPointer(this.value));
+                    }
+
+                    // Otherwise...
                     var copiabilityVisitor = new TypeCopiabilityVisitor(this.scope);
 
                     // If all of the struct's members are unconditionally copiable,
                     // let C handle the copy implicitly
-                    if (structInfo.Signature.Members.All(x => x.Type.Accept(copiabilityVisitor) == TypeCopiability.Unconditional)) {
+                    if (compositeInfo.Signature.Members.All(x => x.Type.Accept(copiabilityVisitor) == TypeCopiability.Unconditional)) {
                         return new CBlock(this.value);
                     }
 
@@ -62,7 +68,7 @@ namespace Attempt17.CodeGeneration {
                     var writer = new CWriter();
 
                     // Copy all of the struct's members
-                    var copies = structInfo
+                    var copies = compositeInfo
                         .Signature
                         .Members
                         .Select(x => {
@@ -96,8 +102,6 @@ namespace Attempt17.CodeGeneration {
         }
 
         public CBlock VisitVariableType(VariableType type) {
-            var varTypeName = this.gen.Generate(type);
-
             return new CBlock(CWriter.MaskPointer(this.value));
         }
 

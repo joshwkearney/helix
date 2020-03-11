@@ -48,26 +48,31 @@ namespace Attempt17.TypeChecking {
             return info.Match(
                 varInfo => throw new InvalidOperationException(),
                 funcInfo => Option.None<ISyntax<TypeCheckTag>>(),
-                structInfo => {
-                    var allDefault = structInfo.Signature
-                        .Members
-                        .Select(x => new {
-                            x.Name,
-                            Value = x.Type.Accept(this)
-                        })
-                        .ToArray();
-
-                    if (!allDefault.All(x => x.Value.Any())) {
+                compositeInfo => {
+                    if (compositeInfo.Kind == CompositeKind.Class) {
                         return Option.None<ISyntax<TypeCheckTag>>();
                     }
+                    else {
+                        var allDefault = compositeInfo.Signature
+                            .Members
+                            .Select(x => new {
+                                x.Name,
+                                Value = x.Type.Accept(this)
+                            })
+                            .ToArray();
 
-                    var insts = allDefault
-                        .Select(x => new MemberInstantiation<TypeCheckTag>(x.Name, x.Value.GetValue()))
-                        .ToImmutableList();
+                        if (!allDefault.All(x => x.Value.Any())) {
+                            return Option.None<ISyntax<TypeCheckTag>>();
+                        }
 
-                    var tag = new TypeCheckTag(structInfo.StructType);
+                        var insts = allDefault
+                            .Select(x => new MemberInstantiation<TypeCheckTag>(x.Name, x.Value.GetValue()))
+                            .ToImmutableList();
 
-                    return Option.Some(new NewStructSyntax<TypeCheckTag>(tag, structInfo, insts));
+                        var tag = new TypeCheckTag(compositeInfo.StructType);
+
+                        return Option.Some(new NewCompositeSyntax<TypeCheckTag>(tag, compositeInfo, insts));
+                    }
                 });
         }
 

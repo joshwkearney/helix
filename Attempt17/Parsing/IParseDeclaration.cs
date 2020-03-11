@@ -11,6 +11,6 @@ namespace Attempt17.Parsing {
     public interface IParseDeclarationVisitor<T> {
         public T VisitFunctionDeclaration(ParseFunctionDeclaration decl);
 
-        public T VisitStructDeclaration(ParseStructDeclaration decl);
+        public T VisitCompositeDeclaration(ParseCompositeDeclaration decl);
     }
 }

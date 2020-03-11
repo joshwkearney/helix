@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Attempt17.Features.Arrays;
-using Attempt17.Features.Containers.Structs;
+using Attempt17.Features.Containers.Composites;
 using Attempt17.Features.Functions;
 using Attempt17.Features.Variables;
 using Attempt17.Parsing;
@@ -89,8 +89,8 @@ namespace Attempt17.Features.Containers {
                 return info.Match(
                     varInfo => throw new InvalidOperationException(),
                     funcInfo => throw TypeCheckingErrors.MemberUndefined(this.location, type, this.memberName),
-                    structInfo => {
-                        var mem = structInfo.Signature.Members.FirstOrDefault(x => x.Name == this.memberName);
+                    compositeInfo => {
+                        var mem = compositeInfo.Signature.Members.FirstOrDefault(x => x.Name == this.memberName);
 
                         if (mem == null) {
                             throw TypeCheckingErrors.MemberUndefined(this.location, type, this.memberName);
@@ -111,7 +111,7 @@ namespace Attempt17.Features.Containers {
 
                         var tag = new TypeCheckTag(mem.Type, captured);
 
-                        return new StructMemberAccessSyntax(tag, this.target, this.memberName);
+                        return new CompositeMemberAccessSyntax(tag, this.target, this.memberName, compositeInfo);
                     });
             }
 

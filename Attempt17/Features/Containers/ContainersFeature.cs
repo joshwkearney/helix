@@ -1,10 +1,10 @@
 ﻿using System;
-using Attempt17.Features.Containers.Structs;
+using Attempt17.Features.Containers.Composites;
 using Attempt17.Parsing;
 
 namespace Attempt17.Features.Containers {
     public class ContainersFeature : ILanguageFeature {
-        private readonly StructsFeature structsFeature = new StructsFeature();
+        private readonly CompositeFeature structsFeature = new CompositeFeature();
 
         private readonly ContainersTypeChecker typeChecker = new ContainersTypeChecker();
 

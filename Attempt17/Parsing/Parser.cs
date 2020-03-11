@@ -160,12 +160,16 @@ namespace Attempt17.Parsing {
         }
 
         private IParseDeclaration StructDeclaration() {
-            var first = this.Advance(TokenKind.StructKeyword);
+            var first = this.Advance();
+
+            if (first.Kind != TokenKind.StructKeyword && first.Kind != TokenKind.ClassKeyword) {
+                throw ParsingErrors.UnexpectedToken(first);
+            }
 
             var name = this.Advance<string>();
             this.Advance(TokenKind.OpenBrace);
 
-            var mems = ImmutableList<StructMember>.Empty;
+            var mems = ImmutableList<ContainerMember>.Empty;
             var decls = ImmutableList<IParseDeclaration>.Empty;
 
             while (!this.TryAdvance(TokenKind.CloseBrace)) {
@@ -178,18 +182,19 @@ namespace Attempt17.Parsing {
 
                     this.Advance(TokenKind.Semicolon);
 
-                    mems = mems.Add(new StructMember(memName, memType));
+                    mems = mems.Add(new ContainerMember(memName, memType));
                 }
             }
 
             var last = this.Advance(TokenKind.Semicolon);
             var loc = first.Location.Span(last.Location);
             var tag = new ParseTag(loc);
-            var sig = new StructSignature(name, mems);
+            var sig = new CompositeSignature(name, mems);
+            var kind = first.Kind == TokenKind.StructKeyword ? CompositeKind.Struct : CompositeKind.Class;
 
-            return new ParseStructDeclaration(
+            return new ParseCompositeDeclaration(
                 tag,
-                new StructInfo(sig, new IdentifierPath(name)),
+                new CompositeInfo(sig, new IdentifierPath(name), kind),
                 decls);
         }
 
@@ -197,7 +202,7 @@ namespace Attempt17.Parsing {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
-            else if (this.Peek(TokenKind.StructKeyword)) {
+            else if (this.Peek(TokenKind.StructKeyword) || this.Peek(TokenKind.ClassKeyword)) {
                 return this.StructDeclaration();
             }
 

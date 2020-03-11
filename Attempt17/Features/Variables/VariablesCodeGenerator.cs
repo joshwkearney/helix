@@ -81,7 +81,7 @@ namespace Attempt17.Features.Variables {
         public CBlock GenerateMove(MoveSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {           
             scope.SetVariableMoved(syntax.VariableName);
 
-            return syntax.Tag.ReturnType.Accept(new ValueMoveVisitor(syntax.VariableName, gen));
+            return syntax.Tag.ReturnType.Accept(new ValueMoveVisitor(syntax.VariableName, scope, gen));
         }
     }
 }

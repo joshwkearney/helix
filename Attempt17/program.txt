@@ -1,11 +1,19 @@
 ﻿function main () => void: {
+    #var p <- new Point { x = 4, y = 2 };
+    #var x <- p.scale(5).norm();
+
 	var array <- [5, 8, 6, 2, 7, 3, 9];
+    var s <- new String { chars = move array };
 
-    var p <- new Point { x = 4, y = 2 };
-
-    var x <- p.scale(5).norm();
+    var test <- s.size();
 
 	void;
+};
+
+class String {
+    int[] chars;
+
+    function size () => int: this.chars.size;
 };
 
 struct Point {
@@ -17,50 +25,8 @@ struct Point {
     function scale (int factor) => Point: {
         new Point { x = factor * this.x, y = factor * this.y };
     };
-};
- 
-function selection_sort (int[] array) => void: {
-	var i <- 0;
 
-	while i + 1 < array.size do: {
-		var j <- i;
-		var smallest <- j;
-
-		while j + 1 < array.size do: {
-			@j <- j + 1;
-
-			if array[j] < array[smallest] do: {
-				@smallest <- j;
-			};
-		};
-
-		var temp <- array[i];
-
-		array[i] = array[smallest];
-		array[smallest] = temp;
-
-		@i <- i + 1;
+    struct inner {
+        function some() => void: void;
     };
-};
-
-function fib_linear (int n) => int: {
-	var first <- 0;
-	var second <- 0;
-	var i <- n;
-
-	while i > 0 do: {
-		var third <- first + second;
-
-		@first <- second;
-		@second <- third;
-		@i <- n - 1;
-	};
-
-	first;
-};
-
-function fib_recursive (int n) => int: {
-	if n <= 1 
-	then: n
-	else: fib_recursive(n - 1) + fib_recursive(n - 2);
 };

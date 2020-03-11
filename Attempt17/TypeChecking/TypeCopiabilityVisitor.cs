@@ -25,22 +25,27 @@ namespace Attempt17.TypeChecking {
                 return info.Match(
                     varInfo => throw new InvalidOperationException(),
                     funcInfo => TypeCopiability.Unconditional,
-                    structInfo => {
-                        var memCopiability = structInfo
-                            .Signature
-                            .Members
-                            .Select(x => x.Type)
-                            .Select(x => x.Accept(this))
-                            .ToArray();
-
-                        if (memCopiability.Any(x => x == TypeCopiability.None)) {
-                            return TypeCopiability.None;
-                        }
-                        else if (memCopiability.All(x => x == TypeCopiability.Unconditional)) {
-                            return TypeCopiability.Unconditional;
+                    compositeInfo => {
+                        if (compositeInfo.Kind == CompositeKind.Class) {
+                            return TypeCopiability.Conditional;
                         }
                         else {
-                            return TypeCopiability.Conditional;
+                            var memCopiability = compositeInfo
+                                .Signature
+                                .Members
+                                .Select(x => x.Type)
+                                .Select(x => x.Accept(this))
+                                .ToArray();
+
+                            if (memCopiability.Any(x => x == TypeCopiability.None)) {
+                                return TypeCopiability.None;
+                            }
+                            else if (memCopiability.All(x => x == TypeCopiability.Unconditional)) {
+                                return TypeCopiability.Unconditional;
+                            }
+                            else {
+                                return TypeCopiability.Conditional;
+                            }
                         }
                     });
             }

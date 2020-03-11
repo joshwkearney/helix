@@ -26,8 +26,8 @@ namespace Attempt17.TypeChecking {
                 return info.Match(
                     varInfo => throw new InvalidOperationException(),
                     funcInfo => ImmutableHashSet<LanguageType>.Empty,
-                    structInfo => {
-                        return structInfo
+                    compositeInfo => {
+                        return compositeInfo
                             .Signature
                             .Members
                             .Select(x => x.Type)

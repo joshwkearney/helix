@@ -1,4 +1,5 @@
-﻿using Attempt17.Types;
+﻿using Attempt17.TypeChecking;
+using Attempt17.Types;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -46,7 +47,14 @@ namespace Attempt17.CodeGeneration {
             return info.Match(
                 varInfo => throw new InvalidOperationException(),
                 funcInfo => "uint16_t",
-                structInfo => structInfo.Path.ToCName());
+                structInfo => {
+                    if (structInfo.Kind == CompositeKind.Class) {
+                        return "uintptr_t";
+                    }
+                    else {
+                        return structInfo.Path.ToCName();
+                    }
+                });
         }
 
         public string VisitVariableType(VariableType type) {

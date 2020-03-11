@@ -3,23 +3,23 @@ using System.Collections.Immutable;
 using Attempt17.Types;
 
 namespace Attempt17.Types {
-    public class StructMember {
+    public class ContainerMember {
         public string Name { get; }
 
         public LanguageType Type { get; }
 
-        public StructMember(string name, LanguageType type) {
+        public ContainerMember(string name, LanguageType type) {
             this.Name = name;
             this.Type = type;
         }
     }
 
-    public class StructSignature {
+    public class CompositeSignature {
         public string Name { get; }
 
-        public ImmutableList<StructMember> Members { get; }
+        public ImmutableList<ContainerMember> Members { get; }
 
-        public StructSignature(string name, ImmutableList<StructMember> mems) {
+        public CompositeSignature(string name, ImmutableList<ContainerMember> mems) {
             this.Name = name;
             this.Members = mems;
         }

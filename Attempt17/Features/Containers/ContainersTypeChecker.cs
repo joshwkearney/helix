@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt17.Features.Containers.Structs;
+using Attempt17.Features.Containers.Composites;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
@@ -15,7 +15,7 @@ namespace Attempt17.Features.Containers {
             }
 
             if (scope.FindStruct(namedType.Path).TryGetValue(out var structInfo)) {
-                return checker.Check(new NewStructSyntax<ParseTag>(syntax.Tag, structInfo, syntax.Instantiations), scope);
+                return checker.Check(new NewCompositeSyntax<ParseTag>(syntax.Tag, structInfo, syntax.Instantiations), scope);
             }
 
             throw TypeCheckingErrors.UnexpectedType(syntax.Tag.Location, namedType);

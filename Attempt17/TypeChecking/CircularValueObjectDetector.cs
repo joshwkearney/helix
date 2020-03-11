@@ -31,14 +31,16 @@ namespace Attempt17.TypeChecking {
             return info.Match(
                 varInfo => throw new InvalidOperationException(),
                 funcInfo => this.containingType == type,
-                structInfo => {
-                    foreach (var mem in structInfo.Signature.Members) {
-                        if (mem.Type == this.containingType) {
-                            return true;
-                        }
+                compositeInfo => {
+                    if (compositeInfo.Kind == CompositeKind.Struct) {
+                        foreach (var mem in compositeInfo.Signature.Members) {
+                            if (mem.Type == this.containingType) {
+                                return true;
+                            }
 
-                        if (mem.Type.Accept(this)) {
-                            return true;
+                            if (mem.Type.Accept(this)) {
+                                return true;
+                            }
                         }
                     }
 

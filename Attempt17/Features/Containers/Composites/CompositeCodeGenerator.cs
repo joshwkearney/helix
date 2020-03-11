@@ -4,14 +4,14 @@ using Attempt17.CodeGeneration;
 using Attempt17.Features.Variables;
 using Attempt17.TypeChecking;
 
-namespace Attempt17.Features.Containers.Structs {
-    public class StructsCodeGenerator {
+namespace Attempt17.Features.Containers.Composites {
+    public class CompositeCodeGenerator {
         private static int newCounter = 0;
 
-        public CBlock GenerateStructDeclaration(StructDeclarationSyntax<TypeCheckTag>  syntax, ICScope scope, ICodeGenerator gen) {
-            string name = syntax.StructInfo.Path.ToCName();
+        public CBlock GenerateCompositeDeclaration(CompositeDeclarationSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
+            string name = syntax.CompositeInfo.Path.ToCName();
 
-            if (syntax.StructInfo.Signature.Members.Any()) {
+            if (syntax.CompositeInfo.Signature.Members.Any()) {
                 // Generate forward declaration
                 gen.Header1Writer.Line($"typedef struct {name} {name};");
                 gen.Header1Writer.EmptyLine();
@@ -19,7 +19,7 @@ namespace Attempt17.Features.Containers.Structs {
                 // Generate struct definition
                 gen.Header2Writer.Line($"struct {name} {{");
 
-                foreach (var mem in syntax.StructInfo.Signature.Members) {
+                foreach (var mem in syntax.CompositeInfo.Signature.Members) {
                     var memType = gen.Generate(mem.Type);
 
                     gen.Header2Writer.Lines(CWriter.Indent($"{memType} {mem.Name};"));
@@ -37,7 +37,7 @@ namespace Attempt17.Features.Containers.Structs {
             return new CBlock("0");
         }
 
-        public CBlock GenerateNewStructSyntax(NewStructSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
+        public CBlock GenerateNewCompositeSyntax(NewCompositeSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
             var writer = new CWriter();
             var tempName = "$struct_new_" + newCounter++;
             var structType = gen.Generate(syntax.Tag.ReturnType);
@@ -59,12 +59,27 @@ namespace Attempt17.Features.Containers.Structs {
                 writer.Lines(inst.Code.SourceLines);
             }
 
-            // Write the temp variable
-            writer.Line("// New struct");
-            writer.VariableInit(structType, tempName);
+            if (syntax.CompositeInfo.Kind == CompositeKind.Class) {
+                var structName = syntax.CompositeInfo.Path.ToCName();
 
-            foreach (var inst in insts) {
-                writer.VariableAssignment($"{tempName}.{inst.MemberName}", inst.Code.Value);
+                // Write the temp variable
+                writer.Line("// New class");
+                writer.VariableInit(structType, tempName, $"(uintptr_t)malloc(sizeof({structName}))");
+
+                foreach (var inst in insts) {
+                    writer.VariableAssignment($"(({structName}*){tempName})->{inst.MemberName}", inst.Code.Value);
+                }
+
+                writer.Line($"{tempName} |= 1;");
+            }
+            else {
+                // Write the temp variable
+                writer.Line("// New struct");
+                writer.VariableInit(structType, tempName);
+
+                foreach (var inst in insts) {
+                    writer.VariableAssignment($"{tempName}.{inst.MemberName}", inst.Code.Value);
+                }
             }
 
             writer.EmptyLine();
@@ -72,7 +87,7 @@ namespace Attempt17.Features.Containers.Structs {
             return writer.ToBlock(tempName);
         }
 
-        public CBlock GenerateStructMemberAccess(StructMemberAccessSyntax syntax, ICScope scope, ICodeGenerator gen) {
+        public CBlock GenerateCompositeMemberAccess(CompositeMemberAccessSyntax syntax, ICScope scope, ICodeGenerator gen) {
             var target = gen.Generate(syntax.Target, scope);
             var writer = new CWriter();
 
@@ -90,7 +105,14 @@ namespace Attempt17.Features.Containers.Structs {
 
             writer.Lines(target.SourceLines);
 
-            return writer.ToBlock($"({target.Value}.{syntax.MemberName})");
+            if (syntax.CompositeInfo.Kind == CompositeKind.Struct) {
+                return writer.ToBlock($"({target.Value}.{syntax.MemberName})");
+            }
+            else {
+                var structName = syntax.CompositeInfo.Path.ToCName();
+
+                return writer.ToBlock($"((({structName}*)({target.Value} & ~1))->{syntax.MemberName})");
+            }
         }
     }
 }

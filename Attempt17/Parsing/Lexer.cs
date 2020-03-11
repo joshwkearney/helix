@@ -159,6 +159,9 @@ namespace Attempt17.Parsing {
             else if (id == "struct") {
                 return new Token(TokenKind.StructKeyword, location);
             }
+            else if (id == "class") {
+                return new Token(TokenKind.ClassKeyword, location);
+            }
             else if (id == "ref") {
                 return new Token(TokenKind.RefKeyword, location);
             }

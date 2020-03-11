@@ -1,4 +1,5 @@
-﻿using Attempt17.Types;
+﻿using Attempt17.TypeChecking;
+using Attempt17.Types;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,9 +9,11 @@ namespace Attempt17.CodeGeneration {
         private readonly string value;
         private readonly ICodeGenerator gen;
         private static int moveTemp = 0;
+        private IScope scope;
 
-        public ValueMoveVisitor(string value, ICodeGenerator gen) {
+        public ValueMoveVisitor(string value, IScope scope, ICodeGenerator gen) {
             this.value = value;
+            this.scope = scope;
             this.gen = gen;
         }
 
@@ -37,7 +40,25 @@ namespace Attempt17.CodeGeneration {
         }
 
         public CBlock VisitNamedType(NamedType type) {
-            throw new InvalidOperationException();
+            if (!this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
+                throw new Exception("This is not supposed to happen");
+            }
+
+            return info.Match(
+                varInfo => throw new InvalidOperationException(),
+                funcInfo => throw new InvalidOperationException(),
+                compositeInfo => {
+                    var varName = "$move_temp_" + moveTemp++;
+                    var varType = this.gen.Generate(type);
+                    var writer = new CWriter();
+
+                    writer.Line("// Class move");
+                    writer.Line($"{varType} {varName} = {this.value};");
+                    writer.Line($"{this.value} = NULL;");
+                    writer.EmptyLine();
+
+                    return writer.ToBlock(varName);
+                });
         }
 
         public CBlock VisitVariableType(VariableType type) {

@@ -6,7 +6,7 @@ namespace Attempt17.TypeChecking {
         public abstract T Match<T>(
             Func<VariableInfo, T> ifVarInfo,
             Func<FunctionInfo, T> ifFuncInfo,
-            Func<StructInfo, T> ifStructInfo);
+            Func<CompositeInfo, T> ifStructInfo);
 
         public LanguageType Type {
             get {
@@ -31,10 +31,10 @@ namespace Attempt17.TypeChecking {
                 _ => Option.None<FunctionInfo>());
         }
 
-        public IOption<StructInfo> AsStructInfo() {
+        public IOption<CompositeInfo> AsStructInfo() {
             return this.Match(
-                _ => Option.None<StructInfo>(),
-                _ => Option.None<StructInfo>(),
+                _ => Option.None<CompositeInfo>(),
+                _ => Option.None<CompositeInfo>(),
                 Option.Some);
         }
     }
@@ -54,7 +54,7 @@ namespace Attempt17.TypeChecking {
         public override T Match<T>(
             Func<VariableInfo, T> ifVarInfo,
             Func<FunctionInfo, T> ifFuncInfo,
-            Func<StructInfo, T> ifStructInfo) {
+            Func<CompositeInfo, T> ifStructInfo) {
 
             return ifFuncInfo(this);
         }
@@ -79,28 +79,35 @@ namespace Attempt17.TypeChecking {
         public override T Match<T>(
             Func<VariableInfo, T> ifVarInfo,
             Func<FunctionInfo, T> ifFuncInfo,
-            Func<StructInfo, T> ifStructInfo) {
+            Func<CompositeInfo, T> ifStructInfo) {
 
             return ifVarInfo(this);
         }
     }
 
-    public class StructInfo : TypeInfo {
-        public StructSignature Signature { get; }
+    public enum CompositeKind {
+        Struct, Class
+    }
+
+    public class CompositeInfo : TypeInfo {
+        public CompositeSignature Signature { get; }
 
         public IdentifierPath Path { get; }
 
         public LanguageType StructType => new NamedType(this.Path);
 
-        public StructInfo(StructSignature sig, IdentifierPath path) {
+        public CompositeKind Kind { get; }
+
+        public CompositeInfo(CompositeSignature sig, IdentifierPath path, CompositeKind kind) {
             this.Signature = sig;
             this.Path = path;
+            this.Kind = kind;
         }
 
         public override T Match<T>(
             Func<VariableInfo, T> ifVarInfo,
             Func<FunctionInfo, T> ifFuncInfo,
-            Func<StructInfo, T> ifStructInfo) {
+            Func<CompositeInfo, T> ifStructInfo) {
 
             return ifStructInfo(this);
         }

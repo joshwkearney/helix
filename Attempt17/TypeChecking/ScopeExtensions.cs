@@ -10,7 +10,7 @@ namespace Attempt17.TypeChecking {
             return scope.FindTypeInfo(path).SelectMany(x => x.AsFunctionInfo());
         }
 
-        public static IOption<StructInfo> FindStruct(this ITypeCheckScope scope, IdentifierPath path) {
+        public static IOption<CompositeInfo> FindStruct(this ITypeCheckScope scope, IdentifierPath path) {
             return scope.FindTypeInfo(path).SelectMany(x => x.AsStructInfo());
         }
 
@@ -32,7 +32,7 @@ namespace Attempt17.TypeChecking {
             return scope.FindTypeInfo(name).SelectMany(x => x.AsFunctionInfo());
         }
 
-        public static IOption<StructInfo> FindStruct(this ITypeCheckScope scope, string name) {
+        public static IOption<CompositeInfo> FindStruct(this ITypeCheckScope scope, string name) {
             return scope.FindTypeInfo(name).SelectMany(x => x.AsStructInfo());
         }
 

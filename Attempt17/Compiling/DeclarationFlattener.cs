@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Attempt17.Features.Containers.Structs;
+using Attempt17.Features.Containers.Composites;
 using Attempt17.Features.Functions;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
@@ -18,12 +18,12 @@ namespace Attempt17.Compiling {
             return new[] { new FunctionDeclarationSyntax<ParseTag>(decl.Tag, decl.FunctionInfo, decl.Body) };
         }
 
-        public IEnumerable<ISyntax<ParseTag>> VisitStructDeclaration(ParseStructDeclaration decl) {
-            var transformer = new StructDeclarationTransformer(decl.StructInfo.Path, this.scope);
+        public IEnumerable<ISyntax<ParseTag>> VisitCompositeDeclaration(ParseCompositeDeclaration decl) {
+            var transformer = new StructDeclarationTransformer(decl.CompositeInfo.Path, this.scope);
 
-            var newDecl = new StructDeclarationSyntax<ParseTag>(
+            var newDecl = new CompositeDeclarationSyntax<ParseTag>(
                 decl.Tag,
-                decl.StructInfo);
+                decl.CompositeInfo);
 
             return decl
                 .Declarations
@@ -59,12 +59,13 @@ namespace Attempt17.Compiling {
             return new ParseFunctionDeclaration(decl.Tag, newInfo, decl.Body);
         }
 
-        public IParseDeclaration VisitStructDeclaration(ParseStructDeclaration decl) {
-            var newInfo = new StructInfo(
-                decl.StructInfo.Signature,
-                this.containingStruct.Append(decl.StructInfo.Path));
+        public IParseDeclaration VisitCompositeDeclaration(ParseCompositeDeclaration decl) {
+            var newInfo = new CompositeInfo(
+                decl.CompositeInfo.Signature,
+                this.containingStruct.Append(decl.CompositeInfo.Path),
+                decl.CompositeInfo.Kind);
 
-            return new ParseStructDeclaration(decl.Tag, newInfo, decl.Declarations);
+            return new ParseCompositeDeclaration(decl.Tag, newInfo, decl.Declarations);
         }
     }
 }
