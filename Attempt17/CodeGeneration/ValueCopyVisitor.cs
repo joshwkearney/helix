@@ -28,8 +28,6 @@ namespace Attempt17.CodeGeneration {
             writer.Line($"{tempName}.data &= ~1;");
             writer.EmptyLine();
 
-            this.scope.SetVariableUndestructed(tempName, type);
-
             return writer.ToBlock(tempName);
         }
 
