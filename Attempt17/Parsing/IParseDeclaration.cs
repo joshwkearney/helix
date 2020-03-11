@@ -4,7 +4,7 @@ using Attempt17.Parsing;
 using Attempt17.Types;
 
 namespace Attempt17.Parsing {
-    public interface IParseDeclaration : ISyntax<ParseTag> {
+    public interface IParseDeclaration {
         public T Accept<T>(IParseDeclarationVisitor<T> visitor);
     }
 

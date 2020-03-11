@@ -8,7 +8,7 @@ using Attempt17.Types;
 
 namespace Attempt17.Features.Structs {
     public class StructsTypeChecker {
-        public void ModifyScopeForStructDeclaration(ParseStructDeclaration syntax, IScope scope) {
+        public void ModifyScopeForStructDeclaration(StructDeclarationSyntax<ParseTag> syntax, IScope scope) {
             // Check to make sure the name isn't taken
             if (scope.IsPathTaken(syntax.StructInfo.Path)) {
                 throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.StructInfo.Signature.Name);
@@ -17,7 +17,7 @@ namespace Attempt17.Features.Structs {
             scope.SetTypeInfo(syntax.StructInfo.Path, syntax.StructInfo);
         }
 
-        public ISyntax<TypeCheckTag> CheckStructDeclaration(ParseStructDeclaration syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckStructDeclaration(StructDeclarationSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             // Check to make sure that there are no duplicate member names
             foreach (var mem1 in syntax.StructInfo.Signature.Members) {
                 foreach (var mem2 in syntax.StructInfo.Signature.Members) {
@@ -36,7 +36,7 @@ namespace Attempt17.Features.Structs {
 
             var tag = new TypeCheckTag(VoidType.Instance);
 
-            return new StructDeclarationSyntaxTree(
+            return new StructDeclarationSyntax<TypeCheckTag>(
                 tag,
                 syntax.StructInfo);
         }

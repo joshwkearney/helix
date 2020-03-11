@@ -1,9 +1,9 @@
 ﻿function main () => void: {
 	var array <- [5, 8, 6, 2, 7, 3, 9];
 
-	selection_sort(array);
+    var p <- new Point { x = 4, y = 2 };
 
-	var a <- 4;
+    var x <- p.scale(5).norm();
 
 	void;
 };
@@ -11,6 +11,12 @@
 struct Point {
     int x;
     int y;
+
+    function norm () => int: this.x*this.x + this.y*this.y;
+
+    function scale (int factor) => Point: {
+        new Point { x = factor * this.x, y = factor * this.y };
+    };
 };
  
 function selection_sort (int[] array) => void: {
@@ -34,7 +40,7 @@ function selection_sort (int[] array) => void: {
 		array[smallest] = temp;
 
 		@i <- i + 1;
-	};
+    };
 };
 
 function fib_linear (int n) => int: {

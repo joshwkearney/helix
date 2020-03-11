@@ -7,9 +7,9 @@ namespace Attempt17.Features.Functions {
         private readonly FunctionsCodeGenerator codeGen = new FunctionsCodeGenerator();
 
         public void RegisterSyntax(ISyntaxRegistry registry) {
-            registry.RegisterParseTree<ParseFunctionDeclaration>(this.typeChecker.CheckFunctionDeclaration);
-            registry.RegisterDeclaration<ParseFunctionDeclaration>(this.typeChecker.ModifyDeclarationScope);
-            registry.RegisterSyntaxTree<FunctionDeclarationSyntax>(this.codeGen.GenerateFunctionDeclaration);
+            registry.RegisterParseTree<FunctionDeclarationSyntax<ParseTag>>(this.typeChecker.CheckFunctionDeclaration);
+            registry.RegisterDeclaration<FunctionDeclarationSyntax<ParseTag>>(this.typeChecker.ModifyDeclarationScope);
+            registry.RegisterSyntaxTree<FunctionDeclarationSyntax<TypeCheckTag>>(this.codeGen.GenerateFunctionDeclaration);
 
             registry.RegisterParseTree<InvokeParseSyntax>(this.typeChecker.CheckInvoke);
             registry.RegisterSyntaxTree<InvokeSyntax>(this.codeGen.GenerateInvoke);

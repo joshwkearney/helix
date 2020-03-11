@@ -8,18 +8,18 @@ namespace Attempt17.Features.Functions {
     public class FunctionsCodeGenerator {
         private int invokeTempCounter = 0;
 
-        public CBlock GenerateFunctionDeclaration(FunctionDeclarationSyntax syntax, ICScope scope, ICodeGenerator gen) {
+        public CBlock GenerateFunctionDeclaration(FunctionDeclarationSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
             scope = new FunctionCScope(scope);
 
             // Add the parameters to the scope
-            foreach (var par in syntax.Info.Signature.Parameters) {
+            foreach (var par in syntax.FunctionInfo.Signature.Parameters) {
                 scope.SetVariableUndestructed(par.Name, par.Type);
             }
 
             var writer = new CWriter();
             var body = gen.Generate(syntax.Body, scope);
-            var returnType = gen.Generate(syntax.Info.Signature.ReturnType);
-            var line = this.GenerateSignature(syntax.Info, gen) + " {";
+            var returnType = gen.Generate(syntax.FunctionInfo.Signature.ReturnType);
+            var line = this.GenerateSignature(syntax.FunctionInfo, gen) + " {";
             var varsToCleanUp = scope
                 .GetUndestructedVariables()
                 .ToImmutableDictionary(x => x.Key, x => x.Value);
@@ -34,11 +34,11 @@ namespace Attempt17.Features.Functions {
             writer.EmptyLine();
 
             gen.Header1Writer
-                .Line("typedef short " + syntax.Info.Path.ToCName() + ";")
+                .Line("typedef short " + syntax.FunctionInfo.Path.ToCName() + ";")
                 .EmptyLine();
 
             gen.Header2Writer
-                .Line(this.GenerateSignature(syntax.Info, gen) + ";")
+                .Line(this.GenerateSignature(syntax.FunctionInfo, gen) + ";")
                 .EmptyLine();
 
             return writer.ToBlock("0");

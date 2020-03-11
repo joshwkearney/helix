@@ -8,9 +8,9 @@ namespace Attempt17.Features.Structs {
         private readonly StructsCodeGenerator codeGen = new StructsCodeGenerator();
 
         public void RegisterSyntax(ISyntaxRegistry registry) {
-            registry.RegisterDeclaration<ParseStructDeclaration>(this.typeChecker.ModifyScopeForStructDeclaration);
-            registry.RegisterParseTree<ParseStructDeclaration>(this.typeChecker.CheckStructDeclaration);
-            registry.RegisterSyntaxTree<StructDeclarationSyntaxTree>(this.codeGen.GenerateStructDeclaration);
+            registry.RegisterDeclaration<StructDeclarationSyntax<ParseTag>>(this.typeChecker.ModifyScopeForStructDeclaration);
+            registry.RegisterParseTree<StructDeclarationSyntax<ParseTag>>(this.typeChecker.CheckStructDeclaration);
+            registry.RegisterSyntaxTree<StructDeclarationSyntax<TypeCheckTag>>(this.codeGen.GenerateStructDeclaration);
 
             registry.RegisterParseTree<NewSyntax<ParseTag>>(this.typeChecker.CheckNew);
             registry.RegisterSyntaxTree<NewSyntax<TypeCheckTag>>(this.codeGen.GenerateNewSyntax);

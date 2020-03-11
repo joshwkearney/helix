@@ -3,29 +3,29 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Attempt17.Features.Functions;
+using Attempt17.Features.Structs;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
 
 namespace Attempt17.Compiling {
-    public class DeclarationFlattener : IParseDeclarationVisitor<IEnumerable<IParseDeclaration>> {
+    public class DeclarationFlattener : IParseDeclarationVisitor<IEnumerable<ISyntax<ParseTag>>> {
         private readonly IScope scope;
 
         public DeclarationFlattener(IScope scope) {
             this.scope = scope;
         }
 
-        public IEnumerable<IParseDeclaration> VisitFunctionDeclaration(ParseFunctionDeclaration decl) {
-            return new[] { decl };
+        public IEnumerable<ISyntax<ParseTag>> VisitFunctionDeclaration(ParseFunctionDeclaration decl) {
+            return new[] { new FunctionDeclarationSyntax<ParseTag>(decl.Tag, decl.FunctionInfo, decl.Body) };
         }
 
-        public IEnumerable<IParseDeclaration> VisitStructDeclaration(ParseStructDeclaration decl) {
+        public IEnumerable<ISyntax<ParseTag>> VisitStructDeclaration(ParseStructDeclaration decl) {
             var transformer = new StructDeclarationTransformer(decl.StructInfo.Path, this.scope);
 
-            var newDecl = new ParseStructDeclaration(
+            var newDecl = new StructDeclarationSyntax<ParseTag>(
                 decl.Tag,
-                decl.StructInfo,
-                ImmutableList<IParseDeclaration>.Empty);
+                decl.StructInfo);
 
             return decl
                 .Declarations

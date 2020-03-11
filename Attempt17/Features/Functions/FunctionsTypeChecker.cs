@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Attempt17.Features.Functions {
     public class FunctionsTypeChecker {
-        public ISyntax<TypeCheckTag> CheckFunctionDeclaration(ParseFunctionDeclaration syntax, IScope scope, ITypeChecker checker) {
+        public ISyntax<TypeCheckTag> CheckFunctionDeclaration(FunctionDeclarationSyntax<ParseTag> syntax, IScope scope, ITypeChecker checker) {
             // Make sure the return type is defined
             if (!checker.IsTypeDefined(syntax.FunctionInfo.Signature.ReturnType, scope)) {
                 throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location, syntax.FunctionInfo.Signature.ReturnType.ToString());
@@ -77,13 +77,13 @@ namespace Attempt17.Features.Functions {
             var tag = new TypeCheckTag(VoidType.Instance);
             var info = new FunctionInfo(funcScope.Path, syntax.FunctionInfo.Signature);
 
-            return new FunctionDeclarationSyntax(
+            return new FunctionDeclarationSyntax<TypeCheckTag>(
                 tag,
                 info,
                 body);
         }
 
-        public void ModifyDeclarationScope(ParseFunctionDeclaration syntax, IScope scope) {
+        public void ModifyDeclarationScope(FunctionDeclarationSyntax<ParseTag> syntax, IScope scope) {
             // Make sure this path isn't taken
             if (scope.IsPathTaken(syntax.FunctionInfo.Path)) {
                 throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.FunctionInfo.Signature.Name);

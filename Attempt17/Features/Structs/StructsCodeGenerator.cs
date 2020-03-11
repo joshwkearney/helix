@@ -8,8 +8,8 @@ namespace Attempt17.Features.Structs {
     public class StructsCodeGenerator {
         private static int newCounter = 0;
 
-        public CBlock GenerateStructDeclaration(StructDeclarationSyntaxTree syntax, ICScope scope, ICodeGenerator gen) {
-            string name = syntax.Info.Path.ToCName();
+        public CBlock GenerateStructDeclaration(StructDeclarationSyntax<TypeCheckTag>  syntax, ICScope scope, ICodeGenerator gen) {
+            string name = syntax.StructInfo.Path.ToCName();
 
             // Generate forward declaration
             gen.Header1Writer.Line($"typedef struct {name} {name};");
@@ -18,7 +18,7 @@ namespace Attempt17.Features.Structs {
             // Generate struct definition
             gen.Header2Writer.Line($"struct {name} {{");
 
-            foreach (var mem in syntax.Info.Signature.Members) {
+            foreach (var mem in syntax.StructInfo.Signature.Members) {
                 var memType = gen.Generate(mem.Type);
 
                 gen.Header2Writer.Lines(CWriter.Indent($"{memType} {mem.Name};"));

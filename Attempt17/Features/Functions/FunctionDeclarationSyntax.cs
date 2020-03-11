@@ -1,16 +1,16 @@
 ﻿using Attempt17.TypeChecking;
 
 namespace Attempt17.Features.Functions {
-    public class FunctionDeclarationSyntax : ISyntax<TypeCheckTag> {
-        public TypeCheckTag Tag { get; }
+    public class FunctionDeclarationSyntax<T> : ISyntax<T> {
+        public T Tag { get; }
 
-        public FunctionInfo Info { get; }
+        public FunctionInfo FunctionInfo { get; }
 
-        public ISyntax<TypeCheckTag> Body { get; }
+        public ISyntax<T> Body { get; }
 
-        public FunctionDeclarationSyntax(TypeCheckTag tag, FunctionInfo info, ISyntax<TypeCheckTag> body) {
+        public FunctionDeclarationSyntax(T tag, FunctionInfo info, ISyntax<T> body) {
             this.Tag = tag;
-            this.Info = info;
+            this.FunctionInfo = info;
             this.Body = body;
         }
     }
