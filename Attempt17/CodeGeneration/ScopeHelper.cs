@@ -15,9 +15,7 @@ namespace Attempt17.CodeGeneration {
                     continue;
                 }
 
-                if (type is VariableType varType || type is ArrayType) {
-                    lines = lines.Add($"{destructor}({name});");
-                }
+                lines = lines.Add($"{destructor}({name});");
             }
 
             return lines;

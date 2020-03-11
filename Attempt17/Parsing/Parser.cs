@@ -623,20 +623,55 @@ namespace Attempt17.Parsing {
             return result;
         }
 
+        private MemberInstantiation<ParseTag> MemberInstantiation() {
+            var start = (Token<string>)this.Advance(TokenKind.Identifier);
+
+            this.Advance(TokenKind.AssignmentSign);
+
+            var value = this.TopExpression();
+
+            var loc = start.Location.Span(value.Tag.Location);
+            var tag = new ParseTag(loc);
+
+            return new MemberInstantiation<ParseTag>(start.Value, value);
+        }
+
         private ISyntax<ParseTag> NewExpression() {
             var start = this.Advance(TokenKind.NewKeyword);
             var type = this.TypeExpression();
 
-            this.Advance(TokenKind.OpenBracket);
+            if (this.TryAdvance(TokenKind.OpenBracket)) {
+                // Parse new array
+                var count = this.TopExpression();
 
-            var count = this.TopExpression();
+                this.Advance(TokenKind.CloseBracket);
 
-            this.Advance(TokenKind.CloseBracket);
+                var loc = start.Location.Span(count.Tag.Location);
+                var tag = new ParseTag(loc);
 
-            var loc = start.Location.Span(count.Tag.Location);
-            var tag = new ParseTag(loc);
+                return new ArrayRangeLiteralSyntax<ParseTag>(tag, type, count);
+            }
+            else if (this.TryAdvance(TokenKind.OpenBrace)) {
+                // Parse new struct
+                var insts = ImmutableList<MemberInstantiation<ParseTag>>.Empty;
 
-            return new ArrayRangeLiteralSyntax<ParseTag>(tag, type, count);
+                while (!this.Peek(TokenKind.CloseBrace)) {
+                    insts = insts.Add(this.MemberInstantiation());
+
+                    if (!this.Peek(TokenKind.CloseBrace)) {
+                        this.Advance(TokenKind.Comma);
+                    }
+                }
+
+                var end = this.Advance(TokenKind.CloseBrace);
+                var loc = start.Location.Span(end.Location);
+                var tag = new ParseTag(loc);
+
+                return new NewSyntax<ParseTag>(tag, type, insts);
+            }
+            else {
+                throw ParsingErrors.UnexpectedToken(this.Advance());
+            }
         }
 
         private ISyntax<ParseTag> BoolLiteral() {

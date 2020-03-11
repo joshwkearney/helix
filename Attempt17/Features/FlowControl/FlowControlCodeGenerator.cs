@@ -93,6 +93,7 @@ namespace Attempt17.Features.FlowControl {
                 var returnType = gen.Generate(syntax.Statements.Last().Tag.ReturnType);
                 var returnVal = stats.Last().Value;
                 var tempName = $"$block_return_" + this.blockCounter++;
+
                 var varsToCleanUp = scope
                     .GetUndestructedVariables()
                     .ToImmutableDictionary(x => x.Key, x => x.Value)
@@ -102,6 +103,7 @@ namespace Attempt17.Features.FlowControl {
                             .Zip(stats, (x, y) => new KeyValuePair<string, LanguageType>(y.Value, x.Tag.ReturnType))
                             .SkipLast(1)
                     );
+
                 var lines = stats
                     .Select(x => x.SourceLines)
                     .Aggregate((x, y) => x.AddRange(y));

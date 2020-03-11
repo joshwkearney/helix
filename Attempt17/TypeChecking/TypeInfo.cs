@@ -10,6 +10,15 @@ namespace Attempt17.TypeChecking {
             Func<FunctionInfo, T> ifFuncInfo,
             Func<StructInfo, T> ifStructInfo);
 
+        public LanguageType Type {
+            get {
+                return this.Match(
+                    x => x.VariableType,
+                    x => x.FunctionType,
+                    x => x.StructType);
+            }
+        }
+
         public IOption<VariableInfo> AsVariableInfo() {
             return this.Match(
                 Option.Some,
@@ -56,14 +65,14 @@ namespace Attempt17.TypeChecking {
     public class VariableInfo : TypeInfo {
         public VariableDefinitionKind DefinitionKind { get; }
 
-        public LanguageType Type { get; }
+        public LanguageType VariableType { get; }
 
         public IdentifierPath Path { get; }
 
         public bool IsFunctionParameter { get; }
 
         public VariableInfo(LanguageType type, VariableDefinitionKind kind, IdentifierPath path, bool isFuncParameter = false) {
-            this.Type = type;
+            this.VariableType = type;
             this.DefinitionKind = kind;
             this.Path = path;
             this.IsFunctionParameter = isFuncParameter;

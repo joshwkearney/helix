@@ -2,6 +2,8 @@
 using Attempt17.Parsing;
 using Attempt17.Types;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Attempt17.TypeChecking {
@@ -60,6 +62,13 @@ namespace Attempt17.TypeChecking {
                 location,
                 "Expected Array Type",
                 $"Expected an array type, but recieved '{actual}'");
+        }
+
+        public static Exception ExpectedStructType(TokenLocation location, LanguageType actual) {
+            return new CompilerException(
+                location,
+                "Expected Struct Type",
+                $"Expected a struct type, but recieved '{actual}'");
         }
 
         public static Exception TypeUndefined(TokenLocation loc, string name) {
@@ -168,6 +177,24 @@ namespace Attempt17.TypeChecking {
                 loc,
                 "Invalid Variable Access",
                 $"The function parameter '{par}' cannot be accessed as if it were a variable type.");
+        }
+
+        public static Exception NewObjectMissingFields(TokenLocation loc, LanguageType typeName, IEnumerable<string> missingFields) {
+            string missing = string.Join(", ", missingFields.Select(x => "'" + x + "'"));
+
+            return new CompilerException(
+                loc,
+                "Fields Missing in Object Instantiation",
+                $"The following fields are missing in the instantiation of an object of type '{typeName.ToString()}': {missing}");
+        }
+
+        public static Exception NewObjectHasExtraneousFields(TokenLocation loc, LanguageType typeName, IEnumerable<string> extraFields) {
+            string extra = string.Join(", ", extraFields.Select(x => "'" + x + "'"));
+
+            return new CompilerException(
+                loc,
+                "Extraneous Fields Present in Object Instantiation",
+                $"The following extraneous fields are present in the instantiation of an object of type '{typeName.ToString()}': {extra}");
         }
     }
 }

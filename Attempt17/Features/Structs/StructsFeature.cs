@@ -1,4 +1,6 @@
 ﻿using System;
+using Attempt17.Parsing;
+using Attempt17.TypeChecking;
 
 namespace Attempt17.Features.Structs {
     public class StructsFeature : ILanguageFeature {
@@ -9,6 +11,9 @@ namespace Attempt17.Features.Structs {
             registry.RegisterDeclaration<StructDeclarationParseTree>(this.typeChecker.ModifyScopeForStructDeclaration);
             registry.RegisterParseTree<StructDeclarationParseTree>(this.typeChecker.CheckStructDeclaration);
             registry.RegisterSyntaxTree<StructDeclarationSyntaxTree>(this.codeGen.GenerateStructDeclaration);
+
+            registry.RegisterParseTree<NewSyntax<ParseTag>>(this.typeChecker.CheckNew);
+            registry.RegisterSyntaxTree<NewSyntax<TypeCheckTag>>(this.codeGen.GenerateNewSyntax);
         }
     }
 }
