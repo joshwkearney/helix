@@ -391,7 +391,7 @@ namespace Attempt17.Parsing {
         }
 
         private ISyntax<ParseTag> MultiplyExpression() {
-            var first = this.MemberUsageSyntax();
+            var first = this.InvokeExpression();
 
             while (true) {
                 if (!this.Peek(TokenKind.MultiplySign)) {
@@ -400,7 +400,7 @@ namespace Attempt17.Parsing {
 
                 var tok = this.Advance().Kind;
                 var op = tok == TokenKind.MultiplySign ? BinarySyntaxKind.Multiply : BinarySyntaxKind.Multiply;
-                var second = this.MemberUsageSyntax();
+                var second = this.InvokeExpression();
                 var loc = first.Tag.Location.Span(second.Tag.Location);
 
                 first = new BinarySyntax<ParseTag>(
@@ -413,8 +413,46 @@ namespace Attempt17.Parsing {
             return first;
         }
 
+
+        private ISyntax<ParseTag> InvokeExpression() {
+            var first = this.MemberUsageSyntax();
+
+            while (true) {
+                if (this.TryAdvance(TokenKind.OpenParenthesis)) {
+                    var args = ImmutableList<ISyntax<ParseTag>>.Empty;
+
+                    while (!this.Peek(TokenKind.CloseParenthesis)) {
+                        args = args.Add(this.TopExpression());
+
+                        if (!this.Peek(TokenKind.CloseParenthesis)) {
+                            this.Advance(TokenKind.Comma);
+                        }
+                    }
+
+                    var last = this.Advance(TokenKind.CloseParenthesis);
+                    var loc = first.Tag.Location.Span(last.Location);
+
+                    first = new InvokeParseSyntax(
+                        new ParseTag(loc),
+                        first,
+                        args);
+                }
+                else if (this.TryAdvance(TokenKind.OpenBracket)) {
+                    var inner = this.TopExpression();
+                    var last = this.Advance(TokenKind.CloseBracket);
+                    var loc = first.Tag.Location.Span(last.Location);
+                    var tag = new ParseTag(loc);
+
+                    first = new ArrayIndexSyntax<ParseTag>(tag, first, inner);
+                }
+                else {
+                    return first;
+                }
+            }
+        }
+
         private ISyntax<ParseTag> MemberUsageSyntax() {
-            var first = InvokeExpression();
+            var first = this.Atom();
 
             if (this.Peek(TokenKind.Dot)) {
                 var segs = ImmutableList<IMemberUsageSegment>.Empty;
@@ -452,43 +490,6 @@ namespace Attempt17.Parsing {
             }
             else {
                 return first;
-            }
-        }
-
-        private ISyntax<ParseTag> InvokeExpression() {
-            var first = this.Atom();
-
-            while (true) {
-                if (this.TryAdvance(TokenKind.OpenParenthesis)) {
-                    var args = ImmutableList<ISyntax<ParseTag>>.Empty;
-
-                    while (!this.Peek(TokenKind.CloseParenthesis)) {
-                        args = args.Add(this.TopExpression());
-
-                        if (!this.Peek(TokenKind.CloseParenthesis)) {
-                            this.Advance(TokenKind.Comma);
-                        }
-                    }
-
-                    var last = this.Advance(TokenKind.CloseParenthesis);
-                    var loc = first.Tag.Location.Span(last.Location);
-
-                    first = new InvokeParseSyntax(
-                        new ParseTag(loc),
-                        first,
-                        args);
-                }
-                else if (this.TryAdvance(TokenKind.OpenBracket)) {
-                    var inner = this.TopExpression();
-                    var last = this.Advance(TokenKind.CloseBracket);
-                    var loc = first.Tag.Location.Span(last.Location);
-                    var tag = new ParseTag(loc);
-
-                    first = new ArrayIndexSyntax<ParseTag>(tag, first, inner);
-                }
-                else {
-                    return first;
-                }
             }
         }
 
