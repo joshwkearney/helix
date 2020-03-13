@@ -44,7 +44,7 @@ namespace Attempt17.Compiling {
 
         public IParseDeclaration VisitFunctionDeclaration(ParseFunctionDeclaration decl) {
             var structType = new NamedType(this.containingStruct);
-            var firstParam = new FunctionParameter("this", structType);
+            var firstParam = new Parameter("this", structType);
 
             var newSig = new FunctionSignature(
                 decl.FunctionInfo.Signature.Name,

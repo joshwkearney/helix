@@ -28,11 +28,10 @@ namespace Attempt17.TypeChecking {
                 throw new Exception("This isn't supposed to happen");
             }
 
-            return info.Match(
-                varInfo => throw new InvalidOperationException(),
-                funcInfo => this.containingType == type,
-                compositeInfo => {
-                    if (compositeInfo.Kind == CompositeKind.Struct) {
+            return info.Accept(new IdentifierTargetVisitor<bool>() {
+                HandleFunction = _ => this.containingType == type,
+                HandleComposite = compositeInfo => {
+                    if (compositeInfo.Kind == CompositeKind.Struct || compositeInfo.Kind == CompositeKind.Union) {
                         foreach (var mem in compositeInfo.Signature.Members) {
                             if (mem.Type == this.containingType) {
                                 return true;
@@ -45,7 +44,8 @@ namespace Attempt17.TypeChecking {
                     }
 
                     return false;
-                });
+                }
+            });
         }
 
         public bool VisitVariableType(VariableType type) {

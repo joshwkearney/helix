@@ -44,21 +44,25 @@ namespace Attempt17.CodeGeneration {
                 throw new Exception("This is not supposed to happen");
             }
 
-            return info.Match(
-                varInfo => throw new InvalidOperationException(),
-                funcInfo => throw new InvalidOperationException(),
-                compositeInfo => {
-                    var varName = "$move_temp_" + moveTemp++;
-                    var varType = this.gen.Generate(type);
-                    var writer = new CWriter();
+            return info.Accept(new IdentifierTargetVisitor<CBlock>() {
+                HandleComposite = compositeInfo => {
+                    if (compositeInfo.Kind == CompositeKind.Class) {
+                        var varName = "$move_temp_" + moveTemp++;
+                        var varType = this.gen.Generate(type);
+                        var writer = new CWriter();
 
-                    writer.Line("// Class move");
-                    writer.Line($"{varType} {varName} = {this.value};");
-                    writer.Line($"{this.value} = 0;");
-                    writer.EmptyLine();
+                        writer.Line("// Class move");
+                        writer.Line($"{varType} {varName} = {this.value};");
+                        writer.Line($"{this.value} = 0;");
+                        writer.EmptyLine();
 
-                    return writer.ToBlock(varName);
-                });
+                        return writer.ToBlock(varName);
+                    }
+                    else {
+                        throw new InvalidOperationException();
+                    }
+                }
+            });
         }
 
         public CBlock VisitVariableType(VariableType type) {

@@ -22,7 +22,7 @@ namespace Attempt17.TypeChecking {
         public bool VisitNamedType(NamedType type) {
             var opt = this.scope.FindTypeInfo(type.Path);
 
-            if (!opt.Any() || opt.GetValue().AsVariableInfo().Any()) {
+            if (!opt.Any() || opt.GetValue().AsVariable().Any()) {
                 return false;
             }
 

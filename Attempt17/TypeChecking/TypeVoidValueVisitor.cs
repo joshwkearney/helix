@@ -45,14 +45,13 @@ namespace Attempt17.TypeChecking {
                 throw new Exception("This should never happen");
             }
 
-            return info.Match(
-                varInfo => throw new InvalidOperationException(),
-                funcInfo => Option.None<ISyntax<TypeCheckTag>>(),
-                compositeInfo => {
+            return info.Accept(new IdentifierTargetVisitor<IOption<ISyntax<TypeCheckTag>>>() {
+                HandleFunction = _ => Option.None<ISyntax<TypeCheckTag>>(),
+                HandleComposite = compositeInfo => {
                     if (compositeInfo.Kind == CompositeKind.Class) {
                         return Option.None<ISyntax<TypeCheckTag>>();
                     }
-                    else {
+                    else if (compositeInfo.Kind == CompositeKind.Struct) {
                         var allDefault = compositeInfo.Signature
                             .Members
                             .Select(x => new {
@@ -61,6 +60,7 @@ namespace Attempt17.TypeChecking {
                             })
                             .ToArray();
 
+                        // Every member of a struct must have a default value
                         if (!allDefault.All(x => x.Value.Any())) {
                             return Option.None<ISyntax<TypeCheckTag>>();
                         }
@@ -69,11 +69,34 @@ namespace Attempt17.TypeChecking {
                             .Select(x => new MemberInstantiation<TypeCheckTag>(x.Name, x.Value.GetValue()))
                             .ToImmutableList();
 
-                        var tag = new TypeCheckTag(compositeInfo.StructType);
+                        var tag = new TypeCheckTag(compositeInfo.Type);
 
                         return Option.Some(new NewCompositeSyntax<TypeCheckTag>(tag, compositeInfo, insts));
                     }
-                });
+                    else if (compositeInfo.Kind == CompositeKind.Union) {
+                        var mem = compositeInfo.Signature.Members.FirstOrDefault();
+                        var tag = new TypeCheckTag(compositeInfo.Type);
+                        var insts = ImmutableList<MemberInstantiation<TypeCheckTag>>.Empty;
+
+                        // If there are no members, then there is a default value
+                        if (mem == null) {
+                            return Option.Some(new NewCompositeSyntax<TypeCheckTag>(tag, compositeInfo, insts));
+                        }
+
+                        // The first member must have a default value
+                        if (!mem.Type.Accept(this).TryGetValue(out var voidValue)) {
+                            return Option.None<ISyntax<TypeCheckTag>>();
+                        }
+
+                        insts = insts.Add(new MemberInstantiation<TypeCheckTag>(mem.Name, voidValue));
+
+                        return Option.Some(new NewCompositeSyntax<TypeCheckTag>(tag, compositeInfo, insts));
+                    }
+                    else {
+                        throw new Exception();
+                    }
+                }
+            });
         }
 
         public IOption<ISyntax<TypeCheckTag>> VisitVariableType(VariableType type) {

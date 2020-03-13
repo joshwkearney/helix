@@ -3,18 +3,18 @@
 namespace Attempt17.TypeChecking {
     public static class ScopeExtensions {
         public static IOption<VariableInfo> FindVariable(this ITypeCheckScope scope, IdentifierPath path) {
-            return scope.FindTypeInfo(path).SelectMany(x => x.AsVariableInfo());
+            return scope.FindTypeInfo(path).SelectMany(x => x.AsVariable());
         }
 
         public static IOption<FunctionInfo> FindFunction(this ITypeCheckScope scope, IdentifierPath path) {
-            return scope.FindTypeInfo(path).SelectMany(x => x.AsFunctionInfo());
+            return scope.FindTypeInfo(path).SelectMany(x => x.AsFunction());
         }
 
-        public static IOption<CompositeInfo> FindStruct(this ITypeCheckScope scope, IdentifierPath path) {
-            return scope.FindTypeInfo(path).SelectMany(x => x.AsStructInfo());
+        public static IOption<CompositeInfo> FindComposite(this ITypeCheckScope scope, IdentifierPath path) {
+            return scope.FindTypeInfo(path).SelectMany(x => x.AsComposite());
         }
 
-        public static IOption<TypeInfo> FindTypeInfo(this ITypeCheckScope scope, string name) {
+        public static IOption<IIdentifierTarget> FindTypeInfo(this ITypeCheckScope scope, string name) {
             foreach (var path in GetPossiblePaths(scope.Path, name)) {
                 if (scope.FindTypeInfo(path).TryGetValue(out var info)) {
                     return Option.Some(info);
@@ -25,15 +25,15 @@ namespace Attempt17.TypeChecking {
         }
 
         public static IOption<VariableInfo> FindVariable(this ITypeCheckScope scope, string name) {
-            return scope.FindTypeInfo(name).SelectMany(x => x.AsVariableInfo());
+            return scope.FindTypeInfo(name).SelectMany(x => x.AsVariable());
         }
 
         public static IOption<FunctionInfo> FindFunction(this ITypeCheckScope scope, string name) {
-            return scope.FindTypeInfo(name).SelectMany(x => x.AsFunctionInfo());
+            return scope.FindTypeInfo(name).SelectMany(x => x.AsFunction());
         }
 
-        public static IOption<CompositeInfo> FindStruct(this ITypeCheckScope scope, string name) {
-            return scope.FindTypeInfo(name).SelectMany(x => x.AsStructInfo());
+        public static IOption<CompositeInfo> FindComposite(this ITypeCheckScope scope, string name) {
+            return scope.FindTypeInfo(name).SelectMany(x => x.AsComposite());
         }
 
         public static bool IsPathTaken(this ITypeCheckScope scope, IdentifierPath path) {

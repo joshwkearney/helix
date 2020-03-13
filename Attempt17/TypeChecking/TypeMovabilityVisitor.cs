@@ -23,13 +23,13 @@ namespace Attempt17.TypeChecking {
 
         public bool VisitNamedType(NamedType type) {
             if (!this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
-                throw new Exception("This is no supposed to happen");
+                throw new Exception("This is not supposed to happen");
             }
 
-            return info.Match(
-                varInfo => false,
-                funcInfo => false,
-                compositeInfo => compositeInfo.Kind == CompositeKind.Class);
+            return info.Accept(new IdentifierTargetVisitor<bool>() {
+                HandleFunction = _ => false,
+                HandleComposite = compositeInfo => compositeInfo.Kind == CompositeKind.Class
+            });
         }
 
         public bool VisitVariableType(VariableType type) {

@@ -3,15 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using Attempt17.TypeChecking;
 
 namespace Attempt17.CodeGeneration {
     public class TypeDestructorGenerator : ITypeVisitor<IOption<string>> {
         private readonly ICodeWriter headerWriter;
         private readonly ICodeGenerator gen;
         private readonly ICScope scope;
-        private readonly Dictionary<LanguageType, IOption<string>> generatedTypes = new Dictionary<LanguageType, IOption<string>>();
+        private readonly Dictionary<LanguageType, IOption<string>> generatedTypes
+            = new Dictionary<LanguageType, IOption<string>>();
 
-        public TypeDestructorGenerator(ICodeWriter headerWriter, ICodeGenerator gen, ICScope scope) {
+        public TypeDestructorGenerator(ICodeWriter headerWriter, ICodeGenerator gen,
+                                       ICScope scope) {
             this.headerWriter = headerWriter;
             this.gen = gen;
             this.scope = scope;
@@ -25,7 +28,10 @@ namespace Attempt17.CodeGeneration {
             var destructorName = "$destructor_" + type.ToFriendlyString();
             var arrayTypeName = this.gen.Generate(type);
             var dataTypeName = this.gen.Generate(type.ElementType);
-            var hasInnerDestructor = type.ElementType.Accept(this).TryGetValue(out string innerDestructor);
+
+            var hasInnerDestructor = type.ElementType
+                .Accept(this)
+                .TryGetValue(out string innerDestructor);
 
             this.headerWriter.Line($"inline void {destructorName}({arrayTypeName} obj) {{");
             this.headerWriter.Lines(CWriter.Indent($"if ((obj.data & 1) == 1) {{"));
@@ -33,7 +39,7 @@ namespace Attempt17.CodeGeneration {
             if (hasInnerDestructor) {
                 var intType = this.gen.Generate(IntType.Instance);
                 var innerType = this.gen.Generate(type.ElementType);
-           
+
                 this.headerWriter.Lines(
                     CWriter.Indent(2, $"for ({intType} i = 0; i < obj.size; i++) {{"));
 
@@ -72,69 +78,135 @@ namespace Attempt17.CodeGeneration {
                 throw new Exception("This is not supposed to happen");
             }
 
-            return info.Match(
-                varInfo => throw new InvalidOperationException(),
-                funcInfo => Option.None<string>(),
-                compositeInfo => {
-                    var memberDestructors = compositeInfo
-                        .Signature
-                        .Members
-                        .SelectMany(x => x.Type.Accept(this).AsEnumerable().Select(y => new {
-                            MemberName = x.Name,
-                            Destructor = y
-                        }))
-                        .ToArray();
-
-                    // If we're a struct and none of the members have destructors, we don't need a destructor
-                    if (!memberDestructors.Any() && compositeInfo.Kind == TypeChecking.CompositeKind.Struct) {
-                        this.generatedTypes[type] = Option.None<string>();
-                        return Option.None<string>();
+            return info.Accept(new IdentifierTargetVisitor<IOption<string>>() {
+                HandleFunction = _ => Option.None<string>(),
+                HandleComposite = compositeInfo => {
+                    if (compositeInfo.Kind == CompositeKind.Struct) {
+                        return this.DestructStruct(type, compositeInfo);
                     }
-
-                    var destructorName = "$destructor_" + type.ToFriendlyString();
-                    var structTypeName = this.gen.Generate(type);
-                    var structName = compositeInfo.Path.ToCName();
-
-                    // Write the function signature
-                    this.headerWriter.Line($"inline void {destructorName}({structTypeName} obj) {{");
-
-                    // If we're a class, make sure the destructor bit is set to 1
-                    if (compositeInfo.Kind == TypeChecking.CompositeKind.Class) {
-                        this.headerWriter.Lines(CWriter.Indent($"if ((obj & 1) == 0) {{"));
-                        this.headerWriter.Lines(CWriter.Indent(2, "return;"));
-                        this.headerWriter.Lines(CWriter.Indent("}"));
-                        this.headerWriter.Lines(CWriter.Indent("else {"));
-                        this.headerWriter.Lines(CWriter.Indent(2, "obj &= ~1;"));
-                        this.headerWriter.Lines(CWriter.Indent("}"));
-                        this.headerWriter.EmptyLine();
+                    else if (compositeInfo.Kind == CompositeKind.Class) {
+                        return this.DestructClass(type, compositeInfo);
                     }
-
-                    // Write the member destructors
-                    foreach (var destructor in memberDestructors) {
-                        if (compositeInfo.Kind == TypeChecking.CompositeKind.Struct) {
-                            this.headerWriter.Lines(CWriter.Indent($"{destructor.Destructor}(obj.{destructor.MemberName});"));
-                        }
-                        else {
-                            this.headerWriter.Lines(CWriter.Indent($"{destructor.Destructor}((({structName}*)obj)->{destructor.MemberName});"));
-                        }
+                    else if (compositeInfo.Kind == CompositeKind.Union) {
+                        return this.DestructUnion(type, compositeInfo);
                     }
-
-                    if (memberDestructors.Any()) {
-                        this.headerWriter.EmptyLine();
+                    else {
+                        throw new Exception();
                     }
+                }
+            });
+        }
 
-                    // If we're a class, free the pointer also
-                    if (compositeInfo.Kind == TypeChecking.CompositeKind.Class) {
-                        this.headerWriter.Lines(CWriter.Indent($"free(({structName}*)obj);"));
-                    }
+        private IOption<string> DestructUnion(NamedType type, CompositeInfo compositeInfo) {
+            var memberDestructors = compositeInfo
+                .Signature
+                .Members
+                .SelectMany((x, i) => x.Type.Accept(this).AsEnumerable().Select(y => new {
+                    MemberName = x.Name,
+                    Destructor = y,
+                    Index = i
+                }))
+                .ToArray();
 
-                    this.headerWriter.Line("}");
-                    this.headerWriter.EmptyLine();
+            // If none of the members have destructors, we don't need a destructor
+            if (!memberDestructors.Any()) {
+                this.generatedTypes[type] = Option.None<string>();
+                return Option.None<string>();
+            }
 
-                    this.generatedTypes[type] = Option.Some(destructorName);
+            var destructorName = "$destructor_" + type.ToFriendlyString();
+            var unionTypeName = this.gen.Generate(type);
 
-                    return Option.Some(destructorName);
-                });
+            // Write the function signature
+            this.headerWriter.Line($"inline void {destructorName}({unionTypeName} obj) {{");
+            this.headerWriter.Lines(CWriter.Indent("switch (obj.tag) {"));
+
+            // Write the member destructors
+            foreach (var destructor in memberDestructors) {
+                this.headerWriter.Lines(CWriter.Indent(2, $"case {destructor.Index}: {{"));
+                this.headerWriter.Lines(CWriter.Indent(3, $"{destructor.Destructor}(obj.data.{destructor.MemberName});"));
+                this.headerWriter.Lines(CWriter.Indent(3, $"break;"));
+                this.headerWriter.Lines(CWriter.Indent(2, $"}}"));
+            }
+
+            this.headerWriter.Lines(CWriter.Indent(1, $"}}"));
+            this.headerWriter.Line("}");
+            this.headerWriter.EmptyLine();
+
+            this.generatedTypes[type] = Option.Some(destructorName);
+
+            return Option.Some(destructorName);
+        }
+
+        private IOption<string> DestructStruct(NamedType type, CompositeInfo compositeInfo) {
+            var memberDestructors = compositeInfo
+                .Signature
+                .Members
+                .SelectMany(x => x.Type.Accept(this).AsEnumerable().Select(y => new {
+                    MemberName = x.Name,
+                    Destructor = y
+                }))
+                .ToArray();
+
+            // If none of the members have destructors, we don't need a destructor
+            if (!memberDestructors.Any()) {
+                this.generatedTypes[type] = Option.None<string>();
+                return Option.None<string>();
+            }
+
+            var destructorName = "$destructor_" + type.ToFriendlyString();
+            var structTypeName = this.gen.Generate(type);
+
+            // Write the function signature
+            this.headerWriter.Line($"inline void {destructorName}({structTypeName} obj) {{");
+
+            // Write the member destructors
+            foreach (var destructor in memberDestructors) {
+                this.headerWriter.Lines(CWriter.Indent($"{destructor.Destructor}(obj.{destructor.MemberName});"));
+            }
+
+            this.headerWriter.Line("}");
+            this.headerWriter.EmptyLine();
+
+            this.generatedTypes[type] = Option.Some(destructorName);
+
+            return Option.Some(destructorName);
+        }
+
+        private IOption<string> DestructClass(NamedType type, CompositeInfo compositeInfo) {
+            var memberDestructors = compositeInfo
+                .Signature
+                .Members
+                .SelectMany(x => x.Type.Accept(this).AsEnumerable().Select(y => new {
+                    MemberName = x.Name,
+                    Destructor = y
+                }))
+                .ToArray();
+
+            var destructorName = "$destructor_" + type.ToFriendlyString();
+            var structTypeName = this.gen.Generate(type);
+            var structName = compositeInfo.Path.ToCName();
+
+            // Write the function signature
+            this.headerWriter.Line($"inline void {destructorName}({structTypeName} obj) {{");
+
+            // Make sure the destructor bit is set to 1
+            this.headerWriter.Lines(CWriter.Indent($"if ((obj & 1) == 1) {{"));
+
+            // Write the member destructors
+            foreach (var destructor in memberDestructors) {
+                this.headerWriter.Lines(CWriter.Indent(2, $"{destructor.Destructor}((({structName}*)(obj & ~1))->{destructor.MemberName});"));
+            }
+
+            // Also free the pointer
+            this.headerWriter.Lines(CWriter.Indent(2, $"free(({structName}*)obj);"));
+            this.headerWriter.Lines(CWriter.Indent("}"));
+            this.headerWriter.Line("}");
+            this.headerWriter.EmptyLine();
+
+            this.generatedTypes[type] = Option.Some(destructorName);
+
+            return Option.Some(destructorName);
         }
 
         public IOption<string> VisitVariableType(VariableType type) {

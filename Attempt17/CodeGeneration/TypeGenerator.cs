@@ -44,17 +44,17 @@ namespace Attempt17.CodeGeneration {
                 throw new Exception("This isn't supposed to happen");
             }
 
-            return info.Match(
-                varInfo => throw new InvalidOperationException(),
-                funcInfo => "uint16_t",
-                structInfo => {
+            return info.Accept(new IdentifierTargetVisitor<string>() {
+                HandleFunction = _ => "uint16_t",
+                HandleComposite = structInfo => {
                     if (structInfo.Kind == CompositeKind.Class) {
                         return "uintptr_t";
                     }
                     else {
                         return structInfo.Path.ToCName();
                     }
-                });
+                }
+            });
         }
 
         public string VisitVariableType(VariableType type) {

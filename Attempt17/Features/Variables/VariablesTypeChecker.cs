@@ -18,7 +18,7 @@ namespace Attempt17.Features.Variables {
                 }
 
                 if (syntax.Kind == VariableAccessKind.ValueAccess) {
-                    var copiability = checker.GetTypeCopiability(info.VariableType, scope);
+                    var copiability = checker.GetTypeCopiability(info.Type, scope);
                     ImmutableHashSet<VariableCapture> captured;
 
                     if (copiability == TypeCopiability.Unconditional) {
@@ -29,17 +29,17 @@ namespace Attempt17.Features.Variables {
                         captured = new[] { cap }.ToImmutableHashSet();
                     }
                     else {
-                        throw TypeCheckingErrors.TypeNotCopiable(syntax.Tag.Location, info.VariableType);
+                        throw TypeCheckingErrors.TypeNotCopiable(syntax.Tag.Location, info.Type);
                     }
 
-                    var tag = new TypeCheckTag(info.VariableType, captured);
+                    var tag = new TypeCheckTag(info.Type, captured);
 
                     return new VariableAccessSyntax(tag, syntax.Kind, info);
                 }
                 else {
                     var cap = new VariableCapture(VariableCaptureKind.IdentityCapture, info.Path);
                     var tag = new TypeCheckTag(
-                        new VariableType(info.VariableType),
+                        new VariableType(info.Type),
                         new[] { cap }.ToImmutableHashSet());
 
                     if (info.DefinitionKind == VariableDefinitionKind.Local && info.IsFunctionParameter) {
@@ -50,7 +50,7 @@ namespace Attempt17.Features.Variables {
                 }
             }
             else if (scope.FindFunction(syntax.VariableName).TryGetValue(out var funcInfo)) {
-                var tag = new TypeCheckTag(funcInfo.FunctionType);
+                var tag = new TypeCheckTag(funcInfo.Type);
 
                 return new FunctionLiteralSyntax(tag);
             }
@@ -208,7 +208,7 @@ namespace Attempt17.Features.Variables {
 
                 scope.SetVariableMoved(info.Path, true);
 
-                var tag = new TypeCheckTag(info.VariableType);
+                var tag = new TypeCheckTag(info.Type);
 
                 return new MoveSyntax<TypeCheckTag>(tag, MovementKind.ValueMove, syntax.VariableName);
             }
@@ -220,7 +220,7 @@ namespace Attempt17.Features.Variables {
                 // Set the variable to moved
                 scope.SetVariableMoved(info.Path, true);
 
-                var tag = new TypeCheckTag(new VariableType(info.VariableType));
+                var tag = new TypeCheckTag(new VariableType(info.Type));
 
                 return new MoveSyntax<TypeCheckTag>(tag, MovementKind.LiteralMove, syntax.VariableName);
             }

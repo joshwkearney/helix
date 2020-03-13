@@ -7,7 +7,7 @@ namespace Attempt17.TypeChecking {
     public interface ITypeCheckScope : IScope {
         IdentifierPath Path { get; }
 
-        void SetTypeInfo(IdentifierPath path, TypeInfo info);
+        void SetTypeInfo(IdentifierPath path, IIdentifierTarget info);
 
         void SetCapturingVariable(VariableCapture capturing, IdentifierPath captured);
 

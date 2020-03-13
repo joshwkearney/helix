@@ -22,14 +22,13 @@ namespace Attempt17.TypeChecking {
 
         public TypeCopiability VisitNamedType(NamedType type) {
             if (this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
-                return info.Match(
-                    varInfo => throw new InvalidOperationException(),
-                    funcInfo => TypeCopiability.Unconditional,
-                    compositeInfo => {
+                return info.Accept(new IdentifierTargetVisitor<TypeCopiability>() {
+                    HandleFunction = _ => TypeCopiability.Unconditional,
+                    HandleComposite = compositeInfo => {
                         if (compositeInfo.Kind == CompositeKind.Class) {
                             return TypeCopiability.Conditional;
                         }
-                        else {
+                        else if (compositeInfo.Kind == CompositeKind.Struct || compositeInfo.Kind == CompositeKind.Union) {
                             var memCopiability = compositeInfo
                                 .Signature
                                 .Members
@@ -47,7 +46,11 @@ namespace Attempt17.TypeChecking {
                                 return TypeCopiability.Conditional;
                             }
                         }
-                    });
+                        else {
+                            throw new Exception();
+                        }
+                    }
+                });
             }
 
             throw new Exception("This should never happen");

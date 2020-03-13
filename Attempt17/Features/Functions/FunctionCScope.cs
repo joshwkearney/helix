@@ -15,7 +15,7 @@ namespace Attempt17.Features.Functions {
             this.head = head;
         }
 
-        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+        public IOption<IIdentifierTarget> FindTypeInfo(IdentifierPath path) {
             return this.head.FindTypeInfo(path);
         }
 

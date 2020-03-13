@@ -25,10 +25,9 @@ namespace Attempt17.TypeChecking {
 
         public ImmutableHashSet<LanguageType> VisitNamedType(NamedType type) {
             if (this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
-                return info.Match(
-                    varInfo => throw new InvalidOperationException(),
-                    funcInfo => new LanguageType[] { type }.ToImmutableHashSet(),
-                    compositeInfo => {
+                return info.Accept(new IdentifierTargetVisitor<ImmutableHashSet<LanguageType>>() {
+                    HandleFunction = _ => new LanguageType[] { type }.ToImmutableHashSet(),
+                    HandleComposite = compositeInfo => {
                         return compositeInfo
                             .Signature
                             .Members
@@ -36,7 +35,8 @@ namespace Attempt17.TypeChecking {
                             .Select(x => x.Accept(this).Add(x))
                             .Aggregate((x, y) => x.Union(y))
                             .Add(type);
-                    });
+                    }
+                });
             }
 
             throw new Exception("This should never happen");

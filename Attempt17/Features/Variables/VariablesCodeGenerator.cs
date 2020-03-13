@@ -12,7 +12,7 @@ namespace Attempt17.Features.Variables {
 
             if (syntax.Kind == VariableAccessKind.RemoteAccess) {
                 if (syntax.VariableInfo.DefinitionKind == VariableDefinitionKind.Alias) {
-                    var varType = new VariableType(syntax.VariableInfo.VariableType);
+                    var varType = new VariableType(syntax.VariableInfo.Type);
 
                     return gen.CopyValue(name, varType, scope);
                 }
@@ -22,13 +22,13 @@ namespace Attempt17.Features.Variables {
             }
             else if (syntax.Kind == VariableAccessKind.ValueAccess) {
                 if (syntax.VariableInfo.DefinitionKind == VariableDefinitionKind.Alias) {
-                    var varTypeName = gen.Generate(syntax.VariableInfo.VariableType);
+                    var varTypeName = gen.Generate(syntax.VariableInfo.Type);
                     var deref = CWriter.Dereference(name, varTypeName);
 
-                    return gen.CopyValue(deref, syntax.VariableInfo.VariableType, scope);
+                    return gen.CopyValue(deref, syntax.VariableInfo.Type, scope);
                 }
                 else if (syntax.VariableInfo.DefinitionKind == VariableDefinitionKind.Local) {
-                    return gen.CopyValue(name, syntax.VariableInfo.VariableType, scope);
+                    return gen.CopyValue(name, syntax.VariableInfo.Type, scope);
                 }
             }
 

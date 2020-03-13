@@ -28,7 +28,7 @@ namespace Attempt17.Features.FlowControl {
             this.head = head;
         }
 
-        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+        public IOption<IIdentifierTarget> FindTypeInfo(IdentifierPath path) {
             return this.head.FindTypeInfo(path);
         }
 
@@ -57,10 +57,10 @@ namespace Attempt17.Features.FlowControl {
             this.capturingVariables[captured] = this.capturingVariables[captured].Add(capturing);
         }
 
-        public void SetTypeInfo(IdentifierPath path, TypeInfo info) {
+        public void SetTypeInfo(IdentifierPath path, IIdentifierTarget info) {
             this.head.SetTypeInfo(path, info);
 
-            if (info.AsVariableInfo().TryGetValue(out var varinfo)) {
+            if (info.AsVariable().TryGetValue(out var varinfo)) {
                 this.declaredVariables.Add(varinfo.Path);
             }
         }

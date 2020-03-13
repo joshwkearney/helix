@@ -32,7 +32,7 @@ namespace Attempt17.Features.Containers {
                 throw TypeCheckingErrors.MemberUndefined(this.loc, this.value.Tag.ReturnType, name);
             }
 
-            var target = new FunctionLiteralSyntax(new TypeCheckTag(info.FunctionType));
+            var target = new FunctionLiteralSyntax(new TypeCheckTag(info.Type));
 
             var access = FunctionsTypeChecker.CheckFunctionInvoke(
                 this.loc,
@@ -86,10 +86,9 @@ namespace Attempt17.Features.Containers {
                     throw new Exception("This isn't supposed to happen");
                 }
 
-                return info.Match(
-                    varInfo => throw new InvalidOperationException(),
-                    funcInfo => throw TypeCheckingErrors.MemberUndefined(this.location, type, this.memberName),
-                    compositeInfo => {
+                return info.Accept(new IdentifierTargetVisitor<ISyntax<TypeCheckTag>>() {
+                    HandleFunction = _ => throw TypeCheckingErrors.MemberUndefined(this.location, type, this.memberName),
+                    HandleComposite = compositeInfo => {
                         var mem = compositeInfo.Signature.Members.FirstOrDefault(x => x.Name == this.memberName);
 
                         if (mem == null) {
@@ -112,7 +111,8 @@ namespace Attempt17.Features.Containers {
                         var tag = new TypeCheckTag(mem.Type, captured);
 
                         return new CompositeMemberAccessSyntax(tag, this.target, this.memberName, compositeInfo);
-                    });
+                    }
+                });
             }
 
             public ISyntax<TypeCheckTag> VisitVariableType(VariableType type) {

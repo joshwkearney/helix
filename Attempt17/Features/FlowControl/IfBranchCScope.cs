@@ -32,7 +32,7 @@ namespace Attempt17.Features.FlowControl {
             this.head.SetVariableUndestructed(name, type);
         }
 
-        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+        public IOption<IIdentifierTarget> FindTypeInfo(IdentifierPath path) {
             return this.head.FindTypeInfo(path);
         }
     }

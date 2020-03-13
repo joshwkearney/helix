@@ -15,5 +15,6 @@
   <ItemGroup>
     <Folder Include="Features\Containers\" />
     <Folder Include="Features\Containers\Composites\" />
+    <Folder Include="Features\Containers\Unions\" />
   </ItemGroup>
 </Project>

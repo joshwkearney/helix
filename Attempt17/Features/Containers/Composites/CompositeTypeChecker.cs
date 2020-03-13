@@ -28,9 +28,9 @@ namespace Attempt17.Features.Containers.Composites {
             }
 
             // Check to make sure the struct isn't circular
-            var detector = new CircularValueObjectDetector(syntax.CompositeInfo.StructType, scope);
-            if (syntax.CompositeInfo.StructType.Accept(detector)) {
-                throw TypeCheckingErrors.CircularValueObject(syntax.Tag.Location, syntax.CompositeInfo.StructType);
+            var detector = new CircularValueObjectDetector(syntax.CompositeInfo.Type, scope);
+            if (syntax.CompositeInfo.Type.Accept(detector)) {
+                throw TypeCheckingErrors.CircularValueObject(syntax.Tag.Location, syntax.CompositeInfo.Type);
             }
 
             // Check to make sure that all member types are defined
@@ -57,12 +57,12 @@ namespace Attempt17.Features.Containers.Composites {
 
             // Make sure there are no missing fields
             if (missing.Any()) {
-                throw TypeCheckingErrors.NewObjectMissingFields(syntax.Tag.Location, syntax.CompositeInfo.StructType, missing);
+                throw TypeCheckingErrors.NewObjectMissingFields(syntax.Tag.Location, syntax.CompositeInfo.Type, missing);
             }
 
             // Make sure there are no extra fields
             if (extra.Any()) {
-                throw TypeCheckingErrors.NewObjectHasExtraneousFields(syntax.Tag.Location, syntax.CompositeInfo.StructType, extra);
+                throw TypeCheckingErrors.NewObjectHasExtraneousFields(syntax.Tag.Location, syntax.CompositeInfo.Type, extra);
             }
 
             // Type check all the instantiations
@@ -74,7 +74,7 @@ namespace Attempt17.Features.Containers.Composites {
                 .Select(x => x.Value.Tag.CapturedVariables)
                 .Aggregate(ImmutableHashSet<VariableCapture>.Empty, (x, y) => x.Union(y));
 
-            var tag = new TypeCheckTag(syntax.CompositeInfo.StructType, captured);
+            var tag = new TypeCheckTag(syntax.CompositeInfo.Type, captured);
 
             return new NewCompositeSyntax<TypeCheckTag>(tag, syntax.CompositeInfo, insts);
         }

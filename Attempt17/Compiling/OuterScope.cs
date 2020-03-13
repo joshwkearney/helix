@@ -7,15 +7,15 @@ using System.Text;
 
 namespace Attempt17.Compiling {
     public class OuterScope : ITypeCheckScope {
-        public Dictionary<IdentifierPath, TypeInfo> TypeInfo { get; }
-            = new Dictionary<IdentifierPath, TypeInfo>();
+        public Dictionary<IdentifierPath, IIdentifierTarget> TypeInfo { get; }
+            = new Dictionary<IdentifierPath, IIdentifierTarget>();
 
         private Dictionary<(LanguageType type, string methodName), IdentifierPath> methods
             = new Dictionary<(LanguageType type, string methodName), IdentifierPath>();
 
         public IdentifierPath Path => new IdentifierPath();
 
-        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+        public IOption<IIdentifierTarget> FindTypeInfo(IdentifierPath path) {
             return this.TypeInfo.GetValueOption(path);
         }
 
@@ -29,7 +29,7 @@ namespace Attempt17.Compiling {
 
         public void SetCapturingVariable(VariableCapture capturing, IdentifierPath captured) { throw new InvalidOperationException(); }
 
-        public void SetTypeInfo(IdentifierPath path, TypeInfo info) {
+        public void SetTypeInfo(IdentifierPath path, IIdentifierTarget info) {
             this.TypeInfo[path] = info;
         }
 

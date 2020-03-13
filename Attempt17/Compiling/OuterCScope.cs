@@ -7,13 +7,13 @@ using Attempt17.Types;
 
 namespace Attempt17.Compiling {
     public class OuterCScope : ICScope {
-        private readonly IReadOnlyDictionary<IdentifierPath, TypeInfo> typeinfo;
+        private readonly IReadOnlyDictionary<IdentifierPath, IIdentifierTarget> typeinfo;
 
-        public OuterCScope(IReadOnlyDictionary<IdentifierPath, TypeInfo> typeinfo) {
+        public OuterCScope(IReadOnlyDictionary<IdentifierPath, IIdentifierTarget> typeinfo) {
             this.typeinfo = typeinfo;
         }
 
-        public IOption<TypeInfo> FindTypeInfo(IdentifierPath path) {
+        public IOption<IIdentifierTarget> FindTypeInfo(IdentifierPath path) {
             return this.typeinfo.GetValueOption(path);
         }
 

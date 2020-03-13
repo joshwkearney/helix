@@ -129,7 +129,7 @@ namespace Attempt17.Parsing {
             string funcName = this.Advance<string>();
             this.Advance(TokenKind.OpenParenthesis);
 
-            var pars = ImmutableList<FunctionParameter>.Empty;
+            var pars = ImmutableList<Parameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
                 var parType = this.TypeExpression();
                 var parName = this.Advance<string>();
@@ -138,7 +138,7 @@ namespace Attempt17.Parsing {
                     this.Advance(TokenKind.Comma);
                 }
 
-                pars = pars.Add(new FunctionParameter(parName, parType));
+                pars = pars.Add(new Parameter(parName, parType));
             }
 
             this.Advance(TokenKind.CloseParenthesis);
@@ -169,7 +169,7 @@ namespace Attempt17.Parsing {
             var name = this.Advance<string>();
             this.Advance(TokenKind.OpenBrace);
 
-            var mems = ImmutableList<ContainerMember>.Empty;
+            var mems = ImmutableList<Parameter>.Empty;
             var decls = ImmutableList<IParseDeclaration>.Empty;
 
             while (!this.TryAdvance(TokenKind.CloseBrace)) {
@@ -182,7 +182,7 @@ namespace Attempt17.Parsing {
 
                     this.Advance(TokenKind.Semicolon);
 
-                    mems = mems.Add(new ContainerMember(memName, memType));
+                    mems = mems.Add(new Parameter(memName, memType));
                 }
             }
 
