@@ -1,11 +1,13 @@
 ﻿function main () => void: {
-    #var p <- new Point { x = 4, y = 2 };
-    #var x <- p.scale(5).norm();
+    var p <- new Point { x = 4, y = 2 };
+    var x <- p.scale(5).norm();
 
-	var array <- [5, 8, 6, 2, 7, 3, 9];
+    var array <- [5, 8, 6, 2, 7, 3, 9];
     var s <- new String { chars = move array };
 
-    var test <- s.size();
+    var wut <- s.substring(0, 3);
+
+    #new Option { some = 4 };
 
 	void;
 };
@@ -14,6 +16,39 @@ class String {
     int[] chars;
 
     function size () => int: this.chars.size;
+
+    function get (int index) => int: this.chars[index];
+
+    function substring (int start, int count) => String: {
+        var array <- new int[count];
+        var i <- 0;
+
+        while i < count do: {
+            array[i] = this.chars[start + i];
+            @i <- i + 1;
+        };
+
+        new String { chars = move array };
+    };
+
+    function concat (String other) => String: {
+        var array <- new int[this.chars.size + other.chars.size];
+        var i <- 0;
+
+        while i < this.chars.size do:{
+            array[i] = this.chars[i];
+            @i <- i + 1;
+        };
+
+        @i <- 0;
+
+        while i < other.chars.size do: {
+            array[this.chars.size + i] = other.chars[i];
+            @i <- i + 1;
+        };
+
+        new String { chars = move array };
+    };
 };
 
 struct Point {

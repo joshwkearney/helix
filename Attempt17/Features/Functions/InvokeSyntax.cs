@@ -1,18 +1,22 @@
-﻿using Attempt17.TypeChecking;
+﻿using Attempt17.Parsing;
 using System.Collections.Immutable;
 
 namespace Attempt17.Features.Functions {
-    public class InvokeSyntax : ISyntax<TypeCheckTag> {
-        public TypeCheckTag Tag { get; }
+    public class InvokeSyntax<T> : ISyntax<T> {
+        public T Tag { get; }
 
-        public FunctionInfo Target { get; }
+        public ISyntax<T> Target { get; }
 
-        public ImmutableList<ISyntax<TypeCheckTag>> Arguments { get; }
+        public ImmutableList<ISyntax<T>> Arguments { get; }
 
-        public InvokeSyntax(TypeCheckTag tag, FunctionInfo target, ImmutableList<ISyntax<TypeCheckTag>> arguments) {
+        public InvokeSyntax(T tag, ISyntax<T> target, ImmutableList<ISyntax<T>> arguments) {
             this.Tag = tag;
             this.Target = target;
             this.Arguments = arguments;
+        }
+
+        public T1 Accept<T1, TContext>(ISyntaxVisitor<T1, T, TContext> visitor, TContext context) {
+            return visitor.FunctionsVisitor.VisitInvoke(this, visitor, context);
         }
     }
 }

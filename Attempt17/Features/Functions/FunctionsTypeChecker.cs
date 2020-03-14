@@ -1,21 +1,27 @@
+﻿using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Attempt17.Features.FlowControl;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
-using System;
-using System.Collections.Immutable;
-using System.Linq;
 
 namespace Attempt17.Features.Functions {
-    public class FunctionsTypeChecker {
-        public ISyntax<TypeCheckTag> CheckFunctionDeclaration(FunctionDeclarationSyntax<ParseTag> syntax, ITypeCheckScope scope, ITypeChecker checker) {
+    public class FunctionsTypeChecker
+        : IFunctionsVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> {
+
+        public ISyntax<TypeCheckTag> VisitFunctionDeclaration(
+            FunctionDeclarationSyntax<ParseTag> syntax,
+            ISyntaxVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> visitor,
+            TypeCheckContext context) {
+
             // Make sure the return type is defined
-            if (!checker.IsTypeDefined(syntax.FunctionInfo.Signature.ReturnType, scope)) {
+            if (!syntax.FunctionInfo.Signature.ReturnType.IsDefined(context.Scope)) {
                 throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location, syntax.FunctionInfo.Signature.ReturnType.ToString());
             }
 
             // Get a new scope for the function body
-            var funcScope = new BlockScope(syntax.FunctionInfo.Path, scope);
+            var funcScope = new BlockScope(syntax.FunctionInfo.Path, context.Scope);
 
             // Add each parameter to the scope
             foreach (var par in syntax.FunctionInfo.Signature.Parameters) {
@@ -25,7 +31,7 @@ namespace Attempt17.Features.Functions {
                 }
 
                 // Make sure the type is defined
-                if (!checker.IsTypeDefined(par.Type, scope)) {
+                if (!par.Type.IsDefined(context.Scope)) {
                     throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location, par.Type.ToString());
                 }
 
@@ -62,7 +68,7 @@ namespace Attempt17.Features.Functions {
                 }
             }
 
-            var body = checker.Check(syntax.Body, funcScope);
+            var body = syntax.Body.Accept(visitor, context.WithScope(funcScope));
 
             // Return types have to match
             if (body.Tag.ReturnType != syntax.FunctionInfo.Signature.ReturnType) {
@@ -89,25 +95,29 @@ namespace Attempt17.Features.Functions {
                 body);
         }
 
-        public void ModifyDeclarationScope(FunctionDeclarationSyntax<ParseTag> syntax, ITypeCheckScope scope) {
-            // Make sure this path isn't taken
-            if (scope.IsPathTaken(syntax.FunctionInfo.Path)) {
-                throw TypeCheckingErrors.IdentifierDefined(syntax.Tag.Location, syntax.FunctionInfo.Signature.Name);
-            }
+        public ISyntax<TypeCheckTag> VisitFunctionLiteral(FunctionLiteralSyntax<ParseTag> syntax,
+            ISyntaxVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> visitor,
+            TypeCheckContext context) {
 
-            scope.SetTypeInfo(syntax.FunctionInfo.Path, syntax.FunctionInfo);
+            throw new InvalidOperationException();
         }
 
-        public ISyntax<TypeCheckTag> CheckInvoke(InvokeParseSyntax syntax, ITypeCheckScope scope, ITypeChecker checker) {
-            var target = checker.Check(syntax.Target, scope);
+        public ISyntax<TypeCheckTag> VisitInvoke(InvokeSyntax<ParseTag> syntax,
+            ISyntaxVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> visitor,
+            TypeCheckContext context) {
+
+            var target = syntax.Target.Accept(visitor, context);
             var args = syntax.Arguments
-                .Select(x => checker.Check(x, scope))
+                .Select(x => x.Accept(visitor, context))
                 .ToImmutableList();
 
-            return CheckFunctionInvoke(syntax.Tag.Location, target, args, scope);
+            return CheckFunctionInvoke(syntax.Tag.Location, target, args, context.Scope);
         }
 
-        public static ISyntax<TypeCheckTag> CheckFunctionInvoke(TokenLocation loc, ISyntax<TypeCheckTag> target, ImmutableList<ISyntax<TypeCheckTag>> args, ITypeCheckScope scope) {
+        public static ISyntax<TypeCheckTag> CheckFunctionInvoke(TokenLocation loc,
+            ISyntax<TypeCheckTag> target, ImmutableList<ISyntax<TypeCheckTag>> args,
+            ITypeCheckScope scope) {
+
             // Make sure the target is a named type
             if (!(target.Tag.ReturnType is NamedType namedType)) {
                 throw TypeCheckingErrors.ExpectedFunctionType(loc, target.Tag.ReturnType);
@@ -199,7 +209,7 @@ namespace Attempt17.Features.Functions {
 
             var tag = new TypeCheckTag(info.Signature.ReturnType, captured);
 
-            return new InvokeSyntax(tag, info, args);
+            return new InvokeSyntax<TypeCheckTag>(tag, target, args);
         }
     }
 }

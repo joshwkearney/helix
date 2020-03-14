@@ -1,11 +1,11 @@
 ﻿using Attempt17.CodeGeneration;
+using Attempt17.Features;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
 
 namespace Attempt17.Compiling {
     public partial class Compiler {
         private class CodeGenerator : ICodeGenerator {
-            private readonly SyntaxRegistry registry;
             private readonly TypeGenerator typegen;
             private readonly TypeDestructorGenerator destructGen;
 
@@ -21,14 +21,9 @@ namespace Attempt17.Compiling {
 
             ICodeWriter ICodeGenerator.Header3Writer => this.Header3Writer;
 
-            public CodeGenerator(SyntaxRegistry registry, ICScope outerScope) {
-                this.registry = registry;
+            public CodeGenerator(ICScope outerScope) {
                 this.typegen = new TypeGenerator(outerScope, this.Header2Writer);
                 this.destructGen = new TypeDestructorGenerator(this.Header3Writer, this, outerScope);
-            }
-
-            public CBlock Generate(ISyntax<TypeCheckTag> syntax, ICScope scope) {
-                return this.registry.syntaxTrees[syntax.GetType()](syntax, scope, this);
             }
 
             public string Generate(LanguageType type) {
@@ -39,8 +34,10 @@ namespace Attempt17.Compiling {
                 return type.Accept(this.destructGen);
             }
 
-            public CBlock CopyValue(string value, LanguageType type, ICScope scope) {
-                return type.Accept(new ValueCopyVisitor(value, this, scope));
+            public CBlock CopyValue(string value, LanguageType type,
+                CodeGenerationContext context) {
+
+                return type.Accept(new ValueCopyVisitor(value, this, context.Scope));
             }
         }
     }

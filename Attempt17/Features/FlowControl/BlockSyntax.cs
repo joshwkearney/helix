@@ -10,5 +10,9 @@ namespace Attempt17.Features.FlowControl {
             this.Tag = tag;
             this.Statements = stats;
         }
+
+        public T1 Accept<T1, TContext>(ISyntaxVisitor<T1, T, TContext> visitor, TContext context) {
+            return visitor.FlowControlVisitor.VisitBlock(this, visitor, context);
+        }
     }
 }

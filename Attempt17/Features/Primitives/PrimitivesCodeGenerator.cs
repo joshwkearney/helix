@@ -1,29 +1,41 @@
-﻿using Attempt17.CodeGeneration;
+﻿using System;
+using Attempt17.CodeGeneration;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
-using System;
 
 namespace Attempt17.Features.Primitives {
-    public class PrimitivesCodeGenerator {
+    public class PrimitivesCodeGenerator : IPrimitivesVisitor<CBlock, TypeCheckTag, CodeGenerationContext> {
         private int allocTempCounter = 0;
 
-        public CBlock GenerateIntLiteral(IntLiteralSyntax<TypeCheckTag> literal, ICScope scope, ICodeGenerator gen) {
-            return new CBlock(literal.Value.ToString() + "LL");
+        public CBlock VisitAlloc(AllocSyntax<TypeCheckTag> syntax, ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor, CodeGenerationContext context) {
+            var target = syntax.Target.Accept(visitor, context);
+            var innerType = context.Generator.Generate(syntax.Target.Tag.ReturnType);
+            var tempType = context.Generator.Generate(syntax.Tag.ReturnType);
+            var tempName = "$alloc_temp_" + this.allocTempCounter++;
+            var writer = new CWriter();
+
+            writer.Lines(target.SourceLines);
+            writer.Line("// Allocation");
+            writer.VariableInit(tempType, tempName, $"({tempType})malloc(sizeof({innerType}))");
+            writer.VariableAssignment($"*({innerType}*){tempName}", $"{target.Value}");
+            writer.Line($"{tempName} |= 1;");
+            writer.EmptyLine();
+
+            context.Scope.SetVariableUndestructed(tempName, syntax.Tag.ReturnType);
+
+            return writer.ToBlock(tempName);
         }
 
-        public CBlock GenerateVoidLiteral(VoidLiteralSyntax<TypeCheckTag> literal, ICScope scope, ICodeGenerator gen) {
-            return new CBlock("0");
+        public CBlock VisitAs(AsSyntax<TypeCheckTag> syntax, ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor, CodeGenerationContext context) {
+            throw new InvalidOperationException();
         }
 
-        public CBlock GenerateBoolLiteral(BoolLiteralSyntax<TypeCheckTag> literal, ICScope scope, ICodeGenerator gen) {
-            return new CBlock(literal.Value ? "1" : "0");
-        }
-
-        public CBlock GenerateBinarySyntax(BinarySyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
+        public CBlock VisitBinary(BinarySyntax<TypeCheckTag> syntax, ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor, CodeGenerationContext context) {
             string op;
 
             if (syntax.Left.Tag.ReturnType == IntType.Instance) {
-                op = syntax.Kind switch {
+                op = syntax.Kind switch
+                {
                     BinarySyntaxKind.Add => " + ",
                     BinarySyntaxKind.Subtract => " - ",
                     BinarySyntaxKind.Multiply => " * ",
@@ -40,7 +52,8 @@ namespace Attempt17.Features.Primitives {
                 };
             }
             else if (syntax.Left.Tag.ReturnType == BoolType.Instance) {
-                op = syntax.Kind switch {
+                op = syntax.Kind switch
+                {
                     BinarySyntaxKind.And => " && ",
                     BinarySyntaxKind.Or => " || ",
                     BinarySyntaxKind.Xor => " != ",
@@ -51,31 +64,24 @@ namespace Attempt17.Features.Primitives {
             }
             else {
                 throw new Exception("This should never happen");
-            }                        
+            }
 
-            var left = gen.Generate(syntax.Left, scope);
-            var right = gen.Generate(syntax.Right, scope);
+            var left = syntax.Left.Accept(visitor, context);
+            var right = syntax.Right.Accept(visitor, context);
 
             return left.Combine(right, (x, y) => "(" + x + op + y + ")");
         }
 
-        public CBlock GenerateAlloc(AllocSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
-            var target = gen.Generate(syntax.Target, scope);
-            var innerType = gen.Generate(syntax.Target.Tag.ReturnType);
-            var tempType = gen.Generate(syntax.Tag.ReturnType);
-            var tempName = "$alloc_temp_" + this.allocTempCounter++;
-            var writer = new CWriter();
+        public CBlock VisitBoolLiteral(BoolLiteralSyntax<TypeCheckTag> syntax, ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor, CodeGenerationContext context) {
+            return new CBlock(syntax.Value ? "1" : "0");
+        }
 
-            writer.Lines(target.SourceLines);
-            writer.Line("// Allocation");
-            writer.VariableInit(tempType, tempName, $"({tempType})malloc(sizeof({innerType}))");
-            writer.VariableAssignment($"*({innerType}*){tempName}", $"{target.Value}");
-            writer.Line($"{tempName} |= 1;");
-            writer.EmptyLine();
+        public CBlock VisitIntLiteral(IntLiteralSyntax<TypeCheckTag> syntax, ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor, CodeGenerationContext context) {
+            return new CBlock(syntax.Value.ToString() + "LL");
+        }
 
-            scope.SetVariableUndestructed(tempName, syntax.Tag.ReturnType);
-
-            return writer.ToBlock(tempName);
+        public CBlock VisitVoidLiteral(VoidLiteralSyntax<TypeCheckTag> syntax, ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor, CodeGenerationContext context) {
+            return new CBlock("0");
         }
     }
 }

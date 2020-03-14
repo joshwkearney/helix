@@ -3,7 +3,6 @@ using Attempt17.Parsing;
 using Attempt17.Types;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace Attempt17.TypeChecking {

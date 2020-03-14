@@ -1,61 +1,42 @@
 ﻿using Attempt17.CodeGeneration;
 using Attempt17.Features;
-using Attempt17.Features.Arrays;
-using Attempt17.Features.Containers;
-using Attempt17.Features.FlowControl;
-using Attempt17.Features.Functions;
-using Attempt17.Features.Primitives;
-using Attempt17.Features.Variables;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
-using System;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace Attempt17.Compiling {
     public partial class Compiler {
-        private readonly ILanguageFeature[] features = new ILanguageFeature[] { 
-            new FlowControlFeature(),
-            new FunctionsFeature(),
-            new PrimitivesFeature(),
-            new VariablesFeature(),
-            new ArraysFeature(),
-            new ContainersFeature()
-        };
-
         public string Compile(string input) {
-            var registry = this.GetRegistry();
             var tokens = new Lexer(input).GetTokens();
 
             var scope = new OuterScope();
             var declFlattener = new DeclarationFlattener(scope);
+            var declScoper = new DeclarationScoper();
 
             var decls = new Parser(tokens)
                 .Parse()
-                .SelectMany(x => x.Accept(declFlattener))
+                .SelectMany(x => x.Accept(declFlattener, scope))
+                .Select(x => x.Accept(declScoper, scope))
                 .ToArray();
 
-            // Make sure all the declarations can add to the scope
-            foreach (var decl in decls) {
-                registry.declarations[decl.GetType()](decl, scope);
-            }
-
-            var typeChecker = new TypeChecker(registry, scope);
+            var typeChecker = new SyntaxTypeChecker();
+            var typeCheckContext = new TypeCheckContext(new TypeChecker(), scope);
 
             // Type check everything
-
             var checkedDecls = decls
-                .Select(x => typeChecker.Check(x, scope))
+                .Select(x => x.Accept(typeChecker, typeCheckContext))
                 .ToArray();
 
             var cscope = new OuterCScope(scope.TypeInfo);
-            var codegen = new CodeGenerator(registry, cscope);
+            var codeGen = new CodeGenerator(cscope);
+            var syntaxCodegen = new SyntaxCodeGenerator();
+            var codegenContext = new CodeGenerationContext(cscope, codeGen);
 
             // Generate everything
             var lines = checkedDecls
-                .Select(x => codegen.Generate(x, cscope))
+                .Select(x => x.Accept(syntaxCodegen, codegenContext))
                 .SelectMany(x => x.SourceLines)
                 .ToImmutableList();
 
@@ -67,15 +48,15 @@ namespace Attempt17.Compiling {
             source.AppendLine("#include <stdint.h>");
             source.AppendLine("");
 
-            foreach (var line in codegen.Header1Writer.ToLines()) {
+            foreach (var line in codeGen.Header1Writer.ToLines()) {
                 source.AppendLine(line);
             }
 
-            foreach (var line in codegen.Header2Writer.ToLines()) {
+            foreach (var line in codeGen.Header2Writer.ToLines()) {
                 source.AppendLine(line);
             }
 
-            foreach (var line in codegen.Header3Writer.ToLines()) {
+            foreach (var line in codeGen.Header3Writer.ToLines()) {
                 source.AppendLine(line);
             }
 
@@ -84,16 +65,6 @@ namespace Attempt17.Compiling {
             }
 
             return source.ToString();
-        }
-
-        private SyntaxRegistry GetRegistry() {
-            var registry = new SyntaxRegistry();
-
-            foreach (var feature in this.features) {
-                feature.RegisterSyntax(registry);
-            }
-
-            return registry;
         }
     }
 }

@@ -16,5 +16,12 @@ namespace Attempt17.Features.Containers {
             this.CompositeInfo = info;
             this.Instantiations = insts;
         }
+
+        public T1 Accept<T1, TContext>(ISyntaxVisitor<T1, T, TContext> visitor, TContext context) {
+            return visitor
+                .ContainersVisitor
+                .CompositesVisitor
+                .VisitNewComposite(this, visitor, context);
+        }
     }
 }

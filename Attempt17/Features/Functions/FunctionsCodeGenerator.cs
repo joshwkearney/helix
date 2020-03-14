@@ -1,15 +1,23 @@
-﻿using Attempt17.CodeGeneration;
-using Attempt17.TypeChecking;
-using Attempt17.Types;
+﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Attempt17.CodeGeneration;
+using Attempt17.TypeChecking;
+using Attempt17.Types;
 
 namespace Attempt17.Features.Functions {
-    public class FunctionsCodeGenerator {
+    public class FunctionsCodeGenerator
+        : IFunctionsVisitor<CBlock, TypeCheckTag, CodeGenerationContext> {
+
         private int invokeTempCounter = 0;
 
-        public CBlock GenerateFunctionDeclaration(FunctionDeclarationSyntax<TypeCheckTag> syntax, ICScope scope, ICodeGenerator gen) {
-            scope = new FunctionCScope(scope);
+        public CBlock VisitFunctionDeclaration(FunctionDeclarationSyntax<TypeCheckTag> syntax,
+            ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor,
+            CodeGenerationContext context) {
+
+            // Get a new scope
+            var scope = new FunctionCScope(context.Scope);
+            context = context.WithScope(scope);
 
             // Add the parameters to the scope
             foreach (var par in syntax.FunctionInfo.Signature.Parameters) {
@@ -17,9 +25,9 @@ namespace Attempt17.Features.Functions {
             }
 
             var writer = new CWriter();
-            var body = gen.Generate(syntax.Body, scope);
-            var returnType = gen.Generate(syntax.FunctionInfo.Signature.ReturnType);
-            var line = this.GenerateSignature(syntax.FunctionInfo, gen) + " {";
+            var body = syntax.Body.Accept(visitor, context);
+            var returnType = context.Generator.Generate(syntax.FunctionInfo.Signature.ReturnType);
+            var line = this.GenerateSignature(syntax.FunctionInfo, context) + " {";
             var varsToCleanUp = scope
                 .GetUndestructedVariables()
                 .ToImmutableDictionary(x => x.Key, x => x.Value);
@@ -28,23 +36,37 @@ namespace Attempt17.Features.Functions {
             writer.Lines(CWriter.Indent(body.SourceLines));
             writer.Lines(CWriter.Indent("// Function cleanup"));
             writer.Lines(CWriter.Indent($"{returnType} $func_return = {body.Value};"));
-            writer.Lines(CWriter.Indent(ScopeHelper.CleanupScope(varsToCleanUp, gen)));
+            writer.Lines(CWriter.Indent(ScopeHelper.CleanupScope(varsToCleanUp,
+                context.Generator)));
             writer.Lines(CWriter.Indent("return $func_return;"));
             writer.Line("}");
             writer.EmptyLine();
 
-            gen.Header2Writer
-                .Line(this.GenerateSignature(syntax.FunctionInfo, gen) + ";")
+            context
+                .Generator
+                .Header2Writer
+                .Line(this.GenerateSignature(syntax.FunctionInfo, context) + ";")
                 .EmptyLine();
 
             return writer.ToBlock("0");
         }
 
-        public CBlock GenerateInvoke(InvokeSyntax syntax, ICScope scope, ICodeGenerator gen) {
-            var args = syntax.Arguments.Select(x => gen.Generate(x, scope)).ToArray();
-            var targetName = syntax.Target.Path.ToCName();
+        public CBlock VisitFunctionLiteral(FunctionLiteralSyntax<TypeCheckTag> syntax,
+            ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor,
+            CodeGenerationContext context) {
+
+            return new CBlock("0");
+        }
+
+        public CBlock VisitInvoke(InvokeSyntax<TypeCheckTag> syntax,
+            ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor,
+            CodeGenerationContext context) {
+
+            var args = syntax.Arguments.Select(x => x.Accept(visitor, context)).ToArray();
+            var funcType = (NamedType)syntax.Target.Tag.ReturnType;
+            var targetName = funcType.Path.ToCName();
             var tempName = "$invoke_result_" + this.invokeTempCounter++;
-            var tempType = gen.Generate(syntax.Tag.ReturnType);
+            var tempType = context.Generator.Generate(syntax.Tag.ReturnType);
             var writer = new CWriter();
             var invoke = targetName + "(";
 
@@ -60,24 +82,20 @@ namespace Attempt17.Features.Functions {
             writer.VariableInit(tempType, tempName, invoke);
             writer.EmptyLine();
 
-            scope.SetVariableUndestructed(tempName, syntax.Target.Signature.ReturnType);
+            context.Scope.SetVariableUndestructed(tempName, syntax.Tag.ReturnType);
 
             return writer.ToBlock(tempName);
         }
 
-        public CBlock GenerateFunctionLiteral(FunctionLiteralSyntax syntax, ICScope scope, ICodeGenerator gen) {
-            return new CBlock("0");
-        }
-
-        private string GenerateSignature(FunctionInfo info, ICodeGenerator gen) {
+        private string GenerateSignature(FunctionInfo info, CodeGenerationContext context) {
             var line = "";
 
-            line += gen.Generate(info.Signature.ReturnType) + " ";
+            line += context.Generator.Generate(info.Signature.ReturnType) + " ";
             line += info.Path.ToCName();
             line += "(";
 
             foreach (var par in info.Signature.Parameters) {
-                line += gen.Generate(par.Type) + " ";
+                line += context.Generator.Generate(par.Type) + " ";
                 line += par.Name + ", ";
             }
 

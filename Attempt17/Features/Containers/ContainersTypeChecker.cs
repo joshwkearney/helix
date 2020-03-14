@@ -1,38 +1,44 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Attempt17.Features.Containers.Arrays;
 using Attempt17.Features.Containers.Composites;
+using Attempt17.Features.Containers.Unions;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
 
 namespace Attempt17.Features.Containers {
-    public class ContainersTypeChecker {
-        public ISyntax<TypeCheckTag> CheckNew(NewSyntax syntax, ITypeCheckScope scope, ITypeChecker checker) {
-            // Make sure the type is a namedType
-            if (!(syntax.Type is NamedType namedType)) {
-                throw TypeCheckingErrors.ExpectedStructType(syntax.Tag.Location, syntax.Type);
-            }
+    public class ContainersTypeChecker
+        : IContainersVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> {
 
-            if (scope.FindStruct(namedType.Path).TryGetValue(out var structInfo)) {
-                return checker.Check(new NewCompositeSyntax<ParseTag>(syntax.Tag, structInfo, syntax.Instantiations), scope);
-            }
+        public
+        IArraysVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> ArraysVisitor { get; }
+                = new ArraysTypeChecker();
 
-            throw TypeCheckingErrors.UnexpectedType(syntax.Tag.Location, namedType);
-        }
+        public
+        ICompositesVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> CompositesVisitor
+            { get; } = new CompositesTypeChecker();
 
-        public ISyntax<TypeCheckTag> CheckMemberUsage(MemberUsageParseSyntax syntax, ITypeCheckScope scope, ITypeChecker checker) {
+        public
+        IUnionVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> UnionVisitor { get; }
+             = new UnionTypeChecker();
+
+        public ISyntax<TypeCheckTag> VisitMemberUsage(MemberUsageSyntax<ParseTag> syntax,
+            ISyntaxVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> visitor,
+            TypeCheckContext context) {
+
             IMemberAccessTarget initial = new ValueMemberAccessTarget(
-                checker.Check(syntax.Target, scope),
+                syntax.Target.Accept(visitor, context),
                 syntax.Tag.Location,
-                scope);
+                context.Scope);
 
             foreach (var seg in syntax.UsageSegments) {
                 initial = seg.Match(
                     access => initial.AccessMember(access.MemberName),
                     invoke => {
                         var args = invoke.Arguments
-                            .Select(x => checker.Check(x, scope))
+                            .Select(x => x.Accept(visitor, context))
                             .ToImmutableList();
 
                         return initial.InvokeMember(invoke.MemberName, args);
@@ -40,6 +46,36 @@ namespace Attempt17.Features.Containers {
             }
 
             return initial.ToSyntax();
+        }
+
+        public ISyntax<TypeCheckTag> VisitNew(NewSyntax<ParseTag> syntax,
+            ISyntaxVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> visitor,
+            TypeCheckContext context) {
+
+            // Make sure the type is a namedType
+            if (!(syntax.Type is NamedType namedType)) {
+                throw TypeCheckingErrors.ExpectedStructType(syntax.Tag.Location, syntax.Type);
+            }
+
+            if (context.Scope.FindComposite(namedType.Path).TryGetValue(out var structInfo)) {
+                bool isClassOrStruct = structInfo.Kind == CompositeKind.Class
+                    || structInfo.Kind == CompositeKind.Struct;
+
+                if (isClassOrStruct) {
+                    var newSyntax = new NewCompositeSyntax<ParseTag>(syntax.Tag, structInfo,
+                        syntax.Instantiations);
+
+                    return newSyntax.Accept(visitor, context);
+                }
+                else if (structInfo.Kind == CompositeKind.Union) {
+                    throw new NotImplementedException();
+                }
+                else {
+                    throw new Exception();
+                }
+            }
+
+            throw TypeCheckingErrors.UnexpectedType(syntax.Tag.Location, namedType);
         }
     }
 }

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt17.Features.Arrays;
+using Attempt17.Features;
 using Attempt17.Features.Containers;
+using Attempt17.Features.Containers.Arrays;
 using Attempt17.Features.Primitives;
 using Attempt17.Types;
 

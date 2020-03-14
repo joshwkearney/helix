@@ -19,5 +19,9 @@ namespace Attempt17.Features.Variables {
             this.Kind = kind;
             this.VariableName = variableName;
         }
+
+        public T1 Accept<T1, TContext>(ISyntaxVisitor<T1, T, TContext> visitor, TContext context) {
+            return visitor.VariablesVisitor.VisitMove(this, visitor, context);
+        }
     }
 }

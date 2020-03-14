@@ -1,10 +1,11 @@
-﻿using Attempt17.Features.Arrays;
+﻿using Attempt17.Features;
 using Attempt17.Features.Containers;
+using Attempt17.Features.Containers.Arrays;
+using Attempt17.Features.Containers.Composites;
 using Attempt17.Features.FlowControl;
 using Attempt17.Features.Functions;
 using Attempt17.Features.Primitives;
 using Attempt17.Features.Variables;
-using Attempt17.TypeChecking;
 using Attempt17.Types;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -19,8 +20,8 @@ namespace Attempt17.Parsing {
             this.tokens = tokens;
         }
 
-        public ImmutableList<IParseDeclaration> Parse() {
-            var list = ImmutableList<IParseDeclaration>.Empty;
+        public ImmutableList<IDeclaration<ParseTag>> Parse() {
+            var list = ImmutableList<IDeclaration<ParseTag>>.Empty;
 
             while (this.pos < tokens.Count) {
                 list = list.Add(this.Declaration());
@@ -123,7 +124,7 @@ namespace Attempt17.Parsing {
             }
         }
 
-        private IParseDeclaration FunctionDeclaration() {
+        private IDeclaration<ParseTag> FunctionDeclaration() {
             var start = this.Advance(TokenKind.FunctionKeyword);
 
             string funcName = this.Advance<string>();
@@ -153,13 +154,13 @@ namespace Attempt17.Parsing {
 
             this.Advance(TokenKind.Semicolon);
 
-            return new ParseFunctionDeclaration(
+            return new FunctionDeclarationSyntax<ParseTag>(
                 new ParseTag(loc),
                 new FunctionInfo(new IdentifierPath(funcName), sig),
                 body);
         }
 
-        private IParseDeclaration StructDeclaration() {
+        private IDeclaration<ParseTag> StructDeclaration() {
             var first = this.Advance();
 
             if (first.Kind != TokenKind.StructKeyword && first.Kind != TokenKind.ClassKeyword) {
@@ -170,7 +171,7 @@ namespace Attempt17.Parsing {
             this.Advance(TokenKind.OpenBrace);
 
             var mems = ImmutableList<Parameter>.Empty;
-            var decls = ImmutableList<IParseDeclaration>.Empty;
+            var decls = ImmutableList<IDeclaration<ParseTag>>.Empty;
 
             while (!this.TryAdvance(TokenKind.CloseBrace)) {
                 if (this.Peek(TokenKind.FunctionKeyword) || this.Peek(TokenKind.StructKeyword)) {
@@ -192,13 +193,13 @@ namespace Attempt17.Parsing {
             var sig = new CompositeSignature(name, mems);
             var kind = first.Kind == TokenKind.StructKeyword ? CompositeKind.Struct : CompositeKind.Class;
 
-            return new ParseCompositeDeclaration(
+            return new CompositeDeclarationSyntax<ParseTag>(
                 tag,
                 new CompositeInfo(sig, new IdentifierPath(name), kind),
                 decls);
         }
 
-        private IParseDeclaration Declaration() {
+        private IDeclaration<ParseTag> Declaration() {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
@@ -432,7 +433,7 @@ namespace Attempt17.Parsing {
                     var last = this.Advance(TokenKind.CloseParenthesis);
                     var loc = first.Tag.Location.Span(last.Location);
 
-                    first = new InvokeParseSyntax(
+                    first = new InvokeSyntax<ParseTag>(
                         new ParseTag(loc),
                         first,
                         args);
@@ -486,7 +487,7 @@ namespace Attempt17.Parsing {
                 var loc = first.Tag.Location.Span(this.tokens[this.pos - 1].Location);
                 var tag = new ParseTag(loc);
 
-                return new MemberUsageParseSyntax(tag, first, segs);
+                return new MemberUsageSyntax<ParseTag>(tag, first, segs);
             }
             else {
                 return first;
@@ -641,7 +642,7 @@ namespace Attempt17.Parsing {
         private ISyntax<ParseTag> VariableLiteral() {
             var tok = (Token<string>)this.Advance(TokenKind.Identifier);
 
-            return new VariableAccessParseSyntax(
+            return new VariableAccessParseSyntax<ParseTag>(
                 new ParseTag(tok.Location),
                 VariableAccessKind.ValueAccess,
                 tok.Value);
@@ -652,7 +653,7 @@ namespace Attempt17.Parsing {
             var tok = (Token<string>)this.Advance(TokenKind.Identifier);
             var loc = start.Location.Span(tok.Location);
 
-            return new VariableAccessParseSyntax(
+            return new VariableAccessParseSyntax<ParseTag>(
                 new ParseTag(loc),
                 VariableAccessKind.RemoteAccess,
                 tok.Value);
@@ -718,7 +719,7 @@ namespace Attempt17.Parsing {
                 var loc = start.Location.Span(end.Location);
                 var tag = new ParseTag(loc);
 
-                return new NewSyntax(tag, type, insts);
+                return new NewSyntax<ParseTag>(tag, type, insts);
             }
             else {
                 throw ParsingErrors.UnexpectedToken(this.Advance());

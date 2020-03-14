@@ -1,4 +1,8 @@
 ﻿namespace Attempt17.Features.FlowControl {
+    public enum IfKind {
+        Expression, Statement
+    }
+
     public class IfSyntax<T> : ISyntax<T> {
         public T Tag { get; }
 
@@ -16,6 +20,10 @@
             this.Condition = condition;
             this.Affirmative = affirmative;
             this.Negative = negative;
+        }
+
+        public T1 Accept<T1, TContext>(ISyntaxVisitor<T1, T, TContext> visitor, TContext context) {
+            return visitor.FlowControlVisitor.VisitIf(this, visitor, context);
         }
     }
 }

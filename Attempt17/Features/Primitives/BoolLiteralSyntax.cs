@@ -12,5 +12,9 @@ namespace Attempt17.Features.Primitives {
             this.Tag = tag;
             this.Value = value;
         }
+
+        public T1 Accept<T1, TContext>(ISyntaxVisitor<T1, T, TContext> visitor, TContext context) {
+            return visitor.PrimitivesVisitor.VisitBoolLiteral(this, visitor, context);
+        }
     }
 }

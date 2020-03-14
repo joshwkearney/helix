@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt17.Features.Arrays;
 using Attempt17.Features.Containers.Composites;
+using Attempt17.Features.Containers.Arrays;
 using Attempt17.Features.Functions;
-using Attempt17.Features.Variables;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
 using Attempt17.Types;
@@ -15,24 +14,29 @@ namespace Attempt17.Features.Containers {
         private readonly ITypeCheckScope scope;
         private readonly TokenLocation loc;
 
-        public ValueMemberAccessTarget(ISyntax<TypeCheckTag> value, TokenLocation loc, ITypeCheckScope scope) {
+        public ValueMemberAccessTarget(ISyntax<TypeCheckTag> value, TokenLocation loc,
+            ITypeCheckScope scope) {
+
             this.value = value;
             this.scope = scope;
             this.loc = loc;
         }
 
         public IMemberAccessTarget AccessMember(string name) {
-            var value = this.value.Tag.ReturnType.Accept(new MemberAccessVisitor(name, this.loc, this.value, this.scope));
+            var visitor = new MemberAccessVisitor(name, this.loc, this.value, this.scope);
+            var value = this.value.Tag.ReturnType.Accept(visitor);
 
             return new ValueMemberAccessTarget(value, this.loc, this.scope);
         }
 
-        public IMemberAccessTarget InvokeMember(string name, ImmutableList<ISyntax<TypeCheckTag>> arguments) {
+        public IMemberAccessTarget InvokeMember(string name,
+            ImmutableList<ISyntax<TypeCheckTag>> arguments) {
+
             if (!this.scope.FindMethod(this.value.Tag.ReturnType, name).TryGetValue(out var info)) {
                 throw TypeCheckingErrors.MemberUndefined(this.loc, this.value.Tag.ReturnType, name);
             }
 
-            var target = new FunctionLiteralSyntax(new TypeCheckTag(info.Type));
+            var target = new FunctionLiteralSyntax<TypeCheckTag>(new TypeCheckTag(info.Type));
 
             var access = FunctionsTypeChecker.CheckFunctionInvoke(
                 this.loc,
@@ -53,7 +57,9 @@ namespace Attempt17.Features.Containers {
             private readonly TokenLocation location;
             private readonly ISyntax<TypeCheckTag> target;
 
-            public MemberAccessVisitor(string name, TokenLocation loc, ISyntax<TypeCheckTag> target, ITypeCheckScope scope) {
+            public MemberAccessVisitor(string name, TokenLocation loc, ISyntax<TypeCheckTag> target,
+                ITypeCheckScope scope) {
+
                 this.memberName = name;
                 this.scope = scope;
                 this.location = loc;
@@ -70,7 +76,7 @@ namespace Attempt17.Features.Containers {
 
                 var tag = new TypeCheckTag(IntType.Instance);
 
-                return new ArraySizeAccessSyntax(tag, this.target);
+                return new ArraySizeAccessSyntax<TypeCheckTag>(tag, this.target);
             }
 
             public ISyntax<TypeCheckTag> VisitBoolType(BoolType type) {
@@ -87,12 +93,17 @@ namespace Attempt17.Features.Containers {
                 }
 
                 return info.Accept(new IdentifierTargetVisitor<ISyntax<TypeCheckTag>>() {
-                    HandleFunction = _ => throw TypeCheckingErrors.MemberUndefined(this.location, type, this.memberName),
+                    HandleFunction = _ => throw TypeCheckingErrors.MemberUndefined(this.location,
+                        type, this.memberName),
                     HandleComposite = compositeInfo => {
-                        var mem = compositeInfo.Signature.Members.FirstOrDefault(x => x.Name == this.memberName);
+                        var mem = compositeInfo
+                        .Signature
+                        .Members
+                        .FirstOrDefault(x => x.Name == this.memberName);
 
                         if (mem == null) {
-                            throw TypeCheckingErrors.MemberUndefined(this.location, type, this.memberName);
+                            throw TypeCheckingErrors.MemberUndefined(this.location, type,
+                                this.memberName);
                         }
 
                         var copiability = mem.Type.Accept(new TypeCopiabilityVisitor(this.scope));
@@ -110,7 +121,8 @@ namespace Attempt17.Features.Containers {
 
                         var tag = new TypeCheckTag(mem.Type, captured);
 
-                        return new CompositeMemberAccessSyntax(tag, this.target, this.memberName, compositeInfo);
+                        return new CompositeMemberAccessSyntax<TypeCheckTag>(tag, this.target,
+                            this.memberName, compositeInfo);
                     }
                 });
             }

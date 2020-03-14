@@ -13,8 +13,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\" />
+    <Folder Include="Features\Primitives\" />
+    <Folder Include="Features\FlowControl\" />
+    <Folder Include="Features\Functions\" />
+    <Folder Include="Features\Variables\" />
     <Folder Include="Features\Containers\" />
-    <Folder Include="Features\Containers\Composites\" />
+    <Folder Include="Features\Containers\Arrays\" />
     <Folder Include="Features\Containers\Unions\" />
+    <Folder Include="Features\Containers\Composites\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Features\Functions\FunctionsFeature.cs" />
+    <Compile Remove="Features2\Variables\VariableAccessSyntax.cs" />
   </ItemGroup>
 </Project>

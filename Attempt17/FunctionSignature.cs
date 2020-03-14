@@ -33,7 +33,7 @@ namespace Attempt17 {
         }
 
         public bool Equals(FunctionSignature other) {
-            if (other == null) {
+            if (other is null) {
                 return false;
             }
 
@@ -53,8 +53,8 @@ namespace Attempt17 {
         }
 
         public static bool operator ==(FunctionSignature sig1, FunctionSignature sig2) {
-            if (sig1 == null) {
-                return sig2 == null;
+            if (sig1 is null) {
+                return sig2 is null;
             }
 
             return sig1.Equals(sig2);

@@ -11,5 +11,9 @@
             this.Condition = cond;
             this.Body = body;
         }
+
+        public T1 Accept<T1, TContext>(ISyntaxVisitor<T1, T, TContext> visitor, TContext context) {
+            return visitor.FlowControlVisitor.VisitWhile(this, visitor, context);
+        }
     }
 }

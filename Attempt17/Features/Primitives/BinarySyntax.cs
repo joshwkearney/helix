@@ -22,5 +22,9 @@
             this.Left = left;
             this.Right = right;
         }
+
+        public T1 Accept<T1, TContext>(ISyntaxVisitor<T1, T, TContext> visitor, TContext context) {
+            return visitor.PrimitivesVisitor.VisitBinary(this, visitor, context);
+        }
     }
 }

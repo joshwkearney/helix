@@ -26,7 +26,7 @@ namespace Attempt17 {
         }
 
         public bool Equals(Parameter other) {
-            if (other == null) {
+            if (other is null) {
                 return false;
             }
 
@@ -42,8 +42,8 @@ namespace Attempt17 {
         }
 
         public static bool operator==(Parameter par1, Parameter par2) {
-            if (par1 == null) {
-                return par2 == null;
+            if (par1 is null) {
+                return par2 is null;
             }
             else {
                 return par1.Equals(par2);
