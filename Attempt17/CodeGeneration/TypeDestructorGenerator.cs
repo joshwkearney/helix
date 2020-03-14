@@ -33,7 +33,13 @@ namespace Attempt17.CodeGeneration {
                 .Accept(this)
                 .TryGetValue(out string innerDestructor);
 
-            this.headerWriter.Line($"inline void {destructorName}({arrayTypeName} obj) {{");
+            // Write forward declaration
+            this.gen
+                .Header2Writer
+                .Line($"inline void {destructorName}({arrayTypeName} obj);")
+                .EmptyLine();
+
+            this.headerWriter.Line($"void {destructorName}({arrayTypeName} obj) {{");
             this.headerWriter.Lines(CWriter.Indent($"if ((obj.data & 1) == 1) {{"));
 
             if (hasInnerDestructor) {
@@ -81,6 +87,10 @@ namespace Attempt17.CodeGeneration {
             return info.Accept(new IdentifierTargetVisitor<IOption<string>>() {
                 HandleFunction = _ => Option.None<string>(),
                 HandleComposite = compositeInfo => {
+                    if (!compositeInfo.Signature.Members.Any()) {
+                        return Option.None<string>();
+                    }
+
                     if (compositeInfo.Kind == CompositeKind.Struct) {
                         return this.DestructStruct(type, compositeInfo);
                     }
@@ -98,6 +108,9 @@ namespace Attempt17.CodeGeneration {
         }
 
         private IOption<string> DestructUnion(NamedType type, CompositeInfo compositeInfo) {
+            var destructorName = "$destructor_" + type.ToFriendlyString();
+            this.generatedTypes[type] = Option.Some(destructorName);
+
             var memberDestructors = compositeInfo
                 .Signature
                 .Members
@@ -114,11 +127,16 @@ namespace Attempt17.CodeGeneration {
                 return Option.None<string>();
             }
 
-            var destructorName = "$destructor_" + type.ToFriendlyString();
             var unionTypeName = this.gen.Generate(type);
 
+            // Write out the forward declaration
+            this.gen
+                .Header2Writer
+                .Line($"inline void {destructorName}({unionTypeName} obj);")
+                .EmptyLine();
+
             // Write the function signature
-            this.headerWriter.Line($"inline void {destructorName}({unionTypeName} obj) {{");
+            this.headerWriter.Line($"void {destructorName}({unionTypeName} obj) {{");
             this.headerWriter.Lines(CWriter.Indent("switch (obj.tag) {"));
 
             // Write the member destructors
@@ -133,12 +151,13 @@ namespace Attempt17.CodeGeneration {
             this.headerWriter.Line("}");
             this.headerWriter.EmptyLine();
 
-            this.generatedTypes[type] = Option.Some(destructorName);
-
             return Option.Some(destructorName);
         }
 
         private IOption<string> DestructStruct(NamedType type, CompositeInfo compositeInfo) {
+            var destructorName = "$destructor_" + type.ToFriendlyString();
+            this.generatedTypes[type] = Option.Some(destructorName);
+
             var memberDestructors = compositeInfo
                 .Signature
                 .Members
@@ -154,11 +173,16 @@ namespace Attempt17.CodeGeneration {
                 return Option.None<string>();
             }
 
-            var destructorName = "$destructor_" + type.ToFriendlyString();
             var structTypeName = this.gen.Generate(type);
 
+            // Write out the forward declaration
+            this.gen
+                .Header2Writer
+                .Line($"inline void {destructorName}({structTypeName} obj);")
+                .EmptyLine();
+
             // Write the function signature
-            this.headerWriter.Line($"inline void {destructorName}({structTypeName} obj) {{");
+            this.headerWriter.Line($"void {destructorName}({structTypeName} obj) {{");
 
             // Write the member destructors
             foreach (var destructor in memberDestructors) {
@@ -168,12 +192,13 @@ namespace Attempt17.CodeGeneration {
             this.headerWriter.Line("}");
             this.headerWriter.EmptyLine();
 
-            this.generatedTypes[type] = Option.Some(destructorName);
-
             return Option.Some(destructorName);
         }
 
         private IOption<string> DestructClass(NamedType type, CompositeInfo compositeInfo) {
+            var destructorName = "$destructor_" + type.ToFriendlyString();
+            this.generatedTypes[type] = Option.Some(destructorName);
+
             var memberDestructors = compositeInfo
                 .Signature
                 .Members
@@ -183,12 +208,17 @@ namespace Attempt17.CodeGeneration {
                 }))
                 .ToArray();
 
-            var destructorName = "$destructor_" + type.ToFriendlyString();
             var structTypeName = this.gen.Generate(type);
             var structName = compositeInfo.Path.ToCName();
 
+            // Write out the forward declaration
+            this.gen
+                .Header2Writer
+                .Line($"inline void {destructorName}({structTypeName} obj);")
+                .EmptyLine();
+
             // Write the function signature
-            this.headerWriter.Line($"inline void {destructorName}({structTypeName} obj) {{");
+            this.headerWriter.Line($"void {destructorName}({structTypeName} obj) {{");
 
             // Make sure the destructor bit is set to 1
             this.headerWriter.Lines(CWriter.Indent($"if ((obj & 1) == 1) {{"));
@@ -199,12 +229,10 @@ namespace Attempt17.CodeGeneration {
             }
 
             // Also free the pointer
-            this.headerWriter.Lines(CWriter.Indent(2, $"free(({structName}*)obj);"));
+            this.headerWriter.Lines(CWriter.Indent(2, $"free(({structName}*)(obj & ~1));"));
             this.headerWriter.Lines(CWriter.Indent("}"));
             this.headerWriter.Line("}");
             this.headerWriter.EmptyLine();
-
-            this.generatedTypes[type] = Option.Some(destructorName);
 
             return Option.Some(destructorName);
         }
@@ -215,10 +243,18 @@ namespace Attempt17.CodeGeneration {
             }
 
             var destructorName = "$destructor_" + type.ToFriendlyString();
+            this.generatedTypes[type] = Option.Some(destructorName);
+
             var varTypeName = this.gen.Generate(type);
             var innerType = this.gen.Generate(type.InnerType);
 
-            this.headerWriter.Line($"inline void {destructorName}({varTypeName} obj) {{");
+            // Write out the forward declaration
+            this.gen
+                .Header2Writer
+                .Line($"inline void {destructorName}({varTypeName} obj);")
+                .EmptyLine();
+
+            this.headerWriter.Line($"void {destructorName}({varTypeName} obj) {{");
             this.headerWriter.Lines(CWriter.Indent($"if ((obj & 1) == 1) {{"));
 
             if (type.InnerType.Accept(this).TryGetValue(out string innerDestructor)) {
@@ -232,7 +268,6 @@ namespace Attempt17.CodeGeneration {
                 .Line("}")
                 .EmptyLine();
 
-            this.generatedTypes[type] = Option.Some(destructorName);
 
             return Option.Some(destructorName);
         }

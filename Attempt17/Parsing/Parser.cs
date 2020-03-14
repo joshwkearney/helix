@@ -2,6 +2,7 @@
 using Attempt17.Features.Containers;
 using Attempt17.Features.Containers.Arrays;
 using Attempt17.Features.Containers.Composites;
+using Attempt17.Features.Containers.Unions;
 using Attempt17.Features.FlowControl;
 using Attempt17.Features.Functions;
 using Attempt17.Features.Primitives;
@@ -118,14 +119,17 @@ namespace Attempt17.Parsing {
             else if (this.TryAdvance(TokenKind.VoidKeyword)) {
                 return VoidType.Instance;
             }
+            else if (this.TryAdvance(TokenKind.BoolKeyword)) {
+                return BoolType.Instance;
+            }
             else {
                 var path = new IdentifierPath(this.Advance<string>());
                 return new NamedType(path);
             }
         }
 
-        private IDeclaration<ParseTag> FunctionDeclaration() {
-            var start = this.Advance(TokenKind.FunctionKeyword);
+        private FunctionSignature FunctionSignature() {
+            this.Advance(TokenKind.FunctionKeyword);
 
             string funcName = this.Advance<string>();
             this.Advance(TokenKind.OpenParenthesis);
@@ -146,9 +150,16 @@ namespace Attempt17.Parsing {
             this.Advance(TokenKind.YieldSign);
 
             var returnType = this.TypeExpression();
+            var sig = new FunctionSignature(funcName, returnType, pars);
+
+            return sig;
+        }
+
+        private IDeclaration<ParseTag> FunctionDeclaration() {
+            var start = this.tokens[this.pos];
+            var sig = this.FunctionSignature();
             var end = this.Advance(TokenKind.Colon);
 
-            var sig = new FunctionSignature(funcName, returnType, pars);
             var body = this.TopExpression();
             var loc = start.Location.Span(end.Location);
 
@@ -156,7 +167,7 @@ namespace Attempt17.Parsing {
 
             return new FunctionDeclarationSyntax<ParseTag>(
                 new ParseTag(loc),
-                new FunctionInfo(new IdentifierPath(funcName), sig),
+                new FunctionInfo(new IdentifierPath(sig.Name), sig),
                 body);
         }
 
@@ -199,12 +210,52 @@ namespace Attempt17.Parsing {
                 decls);
         }
 
+        private IDeclaration<ParseTag> UnionDeclaration() {
+            var first = this.Advance(TokenKind.UnionKeyword);
+
+            var name = this.Advance<string>();
+            this.Advance(TokenKind.OpenBrace);
+
+            var mems = ImmutableList<Parameter>.Empty;
+            var methods = ImmutableList<FunctionSignature>.Empty;
+
+            while (!this.TryAdvance(TokenKind.CloseBrace)) {
+                if (this.Peek(TokenKind.FunctionKeyword)) {
+                    var methodSig = this.FunctionSignature();
+                    this.Advance(TokenKind.Semicolon);
+
+                    methods = methods.Add(methodSig);
+                }
+                else {
+                    var memType = this.TypeExpression();
+                    var memName = this.Advance<string>();
+
+                    this.Advance(TokenKind.Semicolon);
+
+                    mems = mems.Add(new Parameter(memName, memType));
+                }
+            }
+
+            var last = this.Advance(TokenKind.Semicolon);
+            var loc = first.Location.Span(last.Location);
+            var tag = new ParseTag(loc);
+            var sig = new CompositeSignature(name, mems);
+
+            return new ParseUnionDeclarationSyntax<ParseTag>(
+                tag,
+                new CompositeInfo(sig, new IdentifierPath(name), CompositeKind.Union),
+                methods);
+        }
+
         private IDeclaration<ParseTag> Declaration() {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
             else if (this.Peek(TokenKind.StructKeyword) || this.Peek(TokenKind.ClassKeyword)) {
                 return this.StructDeclaration();
+            }
+            else if (this.Peek(TokenKind.UnionKeyword)) {
+                return this.UnionDeclaration();
             }
 
             throw ParsingErrors.UnexpectedToken(this.Advance());
@@ -413,7 +464,6 @@ namespace Attempt17.Parsing {
 
             return first;
         }
-
 
         private ISyntax<ParseTag> InvokeExpression() {
             var first = this.MemberUsageSyntax();

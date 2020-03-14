@@ -22,6 +22,7 @@
     <Folder Include="Features\Containers\Arrays\" />
     <Folder Include="Features\Containers\Unions\" />
     <Folder Include="Features\Containers\Composites\" />
+    <Folder Include="TypeChecking\Unifiers\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Features\Functions\FunctionsFeature.cs" />

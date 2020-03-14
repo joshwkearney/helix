@@ -1,57 +1,30 @@
 ﻿function main () => void: {
-    var p <- new Point { x = 4, y = 2 };
-    var x <- p.scale(5).norm();
+    var test <- void as Option;
 
-    var array <- [5, 8, 6, 2, 7, 3, 9];
-    var s <- new String { chars = move array };
+    #var copy <- test;
 
-    var wut <- s.substring(0, 3);
+    #var c <- void as int;
 
-    #new Option { some = 4 };
-
-	void;
+    void;
 };
 
-class String {
-    int[] chars;
-
-    function size () => int: this.chars.size;
-
-    function get (int index) => int: this.chars[index];
-
-    function substring (int start, int count) => String: {
-        var array <- new int[count];
-        var i <- 0;
-
-        while i < count do: {
-            array[i] = this.chars[start + i];
-            @i <- i + 1;
-        };
-
-        new String { chars = move array };
-    };
-
-    function concat (String other) => String: {
-        var array <- new int[this.chars.size + other.chars.size];
-        var i <- 0;
-
-        while i < this.chars.size do:{
-            array[i] = this.chars[i];
-            @i <- i + 1;
-        };
-
-        @i <- 0;
-
-        while i < other.chars.size do: {
-            array[this.chars.size + i] = other.chars[i];
-            @i <- i + 1;
-        };
-
-        new String { chars = move array };
-    };
+union Nullable<T> {
+    void null;
+    var T data;
 };
 
-struct Point {
+union Option {
+    void none;
+    int some;
+};
+
+struct OptionSome {
+    Point data;
+
+    function is_empty () => bool: false;
+};
+
+class Point {
     int x;
     int y;
 
@@ -59,9 +32,5 @@ struct Point {
 
     function scale (int factor) => Point: {
         new Point { x = factor * this.x, y = factor * this.y };
-    };
-
-    struct inner {
-        function some() => void: void;
     };
 };

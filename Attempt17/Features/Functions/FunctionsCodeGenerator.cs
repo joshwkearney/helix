@@ -27,7 +27,10 @@ namespace Attempt17.Features.Functions {
             var writer = new CWriter();
             var body = syntax.Body.Accept(visitor, context);
             var returnType = context.Generator.Generate(syntax.FunctionInfo.Signature.ReturnType);
-            var line = this.GenerateSignature(syntax.FunctionInfo, context) + " {";
+
+            var line = GenerateSignature(syntax.FunctionInfo.Signature,
+                syntax.FunctionInfo.Path, context) + " {";
+
             var varsToCleanUp = scope
                 .GetUndestructedVariables()
                 .ToImmutableDictionary(x => x.Key, x => x.Value);
@@ -45,7 +48,8 @@ namespace Attempt17.Features.Functions {
             context
                 .Generator
                 .Header2Writer
-                .Line(this.GenerateSignature(syntax.FunctionInfo, context) + ";")
+                .Line(GenerateSignature(
+                    syntax.FunctionInfo.Signature, syntax.FunctionInfo.Path, context) + ";")
                 .EmptyLine();
 
             return writer.ToBlock("0");
@@ -87,14 +91,16 @@ namespace Attempt17.Features.Functions {
             return writer.ToBlock(tempName);
         }
 
-        private string GenerateSignature(FunctionInfo info, CodeGenerationContext context) {
+        public static string GenerateSignature(FunctionSignature sig, IdentifierPath path,
+            CodeGenerationContext context) {
+
             var line = "";
 
-            line += context.Generator.Generate(info.Signature.ReturnType) + " ";
-            line += info.Path.ToCName();
+            line += context.Generator.Generate(sig.ReturnType) + " ";
+            line += path.ToCName();
             line += "(";
 
-            foreach (var par in info.Signature.Parameters) {
+            foreach (var par in sig.Parameters) {
                 line += context.Generator.Generate(par.Type) + " ";
                 line += par.Name + ", ";
             }

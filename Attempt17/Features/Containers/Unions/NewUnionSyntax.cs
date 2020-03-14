@@ -5,13 +5,13 @@ namespace Attempt17.Features.Containers.Unions {
     public class NewUnionSyntax<T> : ISyntax<T> {
         public T Tag { get; }
 
-        public CompositeInfo CompositeInfo { get; }
+        public CompositeInfo UnionInfo { get; }
 
         public MemberInstantiation<T> Instantiation { get; }
 
         public NewUnionSyntax(T tag, CompositeInfo info, MemberInstantiation<T> inst) {
             this.Tag = tag;
-            this.CompositeInfo = info;
+            this.UnionInfo = info;
             this.Instantiation = inst;
         }
 

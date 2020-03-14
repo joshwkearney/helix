@@ -96,6 +96,7 @@ namespace Attempt17.CodeGeneration {
             // Write out the new struct
             writer.Line("// Union copy");
             writer.VariableInit(tempType, tempName);
+            writer.VariableAssignment($"{tempName}.tag", $"{this.value}.tag");
             writer.Line($"switch ({this.value}.tag) {{");
 
             // Write out all of the copying code
@@ -107,7 +108,7 @@ namespace Attempt17.CodeGeneration {
                 writer.Lines(CWriter.Indent(1, $"}}"));
             }
 
-            writer.Line($"switch ({this.value}.tag) {{");
+            writer.Line($"}}");
             writer.EmptyLine();
 
             return writer.ToBlock(tempName);

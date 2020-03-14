@@ -14,6 +14,14 @@ namespace Attempt17.Features.Containers.Composites {
             ISyntaxVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> visitor,
             TypeCheckContext context) {
 
+            // Check to make sure that all member types are defined
+            foreach (var mem in syntax.CompositeInfo.Signature.Members) {
+                if (!mem.Type.IsDefined(context.Scope)) {
+                    throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location,
+                        mem.Type.ToFriendlyString());
+                }
+            }
+
             // Check to make sure that there are no duplicate member names
             foreach (var mem1 in syntax.CompositeInfo.Signature.Members) {
                 foreach (var mem2 in syntax.CompositeInfo.Signature.Members) {
@@ -27,14 +35,6 @@ namespace Attempt17.Features.Containers.Composites {
             if (syntax.CompositeInfo.Type.IsCircular(context.Scope)) {
                 throw TypeCheckingErrors.CircularValueObject(syntax.Tag.Location,
                     syntax.CompositeInfo.Type);
-            }
-
-            // Check to make sure that all member types are defined
-            foreach (var mem in syntax.CompositeInfo.Signature.Members) {
-                if (!mem.Type.IsDefined(context.Scope)) {
-                    throw TypeCheckingErrors.TypeUndefined(syntax.Tag.Location,
-                        mem.Type.ToFriendlyString());
-                }
             }
 
             var tag = new TypeCheckTag(VoidType.Instance);
@@ -88,6 +88,37 @@ namespace Attempt17.Features.Containers.Composites {
                 .Select(x => new MemberInstantiation<TypeCheckTag>(x.MemberName,
                     x.Value.Accept(visitor, context)))
                 .ToImmutableList();
+
+            // Make sure all instantiations match the correct type
+            var zipped = insts
+                .Join(
+                    syntax.CompositeInfo.Signature.Members,
+                    x => x.MemberName,
+                    x => x.Name,
+                    (x, y) => new {
+                        Name = x.MemberName,
+                        ActualType = x.Value.Tag.ReturnType,
+                        ExpectedType = y.Type
+                    })
+                .Join(
+                    syntax.Instantiations,
+                    x => x.Name,
+                    x => x.MemberName,
+                    (x, y) => new {
+                        x.ActualType,
+                        x.ExpectedType,
+                        x.Name,
+                        y.Value.Tag.Location
+                    }
+                )
+                .ToArray();
+
+            foreach (var entry in zipped) {
+                if (entry.ActualType != entry.ExpectedType) {
+                    throw TypeCheckingErrors.UnexpectedType(entry.Location,
+                        entry.ExpectedType, entry.ActualType);
+                }
+            }
 
             var captured = insts
                 .Select(x => x.Value.Tag.CapturedVariables)

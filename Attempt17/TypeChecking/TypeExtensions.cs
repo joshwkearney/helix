@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
+using Attempt17.Features;
+using Attempt17.Parsing;
 using Attempt17.Types;
 
 namespace Attempt17.TypeChecking {
@@ -30,6 +32,12 @@ namespace Attempt17.TypeChecking {
 
         public static TypeCopiability GetCopiability(this LanguageType type, ITypeCheckScope scope) {
             return type.Accept(new TypeCopiabilityVisitor(scope));
+        }
+
+        public static ISyntax<TypeCheckTag> UnifyTo(this ISyntax<TypeCheckTag> syntax,
+            LanguageType type, TokenLocation loc, ITypeCheckScope scope) {
+
+            return syntax.Tag.ReturnType.Accept(new TypeUnifier(syntax, type, scope, loc));
         }
     }
 }

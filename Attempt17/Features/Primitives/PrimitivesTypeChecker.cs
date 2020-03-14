@@ -51,17 +51,12 @@ namespace Attempt17.Features.Primitives {
             ISyntaxVisitor<ISyntax<TypeCheckTag>, ParseTag, TypeCheckContext> visitor,
             TypeCheckContext context) {
 
-            var target = syntax.Target.Accept(visitor, context);
-            var unified = context.Checker.Unify(target, context.Scope, syntax.TargetType);
+            var target = syntax
+                .Target
+                .Accept(visitor, context)
+                .UnifyTo(syntax.TargetType, syntax.Tag.Location, context.Scope);
 
-            if (!unified.TryGetValue(out var result)) {
-                throw TypeCheckingErrors.UnexpectedType(
-                    syntax.Tag.Location,
-                    syntax.TargetType,
-                    target.Tag.ReturnType);
-            }
-
-            return result;
+            return target;
         }
 
         public ISyntax<TypeCheckTag> VisitBinary(BinarySyntax<ParseTag> syntax,

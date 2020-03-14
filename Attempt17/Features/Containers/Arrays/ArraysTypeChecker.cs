@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Attempt17.Parsing;
 using Attempt17.TypeChecking;
+using Attempt17.TypeChecking.Unifiers;
 using Attempt17.Types;
 
 namespace Attempt17.Features.Containers.Arrays {
@@ -15,7 +16,7 @@ namespace Attempt17.Features.Containers.Arrays {
             TypeCheckContext context) {
 
             // Make sure the element type has a default value
-            if (!syntax.ElementType.Accept(new TypeVoidValueVisitor(context.Scope)).Any()) {
+            if (!syntax.ElementType.Accept(new FromVoidUnifier(context.Scope)).Any()) {
                 throw TypeCheckingErrors.TypeWithoutDefaultValue(syntax.Tag.Location,
                     syntax.ElementType);
             }

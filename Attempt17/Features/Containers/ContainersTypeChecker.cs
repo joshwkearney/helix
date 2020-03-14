@@ -68,7 +68,28 @@ namespace Attempt17.Features.Containers {
                     return newSyntax.Accept(visitor, context);
                 }
                 else if (structInfo.Kind == CompositeKind.Union) {
-                    throw new NotImplementedException();
+                    // Unions can only have one instantiation
+                    if (!syntax.Instantiations.Any()) {
+                        throw TypeCheckingErrors.NewObjectMissingFields(
+                            syntax.Tag.Location,
+                            syntax.Type,
+                            structInfo.Signature.Members.Select(x => x.Name));
+                    }
+
+                    if (syntax.Instantiations.Count() > 1) {
+                        throw TypeCheckingErrors.NewObjectHasExtraneousFields(
+                            syntax.Tag.Location,
+                            syntax.Type,
+                            syntax
+                                .Instantiations
+                                .Select(x => x.MemberName)
+                                .Except(structInfo.Signature.Members.Select(x => x.Name)));
+                    }
+
+                    var newSyntax = new NewUnionSyntax<ParseTag>(syntax.Tag, structInfo,
+                        syntax.Instantiations[0]);
+
+                    return newSyntax.Accept(visitor, context);
                 }
                 else {
                     throw new Exception();

@@ -91,12 +91,9 @@ namespace Attempt17.Features.Variables {
 
             if (value.Value.StartsWith("$")) {
                 context.Scope.SetVariableDestructed(value.Value);
+            }
 
-                return writer.ToBlock("0");
-            }
-            else {
-                return writer.ToBlock("0");
-            }
+            return writer.ToBlock("0");
         }
 
         public CBlock VisitVariableParseAccess(VariableAccessParseSyntax<TypeCheckTag> syntax,

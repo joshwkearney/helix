@@ -162,6 +162,9 @@ namespace Attempt17.Parsing {
             else if (id == "class") {
                 return new Token(TokenKind.ClassKeyword, location);
             }
+            else if (id == "union") {
+                return new Token(TokenKind.UnionKeyword, location);
+            }
             else if (id == "ref") {
                 return new Token(TokenKind.RefKeyword, location);
             }
@@ -185,6 +188,9 @@ namespace Attempt17.Parsing {
             }
             else if (id == "as") {
                 return new Token(TokenKind.AsKeyword, location);
+            }
+            else if (id == "bool") {
+                return new Token(TokenKind.BoolKeyword, location);
             }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);

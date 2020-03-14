@@ -4,14 +4,15 @@ using System.Linq;
 using Attempt17.Features;
 using Attempt17.Features.Containers;
 using Attempt17.Features.Containers.Arrays;
+using Attempt17.Features.Containers.Unions;
 using Attempt17.Features.Primitives;
 using Attempt17.Types;
 
-namespace Attempt17.TypeChecking {
-    public class TypeVoidValueVisitor : ITypeVisitor<IOption<ISyntax<TypeCheckTag>>> {
+namespace Attempt17.TypeChecking.Unifiers {
+    public class FromVoidUnifier : ITypeVisitor<IOption<ISyntax<TypeCheckTag>>> {
         private readonly ITypeCheckScope scope;
 
-        public TypeVoidValueVisitor(ITypeCheckScope scope) {
+        public FromVoidUnifier(ITypeCheckScope scope) {
             this.scope = scope;
         }
 
@@ -77,11 +78,10 @@ namespace Attempt17.TypeChecking {
                     else if (compositeInfo.Kind == CompositeKind.Union) {
                         var mem = compositeInfo.Signature.Members.FirstOrDefault();
                         var tag = new TypeCheckTag(compositeInfo.Type);
-                        var insts = ImmutableList<MemberInstantiation<TypeCheckTag>>.Empty;
 
                         // If there are no members, then there is a default value
                         if (mem == null) {
-                            return Option.Some(new NewCompositeSyntax<TypeCheckTag>(tag, compositeInfo, insts));
+                            throw new Exception();
                         }
 
                         // The first member must have a default value
@@ -89,9 +89,9 @@ namespace Attempt17.TypeChecking {
                             return Option.None<ISyntax<TypeCheckTag>>();
                         }
 
-                        insts = insts.Add(new MemberInstantiation<TypeCheckTag>(mem.Name, voidValue));
+                        var inst = new MemberInstantiation<TypeCheckTag>(mem.Name, voidValue);
 
-                        return Option.Some(new NewCompositeSyntax<TypeCheckTag>(tag, compositeInfo, insts));
+                        return Option.Some(new NewUnionSyntax<TypeCheckTag>(tag, compositeInfo, inst));
                     }
                     else {
                         throw new Exception();

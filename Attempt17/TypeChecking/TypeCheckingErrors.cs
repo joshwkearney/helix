@@ -209,5 +209,19 @@ namespace Attempt17.TypeChecking {
                 "Invalid Circular Object",
                 $"The type '{typeName}' is directly circular, which is invalid in this context. Try using a layer of indirection for circular objects.");
         }
+
+        public static Exception MethodNotDefinedOnUnionMember(TokenLocation loc, IdentifierPath union, string methodName, string memberName) {
+            return new CompilerException(
+                loc,
+                "Method not defined on union member",
+                $"The method '{methodName}' must be defined on the union member '{memberName}' in '{union}'");
+        }
+
+        public static Exception IncorrectUnionMethodSignature(TokenLocation loc, IdentifierPath union, string methodName, string memberName) {
+            return new CompilerException(
+                loc,
+                "Incorrect Signature on union member",
+                $"The method '{methodName}' on union member '{memberName}' does not match the signature defined on the union type '{union}'");
+        }
     }
 }

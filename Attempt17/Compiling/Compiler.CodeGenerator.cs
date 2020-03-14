@@ -22,7 +22,7 @@ namespace Attempt17.Compiling {
             ICodeWriter ICodeGenerator.Header3Writer => this.Header3Writer;
 
             public CodeGenerator(ICScope outerScope) {
-                this.typegen = new TypeGenerator(outerScope, this.Header2Writer);
+                this.typegen = new TypeGenerator(outerScope, this.Header1Writer, this.Header2Writer);
                 this.destructGen = new TypeDestructorGenerator(this.Header3Writer, this, outerScope);
             }
 

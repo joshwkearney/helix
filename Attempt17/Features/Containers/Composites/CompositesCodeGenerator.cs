@@ -13,32 +13,7 @@ namespace Attempt17.Features.Containers.Composites {
 
         public CBlock VisitCompositeDeclaration(CompositeDeclarationSyntax<TypeCheckTag> syntax,
             ISyntaxVisitor<CBlock, TypeCheckTag, CodeGenerationContext> visitor,
-            CodeGenerationContext context) {
-
-            string name = syntax.CompositeInfo.Path.ToCName();
-
-            if (syntax.CompositeInfo.Signature.Members.Any()) {
-                // Generate forward declaration
-                context.Generator.Header1Writer.Line($"typedef struct {name} {name};");
-                context.Generator.Header1Writer.EmptyLine();
-
-                // Generate struct definition
-                context.Generator.Header2Writer.Line($"struct {name} {{");
-
-                foreach (var mem in syntax.CompositeInfo.Signature.Members) {
-                    var memType = context.Generator.Generate(mem.Type);
-
-                    context.Generator.Header2Writer.Lines(CWriter.Indent($"{memType} {mem.Name};"));
-                }
-
-                context.Generator.Header2Writer.Line($"}};");
-                context.Generator.Header2Writer.EmptyLine();
-            }
-            else {
-                // Generate forward declaration
-                context.Generator.Header1Writer.Line($"typedef uint16_t {name};");
-                context.Generator.Header1Writer.EmptyLine();
-            }
+            CodeGenerationContext context) {            
 
             return new CBlock("0");
         }
@@ -106,27 +81,34 @@ namespace Attempt17.Features.Containers.Composites {
                 writer.Lines(inst.Code.SourceLines);
             }
 
-            if (syntax.CompositeInfo.Kind == CompositeKind.Class) {
-                var structName = syntax.CompositeInfo.Path.ToCName();
+            if (insts.Any()) {
+                if (syntax.CompositeInfo.Kind == CompositeKind.Class) {
+                    var structName = syntax.CompositeInfo.Path.ToCName();
 
-                // Write the temp variable
-                writer.Line("// New class");
-                writer.VariableInit(structType, tempName, $"(uintptr_t)malloc(sizeof({structName}))");
+                    // Write the temp variable
+                    writer.Line("// New class");
+                    writer.VariableInit(structType, tempName, $"(uintptr_t)malloc(sizeof({structName}))");
 
-                foreach (var inst in insts) {
-                    writer.VariableAssignment($"(({structName}*){tempName})->{inst.MemberName}", inst.Code.Value);
+                    foreach (var inst in insts) {
+                        writer.VariableAssignment($"(({structName}*){tempName})->{inst.MemberName}", inst.Code.Value);
+                    }
+
+                    writer.Line($"{tempName} |= 1;");
                 }
+                else {
+                    // Write the temp variable
+                    writer.Line("// New struct");
+                    writer.VariableInit(structType, tempName);
 
-                writer.Line($"{tempName} |= 1;");
+                    foreach (var inst in insts) {
+                        writer.VariableAssignment($"{tempName}.{inst.MemberName}", inst.Code.Value);
+                    }
+                }
             }
             else {
                 // Write the temp variable
-                writer.Line("// New struct");
-                writer.VariableInit(structType, tempName);
-
-                foreach (var inst in insts) {
-                    writer.VariableAssignment($"{tempName}.{inst.MemberName}", inst.Code.Value);
-                }
+                writer.Line("// New class");
+                writer.VariableInit(structType, tempName, $"0");
             }
 
             writer.EmptyLine();

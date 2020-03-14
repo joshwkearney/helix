@@ -46,9 +46,11 @@ namespace Attempt17.Compiling {
         }
 
         public IEnumerable<IDeclaration<ParseTag>> VisitUnionDeclaration(
-            UnionDeclarationSyntax<ParseTag> decl, ITypeCheckScope scope) {
+            ParseUnionDeclarationSyntax<ParseTag> decl, ITypeCheckScope scope) {
 
-            throw new System.NotImplementedException();
+            return new[] {
+                new ParseUnionDeclarationSyntax<ParseTag>(decl.Tag, decl.UnionInfo, decl.Methods)
+            };
         }
     }
 
@@ -96,7 +98,7 @@ namespace Attempt17.Compiling {
                 decl.InnerDeclarations);
         }
 
-        public IDeclaration<ParseTag> VisitUnionDeclaration(UnionDeclarationSyntax<ParseTag> decl,
+        public IDeclaration<ParseTag> VisitUnionDeclaration(ParseUnionDeclarationSyntax<ParseTag> decl,
             ITypeCheckScope scope) {
 
             throw new System.NotImplementedException();

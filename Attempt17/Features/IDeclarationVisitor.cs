@@ -11,7 +11,7 @@ namespace Attempt17.Features  {
         public T VisitCompositeDeclaration(CompositeDeclarationSyntax<TTag> decl,
             ITypeCheckScope scope);
 
-        public T VisitUnionDeclaration(UnionDeclarationSyntax<TTag> decl,
+        public T VisitUnionDeclaration(ParseUnionDeclarationSyntax<TTag> decl,
             ITypeCheckScope scope);
     }
 }

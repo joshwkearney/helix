@@ -3,6 +3,7 @@ using Attempt17.Compiling;
 using Attempt17.Parsing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -12,9 +13,16 @@ namespace Attempt17 {
             var input = File.ReadAllText("program.txt").Replace("\t", "    ");
 
             try {
+                var sw = new Stopwatch();
+                sw.Start();
+
                 var comp = new Compiler();
                 var result = comp.Compile(input);
 
+                sw.Stop();
+
+                Console.WriteLine("Compiled in " + sw.ElapsedMilliseconds + " ms");
+                Console.WriteLine();
                 Console.WriteLine(result);
             }
             catch (CompilerException ex) {

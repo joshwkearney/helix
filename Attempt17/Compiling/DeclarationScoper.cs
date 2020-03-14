@@ -49,7 +49,7 @@ namespace Attempt17.Compiling {
         }
 
         public IDeclaration<ParseTag> VisitUnionDeclaration(
-            UnionDeclarationSyntax<ParseTag> syntax,
+            ParseUnionDeclarationSyntax<ParseTag> syntax,
             ITypeCheckScope scope) {
 
             // Check to make sure the name isn't taken
@@ -67,6 +67,21 @@ namespace Attempt17.Compiling {
                 var info = new ReservedIdentifier(path, mem.Type);
 
                 scope.SetTypeInfo(path, info);
+            }
+
+            // Add each method into the scope
+            foreach (var method in syntax.Methods) {
+                var path = syntax.UnionInfo.Path.Append(method.Name);
+
+                var newSig = new FunctionSignature(
+                    method.Name,
+                    method.ReturnType,
+                    method.Parameters.Insert(0, new Parameter("this", syntax.UnionInfo.Type)));
+
+                var info = new FunctionInfo(path, newSig);
+
+                scope.SetTypeInfo(path, info);
+                scope.SetMethod(syntax.UnionInfo.Type, method.Name, path);
             }
 
             return syntax;
