@@ -8,6 +8,8 @@ namespace Attempt17 {
 
         public Func<VariableInfo, T> HandleVariable { get; set; }
 
+        public Func<ReservedIdentifier, T> HandleReserved { get; set; }
+
         public T VisitComposite(CompositeInfo composite) {
             if (this.HandleComposite == null) {
                 throw new InvalidOperationException();
@@ -22,6 +24,14 @@ namespace Attempt17 {
             }
 
             return this.HandleFunction(function);
+        }
+
+        public T VisitReserved(ReservedIdentifier reserved) {
+            if (this.HandleComposite == null) {
+                throw new InvalidOperationException();
+            }
+
+            return this.HandleReserved(reserved);
         }
 
         public T VisitVariable(VariableInfo variable) {

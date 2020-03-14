@@ -12,7 +12,8 @@ namespace Attempt17 {
             return this.Accept(new IdentifierTargetVisitor<IOption<VariableInfo>>() {
                 HandleComposite = _ => Option.None<VariableInfo>(),
                 HandleFunction = _ => Option.None<VariableInfo>(),
-                HandleVariable = Option.Some
+                HandleVariable = Option.Some,
+                HandleReserved = _ => Option.None<VariableInfo>()
             });
         }
 
@@ -20,7 +21,8 @@ namespace Attempt17 {
             return this.Accept(new IdentifierTargetVisitor<IOption<FunctionInfo>>() {
                 HandleComposite = _ => Option.None<FunctionInfo>(),
                 HandleFunction = Option.Some,
-                HandleVariable = _ => Option.None<FunctionInfo>()
+                HandleVariable = _ => Option.None<FunctionInfo>(),
+                HandleReserved = _ => Option.None<FunctionInfo>()
             });
         }
 
@@ -28,7 +30,8 @@ namespace Attempt17 {
             return this.Accept(new IdentifierTargetVisitor<IOption<CompositeInfo>>() {
                 HandleComposite = Option.Some,
                 HandleFunction = _ => Option.None<CompositeInfo>(),
-                HandleVariable = _ => Option.None<CompositeInfo>()
+                HandleVariable = _ => Option.None<CompositeInfo>(),
+                HandleReserved = _ => Option.None<CompositeInfo>()
             });
         }
     }

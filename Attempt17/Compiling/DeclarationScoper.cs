@@ -18,7 +18,16 @@ namespace Attempt17.Compiling {
                     syntax.CompositeInfo.Signature.Name);
             }
 
+            // Add the struct or class to the scope
             scope.SetTypeInfo(syntax.CompositeInfo.Path, syntax.CompositeInfo);
+
+            // Add each field into the scope
+            foreach (var mem in syntax.CompositeInfo.Signature.Members) {
+                var path = syntax.CompositeInfo.Path.Append(mem.Name);
+                var info = new ReservedIdentifier(path, mem.Type);
+
+                scope.SetTypeInfo(path, info);
+            }
 
             return syntax;
         }
@@ -33,6 +42,7 @@ namespace Attempt17.Compiling {
                     syntax.FunctionInfo.Signature.Name);
             }
 
+            // Add the function to the scope
             scope.SetTypeInfo(syntax.FunctionInfo.Path, syntax.FunctionInfo);
 
             return syntax;
@@ -48,7 +58,16 @@ namespace Attempt17.Compiling {
                     syntax.UnionInfo.Signature.Name);
             }
 
+            // Add the union to the scope
             scope.SetTypeInfo(syntax.UnionInfo.Path, syntax.UnionInfo);
+
+            // Add each field into the scope
+            foreach (var mem in syntax.UnionInfo.Signature.Members) {
+                var path = syntax.UnionInfo.Path.Append(mem.Name);
+                var info = new ReservedIdentifier(path, mem.Type);
+
+                scope.SetTypeInfo(path, info);
+            }
 
             return syntax;
         }

@@ -5,5 +5,7 @@
         public T VisitFunction(FunctionInfo function);
 
         public T VisitComposite(CompositeInfo composite);
+
+        public T VisitReserved(ReservedIdentifier reserved);
     }
 }
