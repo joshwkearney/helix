@@ -1,0 +1,39 @@
+﻿function main () => int: {
+    var x <- [1, 2, 3];
+
+    var y <- [x, x, x, x];
+
+    var test <- [[5]];
+
+    {
+        @test <- move y;
+    };
+
+    var p <- new Point {
+        x = 4,
+        y = 3
+    };
+
+    if true
+    then: fib(bloop(p).x)
+    else: 3;
+};
+
+function bloop (Point p) => Point: p;
+
+function fib (int n) => int: {
+    if n <= 1
+    then: n
+    else: fib(n - 1) + fib(n - 2);
+};
+
+function oops (int[] a1, var int[] a2) => void: {
+    # @a2 <- a1;
+};
+
+struct Point {
+    int x;
+    int y;
+
+    function norm () => int: this.x*this.x + this.y*this.y;
+};

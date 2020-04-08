@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt17 {
+namespace Attempt18 {
     public struct IdentifierPath : IEquatable<IdentifierPath> {
+        public static IdentifierPath UnknownPath { get; } = new IdentifierPath("_unknown");
+
+        private readonly Lazy<int> hashCode;
         private readonly ImmutableList<string> segments;
 
         public ImmutableList<string> Segments {
             get => this.segments ?? ImmutableList<string>.Empty;
         }
 
-        public IdentifierPath(params string[] segments) {
-            this.segments = segments.ToImmutableList();
-        }
+        public IdentifierPath(params string[] segments) : this((IEnumerable<string>)segments) { }
 
         public IdentifierPath(IEnumerable<string> segments) {
             this.segments = segments.ToImmutableList();
+            this.hashCode = new Lazy<int>(() => segments.Aggregate(13, (x, y) => x + 7 * y.GetHashCode()));
         }
 
         public IdentifierPath Append(string segment) {
@@ -46,16 +48,12 @@ namespace Attempt17 {
                 .Aggregate(true, (x, y) => x && y);
         }
 
-        public string ToCName() {
-            return string.Join("$", this.segments);
-        }
-
         public bool Equals(IdentifierPath other) {
             return this.Segments.SequenceEqual(other.Segments);
         }
 
         public override string ToString() {
-            return string.Join(".", this.segments);
+            return string.Join("$", this.segments);
         }
 
         public override bool Equals(object obj) {
@@ -67,7 +65,7 @@ namespace Attempt17 {
         }
 
         public override int GetHashCode() {
-            return this.Segments.Aggregate(7, (x, y) => x + 23 * y.GetHashCode());
+            return this.hashCode?.Value ?? 0;
         }
 
         public static bool operator==(IdentifierPath path1, IdentifierPath path2) {
