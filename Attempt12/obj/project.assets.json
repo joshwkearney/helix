@@ -709,19 +709,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\mwkea\\.nuget\\packages\\": {}
+    "C:\\Users\\joshw\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\mwkea\\Source\\Repos\\Blue0500\\Compiler\\Attempt12\\Attempt12.csproj",
+      "projectUniqueName": "C:\\Users\\joshw\\Source\\Repos\\Compiler\\Attempt12\\Attempt12.csproj",
       "projectName": "Attempt12",
-      "projectPath": "C:\\Users\\mwkea\\Source\\Repos\\Blue0500\\Compiler\\Attempt12\\Attempt12.csproj",
-      "packagesPath": "C:\\Users\\mwkea\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\mwkea\\Source\\Repos\\Blue0500\\Compiler\\Attempt12\\obj\\",
+      "projectPath": "C:\\Users\\joshw\\Source\\Repos\\Compiler\\Attempt12\\Attempt12.csproj",
+      "packagesPath": "C:\\Users\\joshw\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\joshw\\Source\\Repos\\Compiler\\Attempt12\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\mwkea\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\joshw\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -766,7 +766,7 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.201\\RuntimeIdentifierGraph.json"
       }
     }
   }

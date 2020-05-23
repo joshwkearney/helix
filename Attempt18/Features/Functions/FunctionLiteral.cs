@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Attempt18.Evaluation;
 using Attempt18.Types;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Attempt18.Features.Functions {
     public class FunctionLiteral : ISyntax {
@@ -10,8 +12,10 @@ namespace Attempt18.Features.Functions {
 
         public IdentifierPath[] CapturedVariables { get; set; }
 
+        public IdentifierPath FunctionPath { get; set; }
+
         public void AnalyzeFlow(TypeChache types, IFlowCache flow) {
-            throw new NotImplementedException();
+            this.CapturedVariables = new IdentifierPath[0];
         }
 
         public void DeclareNames(NameCache<NameTarget> names) {
@@ -22,13 +26,11 @@ namespace Attempt18.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            throw new NotImplementedException();
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            return memory[this.FunctionPath];
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
-            throw new NotImplementedException();
-        }
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) { }
 
         public void ResolveNames(NameCache<NameTarget> names) {
             throw new InvalidOperationException();
@@ -39,7 +41,9 @@ namespace Attempt18.Features.Functions {
         }
 
         public ISyntax ResolveTypes(TypeChache types) {
-            throw new InvalidOperationException();
+            this.ReturnType = new FunctionType(this.FunctionPath);
+
+            return this;
         }
     }
 }

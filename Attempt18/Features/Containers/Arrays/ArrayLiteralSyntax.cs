@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Containers.Arrays {
@@ -36,14 +37,15 @@ namespace Attempt18.Features.Containers.Arrays {
             }
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            return this.Values
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var array = this.Values
                 .Select(x => x.Evaluate(memory))
-                .Select(x => (object)x)
                 .ToArray();
+
+            return new AtomicEvaluateResult(array);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             foreach (var value in this.Values) {
                 value.PreEvaluate(memory);
             }

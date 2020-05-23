@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Variables {
@@ -31,9 +32,21 @@ namespace Attempt18.Features.Variables {
                 throw new Exception("The target of a store cannot be captured");
             }
 
+            var capped = this.Value
+                .CapturedVariables
+                .SelectMany(x => flow.GetAncestorVariables(x))
+                .Distinct()
+                .ToArray();
+
+            var targeted = this.Target
+                .CapturedVariables
+                .SelectMany(x => flow.GetAncestorVariables(x))
+                .Distinct()
+                .ToArray();
+
             // The variables captured in the value assignment must outlive the target
-            foreach (var cap in this.Value.CapturedVariables) {
-                foreach (var target in this.Target.CapturedVariables) {
+            foreach (var cap in capped) {
+                foreach (var target in targeted) {
                     var capScope = cap.Pop();
                     var targetScope = target.Pop();
 
@@ -52,8 +65,8 @@ namespace Attempt18.Features.Variables {
             // }
 
             // Add the new captured variables to the graph
-            foreach (var cap in this.Value.CapturedVariables) {
-                foreach (var target in this.Target.CapturedVariables) {
+            foreach (var cap in capped) {
+                foreach (var target in targeted) {
                     flow.RegisterDependency(target, cap);
                 }
             }
@@ -71,15 +84,15 @@ namespace Attempt18.Features.Variables {
             this.Value.DeclareTypes(cache);
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            var target = (IdentifierPath)this.Target.Evaluate(memory);
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var target = (IdentifierPath)this.Target.Evaluate(memory).Value;
 
             memory[target] = this.Value.Evaluate(memory);
 
-            return 0;
+            return new AtomicEvaluateResult(0);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Target.PreEvaluate(memory);
             this.Value.PreEvaluate(memory);
         }

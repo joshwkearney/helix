@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Variables {
@@ -35,13 +36,13 @@ namespace Attempt18.Features.Variables {
             this.Value.DeclareTypes(cache);
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             memory[this.VariablePath] = this.Value.Evaluate(memory);
 
-            return 0;
+            return new AtomicEvaluateResult(0);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Value.PreEvaluate(memory);
         }
 

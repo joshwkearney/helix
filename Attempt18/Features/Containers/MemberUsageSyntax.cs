@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Containers {
@@ -32,11 +33,11 @@ namespace Attempt18.Features.Containers {
             throw new InvalidOperationException();
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             throw new InvalidOperationException();
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             throw new NotImplementedException();
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Attempt18.Evaluation;
 using Attempt18.Features.Containers;
 using Attempt18.Types;
 
@@ -34,11 +35,11 @@ namespace Attempt18.Features.Variables {
 
         public void DeclareTypes(TypeChache cache) { }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             return memory[this.VariablePath];
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) { }
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) { }
 
         public void ResolveNames(NameCache<NameTarget> names) {
             // Make sure this name exists

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Features.Functions;
 using Attempt18.Types;
 
@@ -64,11 +65,15 @@ namespace Attempt18.Features.Containers.Structs {
             }
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            return 0;
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            return new AtomicEvaluateResult(0);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) { }
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) { 
+            foreach (var decl in this.Declarations) {
+                decl.PreEvaluate(memory);
+            }
+        }
 
         public void ResolveNames(NameCache<NameTarget> names) {
             foreach (var mem in this.Members) {

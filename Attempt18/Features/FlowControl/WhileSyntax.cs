@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.FlowControl {
@@ -30,8 +31,8 @@ namespace Attempt18.Features.FlowControl {
             this.Body.DeclareTypes(cache);
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            var cond = (bool)this.Condition.Evaluate(memory);
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var cond = (bool)this.Condition.Evaluate(memory).Value;
 
             while (true) {
                 if (!cond) {
@@ -39,13 +40,13 @@ namespace Attempt18.Features.FlowControl {
                 }
 
                 this.Body.Evaluate(memory);
-                cond = (bool)this.Condition.Evaluate(memory);
+                cond = (bool)this.Condition.Evaluate(memory).Value;
             }
 
-            return 0;
+            return new AtomicEvaluateResult(0);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Condition.PreEvaluate(memory);
             this.Body.PreEvaluate(memory);
         }

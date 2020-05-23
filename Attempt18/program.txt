@@ -3,10 +3,10 @@
 
     var y <- [x, x, x, x];
 
-    var test <- [[5]];
+    #var test <- [[5]];
 
     {
-        @test <- move y;
+        # @test <- move y;
     };
 
     var p <- new Point {
@@ -14,9 +14,16 @@
         y = 3
     };
 
-    if true
-    then: fib(bloop(p).x)
-    else: 3;
+    test();
+
+    0;
+};
+
+function test () => Some: {
+    var x <- [ 5 ];
+    var s <- new Some { x = @x };
+
+    s;
 };
 
 function bloop (Point p) => Point: p;
@@ -28,7 +35,11 @@ function fib (int n) => int: {
 };
 
 function oops (int[] a1, var int[] a2) => void: {
-    # @a2 <- a1;
+    @a2 <- [1, 2];
+};
+
+struct Some {
+    var int[] x;
 };
 
 struct Point {
@@ -36,4 +47,6 @@ struct Point {
     int y;
 
     function norm () => int: this.x*this.x + this.y*this.y;
+
+    function noop () => Point: this;
 };

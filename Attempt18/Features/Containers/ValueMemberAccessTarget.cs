@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Attempt18.Features.Containers.Arrays;
 using Attempt18.Features.Containers.Structs;
+using Attempt18.Features.Functions;
 using Attempt18.Features.Variables;
 using Attempt18.Parsing;
 using Attempt18.Types;
@@ -25,28 +26,27 @@ namespace Attempt18.Features.Containers {
                     }
 
                     var syntax = new ArraySizeAccess() {
-                        CapturedVariables = new IdentifierPath[0],
-                        ReturnType = IntType.Instance,
                         Scope = this.value.Scope,
-                        Target = this.value
+                        Target = this.value,
+                        ReturnType = IntType.Instance
                     };
 
                     return new ValueMemberAccessTarget(syntax, this.types);
                 case LanguageTypeKind.Struct:
-                    var path = ((StructType)this.value.ReturnType).Path;
-                    var info = this.types.Structs[path];
-
+                    var structType = (StructType)this.value.ReturnType;
+                    var info = this.types.Structs[structType.Path];
                     var mem = info.Members.FirstOrDefault(x => x.Name == name);
-                    if (mem == null) {
-                        throw new Exception();
-                    }
 
                     var syntax2 = new StructMemberAccess() {
                         MemberName = name,
-                        ReturnType = mem.Type,
                         Scope = this.value.Scope,
-                        Target = this.value
+                        Target = this.value,
+                        ReturnType = mem.Type
                     };
+
+                    if (mem == null) {
+                        throw new Exception();
+                    }
 
                     return new ValueMemberAccessTarget(syntax2, this. types);
                 default:
@@ -55,15 +55,43 @@ namespace Attempt18.Features.Containers {
         }
 
         public IMemberAccessTarget InvokeMember(string name, ISyntax[] arguments) {
-            //if (this.value.ReturnType is StructType structType) {
-                // Get the method
-            //    var methodPath = this.types.Methods[structType][name];
+            arguments = arguments.Select(x => x.ResolveTypes(this.types)).ToArray();
 
-            //    var funcSyntax = new FunctionLiteral
-            //}
-            //else {
+            if (this.value.ReturnType is StructType structType) {
+                // Get the method
+                var methodPath = this.types.Methods[structType][name];
+                var sig = this.types.Functions[methodPath];
+
+                if (arguments.Length + 1 != sig.Parameters.Length) {
+                    throw new Exception("Argument and parameter counts must match");
+                }
+
+                for (int i = 0; i < arguments.Length; i++) {
+                    if (arguments[i].ReturnType != sig.Parameters[i + 1].Type) {
+                        throw new Exception("Arguments and parameter types must match");
+                    }
+                }
+
+                var funcLiteral = new FunctionLiteral() {
+                    FunctionPath = methodPath,
+                    Scope = this.value.Scope,
+                    ReturnType = new FunctionType(methodPath)
+                };
+
+                var funcInvoke = new FunctionInvoke() {
+                    Target = funcLiteral,
+                    Arguments = arguments.Prepend(this.value).ToArray(),
+                    Scope = this.value.Scope,
+                    ReturnType = sig.ReturnType,
+                    TargetPath = methodPath,
+                    TargetSignature = sig
+                };
+
+                return new ValueMemberAccessTarget(funcInvoke, this.types);
+            }
+            else {
                 throw new Exception();
-            //}
+            }
         }
 
         public ISyntax ToSyntax() {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.FlowControl {
@@ -53,18 +54,18 @@ namespace Attempt18.Features.FlowControl {
             }
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             var values = this.Statements.Select(x => x.Evaluate(memory)).ToArray();
 
             if (this.Statements.Any()) {
                 return values.Last();
             }
             else {
-                return 0;
+                return new AtomicEvaluateResult(0);
             }
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             foreach (var stat in this.Statements) {
                 stat.PreEvaluate(memory);
             }

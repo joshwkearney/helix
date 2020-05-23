@@ -8,14 +8,12 @@
   <ItemGroup>
     <Folder Include="Types\" />
     <Folder Include="TypeChecking\" />
-    <Folder Include="Features\" />
     <Folder Include="Features\Variables\" />
     <Folder Include="Features\FlowControl\" />
     <Folder Include="Features\Primitives\" />
     <Folder Include="Parsing\" />
     <Folder Include="Features\Containers\" />
     <Folder Include="Features\Containers\Arrays\" />
-    <Folder Include="Features\Functions\" />
     <Folder Include="Features\Containers\Structs\" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Functions {
@@ -18,15 +19,15 @@ namespace Attempt18.Features.Functions {
         public IdentifierPath FunctionPath { get; set; }
 
         public void AnalyzeFlow(TypeChache types, IFlowCache flow) {
-            // Analyze body
-            this.FunctionBody.AnalyzeFlow(types, flow);
-
             // Add unknown dependencies
             foreach (var mem in this.Signature.Parameters) {
                 var memPath = this.FunctionPath.Append(mem.Name);
 
                 flow.RegisterDependency(memPath, IdentifierPath.UnknownPath);
             }
+
+            // Analyze body
+            this.FunctionBody.AnalyzeFlow(types, flow);
 
             // Make sure that the return value doesn't capture any variable inside the scope
             foreach (var cap in this.FunctionBody.CapturedVariables) {
@@ -70,12 +71,12 @@ namespace Attempt18.Features.Functions {
             }
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            return 0;
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            return new AtomicEvaluateResult(0);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
-            memory[this.FunctionPath] = this.FunctionBody;
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            memory[this.FunctionPath] = new AtomicEvaluateResult(this.FunctionBody);
 
             this.FunctionBody.PreEvaluate(memory);
         }

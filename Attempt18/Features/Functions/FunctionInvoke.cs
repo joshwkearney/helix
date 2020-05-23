@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Functions {
@@ -29,8 +30,8 @@ namespace Attempt18.Features.Functions {
             var mutators = this.ReturnType.GetMutators(types).Add(this.ReturnType);
             var captured = new List<IdentifierPath>();
 
-            foreach (var arg in this.Arguments) {
-                if (mutators.Intersect(arg.ReturnType.GetAccessors(types)).Any()) {
+            if (this.ReturnType.GetCopiability(types) != Copiability.None) {
+                foreach (var arg in this.Arguments) {
                     captured.AddRange(arg.CapturedVariables);
                 }
             }
@@ -54,15 +55,15 @@ namespace Attempt18.Features.Functions {
             }
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             // Evaulate arguments
             var args = this.Arguments.Select(x => x.Evaluate(memory)).ToArray();
 
             // Evaluate target
-            var target = (ISyntax)this.Target.Evaluate(memory);
+            var target = (ISyntax)this.Target.Evaluate(memory).Value;
 
             // Save previous parameter values
-            var prev = new Dictionary<IdentifierPath, object>();
+            var prev = new Dictionary<IdentifierPath, IEvaluateResult>();
 
             foreach (var par in this.TargetSignature.Parameters) {
                 var path = this.TargetPath.Append(par.Name);
@@ -90,7 +91,7 @@ namespace Attempt18.Features.Functions {
             return result;
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Target.PreEvaluate(memory);
 
             foreach (var arg in this.Arguments) {

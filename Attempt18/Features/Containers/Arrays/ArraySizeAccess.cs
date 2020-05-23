@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Containers.Arrays {
@@ -27,13 +28,13 @@ namespace Attempt18.Features.Containers.Arrays {
             throw new InvalidOperationException();
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            var target = (object[])this.Target.Evaluate(memory);
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var target = (IEvaluateResult[])this.Target.Evaluate(memory).Value;
 
-            return (long)target.Length;
+            return new AtomicEvaluateResult((long)target.Length);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Target.PreEvaluate(memory);
         }
 

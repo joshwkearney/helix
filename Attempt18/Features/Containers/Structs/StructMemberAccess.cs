@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Containers.Structs {
@@ -29,13 +30,13 @@ namespace Attempt18.Features.Containers.Structs {
             throw new InvalidOperationException();
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            var obj = (Dictionary<string, object>)this.Target.Evaluate(memory);
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var obj = (IReadOnlyDictionary<string, IEvaluateResult>)this.Target.Evaluate(memory).Value;
 
             return obj[this.MemberName];
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Target.PreEvaluate(memory);
         }
 

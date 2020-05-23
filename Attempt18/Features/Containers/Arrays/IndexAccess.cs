@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Containers.Arrays {
@@ -36,14 +37,14 @@ namespace Attempt18.Features.Containers.Arrays {
             this.Index.DeclareTypes(cache);
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            var target = (object[])this.Target.Evaluate(memory);
-            var index = (long)this.Index.Evaluate(memory);
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var target = (IEvaluateResult[])this.Target.Evaluate(memory).Value;
+            var index = (long)this.Index.Evaluate(memory).Value;
 
             return target[index];
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Target.PreEvaluate(memory);
             this.Index.PreEvaluate(memory);
         }

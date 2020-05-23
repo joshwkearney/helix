@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Primitives {
@@ -20,11 +21,11 @@ namespace Attempt18.Features.Primitives {
 
         public void DeclareTypes(TypeChache cache) { }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            return this.Value;
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            return new AtomicEvaluateResult(this.Value);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) { }
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) { }
 
         public void ResolveNames(NameCache<NameTarget> names) { }
 

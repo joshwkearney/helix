@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Primitives {
@@ -72,57 +73,86 @@ namespace Attempt18.Features.Primitives {
             this.Right.DeclareTypes(cache);
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            var left = this.Left.Evaluate(memory);
-            var right = this.Right.Evaluate(memory);
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var left = this.Left.Evaluate(memory).Value;
+            var right = this.Right.Evaluate(memory).Value;
 
             if (left is long leftInt && right is long rightInt) {
+                object result;
+
                 switch (this.Operation) {
                     case BinarySyntaxOperation.Add:
-                        return leftInt + rightInt;
+                        result = leftInt + rightInt;
+                        break;
                     case BinarySyntaxOperation.Subtract:
-                        return leftInt - rightInt;
+                        result = leftInt - rightInt;
+                        break;
                     case BinarySyntaxOperation.Multiply:
-                        return leftInt * rightInt;
+                        result = leftInt * rightInt;
+                        break;
                     case BinarySyntaxOperation.And:
-                        return leftInt & rightInt;
+                        result = leftInt & rightInt;
+                        break;
                     case BinarySyntaxOperation.Or:
-                        return leftInt | rightInt;
+                        result = leftInt | rightInt;
+                        break;
                     case BinarySyntaxOperation.Xor:
-                        return leftInt ^ rightInt;
+                        result = leftInt ^ rightInt;
+                        break;
                     case BinarySyntaxOperation.EqualTo:
-                        return leftInt == rightInt;
+                        result = leftInt == rightInt;
+                        break;
                     case BinarySyntaxOperation.NotEqualTo:
-                        return leftInt != rightInt;
+                        result = leftInt != rightInt;
+                        break;
                     case BinarySyntaxOperation.GreaterThan:
-                        return leftInt > rightInt;
+                        result = leftInt > rightInt;
+                        break;
                     case BinarySyntaxOperation.LessThan:
-                        return leftInt < rightInt;
+                        result = leftInt < rightInt;
+                        break;
                     case BinarySyntaxOperation.GreaterThanOrEqualTo:
-                        return leftInt >= rightInt;
+                        result = leftInt >= rightInt;
+                        break;
                     case BinarySyntaxOperation.LessThanOrEqualTo:
-                        return leftInt <= rightInt;
+                        result = leftInt <= rightInt;
+                        break;
+                    default:
+                        throw new Exception();
                 }
+
+                return new AtomicEvaluateResult(result);
             }
             else if (left is bool leftBool && right is bool rightBool) {
+                object result;
+
                 switch (this.Operation) {
                     case BinarySyntaxOperation.And:
-                        return leftBool && rightBool;
+                        result = leftBool && rightBool;
+                        break;
                     case BinarySyntaxOperation.Or:
-                        return leftBool || rightBool;
+                        result = leftBool || rightBool;
+                        break;
                     case BinarySyntaxOperation.Xor:
-                        return leftBool ^ rightBool;
+                        result = leftBool ^ rightBool;
+                        break;
                     case BinarySyntaxOperation.EqualTo:
-                        return leftBool == rightBool;
+                        result = leftBool == rightBool;
+                        break;
                     case BinarySyntaxOperation.NotEqualTo:
-                        return leftBool != rightBool;
+                        result = leftBool != rightBool;
+                        break;
+                    default:
+                        throw new Exception();
                 }
+
+                return new AtomicEvaluateResult(result);
             }
 
             throw new Exception();
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Left.PreEvaluate(memory);
             this.Right.PreEvaluate(memory);
         }

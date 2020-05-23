@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt4\\Attempt4.csproj": {}
+    "C:\\Users\\joshw\\Source\\Repos\\Compiler\\Attempt4\\Attempt4.csproj": {}
   },
   "projects": {
-    "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt4\\Attempt4.csproj": {
+    "C:\\Users\\joshw\\Source\\Repos\\Compiler\\Attempt4\\Attempt4.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt4\\Attempt4.csproj",
+        "projectUniqueName": "C:\\Users\\joshw\\Source\\Repos\\Compiler\\Attempt4\\Attempt4.csproj",
         "projectName": "Attempt4",
-        "projectPath": "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt4\\Attempt4.csproj",
-        "packagesPath": "C:\\Users\\mwkea\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\mwkea\\source\\repos\\Blue0500\\Compiler\\Attempt4\\obj\\",
+        "projectPath": "C:\\Users\\joshw\\Source\\Repos\\Compiler\\Attempt4\\Attempt4.csproj",
+        "packagesPath": "C:\\Users\\joshw\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\joshw\\Source\\Repos\\Compiler\\Attempt4\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\mwkea\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\joshw\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -43,7 +43,7 @@
               "version": "[5.0.0, )"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.0.100\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.201\\RuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {

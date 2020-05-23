@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Features.Functions;
 using Attempt18.Features.Variables;
 using Attempt18.Parsing;
@@ -114,9 +115,9 @@ namespace Attempt18 {
 
         void AnalyzeFlow(TypeChache types, IFlowCache flow);
 
-        void PreEvaluate(Dictionary<IdentifierPath, object> memory);
+        void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory);
 
-        object Evaluate(Dictionary<IdentifierPath, object> memory);
+        IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory);
     }
 
     class Program {
@@ -135,7 +136,7 @@ namespace Attempt18 {
             var names = new NameCache<NameTarget>();
             var types = new TypeChache();
             var flow = new FlowCache();
-            var memory = new Dictionary<IdentifierPath, object>();
+            var memory = new Dictionary<IdentifierPath, IEvaluateResult>();
 
             foreach (var tree in trees) {
                 tree.ResolveScope(scope);
@@ -203,7 +204,7 @@ namespace Attempt18 {
 
             Console.WriteLine("Evaluated in " + sw.ElapsedMilliseconds + " ms");
 
-            Console.WriteLine("Result: " + result);
+            Console.WriteLine("Result: " + result.Value);
             Console.Read();
         }
     }

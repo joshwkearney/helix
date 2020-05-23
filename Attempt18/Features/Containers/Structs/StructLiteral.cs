@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.Containers.Structs {
@@ -44,16 +45,18 @@ namespace Attempt18.Features.Containers.Structs {
             }
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            return this.Arguments
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var dict = this.Arguments
                 .Select(x => new {
                     x.Name,
                     Value = x.Value.Evaluate(memory)
                 })
                 .ToDictionary(x => x.Name, x => x.Value);
+
+            return new StructEvaluateResult(dict);
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             foreach (var arg in this.Arguments) {
                 arg.Value.PreEvaluate(memory);
             }

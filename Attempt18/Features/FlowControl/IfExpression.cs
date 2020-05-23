@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attempt18.Evaluation;
 using Attempt18.Types;
 
 namespace Attempt18.Features.FlowControl {
@@ -44,8 +45,8 @@ namespace Attempt18.Features.FlowControl {
             this.Negative.DeclareTypes(cache);
         }
 
-        public object Evaluate(Dictionary<IdentifierPath, object> memory) {
-            var cond = (bool)this.Condition.Evaluate(memory);
+        public IEvaluateResult Evaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
+            var cond = (bool)this.Condition.Evaluate(memory).Value;
 
             if (cond) {
                 return this.Affirmative.Evaluate(memory);
@@ -55,7 +56,7 @@ namespace Attempt18.Features.FlowControl {
             }
         }
 
-        public void PreEvaluate(Dictionary<IdentifierPath, object> memory) {
+        public void PreEvaluate(Dictionary<IdentifierPath, IEvaluateResult> memory) {
             this.Condition.PreEvaluate(memory);
             this.Affirmative.PreEvaluate(memory);
             this.Negative.PreEvaluate(memory);
@@ -76,9 +77,9 @@ namespace Attempt18.Features.FlowControl {
         }
 
         public ISyntax ResolveTypes(TypeChache  types) {
-            this.Condition.ResolveTypes(types);
-            this.Affirmative.ResolveTypes(types);
-            this.Negative.ResolveTypes(types);
+            this.Condition = this.Condition.ResolveTypes(types);
+            this.Affirmative = this.Affirmative.ResolveTypes(types);
+            this.Negative = this.Negative.ResolveTypes(types);
 
             if (this.Condition.ReturnType.Kind != LanguageTypeKind.Bool) {
                 throw new Exception();
