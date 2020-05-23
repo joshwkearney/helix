@@ -1,0 +1,13 @@
+﻿{
+    # x scoped locally
+    var x <- [ 4 ];
+
+    # y scoped to x
+    var y <- x + [ 5, 6, 7 ];
+
+    # error
+    return y;
+
+    # error
+    return move y;
+}
