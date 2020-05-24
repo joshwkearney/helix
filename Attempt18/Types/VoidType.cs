@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public class VoidType : LanguageType {
         public static VoidType Instance { get; } = new VoidType();
 

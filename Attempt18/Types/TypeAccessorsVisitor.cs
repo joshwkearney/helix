@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public class TypeAccessorsVisitor : ITypeVisitor<ImmutableHashSet<LanguageType>> {
         private readonly HashSet<LanguageType> visited = new HashSet<LanguageType>();
         private readonly TypeChache  types;

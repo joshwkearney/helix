@@ -1,13 +1,10 @@
-﻿using Attempt18.CodeGeneration;
-using Attempt18.Compiling;
-using Attempt18.Parsing;
+﻿using Attempt19.Compiling;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace Attempt18 {
+namespace Attempt19 {
     public class Program {
         public static void Main(string[] args) {
             var input = File.ReadAllText("program.txt").Replace("\t", "    ");

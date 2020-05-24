@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Attempt18.CodeGeneration {
+namespace Attempt19.CodeGeneration {
     public static class CodeWriterExtensions {
         public static ICodeWriter EmptyLine(this ICodeWriter writer) {
             return writer.Line(string.Empty);

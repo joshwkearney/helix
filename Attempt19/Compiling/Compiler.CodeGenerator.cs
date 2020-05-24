@@ -1,9 +1,9 @@
-﻿using Attempt18.CodeGeneration;
-using Attempt18.Features;
-using Attempt18.TypeChecking;
-using Attempt18.Types;
+﻿using Attempt17.CodeGeneration;
+using Attempt19.CodeGeneration;
+using Attempt19.Types;
+using System;
 
-namespace Attempt18.Compiling {
+namespace Attempt19.Compiling {
     public partial class Compiler {
         private class CodeGenerator : ICodeGenerator {
             private readonly TypeGenerator typegen;
@@ -23,7 +23,7 @@ namespace Attempt18.Compiling {
 
             public CodeGenerator(ICScope outerScope) {
                 this.typegen = new TypeGenerator(outerScope, this.Header1Writer, this.Header2Writer);
-                this.destructGen = new TypeDestructorGenerator(this.Header3Writer, this, outerScope);
+                this.destructGen = new TypeDestructorGenerator(this.Header2Writer, this);
             }
 
             public string Generate(LanguageType type) {
@@ -34,10 +34,12 @@ namespace Attempt18.Compiling {
                 return type.Accept(this.destructGen);
             }
 
-            public CBlock CopyValue(string value, LanguageType type,
-                CodeGenerationContext context) {
+            public CBlock CopyValue(string value, LanguageType type, ICScope scope) {
+                return type.Accept(new ValueCopyVisitor(value, this, scope));
+            }
 
-                return type.Accept(new ValueCopyVisitor(value, this, context.Scope));
+            public CBlock MoveValue(string value, LanguageType type) {
+                return type.Accept(new ValueMoveVisitor(value, this));
             }
         }
     }

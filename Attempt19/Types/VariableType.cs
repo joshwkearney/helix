@@ -1,6 +1,4 @@
-﻿using Attempt17.NewSyntax;
-
-namespace Attempt18.Types {
+﻿namespace Attempt19.Types {
     public class VariableType : LanguageType {
         public LanguageType InnerType { get; }
 

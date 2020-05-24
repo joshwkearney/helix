@@ -1,45 +1,29 @@
-﻿using Attempt18.CodeGeneration;
-using Attempt18.Features;
-using Attempt18.Parsing;
-using Attempt18.TypeChecking;
-using System.Collections.Immutable;
-using System.Linq;
+﻿using Attempt19.Parsing;
 using System.Text;
 
-namespace Attempt18.Compiling {
+namespace Attempt19.Compiling {
     public partial class Compiler {
         public string Compile(string input) {
+            // Initialize things
             var tokens = new Lexer(input).GetTokens();
+            var tree = new Parser(tokens).Parse();
+            var initialPath = new IdentifierPath();
+            var names = new NameCache();
+            var types = new TypeCache();
+            var flows = new FlowCache() {
+                CapturedVariables = new ImmutableGraph<IdentifierPath>(),
+                DependentVariables = new ImmutableGraph<IdentifierPath>() };
+            var codeGen = new CodeGenerator(null);
 
-            var scope = new OuterScope();
-            var declFlattener = new DeclarationFlattener(scope);
-            var declScoper = new DeclarationScoper();
+            // Mature the syntax tree
+            tree = tree.DeclareNames(initialPath, names);
+            tree = tree.ResolveNames(names);
+            tree = tree.DeclareTypes(types);
+            tree = tree.ResolveTypes(types);
+            tree = tree.AnalyzeFlow(flows);
 
-            var decls = new Parser(tokens)
-                .Parse()
-                .SelectMany(x => x.Accept(declFlattener, scope))
-                .Select(x => x.Accept(declScoper, scope))
-                .ToArray();
-
-            var typeChecker = new SyntaxTypeChecker();
-            var typeCheckContext = new TypeCheckContext(new TypeChecker(), scope);
-
-            // Type check everything
-            var checkedDecls = decls
-                .Select(x => x.Accept(typeChecker, typeCheckContext))
-                .ToArray();
-
-            var cscope = new OuterCScope(scope.TypeInfo);
-            var codeGen = new CodeGenerator(cscope);
-            var syntaxCodegen = new SyntaxCodeGenerator();
-            var codegenContext = new CodeGenerationContext(cscope, codeGen);
-
-            // Generate everything
-            var lines = checkedDecls
-                .Select(x => x.Accept(syntaxCodegen, codegenContext))
-                .SelectMany(x => x.SourceLines)
-                .ToImmutableList();
-
+            // Generate code
+            var block = tree.GenerateCode(null, codeGen);
 
             // Get the source text
             var source = new StringBuilder();
@@ -60,7 +44,7 @@ namespace Attempt18.Compiling {
                 source.AppendLine(line);
             }
 
-            foreach (var line in lines) {
+            foreach (var line in block.SourceLines) {
                 source.AppendLine(line);
             }
 

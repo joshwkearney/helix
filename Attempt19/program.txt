@@ -1,13 +1,17 @@
 ﻿{
-    # x scoped locally
-    var x <- [ 4 ];
+    var x <- 4;
+    var meta <- @x;
 
-    # y scoped to x
-    var y <- x + [ 5, 6, 7 ];
+    var test <- [1, 2, 3];
+    test@[0] <- 99;
 
-    # error
-    return y;
+    var p <- new Point { x = 4, y = 6 };
 
-    # error
-    return move y;
+    some.other.@foo <- 45;
+
+    {
+        @meta <- test@[1];
+    };
+
+    x;
 }

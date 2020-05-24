@@ -1,10 +1,7 @@
-﻿using Attempt18.TypeChecking;
-using Attempt18.Types;
-using System;
+﻿using Attempt19.Types;
 using System.Collections.Immutable;
-using System.Text;
 
-namespace Attempt18.CodeGeneration {
+namespace Attempt19.CodeGeneration {
     public interface ICScope {
         public void SetVariableUndestructed(string name, LanguageType type);
 

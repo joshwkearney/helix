@@ -1,7 +1,1 @@
-﻿  Program.c
-C:\Users\mwkea\source\repos\Blue0500\Compiler\CTesting\Program.c(39,64): warning C4020: 'malloc': too many actual parameters
-C:\Users\mwkea\source\repos\Blue0500\Compiler\CTesting\Program.c(63,16): warning C4477: 'printf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'int64_t'
-C:\Users\mwkea\source\repos\Blue0500\Compiler\CTesting\Program.c(63,16): message : consider using '%lld' in the format string
-C:\Users\mwkea\source\repos\Blue0500\Compiler\CTesting\Program.c(63,16): message : consider using '%Id' in the format string
-C:\Users\mwkea\source\repos\Blue0500\Compiler\CTesting\Program.c(63,16): message : consider using '%I64d' in the format string
-  CTesting.vcxproj -> C:\Users\mwkea\source\repos\Blue0500\Compiler\x64\Debug\CTesting.exe
+﻿  CTesting.vcxproj -> C:\Users\joshw\source\repos\Compiler\x64\Debug\CTesting.exe

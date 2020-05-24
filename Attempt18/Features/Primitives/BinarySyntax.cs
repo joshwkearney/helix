@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Attempt18.Evaluation;
-using Attempt18.Types;
+using Attempt19.Evaluation;
+using Attempt19.Types;
 
-namespace Attempt18.Features.Primitives {
+namespace Attempt19.Features.Primitives {
     public enum BinarySyntaxOperation {
         Add, Subtract, Multiply,
         And, Or, Xor,

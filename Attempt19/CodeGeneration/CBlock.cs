@@ -1,9 +1,7 @@
-﻿using Attempt18.Types;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections.Immutable;
 
-namespace Attempt18.CodeGeneration {
+namespace Attempt19.CodeGeneration {
     public class CBlock {
         public ImmutableList<string> SourceLines { get; }
 

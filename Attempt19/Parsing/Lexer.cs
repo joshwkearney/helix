@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Attempt18.Parsing {
+namespace Attempt19.Parsing {
     public class Lexer {
         private readonly string text;
 
@@ -102,8 +102,8 @@ namespace Attempt18.Parsing {
 
             var loc = new TokenLocation(start, strNum.Length);
 
-            if (long.TryParse(strNum, out long num)) {
-                return new Token<long>(num, TokenKind.IntLiteral, loc);
+            if (int.TryParse(strNum, out int num)) {
+                return new Token<int>(num, TokenKind.IntLiteral, loc);
             }
             else {
                 throw ParsingErrors.InvalidNumber(loc, strNum);

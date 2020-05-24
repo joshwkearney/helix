@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Attempt18.Parsing {
+namespace Attempt19.Parsing {
     public class TokenLocation {
         public int StartIndex { get; }
 

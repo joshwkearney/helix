@@ -1,18 +1,18 @@
-﻿using Attempt18.Features;
-using Attempt18.Features.Containers;
-using Attempt18.Features.Containers.Arrays;
-using Attempt18.Features.Containers.Structs;
-using Attempt18.Features.FlowControl;
-using Attempt18.Features.Functions;
-using Attempt18.Features.Primitives;
-using Attempt18.Features.Variables;
-using Attempt18.Types;
+﻿using Attempt19.Features;
+using Attempt19.Features.Containers;
+using Attempt19.Features.Containers.Arrays;
+using Attempt19.Features.Containers.Structs;
+using Attempt19.Features.FlowControl;
+using Attempt19.Features.Functions;
+using Attempt19.Features.Primitives;
+using Attempt19.Features.Variables;
+using Attempt19.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt18.Parsing {
+namespace Attempt19.Parsing {
     public class Parser {
         private int pos = 0;
         private readonly IReadOnlyList<IToken> tokens;
@@ -215,7 +215,6 @@ namespace Attempt18.Parsing {
                 Declarations = decls.ToArray()
             };
         }
-
 
         private ISyntax StructDeclaration() {
             var first = this.Advance(TokenKind.StructKeyword);

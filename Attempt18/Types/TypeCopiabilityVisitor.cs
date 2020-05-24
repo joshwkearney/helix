@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public class TypeCopiabilityVisitor : ITypeVisitor<Copiability> {
         private readonly HashSet<LanguageType> visited = new HashSet<LanguageType>();
         private readonly TypeChache  types;

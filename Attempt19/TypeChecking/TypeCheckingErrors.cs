@@ -1,12 +1,11 @@
-﻿using Attempt18;
-using Attempt18.Features.Primitives;
-using Attempt18.Parsing;
-using Attempt18.Types;
+﻿using Attempt19;
+using Attempt19.Parsing;
+using Attempt19.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Attempt17.TypeChecking {
+namespace Attempt19.TypeChecking {
     public static class TypeCheckingErrors {
         public static Exception UnexpectedType(TokenLocation location, LanguageType expected, LanguageType actual) {
             return new CompilerException(
@@ -148,12 +147,12 @@ namespace Attempt17.TypeChecking {
                 $"The size '{count}' is invalid for an array initializer; arrays must have nonnegative size.");
         }
 
-        public static Exception InvalidBinaryOperator(TokenLocation loc, BinarySyntaxKind op, LanguageType type) {
+        /*public static Exception InvalidBinaryOperator(TokenLocation loc, BinarySyntaxKind op, LanguageType type) {
             return new CompilerException(
                 loc,
                 "Invalid Binary Operator",
                 $"The binary operator '{op}' is invalid for arguments of type '{type}'");
-        }
+        }*/
 
         public static Exception ZeroLengthArrayLiteral(TokenLocation loc) {
             return new CompilerException(

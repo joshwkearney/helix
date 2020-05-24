@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Attempt18.Evaluation;
-using Attempt18.Types;
+using Attempt19.Evaluation;
+using Attempt19.Types;
 
-namespace Attempt18.Features.Variables {
+namespace Attempt19.Features.Variables {
     public class VariableLiteralAccess : ISyntax {
         public IdentifierPath Scope { get; set; }
 

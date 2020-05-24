@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public static class TypeExtensions {
         public static Copiability GetCopiability(this LanguageType type, TypeChache types) {
             return type.Accept(new TypeCopiabilityVisitor(types));

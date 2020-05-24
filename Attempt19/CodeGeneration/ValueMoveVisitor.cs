@@ -1,19 +1,17 @@
-﻿using Attempt18.TypeChecking;
-using Attempt18.Types;
+﻿using Attempt19.CodeGeneration;
+using Attempt19.Types;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Attempt18.CodeGeneration {
+namespace Attempt17.CodeGeneration {
     public class ValueMoveVisitor : ITypeVisitor<CBlock> {
         private readonly string value;
         private readonly ICodeGenerator gen;
         private static int moveTemp = 0;
-        private IScope scope;
 
-        public ValueMoveVisitor(string value, IScope scope, ICodeGenerator gen) {
+        public ValueMoveVisitor(string value, ICodeGenerator gen) {
             this.value = value;
-            this.scope = scope;
             this.gen = gen;
         }
 
@@ -32,37 +30,11 @@ namespace Attempt18.CodeGeneration {
         }
 
         public CBlock VisitBoolType(BoolType type) {
-            throw new InvalidOperationException();
+            return new CBlock(this.value);
         }
 
         public CBlock VisitIntType(IntType type) {
-            throw new InvalidOperationException();
-        }
-
-        public CBlock VisitNamedType(NamedType type) {
-            if (!this.scope.FindTypeInfo(type.Path).TryGetValue(out var info)) {
-                throw new Exception("This is not supposed to happen");
-            }
-
-            return info.Accept(new IdentifierTargetVisitor<CBlock>() {
-                HandleComposite = compositeInfo => {
-                    if (compositeInfo.Kind == CompositeKind.Class) {
-                        var varName = "$move_temp_" + moveTemp++;
-                        var varType = this.gen.Generate(type);
-                        var writer = new CWriter();
-
-                        writer.Line("// Class move");
-                        writer.Line($"{varType} {varName} = {this.value};");
-                        writer.Line($"{this.value} = 0;");
-                        writer.EmptyLine();
-
-                        return writer.ToBlock(varName);
-                    }
-                    else {
-                        throw new InvalidOperationException();
-                    }
-                }
-            });
+            return new CBlock(this.value);
         }
 
         public CBlock VisitVariableType(VariableType type) {
@@ -79,7 +51,7 @@ namespace Attempt18.CodeGeneration {
         }
 
         public CBlock VisitVoidType(VoidType type) {
-            throw new InvalidOperationException();
+            return new CBlock(this.value);
         }
     }
 }

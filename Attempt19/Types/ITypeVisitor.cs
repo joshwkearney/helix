@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Attempt18.Types {
+﻿namespace Attempt19.Types {
     public interface ITypeVisitor<T> {
         T VisitIntType(IntType type);
 
@@ -11,8 +7,6 @@ namespace Attempt18.Types {
         T VisitBoolType(BoolType type);
 
         T VisitVariableType(VariableType type);
-
-        T VisitNamedType(NamedType type);
 
         T VisitArrayType(ArrayType type);
     }

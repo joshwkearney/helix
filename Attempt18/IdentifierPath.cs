@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt18 {
+namespace Attempt19 {
     public struct IdentifierPath : IEquatable<IdentifierPath> {
         public static IdentifierPath UnknownPath { get; } = new IdentifierPath("_unknown");
 

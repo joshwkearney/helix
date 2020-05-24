@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public enum Copiability {
         Unconditional, Conditional, None
     }

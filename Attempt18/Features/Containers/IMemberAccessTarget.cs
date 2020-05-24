@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Attempt18.Features.Containers {
+namespace Attempt19.Features.Containers {
     public interface IMemberAccessTarget {
         public IMemberAccessTarget AccessMember(string name);
 

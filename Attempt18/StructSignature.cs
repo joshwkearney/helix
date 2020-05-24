@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Attempt18 {
+namespace Attempt19 {
     public class StructSignature {
         public string Name { get; set; }
 

@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public class StructType : LanguageType {
         public override LanguageTypeKind Kind => LanguageTypeKind.Struct;
 

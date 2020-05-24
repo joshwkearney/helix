@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Attempt18.Evaluation {
+namespace Attempt19.Evaluation {
     public class AtomicEvaluateResult : IEvaluateResult {
         public object Value { get; }
 

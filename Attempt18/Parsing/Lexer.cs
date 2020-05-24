@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Attempt18.Parsing {
+namespace Attempt19.Parsing {
     public class Lexer {
         private readonly string text;
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Attempt18.Parsing {
+namespace Attempt19.Parsing {
     public static class ParsingErrors {
         public static Exception EndOfFile(TokenLocation location) {
             return new CompilerException(

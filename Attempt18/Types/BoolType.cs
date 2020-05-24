@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public class BoolType : LanguageType {
         public static LanguageType Instance { get; } = new BoolType();
 

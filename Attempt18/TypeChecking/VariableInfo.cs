@@ -1,6 +1,6 @@
-﻿using Attempt18.Types;
+﻿using Attempt19.Types;
 
-namespace Attempt18 {
+namespace Attempt19 {
     public enum VariableDefinitionKind {
         Local, Alias
     }

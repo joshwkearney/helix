@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Attempt18.Evaluation {
+namespace Attempt19.Evaluation {
     public class StructEvaluateResult : IEvaluateResult {
         public IReadOnlyDictionary<string, IEvaluateResult> Members { get; }
 

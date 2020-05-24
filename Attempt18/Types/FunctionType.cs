@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public class FunctionType : LanguageType {
         public IdentifierPath FunctionPath { get; }
 

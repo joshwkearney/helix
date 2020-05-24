@@ -1,6 +1,4 @@
-﻿using Attempt17.NewSyntax;
-
-namespace Attempt18.Types {
+﻿namespace Attempt19.Types {
     public abstract class LanguageType {
         public abstract T Accept<T>(ITypeVisitor<T> visitor);
 

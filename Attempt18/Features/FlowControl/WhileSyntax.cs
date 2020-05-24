@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Attempt18.Evaluation;
-using Attempt18.Types;
+using Attempt19.Evaluation;
+using Attempt19.Types;
 
-namespace Attempt18.Features.FlowControl {
+namespace Attempt19.Features.FlowControl {
     public class WhileSyntax : ISyntax {
         private static int id = 0;
 

@@ -1,10 +1,9 @@
-﻿using Attempt18.Types;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Attempt18.CodeGeneration {
+namespace Attempt19.CodeGeneration {
     public class CWriter : ICodeWriter {
         private ImmutableList<string> lines = ImmutableList<string>.Empty;
 

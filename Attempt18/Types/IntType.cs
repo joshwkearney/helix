@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Attempt18.Types {
+namespace Attempt19.Types {
     public class IntType : LanguageType {
         public static IntType Instance { get; } = new IntType();
 

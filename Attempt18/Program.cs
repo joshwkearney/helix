@@ -4,13 +4,13 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Attempt18.Evaluation;
-using Attempt18.Features.Functions;
-using Attempt18.Features.Variables;
-using Attempt18.Parsing;
-using Attempt18.Types;
+using Attempt19.Evaluation;
+using Attempt19.Features.Functions;
+using Attempt19.Features.Variables;
+using Attempt19.Parsing;
+using Attempt19.Types;
 
-namespace Attempt18 {
+namespace Attempt19 {
     public enum NameTarget {
         Variable, Function, Struct, Reserved
     }
