@@ -11,7 +11,7 @@ namespace Attempt19 {
         public static Syntax MakeVariableAccess(string name, TokenLocation loc) {
             return new Syntax() {
                 Data = SyntaxData.From(new VariableAccessData() {
-                    Name = name,
+                    VariableName = name,
                     Location = loc }),
                 Operator = SyntaxOp.FromNameDeclarator(VariableAccessTransformations.DeclareNames)
             };
@@ -20,19 +20,7 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Variables {
-    public class VariableAccessData : IParsedData, ITypeCheckedData, IFlownData {
-        public string Name { get; set; }
-
-        public IdentifierPath ContainingScope { get; set; }
-
-        public IdentifierPath VariablePath { get; set; }
-
-        public TokenLocation Location { get; set; }
-
-        public LanguageType ReturnType { get; set; }
-
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
-    }    
+    public class VariableAccessData : VariableAccessBase { }
 
     public static class VariableAccessTransformations {
         public static Syntax DeclareNames(IParsedData data, IdentifierPath scope, NameCache names) {
@@ -51,13 +39,13 @@ namespace Attempt19.Features.Variables {
             var access = (VariableAccessData)data;
 
             // Make sure this name exists
-            if (!names.FindName(access.ContainingScope, access.Name, out var varpath, out var target)) {
-                throw TypeCheckingErrors.VariableUndefined(access.Location, access.Name);
+            if (!names.FindName(access.ContainingScope, access.VariableName, out var varpath, out var target)) {
+                throw TypeCheckingErrors.VariableUndefined(access.Location, access.VariableName);
             }
 
             // Make sure this name is a variable
             if (target != NameTarget.Variable) {
-                throw TypeCheckingErrors.VariableUndefined(access.Location, access.Name);
+                throw TypeCheckingErrors.VariableUndefined(access.Location, access.VariableName);
             }
 
             // Set the access variable path
@@ -120,7 +108,7 @@ namespace Attempt19.Features.Variables {
         public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
             var access = (VariableAccessData)data;
 
-            return gen.CopyValue(access.Name, access.ReturnType, scope);
+            return gen.CopyValue(access.VariableName, access.ReturnType, scope);
         }
     }
 }

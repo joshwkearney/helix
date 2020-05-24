@@ -177,10 +177,10 @@ namespace Attempt19.Features.Variables {
 
                 var destructorOp = gen.GetDestructor(innerType);
                 if (destructorOp.TryGetValue(out var destructor)) {
-                    writer.Line($"{destructor}({literal.Name});");
+                    writer.Line($"{destructor}({literal.VariableName});");
                 }
 
-                writer.VariableAssignment(literal.Name, value.Value);
+                writer.VariableAssignment(literal.VariableName, value.Value);
                 writer.EmptyLine();
             }
             else {

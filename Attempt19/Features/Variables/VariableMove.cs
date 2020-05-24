@@ -10,8 +10,8 @@ namespace Attempt19 {
     public static partial class SyntaxFactory {
         public static Syntax MakeVariableMove(string name, TokenLocation loc) {
             return new Syntax() {
-                Data = SyntaxData.From(new VariableAccessData() {
-                    Name = name,
+                Data = SyntaxData.From(new VariableMoveData() {
+                    VariableName = name,
                     Location = loc }),
                 Operator = SyntaxOp.FromNameDeclarator(VariableMoveTransformations.DeclareNames)
             };
@@ -20,9 +20,11 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Variables {
+    public class VariableMoveData : VariableAccessBase { }
+
     public static class VariableMoveTransformations {
         public static Syntax DeclareNames(IParsedData data, IdentifierPath scope, NameCache names) {
-            var access = (VariableAccessData)data;
+            var access = (VariableMoveData)data;
 
             // Set containing scope
             access.ContainingScope = scope;
@@ -34,16 +36,16 @@ namespace Attempt19.Features.Variables {
         }
 
         public static Syntax ResolveNames(IParsedData data, NameCache names) {
-            var access = (VariableAccessData)data;
+            var access = (VariableMoveData)data;
 
             // Make sure this name exists
-            if (!names.FindName(access.ContainingScope, access.Name, out var varpath, out var target)) {
-                throw TypeCheckingErrors.VariableUndefined(access.Location, access.Name);
+            if (!names.FindName(access.ContainingScope, access.VariableName, out var varpath, out var target)) {
+                throw TypeCheckingErrors.VariableUndefined(access.Location, access.VariableName);
             }
 
             // Make sure this name is a variable
             if (target != NameTarget.Variable) {
-                throw TypeCheckingErrors.VariableUndefined(access.Location, access.Name);
+                throw TypeCheckingErrors.VariableUndefined(access.Location, access.VariableName);
             }
 
             // Set the access variable path
@@ -56,7 +58,7 @@ namespace Attempt19.Features.Variables {
         }
 
         public static Syntax DeclareTypes(IParsedData data, TypeCache types) {
-            var access = (VariableAccessData)data;
+            var access = (VariableMoveData)data;
 
             return new Syntax() {
                 Data = SyntaxData.From(access),
@@ -65,7 +67,7 @@ namespace Attempt19.Features.Variables {
         }
 
         public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
-            var access = (VariableAccessData)data;
+            var access = (VariableMoveData)data;
 
             // Set return type
             var info = types.Variables[access.VariablePath];
@@ -78,7 +80,7 @@ namespace Attempt19.Features.Variables {
         }
 
         public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
-            var access = (VariableAccessData)data;
+            var access = (VariableMoveData)data;
 
             var dependents = flows.DependentVariables.GetNeighbors(access.VariablePath);
             var movedPath = new IdentifierPath("$moved");
@@ -111,11 +113,11 @@ namespace Attempt19.Features.Variables {
         }
 
         public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
-            var access = (VariableAccessData)data;
+            var access = (VariableMoveData)data;
 
-            scope.SetVariableDestructed(access.Name);
+            scope.SetVariableDestructed(access.VariableName);
 
-            return gen.MoveValue(access.Name, access.ReturnType);
+            return gen.MoveValue(access.VariableName, access.ReturnType);
         }
     }
 }

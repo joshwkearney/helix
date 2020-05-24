@@ -14,7 +14,7 @@ namespace Attempt19 {
         public static Syntax MakeArrayAccess(string target, Syntax index, ArrayAccessKind kind, TokenLocation loc) {
             return new Syntax() {
                 Data = SyntaxData.From(new ArrayAccessData() {
-                    Target = target,
+                    VariableName = target,
                     IndexSyntax = index,
                     Kind = kind,
                     Location = loc }),
@@ -29,24 +29,12 @@ namespace Attempt19.Features.Containers.Arrays {
         ValueAccess, LiteralAccess
     }
 
-    public class ArrayAccessData : IParsedData, ITypeCheckedData, IFlownData {
+    public class ArrayAccessData : VariableAccessBase {
         public ArrayAccessKind Kind { get; set; }
-
-        public string Target { get; set; }
-
-        public IdentifierPath TargetPath { get; set; }
 
         public Syntax IndexSyntax { get; set; }
 
         public ArrayType ArrayType { get; set; }
-
-        public IdentifierPath ContainingScope { get; set; }
-
-        public TokenLocation Location { get; set; }
-
-        public LanguageType ReturnType { get; set; }
-
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
     }    
 
     public static class ArrayAccessTransformations {
@@ -74,17 +62,17 @@ namespace Attempt19.Features.Containers.Arrays {
             index.IndexSyntax = index.IndexSyntax.ResolveNames(names);
 
             // Make sure this name exists
-            if (!names.FindName(index.ContainingScope, index.Target, out var varpath, out var target)) {
-                throw TypeCheckingErrors.VariableUndefined(index.Location, index.Target);
+            if (!names.FindName(index.ContainingScope, index.VariableName, out var varpath, out var target)) {
+                throw TypeCheckingErrors.VariableUndefined(index.Location, index.VariableName);
             }
 
             // Make sure this name is a variable
             if (target != NameTarget.Variable) {
-                throw TypeCheckingErrors.VariableUndefined(index.Location, index.Target);
+                throw TypeCheckingErrors.VariableUndefined(index.Location, index.VariableName);
             }
 
             // Set target path
-            index.TargetPath = varpath;
+            index.VariablePath = varpath;
 
             return new Syntax() {
                 Data = SyntaxData.From(index),
@@ -110,7 +98,7 @@ namespace Attempt19.Features.Containers.Arrays {
             // Delegate type resolution
             index.IndexSyntax = index.IndexSyntax.ResolveTypes(types);
 
-            var targetType = types.Variables[index.TargetPath].Type;
+            var targetType = types.Variables[index.VariablePath].Type;
             var indexSyntax = index.IndexSyntax.Data.AsTypeCheckedData().GetValue();
 
             // Make sure the target is an array type
@@ -153,10 +141,10 @@ namespace Attempt19.Features.Containers.Arrays {
             // The array only escapes if the element type is conditionally copiable, or if
             // this is a literal access
             if (index.Kind == ArrayAccessKind.LiteralAccess) {
-                index.EscapingVariables = new[] { index.TargetPath }.ToImmutableHashSet();
+                index.EscapingVariables = new[] { index.VariablePath }.ToImmutableHashSet();
             }
             else if (index.ArrayType.ElementType.GetCopiability() == TypeCopiability.Conditional) {
-                index.EscapingVariables = new[] { index.TargetPath }.ToImmutableHashSet();
+                index.EscapingVariables = new[] { index.VariablePath }.ToImmutableHashSet();
             }
             else {
                 index.EscapingVariables = ImmutableHashSet.Create<IdentifierPath>();
@@ -179,7 +167,7 @@ namespace Attempt19.Features.Containers.Arrays {
             writer.Lines(cIndex.SourceLines);
             writer.Line("// Array access");
 
-            string elemPtr = $"({index.Target}.data & ~1) + {cIndex.Value} * sizeof({cElemType})";
+            string elemPtr = $"({index.VariableName}.data & ~1) + {cIndex.Value} * sizeof({cElemType})";
 
             if (index.Kind == ArrayAccessKind.ValueAccess) {
                 var value = gen.CopyValue($"*({elemPtr})", index.ReturnType, scope);
