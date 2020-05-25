@@ -66,23 +66,21 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var access = (VariableMoveData)data;
 
             // Set return type
             var info = types.Variables[access.VariablePath];
-            access.ReturnType = info.Type;            
+            access.ReturnType = info.Type;
 
-            return new Syntax() {
-                Data = SyntaxData.From(access),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
+            // Set escaping variables based on the flow graph
+            access.EscapingVariables = types.FlowGraph
+                .FindAllCapturedVariables(access.VariablePath)
+                .Where(x => x.VariablePath != access.VariablePath)
+                .ToImmutableHashSet()
+                .Add(new VariableCapture(VariableCaptureKind.MoveCapture, access.VariablePath));
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
-            var access = (VariableMoveData)data;
-
-            var dependents = flows.DependentVariables.GetNeighbors(access.VariablePath);
+            var dependents = types.FlowGraph.FindAllDependentVariables(access.VariablePath).Select(x => x.VariablePath);
             var movedPath = new IdentifierPath("$moved");
 
             // Make sure this variable isn't already moved
@@ -93,18 +91,22 @@ namespace Attempt19.Features.Variables {
 
             // Make sure this variable isn't captured by anything
             if (dependents.Any()) {
-                throw TypeCheckingErrors.MovedCapturedVariable(access.Location, 
+                throw TypeCheckingErrors.MovedCapturedVariable(access.Location,
                     access.VariablePath, dependents.First());
             }
 
             // Add a moved psuedo-variable to capture the moved variable
-            flows.DependentVariables = flows.DependentVariables.AddEdge(access.VariablePath, movedPath);
+            types.FlowGraph = types.FlowGraph.AddEdge(access.VariablePath, 
+                new IdentifierPath("$moved"), VariableCaptureKind.ValueCapture);
 
-            // This will always capture the original variable
-            access.EscapingVariables = flows.CapturedVariables
-                .FindAccessibleNodes(access.VariablePath)
-                .ToImmutableHashSet()
-                .Remove(access.VariablePath);
+            return new Syntax() {
+                Data = SyntaxData.From(access),
+                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
+            };
+        }
+
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
+            var access = (VariableMoveData)data;
 
             return new Syntax() {
                 Data = SyntaxData.From(access),

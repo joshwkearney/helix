@@ -4,6 +4,7 @@ using Attempt19.CodeGeneration;
 using Attempt19.Parsing;
 using Attempt19.Types;
 using Attempt19.Features.Variables;
+using System.Linq;
 
 namespace Attempt19 {
     public static partial class SyntaxFactory {
@@ -65,12 +66,25 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var access = (VariableLiteralData)data;
 
             // Set return type
             var info = types.Variables[access.VariablePath];
-            access.ReturnType = new VariableType(info.Type);            
+            access.ReturnType = new VariableType(info.Type);
+
+            // This will always capture the original variable
+            var cap = new VariableCapture(VariableCaptureKind.ReferenceCapture, access.VariablePath);
+            access.EscapingVariables = new[] { cap }.ToImmutableHashSet();
+
+            var neighbors = types.FlowGraph.FindAllDependentVariables(access.VariablePath).Select(x => x.VariablePath);
+            var movedPath = new IdentifierPath("$moved");
+
+            // Make sure this variable isn't moved
+            if (neighbors.Contains(movedPath)) {
+                throw TypeCheckingErrors.AccessedMovedVariable(
+                    access.Location, access.VariablePath);
+            }
 
             return new Syntax() {
                 Data = SyntaxData.From(access),
@@ -78,20 +92,8 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
             var access = (VariableLiteralData)data;
-
-            // Make sure this variable isn't moved
-            var neighbors = flows.DependentVariables.GetNeighbors(access.VariablePath);
-            var movedPath = new IdentifierPath("$moved");
-
-            if (neighbors.Contains(movedPath)) {
-                throw TypeCheckingErrors.AccessedMovedVariable(
-                    access.Location, access.VariablePath);
-            }
-
-            // This will always capture the original variable
-            access.EscapingVariables = new[] { access.VariablePath }.ToImmutableHashSet();
 
             return new Syntax() {
                 Data = SyntaxData.From(access),

@@ -1,17 +1,10 @@
 ﻿{
-    var x <- 4;
-    var meta <- @x;
-
-    var test <- [1, 2, 3];
-    test@[0] <- 99;
-
-    var p <- new Point { x = 4, y = 6 };
-
-    some.other.@foo <- 45;
+    var array <- [[1], [2, 3], [4, 5, 6]];
+    var other <- [[99]];
 
     {
-        @meta <- test@[1];
+        @array <- move other;
     };
 
-    x;
+    move array;
 }

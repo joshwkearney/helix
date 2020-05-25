@@ -1,4 +1,5 @@
 ﻿using Attempt19.CodeGeneration;
+using Attempt19.TypeChecking;
 
 namespace Attempt19 {
     public delegate Syntax NameDeclarator(IParsedData data, IdentifierPath scope, NameCache names);
@@ -7,9 +8,9 @@ namespace Attempt19 {
 
     public delegate Syntax TypeDeclarator(IParsedData data, TypeCache types);
 
-    public delegate Syntax TypeResolver(IParsedData data, TypeCache types);
+    public delegate Syntax TypeResolver(IParsedData data, TypeCache types, ITypeUnifier unifier);
 
-    public delegate Syntax FlowAnalyzer(ITypeCheckedData data, FlowCache flows);
+    public delegate Syntax FlowAnalyzer(ITypeCheckedData data, TypeCache types, FlowCache flows);
 
     public delegate CBlock CodeGenerator(IFlownData data, ICScope scope, ICodeGenerator gen);
 

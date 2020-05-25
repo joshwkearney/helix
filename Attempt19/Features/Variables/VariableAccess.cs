@@ -66,12 +66,30 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var access = (VariableAccessData)data;
 
             // Set return type
             var info = types.Variables[access.VariablePath];
-            access.ReturnType = info.Type;            
+            access.ReturnType = info.Type;
+
+            // If the value type is conditionally copiable, capture the accessed variable
+            if (access.ReturnType.GetCopiability() == TypeCopiability.Conditional) {
+                var cap = new VariableCapture(VariableCaptureKind.ValueCapture, access.VariablePath);
+                access.EscapingVariables = new[] { cap }.ToImmutableHashSet();
+            }
+            else {
+                access.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
+            }
+
+            var neighbors = types.FlowGraph.FindAllDependentVariables(access.VariablePath).Select(x => x.VariablePath);
+            var movedPath = new IdentifierPath("$moved");
+
+            // Make sure this variable isn't moved
+            if (neighbors.Contains(movedPath)) {
+                throw TypeCheckingErrors.AccessedMovedVariable(
+                    access.Location, access.VariablePath);
+            }
 
             return new Syntax() {
                 Data = SyntaxData.From(access),
@@ -79,25 +97,8 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
-            var access = (VariableAccessData)data;
-
-            // Make sure this variable isn't moved
-            var neighbors = flows.DependentVariables.GetNeighbors(access.VariablePath);
-            var movedPath = new IdentifierPath("$moved");
-
-            if (neighbors.Contains(movedPath)) {
-                throw TypeCheckingErrors.AccessedMovedVariable(
-                    access.Location, access.VariablePath);
-            }
-
-            // If the value type is conditionally copiable, capture the accessed variable
-            if (access.ReturnType.GetCopiability() == TypeCopiability.Conditional) {
-                access.EscapingVariables = new[] { access.VariablePath }.ToImmutableHashSet();
-            }
-            else {
-                access.EscapingVariables = ImmutableHashSet.Create<IdentifierPath>();
-            }
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
+            var access = (VariableAccessData)data;            
 
             return new Syntax() {
                 Data = SyntaxData.From(access),

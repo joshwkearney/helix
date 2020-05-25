@@ -3,6 +3,11 @@ using Attempt19.Types;
 
 namespace Attempt19 {
     public class TypeCache {
+        public Dictionary<IdentifierPath, IdentifierPath> VariableLifetimes { get; }
+            = new Dictionary<IdentifierPath, IdentifierPath>();
+
+        public FlowGraph FlowGraph { get; set; } = new FlowGraph();
+
         public Dictionary<IdentifierPath, VariableInfo> Variables { get; }
             = new Dictionary<IdentifierPath, VariableInfo>();
 

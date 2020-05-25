@@ -29,7 +29,7 @@ namespace Attempt19.Features.FlowControl {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
+        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
 
         public IdentifierPath BlockPath { get; set; }
     }
@@ -87,12 +87,12 @@ namespace Attempt19.Features.FlowControl {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var block = (BlockData)data;
 
             // Delegate type resolutions
             block.Statements = block.Statements
-                .Select(x => x.ResolveTypes(types))
+                .Select(x => x.ResolveTypes(types, unifier))
                 .ToArray();
 
             // Set the return type
@@ -101,41 +101,49 @@ namespace Attempt19.Features.FlowControl {
                 .Select(x => x.Data.AsTypeCheckedData().GetValue().ReturnType)
                 .GetValueOr(() => VoidType.Instance);
 
+            // Set escaping variables
+            if (block.Statements.Any()) {
+                var last = block.Statements.Last().Data.AsTypeCheckedData().GetValue();
+
+                block.EscapingVariables = last.EscapingVariables
+                    .SelectMany(x => types.FlowGraph.FindAllCapturedVariables(x.VariablePath))
+                    .Concat(last.EscapingVariables)
+                    .ToImmutableHashSet();
+            }
+            else {
+                block.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
+            }
+
+            // Set variable lifetimes
+            foreach (var cap in block.EscapingVariables) {
+                types.VariableLifetimes[cap.VariablePath] = block.BlockPath.Pop();
+            }
+
             return new Syntax() {
                 Data = SyntaxData.From(block),
                 Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
             var block = (BlockData)data;
 
             // Delegate flow analysis
             block.Statements = block.Statements
-                .Select(x => x.AnalyzeFlow(flows))
+                .Select(x => x.AnalyzeFlow(types, flows))
                 .ToArray();
 
-            if (block.Statements.Any()) {
-                // Get the last statement
-                var retValue = block.Statements
-                    .Last()
-                    .Data
-                    .AsFlownData()
-                    .GetValue();
+            var incorrectEscape = block.EscapingVariables
+                .Where(x => x.Kind != VariableCaptureKind.MoveCapture)
+                .Where(x => x.VariablePath.StartsWith(block.BlockPath))
+                .ToArray();
 
-                // Make sure that the return value doesn't capture any variable inside the scope
-                foreach (var cap in retValue.EscapingVariables) {
-                    if (cap.StartsWith(block.BlockPath)) {
-                        throw TypeCheckingErrors.VariableScopeExceeded(retValue.Location, cap);
-                    }
-                }
+            // Make sure that no variables improperly escape
+            if (incorrectEscape.Any()) {
+                var loc = block.Statements.Last().Data.AsParsedData().Location;
+                var var = incorrectEscape.First().VariablePath;
 
-                // Set the captured variables to the those of the return value
-                block.EscapingVariables = retValue.EscapingVariables;
-            }
-            else {
-                // If there are no statements, there are no captured variables
-                block.EscapingVariables = ImmutableHashSet.Create<IdentifierPath>();
+                throw TypeCheckingErrors.VariableScopeExceeded(loc, var);
             }
 
             return new Syntax() {

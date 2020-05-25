@@ -14,6 +14,6 @@ namespace Attempt19.Features.Variables {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
+        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
     }    
 }

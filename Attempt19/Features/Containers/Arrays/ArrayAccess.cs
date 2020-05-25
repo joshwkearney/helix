@@ -92,11 +92,11 @@ namespace Attempt19.Features.Containers.Arrays {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var index = (ArrayAccessData)data;
 
             // Delegate type resolution
-            index.IndexSyntax = index.IndexSyntax.ResolveTypes(types);
+            index.IndexSyntax = index.IndexSyntax.ResolveTypes(types, unifier);
 
             var targetType = types.Variables[index.VariablePath].Type;
             var indexSyntax = index.IndexSyntax.Data.AsTypeCheckedData().GetValue();
@@ -124,31 +124,30 @@ namespace Attempt19.Features.Containers.Arrays {
                 index.ReturnType = new VariableType(arrType.ElementType);
             }
 
+            // Set escaping variables
+            if (index.Kind == ArrayAccessKind.LiteralAccess) {
+                var cap = new VariableCapture(VariableCaptureKind.ValueCapture, index.VariablePath);
+                index.EscapingVariables = new[] { cap }.ToImmutableHashSet();
+            }
+            else if (index.ArrayType.ElementType.GetCopiability() == TypeCopiability.Conditional) {
+                var cap = new VariableCapture(VariableCaptureKind.ValueCapture, index.VariablePath);
+                index.EscapingVariables = new[] { cap }.ToImmutableHashSet();
+            }
+            else {
+                index.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
+            }
+
             return new Syntax() {
                 Data = SyntaxData.From(index),
                 Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
             var index = (ArrayAccessData)data;
 
             // Delegate flow analysis
-            index.IndexSyntax = index.IndexSyntax.AnalyzeFlow(flows);
-
-            var indexSyntax = index.IndexSyntax.Data.AsFlownData().GetValue();
-
-            // The array only escapes if the element type is conditionally copiable, or if
-            // this is a literal access
-            if (index.Kind == ArrayAccessKind.LiteralAccess) {
-                index.EscapingVariables = new[] { index.VariablePath }.ToImmutableHashSet();
-            }
-            else if (index.ArrayType.ElementType.GetCopiability() == TypeCopiability.Conditional) {
-                index.EscapingVariables = new[] { index.VariablePath }.ToImmutableHashSet();
-            }
-            else {
-                index.EscapingVariables = ImmutableHashSet.Create<IdentifierPath>();
-            }
+            index.IndexSyntax = index.IndexSyntax.AnalyzeFlow(types, flows);
 
             return new Syntax() {
                 Data = SyntaxData.From(index),

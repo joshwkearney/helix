@@ -43,7 +43,7 @@ namespace Attempt19.Features.Primitives {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
+        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
     }    
 
     public static class BinaryExpressionTransformations {
@@ -115,53 +115,53 @@ namespace Attempt19.Features.Primitives {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var bin = (BinaryExpressionData)data;
 
             // Delegate type resolution
-            bin.Left = bin.Left.ResolveTypes(types);
-            bin.Right = bin.Right.ResolveTypes(types);
+            bin.Left = bin.Left.ResolveTypes(types, unifier);
+            bin.Right = bin.Right.ResolveTypes(types, unifier);
 
-            var leftType = bin.Left.Data.AsTypeCheckedData().GetValue().ReturnType;
-            var rightType = bin.Right.Data.AsTypeCheckedData().GetValue().ReturnType;
+            var left = bin.Left.Data.AsTypeCheckedData().GetValue();
+            var right = bin.Right.Data.AsTypeCheckedData().GetValue();
 
             // Check if left is a valid type
-            if (leftType != IntType.Instance && leftType != BoolType.Instance) {
+            if (left.ReturnType != IntType.Instance && left.ReturnType != BoolType.Instance) {
                 throw TypeCheckingErrors.UnexpectedType(
                     bin.Left.Data.AsParsedData().Location, 
-                    leftType);
+                    left.ReturnType);
             }
 
             // Check if right is a valid type
-            if (rightType != IntType.Instance && rightType != BoolType.Instance) {
+            if (right.ReturnType != IntType.Instance && right.ReturnType != BoolType.Instance) {
                 throw TypeCheckingErrors.UnexpectedType(
                     bin.Right.Data.AsParsedData().Location,
-                    rightType);
+                    right.ReturnType);
             }
 
             // Make sure types match
-            if (leftType != rightType) {
+            if (left != right) {
                 throw TypeCheckingErrors.UnexpectedType(
                     bin.Right.Data.AsParsedData().Location,
-                    leftType,
-                    rightType);
+                    left.ReturnType,
+                    right.ReturnType);
             }
 
             // Make sure this is a valid operation
-            if (leftType == IntType.Instance) {
+            if (left.ReturnType == IntType.Instance) {
                 if (!intOperations.TryGetValue(bin.Operation, out var ret)) {
                     throw TypeCheckingErrors.UnexpectedType(
                         bin.Left.Data.AsParsedData().Location,
-                        leftType);
+                        left.ReturnType);
                 }
 
                 bin.ReturnType = ret;
             }
-            else if (leftType == BoolType.Instance) {
+            else if (left.ReturnType == BoolType.Instance) {
                 if (!boolOperations.TryGetValue(bin.Operation, out var ret)) {
                     throw TypeCheckingErrors.UnexpectedType(
                         bin.Left.Data.AsParsedData().Location,
-                        leftType);
+                        left.ReturnType);
                 }
 
                 bin.ReturnType = ret;
@@ -173,23 +173,21 @@ namespace Attempt19.Features.Primitives {
             // Set return type
             bin.ReturnType = VoidType.Instance;
 
+            // Set escaping variables
+            bin.EscapingVariables = left.EscapingVariables.Union(right.EscapingVariables);
+
             return new Syntax() {
                 Data = SyntaxData.From(bin),
                 Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
             var bin = (BinaryExpressionData)data;
 
             // Delegate flow analysis
-            bin.Left = bin.Left.AnalyzeFlow(flows);
-            bin.Right = bin.Right.AnalyzeFlow(flows);
-
-            var leftEscape = bin.Left.Data.AsFlownData().GetValue().EscapingVariables;
-            var rightEscape = bin.Right.Data.AsFlownData().GetValue().EscapingVariables;
-
-            bin.EscapingVariables = leftEscape.Union(rightEscape);
+            bin.Left = bin.Left.AnalyzeFlow(types, flows);
+            bin.Right = bin.Right.AnalyzeFlow(types, flows);            
 
             return new Syntax() {
                 Data = SyntaxData.From(bin),

@@ -25,15 +25,18 @@ namespace Attempt19.Features.Containers.Arrays {
     public class ArrayLiteralData : IParsedData, ITypeCheckedData, IFlownData {
         public IReadOnlyList<Syntax> Elements { get; set; }
 
+        public IdentifierPath ContainingScope { get; set; }
+
         public TokenLocation Location { get; set; }
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
+        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
     }    
 
     public static class ArrayLiteralTransformations {
-        private static int arrayLiteralCounter = 0;
+        private static int arrayLiteralCheckCounter = 0;
+        private static int arrayLiteralCGCounter = 0;
 
         public static Syntax DeclareNames(IParsedData data, IdentifierPath scope, NameCache names) {
             var literal = (ArrayLiteralData)data;
@@ -42,6 +45,9 @@ namespace Attempt19.Features.Containers.Arrays {
             literal.Elements = literal.Elements
                 .Select(x => x.DeclareNames(scope, names))
                 .ToArray();
+
+            // Set containing scope
+            literal.ContainingScope = scope;
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
@@ -77,12 +83,12 @@ namespace Attempt19.Features.Containers.Arrays {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var literal = (ArrayLiteralData)data;
 
             // Delegate type resolution
             literal.Elements = literal.Elements
-                .Select(x => x.ResolveTypes(types))
+                .Select(x => x.ResolveTypes(types, unifier))
                 .ToArray();
 
             // Make sure we have at least one element
@@ -108,7 +114,13 @@ namespace Attempt19.Features.Containers.Arrays {
             }
 
             // Set return type
-            literal.ReturnType = new ArrayType(firstType);     
+            literal.ReturnType = new ArrayType(firstType);
+
+            // Set escaping variables
+            literal.EscapingVariables = literal.Elements
+                .Select(x => x.Data.AsTypeCheckedData().GetValue())
+                .SelectMany(x => x.EscapingVariables)
+                .ToImmutableHashSet();
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
@@ -116,19 +128,13 @@ namespace Attempt19.Features.Containers.Arrays {
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
             var literal = (ArrayLiteralData)data;
 
             // Delegate flow analysis
             literal.Elements = literal.Elements
-                .Select(x => x.AnalyzeFlow(flows))
+                .Select(x => x.AnalyzeFlow(types, flows))
                 .ToArray();
-
-            // Set escaping variables
-            literal.EscapingVariables = literal.Elements
-                .Select(x => x.Data.AsFlownData().GetValue())
-                .SelectMany(x => x.EscapingVariables)
-                .ToImmutableHashSet();
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
@@ -141,7 +147,7 @@ namespace Attempt19.Features.Containers.Arrays {
 
             var arrayType = (ArrayType)literal.ReturnType;
             var cArrayType = gen.Generate(arrayType);
-            var tempName = "$array_init_" + arrayLiteralCounter++;
+            var tempName = "$array_init_" + arrayLiteralCGCounter++;
             var elemType = gen.Generate(arrayType.ElementType);
             var elems = literal.Elements.Select(x => x.GenerateCode(scope, gen)).ToArray();
             var writer = new CWriter();

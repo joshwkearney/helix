@@ -9,10 +9,11 @@ namespace Attempt19 {
 
     public interface ITypeCheckedData : IParsedData {
         public LanguageType ReturnType { get; }
+
+        public ImmutableHashSet<VariableCapture> EscapingVariables { get; }
     }
 
     public interface IFlownData : ITypeCheckedData {
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; }
     }
 
     public class SyntaxData {

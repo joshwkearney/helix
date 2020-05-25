@@ -19,8 +19,8 @@ namespace Attempt19.Compiling {
             tree = tree.DeclareNames(initialPath, names);
             tree = tree.ResolveNames(names);
             tree = tree.DeclareTypes(types);
-            tree = tree.ResolveTypes(types);
-            tree = tree.AnalyzeFlow(flows);
+            tree = tree.ResolveTypes(types, null);
+            tree = tree.AnalyzeFlow(types, flows);
 
             // Generate code
             var block = tree.GenerateCode(null, codeGen);

@@ -19,6 +19,10 @@ namespace Attempt19 {
                 .GetValueOr(() => ImmutableHashSet.Create<T>());
         }
 
+       // public ImmutableGraph<T> ClearNeighbors(T node) {
+
+      //  }
+
         public IEnumerable<T> FindAccessibleNodes(T node) {
             var visited = new HashSet<T>();
             var toVisit = new Queue<T>();

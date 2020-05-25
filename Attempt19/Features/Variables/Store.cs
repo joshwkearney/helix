@@ -30,7 +30,7 @@ namespace Attempt19.Features.Variables {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
+        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
     }    
 
     public static class StoreTransformations {
@@ -73,12 +73,12 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var store = (StoreData)data;
 
             // Delegate type resolution
-            store.Target = store.Target.ResolveTypes(types);
-            store.Value = store.Value.ResolveTypes(types);
+            store.Target = store.Target.ResolveTypes(types, unifier);
+            store.Value = store.Value.ResolveTypes(types, unifier);
 
             var target = store.Target.Data.AsTypeCheckedData().GetValue();
             var value = store.Value.Data.AsTypeCheckedData().GetValue();
@@ -98,58 +98,55 @@ namespace Attempt19.Features.Variables {
             // Set return type
             store.ReturnType = VoidType.Instance;
 
+            // Set no captured variables
+            store.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
+
+            var targetDependents = target.EscapingVariables
+                .Select(x => x.VariablePath)
+                .SelectMany(x => types.FlowGraph.FindAllDependentVariables(x))
+                .Where(x => x.Kind != VariableCaptureKind.ReferenceCapture)
+                .ToImmutableHashSet();
+
+            // Make sure the target's escaping variables are not captured
+            if (targetDependents.Any()) {
+                var capturing = targetDependents.First().VariablePath;
+                var captured = types.FlowGraph.FindAllCapturedVariables(capturing).First().VariablePath;
+
+                throw TypeCheckingErrors.StoredToCapturedVariable(
+                    store.Location, captured, capturing);
+            }
+
             return new Syntax() {
                 Data = SyntaxData.From(store),
                 Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
             var store = (StoreData)data;
 
             // Delegate flow analysis
-            store.Target = store.Target.AnalyzeFlow(flows);
-            store.Value = store.Value.AnalyzeFlow(flows);
+            store.Target = store.Target.AnalyzeFlow(types, flows);
+            store.Value = store.Value.AnalyzeFlow(types, flows);
 
             var target = store.Target.Data.AsFlownData().GetValue();
             var value = store.Value.Data.AsFlownData().GetValue();
 
-            var targetDependents = target.EscapingVariables
-                .SelectMany(x => flows.DependentVariables.FindAccessibleNodes(x))
-                .ToImmutableHashSet()
-                .Except(target.EscapingVariables);
-
-            // TODO: make this more permissive
-            // Make sure the target's escaping variables are not captured
-            if (targetDependents.Any()) {
-                var capturing = targetDependents.First();
-                var captured = flows.CapturedVariables
-                    .FindAccessibleNodes(capturing)
-                    .Intersect(target.EscapingVariables)
-                    .First();
-
-                throw TypeCheckingErrors.StoredToCapturedVariable(
-                    store.Location, captured, capturing);
-            }
-
             // Make sure all escaping variables in value outlive all of the
             // escaping variables in target
-            foreach (var targetVar in target.EscapingVariables) {
-                foreach (var valueVar in value.EscapingVariables) {
-                    var targetScope = targetVar.Pop();
-                    var valueScope = valueVar.Pop();
+            foreach (var targetCap in target.EscapingVariables.Where(x => x.Kind != VariableCaptureKind.MoveCapture)) {
+                foreach (var valueCap in value.EscapingVariables.Where(x => x.Kind != VariableCaptureKind.MoveCapture)) {
+                    var targetScope = types.VariableLifetimes[targetCap.VariablePath];
+                    var valueScope = types.VariableLifetimes[valueCap.VariablePath];
 
                     // There is a problem if valueScope is more specific
                     // than targetScope
                     if (valueScope != targetScope && valueScope.StartsWith(targetScope)) {
-                        throw TypeCheckingErrors.StoreScopeExceeded(store.Location, 
-                            targetVar, valueVar);
+                        throw TypeCheckingErrors.StoreScopeExceeded(store.Location,
+                            targetCap.VariablePath, valueCap.VariablePath);
                     }
                 }
             }
-
-            // Set no captured variables
-            store.EscapingVariables = ImmutableHashSet.Create<IdentifierPath>();
 
             return new Syntax() {
                 Data = SyntaxData.From(store),

@@ -4,6 +4,7 @@ using Attempt19.CodeGeneration;
 using Attempt19.Parsing;
 using Attempt19.Types;
 using Attempt19.Features.Variables;
+using System.Linq;
 
 namespace Attempt19 {
     public static partial class SyntaxFactory {
@@ -31,12 +32,11 @@ namespace Attempt19.Features.Variables {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
+        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
     }    
 
     public static class VariableInitTransformations {
         public static Syntax DeclareNames(IParsedData data, IdentifierPath scope, NameCache names) {
-
             var init = (VariableInitData)data;
 
             // Delegate name declaration
@@ -83,21 +83,32 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var init = (VariableInitData)data;
 
             // Delegate type resolution
-            init.Value = init.Value.ResolveTypes(types);
+            init.Value = init.Value.ResolveTypes(types, unifier);
 
             // Set return type
             init.ReturnType = VoidType.Instance;
 
-            // Add info to the type cache
-            var type = init.Value.Data.AsTypeCheckedData().GetValue().ReturnType;
-            var path = init.ContainingScope.Append(init.Name);
-            var info = new VariableInfo(type, VariableDefinitionKind.Local);
+            var value = init.Value.Data.AsTypeCheckedData().GetValue();
+            var varPath = init.ContainingScope.Append(init.Name);
+            var info = new VariableInfo(value.ReturnType, VariableDefinitionKind.Local);
 
-            types.Variables.Add(path, info);
+            // Add info to the type cache
+            types.Variables.Add(varPath, info);
+
+            // Set no captured variables
+            init.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
+
+            // Add variable dependencies
+            foreach (var escaping in value.EscapingVariables) {
+                types.FlowGraph = types.FlowGraph.AddEdge(escaping.VariablePath, varPath, escaping.Kind);
+            }
+
+            // Set variable lifetime
+            types.VariableLifetimes[varPath] = init.ContainingScope;
 
             return new Syntax() {
                 Data = SyntaxData.From(init),
@@ -105,23 +116,11 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
             var init = (VariableInitData)data;
 
             // Delegate flow analysis
-            init.Value = init.Value.AnalyzeFlow(flows);
-
-            // Capture the escaping variables from value
-            var escaping = init.Value.Data.AsFlownData().GetValue().EscapingVariables;
-            var varPath = init.ContainingScope.Append(init.Name);
-
-            foreach (var escape in escaping) {
-                flows.DependentVariables = flows.DependentVariables.AddEdge(escape, varPath);
-                flows.CapturedVariables = flows.CapturedVariables.AddEdge(varPath, escape);
-            }
-
-            // Set no captured variables
-            init.EscapingVariables = ImmutableHashSet.Create<IdentifierPath>();
+            init.Value = init.Value.AnalyzeFlow(types, flows);
 
             return new Syntax() {
                 Data = SyntaxData.From(init),

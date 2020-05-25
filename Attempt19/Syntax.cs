@@ -1,5 +1,6 @@
 ﻿using System;
 using Attempt19.CodeGeneration;
+using Attempt19.TypeChecking;
 
 namespace Attempt19 {
     public class Syntax {
@@ -31,15 +32,15 @@ namespace Attempt19 {
             return op.Invoke(this.Data.AsParsedData(), types);
         }
 
-        public Syntax ResolveTypes(TypeCache types) {
+        public Syntax ResolveTypes(TypeCache types, ITypeUnifier unifier) {
             if (!this.Operator.AsTypeResolver().TryGetValue(out var op)) {
                 throw new InvalidOperationException();
             }
 
-            return op.Invoke(this.Data.AsParsedData(), types);
+            return op.Invoke(this.Data.AsParsedData(), types, unifier);
         }
 
-        public Syntax AnalyzeFlow(FlowCache flows) {
+        public Syntax AnalyzeFlow(TypeCache types, FlowCache flows) {
             if (!this.Operator.AsFlowAnalyzer().TryGetValue(out var op)) {
                 throw new InvalidOperationException();
             }
@@ -48,7 +49,7 @@ namespace Attempt19 {
                 throw new InvalidOperationException();
             }
 
-            return op.Invoke(data, flows);
+            return op.Invoke(data, types, flows);
         }
 
         public CBlock GenerateCode(ICScope scope, ICodeGenerator gen) {

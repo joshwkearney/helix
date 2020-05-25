@@ -2,6 +2,7 @@
 using Attempt19.CodeGeneration;
 using Attempt19.Features.Primitives;
 using Attempt19.Parsing;
+using Attempt19.TypeChecking;
 using Attempt19.Types;
 
 namespace Attempt19 {
@@ -25,7 +26,7 @@ namespace Attempt19.Features.Primitives {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<IdentifierPath> EscapingVariables { get; set; }
+        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
     }    
 
     public static class BoolLiteralTransformations {
@@ -58,11 +59,14 @@ namespace Attempt19.Features.Primitives {
             };
         }
 
-        public static Syntax ResolveTypes(IParsedData data, TypeCache types) {
+        public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var literal = (BoolLiteralData)data;
 
             // Set return type
             literal.ReturnType = BoolType.Instance;
+
+            // Set no captured variables
+            literal.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
@@ -70,11 +74,8 @@ namespace Attempt19.Features.Primitives {
             };
         }
 
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, FlowCache flows) {
+        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache cache, FlowCache flows) {
             var literal = (BoolLiteralData)data;
-
-            // Set no captured variables
-            literal.EscapingVariables = ImmutableHashSet.Create<IdentifierPath>();
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
