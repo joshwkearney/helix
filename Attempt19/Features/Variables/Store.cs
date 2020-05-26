@@ -101,13 +101,16 @@ namespace Attempt19.Features.Variables {
             // Set no captured variables
             store.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
 
+            // Only follow value capture edges. Move captured variables will either have already
+            // been checked or safe to store into. Reference captured variables won't care if we
+            // destroy the variable's value
             var targetDependents = target.EscapingVariables
                 .Select(x => x.VariablePath)
-                .SelectMany(x => types.FlowGraph.FindAllDependentVariables(x))
-                .Where(x => x.Kind != VariableCaptureKind.ReferenceCapture)
+                .SelectMany(x => types.FlowGraph.FindAllDependentVariables(x, VariableCaptureKind.ValueCapture))
                 .ToImmutableHashSet();
 
-            // Make sure the target's escaping variables are not captured
+            // Make sure the target's escaping variables are not value captured because this will destruct
+            // the value currently in the variable
             if (targetDependents.Any()) {
                 var capturing = targetDependents.First().VariablePath;
                 var captured = types.FlowGraph.FindAllCapturedVariables(capturing).First().VariablePath;

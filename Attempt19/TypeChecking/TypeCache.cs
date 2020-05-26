@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Attempt19.Types;
 
-namespace Attempt19 {
+namespace Attempt19.TypeChecking {
     public class TypeCache {
         public Dictionary<IdentifierPath, IdentifierPath> VariableLifetimes { get; }
             = new Dictionary<IdentifierPath, IdentifierPath>();

@@ -96,6 +96,7 @@ namespace Attempt19.Features.Variables {
             }
 
             // Add a moved psuedo-variable to capture the moved variable
+            // This is used to identify the variable as moved
             types.FlowGraph = types.FlowGraph.AddEdge(access.VariablePath, 
                 new IdentifierPath("$moved"), VariableCaptureKind.ValueCapture);
 

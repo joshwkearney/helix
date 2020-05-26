@@ -1,4 +1,5 @@
 ﻿using Attempt19.Parsing;
+using Attempt19.TypeChecking;
 using System.Text;
 
 namespace Attempt19.Compiling {
@@ -10,9 +11,7 @@ namespace Attempt19.Compiling {
             var initialPath = new IdentifierPath();
             var names = new NameCache();
             var types = new TypeCache();
-            var flows = new FlowCache() {
-                CapturedVariables = new ImmutableGraph<IdentifierPath>(),
-                DependentVariables = new ImmutableGraph<IdentifierPath>() };
+            var flows = new FlowCache() { };
             var codeGen = new CodeGenerator(null);
 
             // Mature the syntax tree

@@ -1,4 +1,5 @@
 ﻿using Attempt19.Features.Containers.Arrays;
+using Attempt19.TypeChecking;
 using Attempt19.Types;
 using System;
 using System.Collections.Generic;

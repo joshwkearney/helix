@@ -3,7 +3,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt19 {
+namespace Attempt19.TypeChecking {
     public class FunctionSignature : IEquatable<FunctionSignature> {
         public LanguageType ReturnType { get; }
 

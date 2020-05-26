@@ -119,6 +119,19 @@ namespace Attempt19.Features.FlowControl {
                 types.VariableLifetimes[cap.VariablePath] = block.BlockPath.Pop();
             }
 
+            var incorrectEscape = block.EscapingVariables
+                .Where(x => x.Kind != VariableCaptureKind.MoveCapture)
+                .Where(x => x.VariablePath.StartsWith(block.BlockPath))
+                .ToArray();
+
+            // Make sure that no variables improperly escape
+            if (incorrectEscape.Any()) {
+                var loc = block.Statements.Last().Data.AsParsedData().Location;
+                var var = incorrectEscape.First().VariablePath;
+
+                throw TypeCheckingErrors.VariableScopeExceeded(loc, var);
+            }
+
             return new Syntax() {
                 Data = SyntaxData.From(block),
                 Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
@@ -132,19 +145,6 @@ namespace Attempt19.Features.FlowControl {
             block.Statements = block.Statements
                 .Select(x => x.AnalyzeFlow(types, flows))
                 .ToArray();
-
-            var incorrectEscape = block.EscapingVariables
-                .Where(x => x.Kind != VariableCaptureKind.MoveCapture)
-                .Where(x => x.VariablePath.StartsWith(block.BlockPath))
-                .ToArray();
-
-            // Make sure that no variables improperly escape
-            if (incorrectEscape.Any()) {
-                var loc = block.Statements.Last().Data.AsParsedData().Location;
-                var var = incorrectEscape.First().VariablePath;
-
-                throw TypeCheckingErrors.VariableScopeExceeded(loc, var);
-            }
 
             return new Syntax() {
                 Data = SyntaxData.From(block),

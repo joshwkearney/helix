@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-namespace Attempt19 {
+namespace Attempt19.TypeChecking {
     public enum VariableCaptureKind {
         MoveCapture, ValueCapture, ReferenceCapture
     }
