@@ -40,8 +40,8 @@ namespace Attempt19 {
             return op.Invoke(this.Data.AsParsedData(), types, unifier);
         }
 
-        public Syntax AnalyzeFlow(TypeCache types, FlowCache flows) {
-            if (!this.Operator.AsFlowAnalyzer().TryGetValue(out var op)) {
+        public CBlock GenerateCode(ICodeGenerator gen) {
+            if (!this.Operator.AsCodeGenerator().TryGetValue(out var op)) {
                 throw new InvalidOperationException();
             }
 
@@ -49,19 +49,7 @@ namespace Attempt19 {
                 throw new InvalidOperationException();
             }
 
-            return op.Invoke(data, types, flows);
-        }
-
-        public CBlock GenerateCode(ICScope scope, ICodeGenerator gen) {
-            if (!this.Operator.AsCodeGenerator().TryGetValue(out var op)) {
-                throw new InvalidOperationException();
-            }
-
-            if (!this.Data.AsFlownData().TryGetValue(out var data)) {
-                throw new InvalidOperationException();
-            }
-
-            return op.Invoke(data, scope, gen);
+            return op.Invoke(data, gen);
         }
     }
 }

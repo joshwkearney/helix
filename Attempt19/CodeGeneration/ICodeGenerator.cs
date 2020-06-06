@@ -9,11 +9,5 @@ namespace Attempt19.CodeGeneration {
         ICodeWriter Header3Writer { get; }
 
         string Generate(LanguageType type);
-
-        IOption<string> GetDestructor(LanguageType type);
-
-        CBlock CopyValue(string value, LanguageType type, ICScope scope);
-
-        CBlock MoveValue(string value, LanguageType type);
     }
 }

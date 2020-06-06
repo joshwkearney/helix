@@ -2,14 +2,23 @@
 using Attempt19.Types;
 
 namespace Attempt19.TypeChecking {
+    public class ParameterInfo {
+        public LanguageType Type { get; }
+
+        public IdentifierPath CapturePath { get; }
+
+        public ParameterInfo(LanguageType type, IdentifierPath capturePath) {
+            this.Type = type;
+            this.CapturePath = capturePath;
+        }
+    }
+
     public class TypeCache {
-        public Dictionary<IdentifierPath, IdentifierPath> VariableLifetimes { get; }
-            = new Dictionary<IdentifierPath, IdentifierPath>();
-
-        public FlowGraph FlowGraph { get; set; } = new FlowGraph();
-
         public Dictionary<IdentifierPath, VariableInfo> Variables { get; }
             = new Dictionary<IdentifierPath, VariableInfo>();
+
+        public Dictionary<IdentifierPath, ParameterInfo> Parameter { get; }
+            = new Dictionary<IdentifierPath, ParameterInfo>();
 
         public Dictionary<IdentifierPath, FunctionSignature> Functions { get; }
             = new Dictionary<IdentifierPath, FunctionSignature>();

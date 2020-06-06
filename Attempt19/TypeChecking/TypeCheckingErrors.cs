@@ -28,11 +28,11 @@ namespace Attempt19.TypeChecking {
                 $"The variable '{variable.Segments.Last()}' was improperly passed beyond its applicable scope");
         }
 
-        public static Exception StoreScopeExceeded(TokenLocation location, IdentifierPath target, IdentifierPath variable) {
+        public static Exception LifetimeExceeded(TokenLocation location, IdentifierPath target, IdentifierPath variable) {
             return new CompilerException(
                 location,
-                "Variable Scope Exceeded in Store",
-                $"The variable '{variable.Segments.Last()}' does not outlive '{target.Segments.Last()}', and was improperly passed beyond its applicable scope");
+                "Variable Lifetime Exceeded in Store",
+                $"The lifetime '{variable.Segments.Last()}' does not outlive the lifetime '{target.Segments.Last()}'");
         }
 
         public static Exception VariableUndefined(TokenLocation location, string name) {

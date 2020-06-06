@@ -15,8 +15,14 @@ namespace Attempt19.Parsing {
             this.tokens = tokens;
         }
 
-        public Syntax Parse() {
-            return this.TopExpression();
+        public IReadOnlyList<Syntax> Parse() {
+            var list = new List<Syntax>();
+
+            while (pos < tokens.Count) {
+                list.Add(this.Declaration());
+            }
+
+            return list;
         }
 
         private bool Peek(TokenKind kind) {
@@ -115,6 +121,18 @@ namespace Attempt19.Parsing {
             }
         }
 
+        private IdentifierPath Lifetime() {
+            if (this.TryAdvance(TokenKind.StackKeyword)) {
+                return new IdentifierPath("heap", "stack");
+            }
+            else if (this.TryAdvance(TokenKind.HeapKeyword)) {
+                return new IdentifierPath("heap");
+            }
+            else {
+                throw ParsingErrors.UnexpectedToken(this.Advance());
+            }
+        }
+
         private FunctionSignature FunctionSignature() {
             this.Advance(TokenKind.FunctionKeyword);
 
@@ -142,6 +160,27 @@ namespace Attempt19.Parsing {
             return sig;
         }
 
+        private Syntax FunctionDeclaration() {
+            var start = this.tokens[this.pos];
+            var sig = this.FunctionSignature();
+            var end = this.Advance(TokenKind.Colon);
+
+            var body = this.TopExpression();
+            var loc = start.Location.Span(end.Location);
+
+            this.Advance(TokenKind.Semicolon);
+
+            return SyntaxFactory.MakeFunctionDeclaration(sig, body, loc);
+        }
+
+        private Syntax Declaration() {
+            if (this.Peek(TokenKind.FunctionKeyword)) {
+                return this.FunctionDeclaration();
+            }
+
+            throw ParsingErrors.UnexpectedToken(this.Advance());
+        }
+
         private Syntax TopExpression() => this.StoreExpression();
 
         private Syntax StoreExpression() {
@@ -156,7 +195,6 @@ namespace Attempt19.Parsing {
 
             return target;
         }
-
 
         private Syntax OrExpression() {
             var first = this.XorExpression();
@@ -385,16 +423,12 @@ namespace Attempt19.Parsing {
             return SyntaxFactory.MakeVariableLiteral(tok.Value, loc);
         }
 
-        private Syntax MoveExpression() {
-            var start = this.Advance(TokenKind.MoveKeyword);
-            var varTok = (Token<string>)this.Advance(TokenKind.Identifier);
-            var loc = start.Location.Span(varTok.Location);
-
-            return SyntaxFactory.MakeVariableMove(varTok.Value, loc);
-        }
-
         private Syntax ArrayLiteral() {
             var start = this.Advance(TokenKind.OpenBracket);
+
+            var lifetime = this.Lifetime();
+            this.Advance(TokenKind.Pipe);
+
             var elems = new List<Syntax>();
 
             while (!this.Peek(TokenKind.CloseBracket)) {
@@ -408,7 +442,7 @@ namespace Attempt19.Parsing {
             var end = this.Advance(TokenKind.CloseBracket);
             var loc = start.Location.Span(end.Location);
 
-            return SyntaxFactory.MakeArrayLiteral(elems, loc);
+            return SyntaxFactory.MakeArrayLiteral(elems, lifetime, loc);
         }
 
         private Syntax Atom() {
@@ -432,9 +466,6 @@ namespace Attempt19.Parsing {
             }
             else if (this.Peek(TokenKind.BoolLiteral)) {
                 return this.BoolLiteral();
-            }
-            else if (this.Peek(TokenKind.MoveKeyword)) {
-                return this.MoveExpression();
             }
             else if (this.Peek(TokenKind.OpenBracket)) {
                 return this.ArrayLiteral();

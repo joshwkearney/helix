@@ -125,29 +125,12 @@ namespace Attempt19.Features.Containers.Arrays {
             }
 
             // Set escaping variables
-            if (index.Kind == ArrayAccessKind.LiteralAccess) {
-                var cap = new VariableCapture(VariableCaptureKind.ValueCapture, index.VariablePath);
-                index.EscapingVariables = new[] { cap }.ToImmutableHashSet();
-            }
-            else if (index.ArrayType.ElementType.GetCopiability() == TypeCopiability.Conditional) {
-                var cap = new VariableCapture(VariableCaptureKind.ValueCapture, index.VariablePath);
-                index.EscapingVariables = new[] { cap }.ToImmutableHashSet();
+            if (index.ArrayType.ElementType.GetCopiability() == TypeCopiability.Unconditional) {
+                index.Lifetimes = ImmutableHashSet.Create<IdentifierPath>();
             }
             else {
-                index.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
+                index.Lifetimes = types.Variables[index.VariablePath].Lifetimes;
             }
-
-            return new Syntax() {
-                Data = SyntaxData.From(index),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
-            var index = (ArrayAccessData)data;
-
-            // Delegate flow analysis
-            index.IndexSyntax = index.IndexSyntax.AnalyzeFlow(types, flows);
 
             return new Syntax() {
                 Data = SyntaxData.From(index),
@@ -155,10 +138,10 @@ namespace Attempt19.Features.Containers.Arrays {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var index = (ArrayAccessData)data;
 
-            var cIndex = index.IndexSyntax.GenerateCode(scope, gen);
+            var cIndex = index.IndexSyntax.GenerateCode(gen);
             var cElemType = gen.Generate(index.ArrayType.ElementType);
             var varname = "$array_access_" + arrayAccessCounter++;
             var writer = new CWriter();
@@ -166,13 +149,13 @@ namespace Attempt19.Features.Containers.Arrays {
             writer.Lines(cIndex.SourceLines);
             writer.Line("// Array access");
 
-            string elemPtr = $"({index.VariableName}.data & ~1) + {cIndex.Value} * sizeof({cElemType})";
+            string elemPtr = $"({index.VariableName}.data) + {cIndex.Value} * sizeof({cElemType})";
 
             if (index.Kind == ArrayAccessKind.ValueAccess) {
-                var value = gen.CopyValue($"*({elemPtr})", index.ReturnType, scope);
-                writer.Lines(value.SourceLines);
+                writer.VariableInit(gen.Generate(index.ReturnType), varname, "*" + elemPtr);
+                writer.EmptyLine();
 
-                return writer.ToBlock(value.Value);
+                return writer.ToBlock(varname);
             }
             else {
                 writer.VariableInit(gen.Generate(index.ReturnType), varname, elemPtr);

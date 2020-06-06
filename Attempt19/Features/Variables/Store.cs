@@ -21,7 +21,7 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Variables {
-    public class StoreData : IParsedData, ITypeCheckedData, IFlownData {
+    public class StoreData : IParsedData, ITypeCheckedData {
         public Syntax Target { get; set; }
 
         public Syntax Value { get; set; }
@@ -30,7 +30,7 @@ namespace Attempt19.Features.Variables {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
     }    
 
     public static class StoreTransformations {
@@ -99,54 +99,15 @@ namespace Attempt19.Features.Variables {
             store.ReturnType = VoidType.Instance;
 
             // Set no captured variables
-            store.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
-
-            // Only follow value capture edges. Move captured variables will either have already
-            // been checked or safe to store into. Reference captured variables won't care if we
-            // destroy the variable's value
-            var targetDependents = target.EscapingVariables
-                .Select(x => x.VariablePath)
-                .SelectMany(x => types.FlowGraph.FindAllDependentVariables(x, VariableCaptureKind.ValueCapture))
-                .ToImmutableHashSet();
-
-            // Make sure the target's escaping variables are not value captured because this will destruct
-            // the value currently in the variable
-            if (targetDependents.Any()) {
-                var capturing = targetDependents.First().VariablePath;
-                var captured = types.FlowGraph.FindAllCapturedVariables(capturing).First().VariablePath;
-
-                throw TypeCheckingErrors.StoredToCapturedVariable(
-                    store.Location, captured, capturing);
-            }
-
-            return new Syntax() {
-                Data = SyntaxData.From(store),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
-            var store = (StoreData)data;
-
-            // Delegate flow analysis
-            store.Target = store.Target.AnalyzeFlow(types, flows);
-            store.Value = store.Value.AnalyzeFlow(types, flows);
-
-            var target = store.Target.Data.AsFlownData().GetValue();
-            var value = store.Value.Data.AsFlownData().GetValue();
+            store.Lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
             // Make sure all escaping variables in value outlive all of the
             // escaping variables in target
-            foreach (var targetCap in target.EscapingVariables.Where(x => x.Kind != VariableCaptureKind.MoveCapture)) {
-                foreach (var valueCap in value.EscapingVariables.Where(x => x.Kind != VariableCaptureKind.MoveCapture)) {
-                    var targetScope = types.VariableLifetimes[targetCap.VariablePath];
-                    var valueScope = types.VariableLifetimes[valueCap.VariablePath];
-
-                    // There is a problem if valueScope is more specific
-                    // than targetScope
-                    if (valueScope != targetScope && valueScope.StartsWith(targetScope)) {
-                        throw TypeCheckingErrors.StoreScopeExceeded(store.Location,
-                            targetCap.VariablePath, valueCap.VariablePath);
+            foreach (var targetCap in target.Lifetimes) {
+                foreach (var valueCap in value.Lifetimes) {
+                    // Make sure targetCap outlives valueCap
+                    if (!targetCap.StartsWith(valueCap)) {
+                        throw TypeCheckingErrors.LifetimeExceeded(store.Location, targetCap, valueCap);
                     }
                 }
             }
@@ -157,45 +118,27 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var store = (StoreData)data;
 
             var writer = new CWriter();
-            var target = store.Target.GenerateCode(scope, gen);
-            var value = store.Value.GenerateCode(scope, gen);
+            var target = store.Target.GenerateCode(gen);
+            var value = store.Value.GenerateCode(gen);
             var innerType = store.Value.Data.AsTypeCheckedData().GetValue().ReturnType;
             var cInnerType = gen.Generate(innerType);
 
-            // Optimization: If the target is a literal variable access don't force a copy
-            if (store.Target.Data.AsFlownData().GetValue() is VariableLiteralData literal) {
-                // This would have produced another variable to clean up, so remove
-                // that from the scope
-                scope.SetVariableDestructed(target.Value);
+            writer.Lines(value.SourceLines);
+            writer.Lines(target.SourceLines);
+            writer.Line("// Variable store");
 
-                writer.Lines(value.SourceLines);
-                writer.Line("// Variable store");
-
-                var destructorOp = gen.GetDestructor(innerType);
-                if (destructorOp.TryGetValue(out var destructor)) {
-                    writer.Line($"{destructor}({literal.VariableName});");
-                }
-
-                writer.VariableAssignment(literal.VariableName, value.Value);
-                writer.EmptyLine();
+            if (target.Value.StartsWith("&")) {
+                writer.VariableAssignment(target.Value.Substring(1), value.Value);
             }
             else {
-                writer.Lines(value.SourceLines);
-                writer.Lines(target.SourceLines);
-                writer.Line("// Variable store");
-
-                var destructorOp = gen.GetDestructor(innerType);
-                if (destructorOp.TryGetValue(out var destructor)) {
-                    writer.Line($"{destructor}({CWriter.Dereference(target.Value, cInnerType)});");
-                }
-
-                writer.VariableAssignment(CWriter.Dereference(target.Value, cInnerType), value.Value);
-                writer.EmptyLine();
+                writer.VariableAssignment("*" + target.Value, value.Value);
             }
+
+            writer.EmptyLine();
 
             return writer.ToBlock("0");
         }

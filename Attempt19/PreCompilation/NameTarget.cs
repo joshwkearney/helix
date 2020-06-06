@@ -1,5 +1,5 @@
 ﻿namespace Attempt19 {
     public enum NameTarget {
-        Variable, Function, Struct, Reserved
+        Variable, Region, Function, Struct, Reserved
     }
 }

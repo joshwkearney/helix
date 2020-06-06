@@ -132,9 +132,6 @@ namespace Attempt19.Parsing {
             else if (id == "void") {
                 return new Token(TokenKind.VoidKeyword, location);
             }
-            else if (id == "alloc") {
-                return new Token(TokenKind.AllocKeyword, location);
-            }
             else if (id == "if") {
                 return new Token(TokenKind.IfKeyword, location);
             }
@@ -168,9 +165,6 @@ namespace Attempt19.Parsing {
             else if (id == "ref") {
                 return new Token(TokenKind.RefKeyword, location);
             }
-            else if (id == "move") {
-                return new Token(TokenKind.MoveKeyword, location);
-            }
             else if (id == "true") {
                 return new Token<bool>(true, TokenKind.BoolLiteral, location);
             }
@@ -191,6 +185,12 @@ namespace Attempt19.Parsing {
             }
             else if (id == "bool") {
                 return new Token(TokenKind.BoolKeyword, location);
+            }
+            else if (id == "stack") {
+                return new Token(TokenKind.StackKeyword, location);
+            }
+            else if (id == "heap") {
+                return new Token(TokenKind.HeapKeyword, location);
             }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);
@@ -268,6 +268,9 @@ namespace Attempt19.Parsing {
             }
             else if (current == '-') {
                 return new Token(TokenKind.SubtractSign, location);
+            }
+            else if (current == '|') {
+                return new Token(TokenKind.Pipe, location);
             }
             else if (char.IsDigit(current)) {
                 return this.GetNumber();

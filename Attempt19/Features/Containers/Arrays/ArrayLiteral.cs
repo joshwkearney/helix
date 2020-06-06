@@ -10,10 +10,11 @@ using System;
 
 namespace Attempt19 {
     public static partial class SyntaxFactory {
-        public static Syntax MakeArrayLiteral(IReadOnlyList<Syntax> elems, TokenLocation loc) {
+        public static Syntax MakeArrayLiteral(IReadOnlyList<Syntax> elems, IdentifierPath targetLifetime, TokenLocation loc) {
             return new Syntax() {
                 Data = SyntaxData.From(new ArrayLiteralData() {
                     Elements = elems,
+                    TargetLifetime = targetLifetime,
                     Location = loc }),
                 Operator = SyntaxOp.FromNameDeclarator(ArrayLiteralTransformations.DeclareNames)
             };
@@ -22,20 +23,19 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Containers.Arrays {
-    public class ArrayLiteralData : IParsedData, ITypeCheckedData, IFlownData {
+    public class ArrayLiteralData : IParsedData, ITypeCheckedData {
         public IReadOnlyList<Syntax> Elements { get; set; }
 
-        public IdentifierPath ContainingScope { get; set; }
+        public IdentifierPath TargetLifetime { get; set; }
 
         public TokenLocation Location { get; set; }
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
     }    
 
     public static class ArrayLiteralTransformations {
-        private static int arrayLiteralCheckCounter = 0;
         private static int arrayLiteralCGCounter = 0;
 
         public static Syntax DeclareNames(IParsedData data, IdentifierPath scope, NameCache names) {
@@ -45,9 +45,6 @@ namespace Attempt19.Features.Containers.Arrays {
             literal.Elements = literal.Elements
                 .Select(x => x.DeclareNames(scope, names))
                 .ToArray();
-
-            // Set containing scope
-            literal.ContainingScope = scope;
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
@@ -113,28 +110,26 @@ namespace Attempt19.Features.Containers.Arrays {
                 }
             }
 
+            // Make sure all elements outlive the literal lifetime
+            foreach (var elem in literal.Elements) {
+                var elemData = elem.Data.AsTypeCheckedData().GetValue();
+
+                foreach (var elemLifetime in elemData.Lifetimes) {
+                    if (!literal.TargetLifetime.StartsWith(elemLifetime)) {
+                        throw TypeCheckingErrors.LifetimeExceeded(literal.Location, literal.TargetLifetime, elemLifetime);
+                    }
+                }
+            }
+
             // Set return type
             literal.ReturnType = new ArrayType(firstType);
 
             // Set escaping variables
-            literal.EscapingVariables = literal.Elements
+            literal.Lifetimes = literal.Elements
                 .Select(x => x.Data.AsTypeCheckedData().GetValue())
-                .SelectMany(x => x.EscapingVariables)
-                .ToImmutableHashSet();
-
-            return new Syntax() {
-                Data = SyntaxData.From(literal),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
-            var literal = (ArrayLiteralData)data;
-
-            // Delegate flow analysis
-            literal.Elements = literal.Elements
-                .Select(x => x.AnalyzeFlow(types, flows))
-                .ToArray();
+                .SelectMany(x => x.Lifetimes)
+                .ToImmutableHashSet()
+                .Add(literal.TargetLifetime);
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
@@ -142,31 +137,45 @@ namespace Attempt19.Features.Containers.Arrays {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var literal = (ArrayLiteralData)data;
 
             var arrayType = (ArrayType)literal.ReturnType;
             var cArrayType = gen.Generate(arrayType);
             var tempName = "$array_init_" + arrayLiteralCGCounter++;
             var elemType = gen.Generate(arrayType.ElementType);
-            var elems = literal.Elements.Select(x => x.GenerateCode(scope, gen)).ToArray();
+            var elems = literal.Elements.Select(x => x.GenerateCode(gen)).ToArray();
             var writer = new CWriter();
+            var region = "$reg_" + literal.TargetLifetime.Segments.Last();
 
             foreach (var elem in elems) {
                 writer.Lines(elem.SourceLines);
             }
 
             if (literal.Elements.Any()) {
-                writer.Line("// Array initialization");
-                writer.VariableInit(cArrayType, tempName);
-                writer.Line($"{tempName}.size = {literal.Elements.Count}LL;");
-                writer.Line($"{tempName}.data = (uintptr_t)malloc({literal.Elements.Count}LL * sizeof({elemType}));");
+                if (literal.TargetLifetime == new IdentifierPath("heap.stack")) {
+                    var tempDataName = "$array_data_" + arrayLiteralCGCounter++;
 
-                for (int i = 0; i < literal.Elements.Count; i++) {
-                    writer.Line($"(({elemType}*)({tempName}.data))[{i}] = {elems[i].Value};");
+                    writer.Line("// Array initialization");
+                    writer.Line($"{cArrayType} {tempDataName}[{literal.Elements.Count}];");
+                    writer.VariableInit(cArrayType, tempName);
+                    writer.Line($"{tempName}.size = {literal.Elements.Count}LL;");
+                    writer.Line($"{tempName}.data = {tempDataName};");
+
+                    for (int i = 0; i < literal.Elements.Count; i++) {
+                        writer.Line($"{tempName}.data[{i}] = {elems[i].Value};");
+                    }
                 }
+                else {
+                    writer.Line("// Array initialization");
+                    writer.VariableInit(cArrayType, tempName);
+                    writer.Line($"{tempName}.size = {literal.Elements.Count}LL;");
+                    writer.Line($"{tempName}.data = $region_malloc({region}, {literal.Elements.Count}LL * sizeof({elemType}));");
 
-                writer.Line($"{tempName}.data |= 1;");
+                    for (int i = 0; i < literal.Elements.Count; i++) {
+                        writer.Line($"{tempName}.data[{i}] = {elems[i].Value};");
+                    }
+                }
             }
             else {
                 writer.Line("// Array initialization");

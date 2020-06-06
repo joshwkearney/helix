@@ -4,7 +4,7 @@ using Attempt19.TypeChecking;
 using Attempt19.Types;
 
 namespace Attempt19.Features.Variables {
-    public abstract class VariableAccessBase : IParsedData, ITypeCheckedData, IFlownData {
+    public abstract class VariableAccessBase : IParsedData, ITypeCheckedData {
         public string VariableName { get; set; }
 
         public IdentifierPath ContainingScope { get; set; }
@@ -15,6 +15,6 @@ namespace Attempt19.Features.Variables {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
     }    
 }

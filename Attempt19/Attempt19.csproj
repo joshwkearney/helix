@@ -10,6 +10,9 @@
     <None Update="program.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="regions.h">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Features2\Variables\VariableAccessSyntax.cs" />

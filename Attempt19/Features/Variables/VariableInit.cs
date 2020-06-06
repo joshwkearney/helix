@@ -21,7 +21,7 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Variables {
-    public class VariableInitData : IParsedData, ITypeCheckedData, IFlownData {
+    public class VariableInitData : IParsedData, ITypeCheckedData {
         public string Name { get; set; }
 
         public Syntax Value { get; set; }
@@ -32,7 +32,7 @@ namespace Attempt19.Features.Variables {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
     }    
 
     public static class VariableInitTransformations {
@@ -94,33 +94,13 @@ namespace Attempt19.Features.Variables {
 
             var value = init.Value.Data.AsTypeCheckedData().GetValue();
             var varPath = init.ContainingScope.Append(init.Name);
-            var info = new VariableInfo(value.ReturnType, VariableDefinitionKind.Local);
+            var info = new VariableInfo(value.ReturnType, VariableDefinitionKind.Local, value.Lifetimes);
 
             // Add info to the type cache
             types.Variables.Add(varPath, info);
 
             // Set no captured variables
-            init.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
-
-            // Add variable dependencies
-            foreach (var escaping in value.EscapingVariables) {
-                types.FlowGraph = types.FlowGraph.AddEdge(escaping.VariablePath, varPath, escaping.Kind);
-            }
-
-            // Set variable lifetime
-            types.VariableLifetimes[varPath] = init.ContainingScope;
-
-            return new Syntax() {
-                Data = SyntaxData.From(init),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
-            var init = (VariableInitData)data;
-
-            // Delegate flow analysis
-            init.Value = init.Value.AnalyzeFlow(types, flows);
+            init.Lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
             return new Syntax() {
                 Data = SyntaxData.From(init),
@@ -128,10 +108,10 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var init = (VariableInitData)data;
 
-            var value = init.Value.GenerateCode(scope, gen);
+            var value = init.Value.GenerateCode(gen);
             var type = init.Value.Data.AsTypeCheckedData().GetValue().ReturnType;
             var ctype = gen.Generate(type);
 
@@ -140,12 +120,6 @@ namespace Attempt19.Features.Variables {
             writer.Line("// Variable initalization");
             writer.VariableInit(ctype, init.Name, value.Value);
             writer.EmptyLine();
-
-            scope.SetVariableUndestructed(init.Name, type);
-
-            if (value.Value.StartsWith("$")) {
-                scope.SetVariableDestructed(value.Value);
-            }
 
             return writer.ToBlock("0");
         }

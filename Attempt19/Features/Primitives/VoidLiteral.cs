@@ -17,12 +17,12 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Primitives {
-    public class VoidLiteralData : IParsedData, ITypeCheckedData, IFlownData {
+    public class VoidLiteralData : IParsedData, ITypeCheckedData {
         public TokenLocation Location { get; set; }
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
     }    
 
     public static class VoidLiteralTransformations {
@@ -62,16 +62,7 @@ namespace Attempt19.Features.Primitives {
             literal.ReturnType = VoidType.Instance;
 
             // Set no captured variables
-            literal.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
-
-            return new Syntax() {
-                Data = SyntaxData.From(literal),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
-            var literal = (VoidLiteralData)data;
+            literal.Lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
@@ -79,7 +70,7 @@ namespace Attempt19.Features.Primitives {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             return new CBlock("0");
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Attempt19.Parsing;
 using Attempt19.TypeChecking;
+using System.Linq;
 using System.Text;
 
 namespace Attempt19.Compiling {
@@ -7,28 +8,30 @@ namespace Attempt19.Compiling {
         public string Compile(string input) {
             // Initialize things
             var tokens = new Lexer(input).GetTokens();
-            var tree = new Parser(tokens).Parse();
+            var trees = new Parser(tokens).Parse();
             var initialPath = new IdentifierPath();
             var names = new NameCache();
             var types = new TypeCache();
-            var flows = new FlowCache() { };
-            var codeGen = new CodeGenerator(null);
+            var codeGen = new CodeGenerator();
 
             // Mature the syntax tree
-            tree = tree.DeclareNames(initialPath, names);
-            tree = tree.ResolveNames(names);
-            tree = tree.DeclareTypes(types);
-            tree = tree.ResolveTypes(types, null);
-            tree = tree.AnalyzeFlow(types, flows);
+            trees = trees.Select(x => x.DeclareNames(initialPath, names)).ToArray();
+            trees = trees.Select(x => x.ResolveNames(names)).ToArray();
+            trees = trees.Select(x => x.DeclareTypes(types)).ToArray();
+            trees = trees.Select(x => x.ResolveTypes(types, null)).ToArray();
 
             // Generate code
-            var block = tree.GenerateCode(null, codeGen);
+            var lines = trees
+                .Select(x => x.GenerateCode(codeGen))
+                .SelectMany(x => x.SourceLines)
+                .ToArray();
 
             // Get the source text
             var source = new StringBuilder();
 
             source.AppendLine("#include <stdlib.h>");
             source.AppendLine("#include <stdint.h>");
+            source.AppendLine("#include \"regions.h\"");
             source.AppendLine("");
 
             foreach (var line in codeGen.Header1Writer.ToLines()) {
@@ -43,7 +46,7 @@ namespace Attempt19.Compiling {
                 source.AppendLine(line);
             }
 
-            foreach (var line in block.SourceLines) {
+            foreach (var line in lines) {
                 source.AppendLine(line);
             }
 

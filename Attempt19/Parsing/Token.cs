@@ -7,15 +7,15 @@
         AssignmentSign, LeftArrow, LiteralSign, YieldSign,
         NotSign, EqualSign, NotEqualSign, GreaterThanSign, LessThanSign,
         LessThanOrEqualToSign, GreaterThanOrEqualToSign,
-        Comma, Colon, Dot, Semicolon,
+        Comma, Colon, Dot, Semicolon, Pipe,
 
         VarKeyword, RefKeyword, IntKeyword, VoidKeyword, BoolKeyword,
-        MoveKeyword, AllocKeyword,
         IfKeyword, ThenKeyword, ElseKeyword, WhileKeyword, DoKeyword,
         FunctionKeyword, NewKeyword, StructKeyword, ClassKeyword, UnionKeyword,
         AsKeyword,
         TrueKeyword, FalseKeyword,
         AndKeyword, OrKeyword, XorKeyword,
+        StackKeyword, HeapKeyword,
 
         Identifier, Whitespace, 
         IntLiteral, BoolLiteral,

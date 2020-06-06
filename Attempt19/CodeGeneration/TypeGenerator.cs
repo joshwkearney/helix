@@ -3,50 +3,51 @@ using System.Collections.Generic;
 
 namespace Attempt19.CodeGeneration {
     public class TypeGenerator : ITypeVisitor<string> {
-        private readonly ICScope scope;
         private readonly ICodeWriter header1Writer;
         private readonly ICodeWriter header2Writer;
 
-        private bool arrayGenerated = false;
+        private int arrayCounter = 0;
 
         private readonly Dictionary<LanguageType, string> generatedTypes
             = new Dictionary<LanguageType, string>();
 
-        public TypeGenerator(ICScope scope, ICodeWriter header1, ICodeWriter header2) {
-            this.scope = scope;
+        public TypeGenerator(ICodeWriter header1, ICodeWriter header2) {
             this.header1Writer = header1;
             this.header2Writer = header2;
         }
 
         public string VisitArrayType(ArrayType type) {
-            if (this.arrayGenerated) {
-                return "$array";
+            if (this.generatedTypes.TryGetValue(type, out var name)) {
+                return name;
             }
 
-            this.header1Writer.Line("typedef struct $array {");
+            name = "$array" + this.arrayCounter++;
+            string elemName = type.ElementType.Accept(this);
+
+            this.header1Writer.Line($"typedef struct {name} {{");
             this.header1Writer.Lines(CWriter.Indent("int64_t size;"));
-            this.header1Writer.Lines(CWriter.Indent("uintptr_t data;"));
-            this.header1Writer.Line("} $array;");
+            this.header1Writer.Lines(CWriter.Indent($"{elemName}* data;"));
+            this.header1Writer.Line($"}} {name};");
             this.header1Writer.EmptyLine();
 
-            this.arrayGenerated = true;
+            generatedTypes[type] = name;
 
             return "$array";
         }
 
         public string VisitBoolType(BoolType type) {
-            return "uint16_t";
+            return "byte";
         }
 
         public string VisitIntType(IntType type) {
             return "int64_t";
         }
         public string VisitVariableType(VariableType type) {
-            return "uintptr_t";
+            return type.InnerType.Accept(this) + "*";
         }
 
         public string VisitVoidType(VoidType type) {
-            return "uint16_t";
+            return "byte";
         }
     }
 }

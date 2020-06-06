@@ -11,10 +11,7 @@ namespace Attempt19 {
     public interface ITypeCheckedData : IParsedData {
         public LanguageType ReturnType { get; }
 
-        public ImmutableHashSet<VariableCapture> EscapingVariables { get; }
-    }
-
-    public interface IFlownData : ITypeCheckedData {
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
     }
 
     public class SyntaxData {
@@ -23,10 +20,6 @@ namespace Attempt19 {
         }
 
         public static SyntaxData From(ITypeCheckedData data) {
-            return new SyntaxData(data);
-        }
-
-        public static SyntaxData From(IFlownData data) {
             return new SyntaxData(data);
         }
 
@@ -42,10 +35,6 @@ namespace Attempt19 {
 
         public IOption<ITypeCheckedData> AsTypeCheckedData() {
             return Option.Some(this.op as ITypeCheckedData).Where(x => x != null);
-        }
-
-        public IOption<IFlownData> AsFlownData() {
-            return Option.Some(this.op as IFlownData).Where(x => x != null);
         }
     }
 }

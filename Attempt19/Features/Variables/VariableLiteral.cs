@@ -73,27 +73,8 @@ namespace Attempt19.Features.Variables {
             var info = types.Variables[access.VariablePath];
             access.ReturnType = new VariableType(info.Type);
 
-            // This will always capture the original variable
-            var cap = new VariableCapture(VariableCaptureKind.ReferenceCapture, access.VariablePath);
-            access.EscapingVariables = new[] { cap }.ToImmutableHashSet();
-
-            var neighbors = types.FlowGraph.FindAllDependentVariables(access.VariablePath).Select(x => x.VariablePath);
-            var movedPath = new IdentifierPath("$moved");
-
-            // Make sure this variable isn't moved
-            if (neighbors.Contains(movedPath)) {
-                throw TypeCheckingErrors.AccessedMovedVariable(
-                    access.Location, access.VariablePath);
-            }
-
-            return new Syntax() {
-                Data = SyntaxData.From(access),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
-            var access = (VariableLiteralData)data;
+            // Set variable lifetimes
+            access.Lifetimes = info.Lifetimes;
 
             return new Syntax() {
                 Data = SyntaxData.From(access),
@@ -101,10 +82,10 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var access = (VariableLiteralData)data;
 
-            return gen.CopyValue(CWriter.AddressOf(access.VariableName), access.ReturnType, scope);
+            return new CBlock("&" + access.VariableName);
         }
     }
 }

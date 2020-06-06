@@ -32,7 +32,7 @@ namespace Attempt19 {
 
 namespace Attempt19.Features.Primitives {
 
-    public class BinaryExpressionData : IParsedData, ITypeCheckedData, IFlownData {
+    public class BinaryExpressionData : IParsedData, ITypeCheckedData {
         public Syntax Left { get; set; }
 
         public Syntax Right { get; set; }
@@ -43,7 +43,7 @@ namespace Attempt19.Features.Primitives {
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
     }    
 
     public static class BinaryExpressionTransformations {
@@ -128,7 +128,7 @@ namespace Attempt19.Features.Primitives {
             // Check if left is a valid type
             if (left.ReturnType != IntType.Instance && left.ReturnType != BoolType.Instance) {
                 throw TypeCheckingErrors.UnexpectedType(
-                    bin.Left.Data.AsParsedData().Location, 
+                    bin.Left.Data.AsParsedData().Location,
                     left.ReturnType);
             }
 
@@ -174,20 +174,7 @@ namespace Attempt19.Features.Primitives {
             bin.ReturnType = VoidType.Instance;
 
             // Set escaping variables
-            bin.EscapingVariables = left.EscapingVariables.Union(right.EscapingVariables);
-
-            return new Syntax() {
-                Data = SyntaxData.From(bin),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
-            var bin = (BinaryExpressionData)data;
-
-            // Delegate flow analysis
-            bin.Left = bin.Left.AnalyzeFlow(types, flows);
-            bin.Right = bin.Right.AnalyzeFlow(types, flows);            
+            bin.Lifetimes = left.Lifetimes.Union(right.Lifetimes);
 
             return new Syntax() {
                 Data = SyntaxData.From(bin),
@@ -195,7 +182,7 @@ namespace Attempt19.Features.Primitives {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var bin = (BinaryExpressionData)data;
             var type = bin.Left.Data.AsTypeCheckedData().GetValue().ReturnType;
 
@@ -232,8 +219,8 @@ namespace Attempt19.Features.Primitives {
                 throw new Exception("This should never happen");
             }
 
-            var left = bin.Left.GenerateCode(scope, gen);
-            var right = bin.Right.GenerateCode(scope, gen);
+            var left = bin.Left.GenerateCode(gen);
+            var right = bin.Right.GenerateCode(gen);
 
             return left.Combine(right, (x, y) => "(" + x + op + y + ")");
         }

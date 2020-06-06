@@ -73,32 +73,13 @@ namespace Attempt19.Features.Variables {
             var info = types.Variables[access.VariablePath];
             access.ReturnType = info.Type;
 
-            // If the value type is conditionally copiable, capture the accessed variable
-            if (access.ReturnType.GetCopiability() == TypeCopiability.Conditional) {
-                var cap = new VariableCapture(VariableCaptureKind.ValueCapture, access.VariablePath);
-                access.EscapingVariables = new[] { cap }.ToImmutableHashSet();
+            // Set variable lifetimes
+            if (info.Type.GetCopiability() == TypeCopiability.Unconditional) {
+                access.Lifetimes = ImmutableHashSet.Create<IdentifierPath>();
             }
             else {
-                access.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
+                access.Lifetimes = info.Lifetimes;
             }
-
-            var neighbors = types.FlowGraph.FindAllDependentVariables(access.VariablePath).Select(x => x.VariablePath);
-            var movedPath = new IdentifierPath("$moved");
-
-            // Make sure this variable isn't moved
-            if (neighbors.Contains(movedPath)) {
-                throw TypeCheckingErrors.AccessedMovedVariable(
-                    access.Location, access.VariablePath);
-            }
-
-            return new Syntax() {
-                Data = SyntaxData.From(access),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache types, FlowCache flows) {
-            var access = (VariableAccessData)data;            
 
             return new Syntax() {
                 Data = SyntaxData.From(access),
@@ -106,10 +87,10 @@ namespace Attempt19.Features.Variables {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var access = (VariableAccessData)data;
 
-            return gen.CopyValue(access.VariableName, access.ReturnType, scope);
+            return new CBlock(access.VariableName);
         }
     }
 }

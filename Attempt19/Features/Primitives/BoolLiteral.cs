@@ -19,14 +19,14 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Primitives {
-    public class BoolLiteralData : IParsedData, ITypeCheckedData, IFlownData {
+    public class BoolLiteralData : IParsedData, ITypeCheckedData {
         public bool Value { get; set; }
 
         public TokenLocation Location { get; set; }
 
         public LanguageType ReturnType { get; set; }
 
-        public ImmutableHashSet<VariableCapture> EscapingVariables { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
     }    
 
     public static class BoolLiteralTransformations {
@@ -66,16 +66,7 @@ namespace Attempt19.Features.Primitives {
             literal.ReturnType = BoolType.Instance;
 
             // Set no captured variables
-            literal.EscapingVariables = ImmutableHashSet.Create<VariableCapture>();
-
-            return new Syntax() {
-                Data = SyntaxData.From(literal),
-                Operator = SyntaxOp.FromFlowAnalyzer(AnalyzeFlow)
-            };
-        }
-
-        public static Syntax AnalyzeFlow(ITypeCheckedData data, TypeCache cache, FlowCache flows) {
-            var literal = (BoolLiteralData)data;
+            literal.Lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
             return new Syntax() {
                 Data = SyntaxData.From(literal),
@@ -83,7 +74,7 @@ namespace Attempt19.Features.Primitives {
             };
         }
 
-        public static CBlock GenerateCode(IFlownData data, ICScope scope, ICodeGenerator gen) {
+        public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var literal = (BoolLiteralData)data;
 
             return new CBlock(literal.Value ? "1" : "0");
