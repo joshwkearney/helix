@@ -147,18 +147,21 @@ namespace Attempt19.Features.Containers.Arrays {
             writer.Lines(cIndex.SourceLines);
             writer.Line("// Array access");
 
+            // Write pointer addition
             string elemPtr = $"({cTarget.Value}.data + {cIndex.Value} * sizeof({cElemType}))";
+            writer.VariableInit(gen.Generate(new VariableType(index.ArrayType.ElementType)), varname, elemPtr);
+
+            // Write bounds check
+            writer.Line($"if ({cIndex.Value} < 0 || {cIndex.Value} >= {cTarget.Value}.size) {{");
+            writer.Lines(CWriter.Indent("fprintf(stderr, \"Array bounds check failed\\n\");"));
+            writer.Lines(CWriter.Indent("exit(-1);"));
+            writer.Line("}");
+            writer.EmptyLine();
 
             if (index.Kind == ArrayAccessKind.ValueAccess) {
-                writer.VariableInit(gen.Generate(index.ReturnType), varname, "*" + elemPtr);
-                writer.EmptyLine();
-
-                return writer.ToBlock(varname);
+                return writer.ToBlock("*" + varname);
             }
             else {
-                writer.VariableInit(gen.Generate(index.ReturnType), varname, elemPtr);
-                writer.EmptyLine();
-
                 return writer.ToBlock(varname);
             }
         }
