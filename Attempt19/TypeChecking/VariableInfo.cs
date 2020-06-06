@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 
 namespace Attempt19.TypeChecking {
     public enum VariableDefinitionKind {
-        Local, Alias
+        Local, Parameter
     }
 
     public class VariableInfo {

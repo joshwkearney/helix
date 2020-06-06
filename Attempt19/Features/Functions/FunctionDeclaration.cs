@@ -81,8 +81,7 @@ namespace Attempt19.Features.Functions {
                 var par = func.Signature.Parameters[i];
                 var parPath = func.FunctionPath.Append(par.Name);
 
-                // TODO: Reimplement this
-                //names.AddLocalName(parPath, NameTarget.Parameter);
+                names.AddLocalName(parPath, NameTarget.Variable);
             }
 
             // Delegate name resolutions
@@ -102,16 +101,15 @@ namespace Attempt19.Features.Functions {
             // Declare this function
             types.Functions[func.FunctionPath] = func.Signature;
 
-            // TODO: Reimplement this
             // Declare the parameters
-            //for (int i = 0; i < func.Signature.Parameters.Count; i++) {
-            //    var par = func.Signature.Parameters[i];
-            //    var parPath = func.FunctionPath.Append(par.Name);
-            //    var capPath = func.FunctionPath.Append("$par" + i).Append(par.Name);
-            //    var info = new ParameterInfo(par.Type, capPath);
+            for (int i = 0; i < func.Signature.Parameters.Count; i++) {
+                var par = func.Signature.Parameters[i];
+                var parPath = func.FunctionPath.Append(par.Name);
+                var info = new VariableInfo(par.Type, VariableDefinitionKind.Parameter, 
+                    new[] { new IdentifierPath("heap") }.ToImmutableHashSet());
 
-            //    types.Parameter[parPath] = info;
-            //}
+                types.Variables[parPath] = info;
+            }
 
             // Delegate type declarations
             func.Body = func.Body.DeclareTypes(types);

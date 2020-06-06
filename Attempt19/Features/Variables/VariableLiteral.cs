@@ -73,6 +73,11 @@ namespace Attempt19.Features.Variables {
             var info = types.Variables[access.VariablePath];
             access.ReturnType = new VariableType(info.Type);
 
+            // Make sure this isn't a non-variable parameter
+            if (info.DefinitionKind == VariableDefinitionKind.Parameter && !(info.Type is VariableType vartype)) {
+                throw TypeCheckingErrors.AccessedFunctionParameterLikeVariable(access.Location, access.VariableName);
+            }
+
             // Set variable lifetimes
             access.Lifetimes = info.Lifetimes;
 

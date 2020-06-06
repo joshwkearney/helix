@@ -17,9 +17,6 @@ namespace Attempt19.TypeChecking {
         public Dictionary<IdentifierPath, VariableInfo> Variables { get; }
             = new Dictionary<IdentifierPath, VariableInfo>();
 
-        public Dictionary<IdentifierPath, ParameterInfo> Parameter { get; }
-            = new Dictionary<IdentifierPath, ParameterInfo>();
-
         public Dictionary<IdentifierPath, FunctionSignature> Functions { get; }
             = new Dictionary<IdentifierPath, FunctionSignature>();
 
