@@ -107,7 +107,7 @@ namespace Attempt19.Features.Variables {
                 return new CBlock(access.VariableName);
             }
             else {
-                return new CBlock("&" + access.VariableName);
+                return new CBlock("(&" + access.VariableName + ")");
             }
         }
     }

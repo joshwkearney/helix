@@ -32,11 +32,11 @@ namespace Attempt19.CodeGeneration {
 
             generatedTypes[type] = name;
 
-            return "$array";
+            return name;
         }
 
         public string VisitBoolType(BoolType type) {
-            return "byte";
+            return "char";
         }
 
         public string VisitIntType(IntType type) {
@@ -47,7 +47,7 @@ namespace Attempt19.CodeGeneration {
         }
 
         public string VisitVoidType(VoidType type) {
-            return "byte";
+            return "char";
         }
     }
 }

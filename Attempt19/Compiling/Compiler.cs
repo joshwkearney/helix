@@ -31,6 +31,7 @@ namespace Attempt19.Compiling {
 
             source.AppendLine("#include <stdlib.h>");
             source.AppendLine("#include <stdint.h>");
+            source.AppendLine("#include <stdio.h>");
             source.AppendLine("#include \"regions.h\"");
             source.AppendLine("");
 

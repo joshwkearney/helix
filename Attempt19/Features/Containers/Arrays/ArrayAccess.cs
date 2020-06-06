@@ -159,7 +159,7 @@ namespace Attempt19.Features.Containers.Arrays {
             writer.EmptyLine();
 
             if (index.Kind == ArrayAccessKind.ValueAccess) {
-                return writer.ToBlock("*" + varname);
+                return writer.ToBlock("(*" + varname + ")");
             }
             else {
                 return writer.ToBlock(varname);

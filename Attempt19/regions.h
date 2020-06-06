@@ -1,16 +1,19 @@
 ﻿#ifndef _REGIONS_H
 #define _REGIONS_H
 
-typedef struct $Region {
-	$RegionFrame frame;
+typedef struct $Region $Region;
+typedef struct $RegionFrame $RegionFrame;
+
+struct $RegionFrame {
+	char* data_start;
+	char* data_end;
+	char* data_current;
+	$RegionFrame* prev_frame;
 };
 
-typedef struct $RegionFrame {
-	byte* data_start;
-	byte* data_end;
-	byte* data_current;
-	$Region* prev_frame;
-} $Region;
+struct $Region {
+	$RegionFrame* frame;
+};
 
 static $RegionFrame* $make_region_frame() {
 	int frame_size = 1024 * 1024;
@@ -18,7 +21,7 @@ static $RegionFrame* $make_region_frame() {
 
 	frame->data_start = malloc(frame_size);
 	frame->data_end = frame->data_start + frame_size;
-	frame->data_current = data_start;
+	frame->data_current = frame->data_start;
 	frame->prev_frame = NULL;
 
 	return frame;

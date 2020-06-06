@@ -103,7 +103,7 @@ namespace Attempt19.Features.Variables {
             var access = (VariableAccessData)data;
             
             if (access.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter && access.VariableInfo.Type is VariableType varType) {
-                return new CBlock("*" + access.VariableName);
+                return new CBlock("(*" + access.VariableName + ")");
             }
             else {
                 return new CBlock(access.VariableName);

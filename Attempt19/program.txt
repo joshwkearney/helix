@@ -1,17 +1,9 @@
 ﻿function main () => void: {
-	var array <- [stack | 1, 2, 3];
-
-	var x <- array[1];
-
-	array@[1] <- 89;
-
-	# @array <- test(array);
-
 	void;
 };
 
-function test (var int x) => int[]: {
-	@x <- 45;
+function test (var int[] x) => int[]: {
+	x@[0] <- 45;
 
 	[heap | 1, 2, 3, 4];
 };
