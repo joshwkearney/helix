@@ -153,7 +153,7 @@ namespace Attempt19.Features.Containers.Arrays {
             }
 
             if (literal.Elements.Any()) {
-                if (literal.TargetLifetime == new IdentifierPath("heap.stack")) {
+                if (literal.TargetLifetime == new IdentifierPath("heap", "stack")) {
                     var tempDataName = "$array_data_" + arrayLiteralCGCounter++;
 
                     writer.Line("// Array initialization");
