@@ -62,9 +62,6 @@ namespace Attempt19.Features.Variables {
         public static Syntax DeclareTypes(IParsedData data, TypeCache types) {
             var access = (VariableLiteralData)data;
 
-            // Set variable info
-            access.VariableInfo = types.Variables[access.VariablePath];
-
             return new Syntax() {
                 Data = SyntaxData.From(access),
                 Operator = SyntaxOp.FromTypeResolver(ResolveTypes)
@@ -74,6 +71,9 @@ namespace Attempt19.Features.Variables {
         public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var access = (VariableLiteralData)data;
             var innerType = (LanguageType)VoidType.Instance;
+
+            // Set variable info
+            access.VariableInfo = types.Variables[access.VariablePath];
 
             if (access.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter) {
                 // Make sure this isn't a non-variable parameter

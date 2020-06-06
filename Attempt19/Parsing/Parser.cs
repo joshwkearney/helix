@@ -297,7 +297,7 @@ namespace Attempt19.Parsing {
         }
 
         private Syntax MultiplyExpression() {
-            var first = this.Atom();
+            var first = this.InvokeExpression();
 
             while (true) {
                 if (!this.Peek(TokenKind.MultiplySign)) {
@@ -306,12 +306,39 @@ namespace Attempt19.Parsing {
 
                 var tok = this.Advance().Kind;
                 var op = tok == TokenKind.MultiplySign ? BinaryOperation.Multiply : BinaryOperation.Multiply;
-                var second = this.Atom();
+                var second = this.InvokeExpression();
                 var loc1 = first.Data.AsParsedData().Location;
                 var loc2 = second.Data.AsParsedData().Location;
 
                 first = SyntaxFactory.MakeBinaryExpression(
                     first, second, op, loc1.Span(loc2));
+            }
+
+            return first;
+        }
+
+        private Syntax InvokeExpression() {
+            var first = this.Atom();
+
+            while (this.Peek(TokenKind.OpenBracket) || this.Peek(TokenKind.LiteralSign)) {
+                ArrayAccessKind kind;
+
+                if (this.TryAdvance(TokenKind.OpenBracket)) {
+                    kind = ArrayAccessKind.ValueAccess;
+                }
+                else if (this.TryAdvance(TokenKind.LiteralSign)) {
+                    this.Advance(TokenKind.OpenBracket);
+                    kind = ArrayAccessKind.LiteralAccess;
+                }
+                else {
+                    throw new Exception("This isn't supposed to happen");
+                }
+
+                var inner = this.TopExpression();
+                var last = this.Advance(TokenKind.CloseBracket);
+                var loc = first.Data.AsParsedData().Location.Span(last.Location);
+
+                first = SyntaxFactory.MakeArrayAccess(first, inner, kind, loc);
             }
 
             return first;
@@ -366,29 +393,6 @@ namespace Attempt19.Parsing {
 
         private Syntax VariableAccess() {
             var tok = (Token<string>)this.Advance(TokenKind.Identifier);
-
-            if (this.Peek(TokenKind.OpenBracket) || this.Peek(TokenKind.LiteralSign)) {
-                ArrayAccessKind kind;
-
-                if (this.Peek(TokenKind.OpenBracket)) {
-                    this.Advance(TokenKind.OpenBracket);
-                    kind = ArrayAccessKind.ValueAccess;
-                }
-                else if (this.Peek(TokenKind.LiteralSign)) {
-                    this.Advance(TokenKind.LiteralSign);
-                    this.Advance(TokenKind.OpenBracket);
-                    kind = ArrayAccessKind.LiteralAccess;
-                }
-                else {
-                    throw new Exception("This isn't supposed to happen");
-                }
-
-                var inner = this.TopExpression();
-                var last = this.Advance(TokenKind.CloseBracket);
-                var loc = tok.Location.Span(last.Location);
-
-                return SyntaxFactory.MakeArrayAccess(tok.Value, inner, kind, loc);
-            }
 
             return SyntaxFactory.MakeVariableAccess(tok.Value, tok.Location);
         }

@@ -11,10 +11,10 @@ using Attempt19.Features.Variables;
 
 namespace Attempt19 {
     public static partial class SyntaxFactory {
-        public static Syntax MakeArrayAccess(string target, Syntax index, ArrayAccessKind kind, TokenLocation loc) {
+        public static Syntax MakeArrayAccess(Syntax target, Syntax index, ArrayAccessKind kind, TokenLocation loc) {
             return new Syntax() {
                 Data = SyntaxData.From(new ArrayAccessData() {
-                    VariableName = target,
+                    TargetSyntax = target,
                     IndexSyntax = index,
                     Kind = kind,
                     Location = loc }),
@@ -29,12 +29,20 @@ namespace Attempt19.Features.Containers.Arrays {
         ValueAccess, LiteralAccess
     }
 
-    public class ArrayAccessData : VariableAccessBase {
+    public class ArrayAccessData : IParsedData, ITypeCheckedData {
         public ArrayAccessKind Kind { get; set; }
+
+        public Syntax TargetSyntax { get; set; }
 
         public Syntax IndexSyntax { get; set; }
 
         public ArrayType ArrayType { get; set; }
+
+        public TokenLocation Location { get; set; }
+
+        public LanguageType ReturnType { get; set; }
+
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
     }    
 
     public static class ArrayAccessTransformations {
@@ -44,10 +52,8 @@ namespace Attempt19.Features.Containers.Arrays {
             var index = (ArrayAccessData)data;
 
             // Delegate name declaration
+            index.TargetSyntax = index.TargetSyntax.DeclareNames(scope, names);
             index.IndexSyntax = index.IndexSyntax.DeclareNames(scope, names);
-
-            // Set containing nscope
-            index.ContainingScope = scope;
 
             return new Syntax() {
                 Data = SyntaxData.From(index),
@@ -59,20 +65,8 @@ namespace Attempt19.Features.Containers.Arrays {
             var index = (ArrayAccessData)data;
 
             // Delegate name resolution
+            index.TargetSyntax = index.TargetSyntax.ResolveNames(names);
             index.IndexSyntax = index.IndexSyntax.ResolveNames(names);
-
-            // Make sure this name exists
-            if (!names.FindName(index.ContainingScope, index.VariableName, out var varpath, out var target)) {
-                throw TypeCheckingErrors.VariableUndefined(index.Location, index.VariableName);
-            }
-
-            // Make sure this name is a variable
-            if (target != NameTarget.Variable) {
-                throw TypeCheckingErrors.VariableUndefined(index.Location, index.VariableName);
-            }
-
-            // Set target path
-            index.VariablePath = varpath;
 
             return new Syntax() {
                 Data = SyntaxData.From(index),
@@ -84,6 +78,7 @@ namespace Attempt19.Features.Containers.Arrays {
             var index = (ArrayAccessData)data;
 
             // Delegate type declaration
+            index.TargetSyntax = index.TargetSyntax.DeclareTypes(types);
             index.IndexSyntax = index.IndexSyntax.DeclareTypes(types);
 
             return new Syntax() {
@@ -96,15 +91,16 @@ namespace Attempt19.Features.Containers.Arrays {
             var index = (ArrayAccessData)data;
 
             // Delegate type resolution
+            index.TargetSyntax = index.TargetSyntax.ResolveTypes(types, unifier);
             index.IndexSyntax = index.IndexSyntax.ResolveTypes(types, unifier);
 
-            var targetType = types.Variables[index.VariablePath].Type;
+            var target = index.TargetSyntax.Data.AsTypeCheckedData().GetValue();
             var indexSyntax = index.IndexSyntax.Data.AsTypeCheckedData().GetValue();
 
             // Make sure the target is an array type
-            if (!(targetType is ArrayType arrType)) {
+            if (!(target.ReturnType is ArrayType arrType)) {
                 throw TypeCheckingErrors.ExpectedArrayType(
-                    index.Location, targetType);
+                    index.Location, target.ReturnType);
             }
 
             // Set array type
@@ -129,7 +125,7 @@ namespace Attempt19.Features.Containers.Arrays {
                 index.Lifetimes = ImmutableHashSet.Create<IdentifierPath>();
             }
             else {
-                index.Lifetimes = types.Variables[index.VariablePath].Lifetimes;
+                index.Lifetimes = target.Lifetimes;
             }
 
             return new Syntax() {
@@ -141,15 +137,17 @@ namespace Attempt19.Features.Containers.Arrays {
         public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var index = (ArrayAccessData)data;
 
+            var cTarget = index.TargetSyntax.GenerateCode(gen);
             var cIndex = index.IndexSyntax.GenerateCode(gen);
             var cElemType = gen.Generate(index.ArrayType.ElementType);
             var varname = "$array_access_" + arrayAccessCounter++;
             var writer = new CWriter();
 
+            writer.Lines(cTarget.SourceLines);
             writer.Lines(cIndex.SourceLines);
             writer.Line("// Array access");
 
-            string elemPtr = $"({index.VariableName}.data) + {cIndex.Value} * sizeof({cElemType})";
+            string elemPtr = $"({cTarget.Value}.data + {cIndex.Value} * sizeof({cElemType}))";
 
             if (index.Kind == ArrayAccessKind.ValueAccess) {
                 writer.VariableInit(gen.Generate(index.ReturnType), varname, "*" + elemPtr);
