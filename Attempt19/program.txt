@@ -1,13 +1,13 @@
 ﻿function main () => void: {
+	var array <- [stack | 1, 2, 3];
+
+	# @array <- test(array);
+
 	void;
 };
 
-function test (int z) => int[]: {
-	var x <- {
-		[heap | 1, 2, z, 4];
-	};
+function test (var int x) => int[]: {
+	@x <- 45;
 
-	@x <- [heap | 4, x[0], 6];
-
-	x;
+	[heap | 1, 2, 3, 4];
 };

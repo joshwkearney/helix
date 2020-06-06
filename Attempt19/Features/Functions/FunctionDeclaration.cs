@@ -184,6 +184,10 @@ namespace Attempt19.Features.Functions {
 
             if (includeHeap) {
                 line += "$Region* $reg_heap";
+
+                if (sig.Parameters.Any()) {
+                    line += ", ";
+                }
             }
 
             foreach (var par in sig.Parameters) {

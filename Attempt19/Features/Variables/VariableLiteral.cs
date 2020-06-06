@@ -20,7 +20,9 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Variables {
-    public class VariableLiteralData : VariableAccessBase { }
+    public class VariableLiteralData : VariableAccessBase { 
+        public VariableInfo VariableInfo { get; set; }
+    }
 
     public static class VariableLiteralTransformations {
         public static Syntax DeclareNames(IParsedData data, IdentifierPath scope, NameCache names) {
@@ -60,6 +62,9 @@ namespace Attempt19.Features.Variables {
         public static Syntax DeclareTypes(IParsedData data, TypeCache types) {
             var access = (VariableLiteralData)data;
 
+            // Set variable info
+            access.VariableInfo = types.Variables[access.VariablePath];
+
             return new Syntax() {
                 Data = SyntaxData.From(access),
                 Operator = SyntaxOp.FromTypeResolver(ResolveTypes)
@@ -68,18 +73,26 @@ namespace Attempt19.Features.Variables {
 
         public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var access = (VariableLiteralData)data;
+            var innerType = (LanguageType)VoidType.Instance;
 
-            // Set return type
-            var info = types.Variables[access.VariablePath];
-            access.ReturnType = new VariableType(info.Type);
-
-            // Make sure this isn't a non-variable parameter
-            if (info.DefinitionKind == VariableDefinitionKind.Parameter && !(info.Type is VariableType vartype)) {
-                throw TypeCheckingErrors.AccessedFunctionParameterLikeVariable(access.Location, access.VariableName);
+            if (access.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter) {
+                // Make sure this isn't a non-variable parameter
+                if (access.VariableInfo.Type is VariableType varType) {
+                    innerType = varType.InnerType;
+                }
+                else {
+                    throw TypeCheckingErrors.AccessedFunctionParameterLikeVariable(access.Location, access.VariableName);
+                }
+            }
+            else {
+                innerType = access.VariableInfo.Type;
             }
 
+            // Set return type
+            access.ReturnType = new VariableType(innerType);
+
             // Set variable lifetimes
-            access.Lifetimes = info.Lifetimes;
+            access.Lifetimes = access.VariableInfo.Lifetimes;
 
             return new Syntax() {
                 Data = SyntaxData.From(access),
@@ -90,7 +103,12 @@ namespace Attempt19.Features.Variables {
         public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var access = (VariableLiteralData)data;
 
-            return new CBlock("&" + access.VariableName);
+            if (access.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter && access.VariableInfo.Type is VariableType varType) {
+                return new CBlock(access.VariableName);
+            }
+            else {
+                return new CBlock("&" + access.VariableName);
+            }
         }
     }
 }

@@ -20,7 +20,9 @@ namespace Attempt19 {
 }
 
 namespace Attempt19.Features.Variables {
-    public class VariableAccessData : VariableAccessBase { }
+    public class VariableAccessData : VariableAccessBase { 
+        public VariableInfo VariableInfo { get; set; }
+    }
 
     public static class VariableAccessTransformations {
         public static Syntax DeclareNames(IParsedData data, IdentifierPath scope, NameCache names) {
@@ -60,6 +62,9 @@ namespace Attempt19.Features.Variables {
         public static Syntax DeclareTypes(IParsedData data, TypeCache types) {
             var access = (VariableAccessData)data;
 
+            // Set variable info
+            access.VariableInfo = types.Variables[access.VariablePath];
+
             return new Syntax() {
                 Data = SyntaxData.From(access),
                 Operator = SyntaxOp.FromTypeResolver(ResolveTypes)
@@ -68,17 +73,24 @@ namespace Attempt19.Features.Variables {
 
         public static Syntax ResolveTypes(IParsedData data, TypeCache types, ITypeUnifier unifier) {
             var access = (VariableAccessData)data;
+            var type = (LanguageType)VoidType.Instance;
+
+            if (access.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter && access.VariableInfo.Type is VariableType varType) {
+                type = varType.InnerType;
+            }
+            else {
+                type = access.VariableInfo.Type;
+            }
 
             // Set return type
-            var info = types.Variables[access.VariablePath];
-            access.ReturnType = info.Type;
+            access.ReturnType = type;
 
             // Set variable lifetimes
-            if (info.Type.GetCopiability() == TypeCopiability.Unconditional) {
+            if (access.VariableInfo.Type.GetCopiability() == TypeCopiability.Unconditional) {
                 access.Lifetimes = ImmutableHashSet.Create<IdentifierPath>();
             }
             else {
-                access.Lifetimes = info.Lifetimes;
+                access.Lifetimes = access.VariableInfo.Lifetimes;
             }
 
             return new Syntax() {
@@ -89,8 +101,13 @@ namespace Attempt19.Features.Variables {
 
         public static CBlock GenerateCode(ITypeCheckedData data, ICodeGenerator gen) {
             var access = (VariableAccessData)data;
-
-            return new CBlock(access.VariableName);
+            
+            if (access.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter && access.VariableInfo.Type is VariableType varType) {
+                return new CBlock("*" + access.VariableName);
+            }
+            else {
+                return new CBlock(access.VariableName);
+            }
         }
     }
 }
