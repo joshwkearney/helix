@@ -157,7 +157,7 @@ namespace Attempt19.Features.Containers.Arrays {
                     var tempDataName = "$array_data_" + arrayLiteralCGCounter++;
 
                     writer.Line("// Array initialization");
-                    writer.Line($"{cArrayType} {tempDataName}[{literal.Elements.Count}];");
+                    writer.Line($"{elemType} {tempDataName}[{literal.Elements.Count}];");
                     writer.VariableInit(cArrayType, tempName);
                     writer.Line($"{tempName}.size = {literal.Elements.Count}LL;");
                     writer.Line($"{tempName}.data = {tempDataName};");
