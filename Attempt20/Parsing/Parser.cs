@@ -97,10 +97,6 @@ namespace Attempt20 {
             var start = this.TypeAtom();
 
             while (this.Peek(TokenKind.OpenBracket)) {
-                if (!this.Peek(TokenKind.CloseBracket, 2)) {
-                    break;
-                }
-
                 this.Advance(TokenKind.OpenBracket);
 
                 if (this.Peek(TokenKind.IntLiteral)) {

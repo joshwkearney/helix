@@ -13,14 +13,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Parsing\" />
-    <Folder Include="Features\" />
     <Folder Include="Features\Primitives\" />
     <Folder Include="Features\Variables\" />
     <Folder Include="Features\FlowControl\" />
     <Folder Include="Features\Functions\" />
     <Folder Include="Resources\" />
     <Folder Include="CodeGeneration\" />
-    <Folder Include="Features\Containers\" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Resources\Program.txt">

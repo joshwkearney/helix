@@ -24,7 +24,7 @@ namespace Attempt20.Features.Containers {
                 })
                 .ToArray();
 
-            this.Target = new NewTypeCheckedSyntax() {
+            this.Target = new NewStructTypeCheckedSyntax() {
                 ReturnType = retType,
                 Arguments = args,
                 Lifetimes = target.Lifetimes,

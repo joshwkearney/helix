@@ -159,6 +159,9 @@ namespace Attempt20 {
                 else if (type.AsArrayType().TryGetValue(out var arrayType)) {
                     return this.MakeArrayType(arrayType);
                 }
+                else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
+                    return this.MakeArrayType(new ArrayType(fixedArrayType.ElementType));
+                }
                 else if (type.AsVariableType().TryGetValue(out var type2)) {
                     return CType.Pointer(ConvertType(type2.InnerType));
                 }
@@ -344,6 +347,9 @@ namespace Attempt20 {
                 }
                 else if (type.AsArrayType().TryGetValue(out var arrayType)) {
                     return new ArrayType(this.ResolveTypeNames(arrayType.ElementType, loc));
+                }
+                else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
+                    return new FixedArrayType(this.ResolveTypeNames(fixedArrayType.ElementType, loc), fixedArrayType.Size);
                 }
                 else if (type.AsVariableType().TryGetValue(out var varType)) {
                     return new VariableType(this.ResolveTypeNames(varType.InnerType, loc));

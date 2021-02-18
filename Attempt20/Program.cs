@@ -16,6 +16,8 @@ namespace Attempt20 {
             catch (CompilerException ex) {
                 Console.WriteLine(ex.Message);
             }
+
+            Console.ReadLine();
         }
     }
 }

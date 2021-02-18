@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Attempt20.CodeGeneration;
+using Attempt20.Features.Arrays;
+using Attempt20.Features.Containers.Arrays;
 using Attempt20.Features.Primitives;
 
 namespace Attempt20.Features.Containers {
@@ -24,6 +26,41 @@ namespace Attempt20.Features.Containers {
         public IParsedSyntax CheckNames(INameRecorder names) {
             // Resolve the target type
             this.Target = names.ResolveTypeNames(this.Target, this.Location);
+
+            // Check for primitive types
+            if (this.Target.IsBoolType || this.Target.IsIntType || this.Target.IsVoidType) {
+                if (this.Arguments.Any()) {
+                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.Target, this.Arguments.Select(x => x.MemberName));
+                }
+
+                if (this.Target.IsBoolType) {
+                    return new BoolLiteralSyntax() { Location = this.Location, Value = false }.CheckNames(names);
+                }
+                else if (this.Target.IsIntType) {
+                    return new IntLiteralSyntax() { Location = this.Location, Value = 0 }.CheckNames(names);
+                }
+                else {
+                    return new VoidLiteralSyntax() { Location = this.Location }.CheckNames(names);
+                }
+            }
+
+            // Check for array types
+            if (this.Target.AsArrayType().TryGetValue(out var arrayType)) {
+                if (this.Arguments.Any()) {
+                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.Target, this.Arguments.Select(x => x.MemberName));
+                }
+
+                return new ArrayParsedLiteral() { Location = this.Location, Arguments = new IParsedSyntax[0] }.CheckNames(names);
+            }
+
+            // Check for fixed array types
+            if (this.Target.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
+                if (this.Arguments.Any()) {
+                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.Target, this.Arguments.Select(x => x.MemberName));
+                }
+
+                return new NewFixedArraySyntax() { ArrayType = fixedArrayType, Location = this.Location }.CheckNames(names);
+            }
 
             // Make sure the target is defined
             if (!this.Target.AsNamedType().TryGetValue(out var path)) {
@@ -116,7 +153,7 @@ namespace Attempt20.Features.Containers {
                 }
             }
 
-            return new NewTypeCheckedSyntax() {
+            return new NewStructTypeCheckedSyntax() {
                 Location = this.Location,
                 Arguments = allFields,
                 Lifetimes = allFields.Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y.MemberValue.Lifetimes)),
@@ -126,7 +163,7 @@ namespace Attempt20.Features.Containers {
         }
     }
 
-    public class NewTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class NewStructTypeCheckedSyntax : ITypeCheckedSyntax {
         private static int tempCounter = 0;
 
         public TokenLocation Location { get; set; }
