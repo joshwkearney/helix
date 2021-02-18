@@ -1,1 +1,1 @@
-﻿  CTesting.vcxproj -> C:\Users\mwkea\source\repos\Blue0500\Compiler\x64\Debug\CTesting.exe
+﻿LINK : fatal error LNK1561: entry point must be defined

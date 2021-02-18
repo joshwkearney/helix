@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
+﻿using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Primitives {
-    public class VoidLiteralSyntax : IParsedSyntax, ITypeCheckedSyntax {
+    public class VoidLiteralSyntax : IParsedSyntax, ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType => LanguageType.Void;
+        public TrophyType ReturnType => TrophyType.Void;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
@@ -14,11 +16,11 @@ namespace Attempt20.Features.Primitives {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             return this;
         }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             return CExpression.IntLiteral(0);
         }
 

@@ -1,7 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.FlowControl {
     public class IfParsedSyntax : IParsedSyntax {
@@ -21,14 +24,14 @@ namespace Attempt20.Features.FlowControl {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var cond = this.Condition.CheckTypes(names, types);
             var affirm = this.TrueBranch.CheckTypes(names, types);
             var negOpt = this.FalseBranch.Select(x => x.CheckTypes(names, types));
 
             // Make sure that the condition is a boolean
             if (!cond.ReturnType.IsBoolType) {
-                throw TypeCheckingErrors.UnexpectedType(cond.Location, LanguageType.Boolean, cond.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(cond.Location, TrophyType.Boolean, cond.ReturnType);
             }
 
             if (negOpt.TryGetValue(out var neg)) {
@@ -55,32 +58,32 @@ namespace Attempt20.Features.FlowControl {
             else {
                 return new IfTypeCheckedSyntax() {
                     Location = this.Location,
-                    ReturnType = LanguageType.Void,
+                    ReturnType = TrophyType.Void,
                     Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
                     Condition = cond,
                     TrueBranch = affirm,
-                    FalseBranch = Option.None<ITypeCheckedSyntax>()
+                    FalseBranch = Option.None<ISyntax>()
                 };
             }
         }
     }
 
-    public class IfTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class IfTypeCheckedSyntax : ISyntax {
         private static int ifTemp = 0;
 
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public ITypeCheckedSyntax Condition { get; set; }
+        public ISyntax Condition { get; set; }
 
-        public ITypeCheckedSyntax TrueBranch { get; set; }
+        public ISyntax TrueBranch { get; set; }
 
-        public IOption<ITypeCheckedSyntax> FalseBranch { get; set; }
+        public IOption<ISyntax> FalseBranch { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var affirmList = new List<CStatement>();
             var affirmWriter = new CStatementWriter();
 

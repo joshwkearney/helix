@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Attempt20.Analysis;
+using Attempt20.Parsing;
 using System.Linq;
 
 namespace Attempt20.Features.FlowControl {
@@ -35,7 +36,7 @@ namespace Attempt20.Features.FlowControl {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             names.PushRegion(this.region);
 
             var target = this.Target.CheckTypes(names, types);

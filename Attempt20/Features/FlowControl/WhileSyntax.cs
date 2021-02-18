@@ -1,7 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.FlowControl {
     public class WhileParsedSyntax : IParsedSyntax {
@@ -18,16 +21,16 @@ namespace Attempt20.Features.FlowControl {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var cond = this.Condition.CheckTypes(names, types);
             var body = this.Body.CheckTypes(names, types);
 
             // Make sure the condition is a boolean
-            if (types.TryUnifyTo(cond, LanguageType.Boolean).TryGetValue(out var newCond)) {
+            if (types.TryUnifyTo(cond, TrophyType.Boolean).TryGetValue(out var newCond)) {
                 cond = newCond;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(cond.Location, LanguageType.Boolean, cond.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(cond.Location, TrophyType.Boolean, cond.ReturnType);
             }
 
             return new WhileTypeCheckedSyntax() {
@@ -35,23 +38,23 @@ namespace Attempt20.Features.FlowControl {
                 Body = body,
                 Condition = cond,
                 Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
-                ReturnType = LanguageType.Void
+                ReturnType = TrophyType.Void
             };
         }
     }
 
-    public class WhileTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class WhileTypeCheckedSyntax : ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public ITypeCheckedSyntax Condition { get; set; }
+        public ISyntax Condition { get; set; }
 
-        public ITypeCheckedSyntax Body { get; set; }
+        public ISyntax Body { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var loopBody = new List<CStatement>();
             var writer = new CStatementWriter();
 

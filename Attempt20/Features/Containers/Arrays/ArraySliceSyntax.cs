@@ -1,9 +1,11 @@
-﻿using System;
-using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
+﻿using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.Primitives;
+using Attempt20.Parsing;
 
-namespace Attempt20.Features.Arrays {
+namespace Attempt20.Features.Containers.Arrays {
     public class ArraySliceParsedSyntax : IParsedSyntax {
         public TokenLocation Location { get; set; }
 
@@ -21,11 +23,11 @@ namespace Attempt20.Features.Arrays {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var target = this.Target.CheckTypes(names, types);
             var startIndex = this.StartIndex.Select(x => x.CheckTypes(names, types));
             var endIndex = this.EndIndex.Select(x => x.CheckTypes(names, types));
-            var returnType = LanguageType.Void;
+            var returnType = TrophyType.Void;
 
             // Make sure the target is an array
             if (target.ReturnType.AsArrayType().TryGetValue(out var arrayType)) {
@@ -40,21 +42,21 @@ namespace Attempt20.Features.Arrays {
 
             // Make sure the index in an int
             startIndex = startIndex.Select(x => {
-                if (types.TryUnifyTo(x, LanguageType.Integer).TryGetValue(out var newStart)) {
+                if (types.TryUnifyTo(x, TrophyType.Integer).TryGetValue(out var newStart)) {
                     return newStart;
                 }
                 else {
-                    throw TypeCheckingErrors.UnexpectedType(x.Location, LanguageType.Integer, x.ReturnType);
+                    throw TypeCheckingErrors.UnexpectedType(x.Location, TrophyType.Integer, x.ReturnType);
                 }
             });
 
             // Make sure the length in an int
             endIndex = endIndex.Select(x => {
-                if (types.TryUnifyTo(x, LanguageType.Integer).TryGetValue(out var newEnd)) {
+                if (types.TryUnifyTo(x, TrophyType.Integer).TryGetValue(out var newEnd)) {
                     return newEnd;
                 }
                 else {
-                    throw TypeCheckingErrors.UnexpectedType(x.Location, LanguageType.Integer, x.ReturnType);
+                    throw TypeCheckingErrors.UnexpectedType(x.Location, TrophyType.Integer, x.ReturnType);
                 }
             });
 
@@ -69,22 +71,22 @@ namespace Attempt20.Features.Arrays {
         }
     }
 
-    public class ArraySliceTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class ArraySliceTypeCheckedSyntax : ISyntax {
         private static int sliceCounter = 0;
 
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public ITypeCheckedSyntax Target { get; set; }
+        public ISyntax Target { get; set; }
 
-        public IOption<ITypeCheckedSyntax> StartIndex { get; set; }
+        public IOption<ISyntax> StartIndex { get; set; }
 
-        public IOption<ITypeCheckedSyntax> EndIndex { get; set; }
+        public IOption<ISyntax> EndIndex { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var target = this.Target.GenerateCode(declWriter, statWriter);
             var sizeExpr = CExpression.MemberAccess(target, "size");
 

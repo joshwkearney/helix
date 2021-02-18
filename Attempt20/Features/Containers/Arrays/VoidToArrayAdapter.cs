@@ -1,20 +1,21 @@
-﻿using System;
-using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
-using Attempt20.Features.Arrays;
+﻿using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.FlowControl;
+using Attempt20.Parsing;
 
-namespace Attempt20.Features.Containers {
-    public class VoidToArrayAdapter : ITypeCheckedSyntax {
+namespace Attempt20.Features.Containers.Arrays {
+    public class VoidToArrayAdapter : ISyntax {
         public TokenLocation Location => this.Target.Location;
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
-        public ITypeCheckedSyntax Target { get; set; }
+        public ISyntax Target { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var syntax = new BlockTypeCheckedSyntax() {
                 Lifetimes = this.Target.Lifetimes,
                 Location = this.Location,
@@ -22,7 +23,7 @@ namespace Attempt20.Features.Containers {
                 Statements = new[] {
                     this.Target,
                     new ArrayTypeCheckedLiteral() {
-                        Arguments = new ITypeCheckedSyntax[0],
+                        Arguments = new ISyntax[0],
                         Lifetimes = this.Target.Lifetimes,
                         Location = this.Target.Location,
                         RegionName = "stack",

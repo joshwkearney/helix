@@ -12,13 +12,14 @@
     <LangVersion>latestmajor</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="Parsing\" />
+    <None Remove="LineCount.ps1" />
+  </ItemGroup>
+  <ItemGroup>
     <Folder Include="Features\Primitives\" />
     <Folder Include="Features\Variables\" />
     <Folder Include="Features\FlowControl\" />
     <Folder Include="Features\Functions\" />
     <Folder Include="Resources\" />
-    <Folder Include="CodeGeneration\" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Resources\Program.txt">

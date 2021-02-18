@@ -1,8 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Attempt20.Analysis;
 using Attempt20.CodeGeneration;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Functions {
     public class FunctionParseDeclaration : IParsedDeclaration {
@@ -47,7 +49,7 @@ namespace Attempt20.Features.Functions {
             var returnType = names.ResolveTypeNames(this.Signature.ReturnType, this.Location);
             var pars = this.Signature
                 .Parameters
-                .Select(x => new Parameter(x.Name, names.ResolveTypeNames(x.Type, this.Location)))
+                .Select(x => new FunctionParameter(x.Name, names.ResolveTypeNames(x.Type, this.Location)))
                 .ToImmutableList();
 
             this.Signature = new FunctionSignature(this.Signature.Name, returnType, pars);
@@ -68,7 +70,7 @@ namespace Attempt20.Features.Functions {
             names.PopScope();
         }
 
-        public ITypeCheckedDeclaration ResolveTypes(INameRecorder names, ITypeRecorder types) {
+        public IDeclaration ResolveTypes(INameRecorder names, ITypeRecorder types) {
             names.PushScope(names.CurrentScope.Append(this.Signature.Name));
             names.PushRegion(IdentifierPath.StackPath);
 
@@ -119,16 +121,16 @@ namespace Attempt20.Features.Functions {
         }
     }
 
-    public class FunctionTypeCheckedDeclaration : ITypeCheckedDeclaration {
+    public class FunctionTypeCheckedDeclaration : IDeclaration {
         public TokenLocation Location { get; set; }
 
         public FunctionSignature Signature { get; set; }
 
         public IdentifierPath FunctionPath { get; set; }
 
-        public ITypeCheckedSyntax Body { get; set; }
+        public ISyntax Body { get; set; }
 
-        public void GenerateCode(ICDeclarationWriter declWriter) {
+        public void GenerateCode(ICWriter declWriter) {
             declWriter.RequireRegions();
 
             var returnType = declWriter.ConvertType(this.Signature.ReturnType);

@@ -1,7 +1,9 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.FlowControl {
     public class RegionBlockParsedSyntax : IParsedSyntax {
@@ -34,7 +36,7 @@ namespace Attempt20.Features.FlowControl {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             names.PushRegion(this.regionPath);
             var body = this.Body.CheckTypes(names, types);
             names.PopRegion();
@@ -56,18 +58,18 @@ namespace Attempt20.Features.FlowControl {
         }
     }
 
-    public class RegionBlockTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class RegionBlockTypeCheckedSyntax : ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
         public string RegionName { get; set; }
 
-        public ITypeCheckedSyntax Body { get; set; }
+        public ISyntax Body { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var regionType = CType.NamedType("$Region*");
 
             // Write the region

@@ -1,7 +1,9 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Containers {
     public class MemberAccessParsedSyntax : IParsedSyntax  {
@@ -17,7 +19,7 @@ namespace Attempt20.Features.Containers {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var target = this.Target.CheckTypes(names, types);
 
             // If this is an array we can get the size
@@ -25,7 +27,7 @@ namespace Attempt20.Features.Containers {
                 if (this.MemberName == "size") {
                     return new MemberAccessTypeCheckedSyntax() {
                         Location = this.Location,
-                        ReturnType = LanguageType.Integer,
+                        ReturnType = TrophyType.Integer,
                         Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
                         MemberName = this.MemberName,
                         Target = target
@@ -58,18 +60,18 @@ namespace Attempt20.Features.Containers {
         }
     }
 
-    public class MemberAccessTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class MemberAccessTypeCheckedSyntax : ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public ITypeCheckedSyntax Target { get; set; }
+        public ISyntax Target { get; set; }
 
         public string MemberName { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var target = this.Target.GenerateCode(declWriter, statWriter);
 
             return CExpression.MemberAccess(target, this.MemberName);

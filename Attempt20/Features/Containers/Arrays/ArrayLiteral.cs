@@ -1,10 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
-namespace Attempt20.Features.Arrays {
+namespace Attempt20.Features.Containers.Arrays {
     public class ArrayParsedLiteral : IParsedSyntax {
         private IdentifierPath region;
 
@@ -19,7 +21,7 @@ namespace Attempt20.Features.Arrays {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var args = this.Arguments.Select(x => x.CheckTypes(names, types)).ToArray();
 
             // Make sure all the types line up
@@ -45,30 +47,30 @@ namespace Attempt20.Features.Arrays {
             }
             else {
                 return new ArrayTypeCheckedLiteral() {
-                    Arguments = new ITypeCheckedSyntax[0],
+                    Arguments = new ISyntax[0],
                     Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
                     Location = this.Location,
-                    ReturnType = new ArrayType(LanguageType.Void),
+                    ReturnType = new ArrayType(TrophyType.Void),
                     RegionName = "stack"
                 };
             }
         }
     }
 
-    public class ArrayTypeCheckedLiteral : ITypeCheckedSyntax {
+    public class ArrayTypeCheckedLiteral : ISyntax {
         private static int arrayTempCounter = 0;
 
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public IReadOnlyList<ITypeCheckedSyntax> Arguments { get; set; }
+        public IReadOnlyList<ISyntax> Arguments { get; set; }
 
         public string RegionName { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var args = this.Arguments.Select(x => x.GenerateCode(declWriter, statWriter)).ToArray();
             var arrayName = "$array_" + arrayTempCounter++;
             var arrayType = declWriter.ConvertType(this.ReturnType);

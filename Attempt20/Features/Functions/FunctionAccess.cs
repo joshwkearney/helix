@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Functions {
     public class FunctionAccessParsedSyntax : IParsedSyntax {
@@ -12,7 +15,7 @@ namespace Attempt20.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             return new FunctionAccessTypeCheckedSyntax() {
                 Location = this.Location,
                 ReturnType = new SingularFunctionType(this.FunctionPath)
@@ -20,14 +23,14 @@ namespace Attempt20.Features.Functions {
         }
     }
 
-    public class FunctionAccessTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class FunctionAccessTypeCheckedSyntax : ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             return CExpression.IntLiteral(0);
         }
     }

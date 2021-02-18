@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Variables {
     public class LetParseSyntax : IParsedSyntax {
@@ -30,7 +33,7 @@ namespace Attempt20.Features.Variables {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var assign = this.AssignExpression.CheckTypes(names, types);
 
             VariableInfo info;
@@ -49,29 +52,29 @@ namespace Attempt20.Features.Variables {
                 VariableName = this.VariableName,
                 VariableInfo = info,
                 AssignExpression = assign,
-                ReturnType = LanguageType.Void,
+                ReturnType = TrophyType.Void,
                 Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
                 Region = this.region
             };
         }
     }
 
-    public class LetTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class LetTypeCheckedSyntax : ISyntax {
         public string VariableName { get; set; }
 
         public VariableInfo VariableInfo { get; set; }
 
-        public ITypeCheckedSyntax AssignExpression { get; set; }
+        public ISyntax AssignExpression { get; set; }
 
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
         public IdentifierPath Region { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var assign = this.AssignExpression.GenerateCode(declWriter, statWriter);
             var typeName = declWriter.ConvertType(this.AssignExpression.ReturnType);
 

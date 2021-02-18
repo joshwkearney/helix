@@ -1,10 +1,10 @@
-﻿using Attempt20.CodeGeneration;
+﻿using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.Primitives;
-using System;
-using System.Collections.Generic;
+using Attempt20.Parsing;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 
 namespace Attempt20.Features.Containers.Arrays {
     public class NewFixedArraySyntax : IParsedSyntax {
@@ -20,7 +20,7 @@ namespace Attempt20.Features.Containers.Arrays {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             // Make sure that the element type has a default value
             if (!this.ArrayType.ElementType.HasDefaultValue(types)) {
                 throw TypeCheckingErrors.TypeWithoutDefaultValue(this.Location, this.ArrayType.ElementType);
@@ -35,7 +35,7 @@ namespace Attempt20.Features.Containers.Arrays {
         }
     }
 
-    public class NewFixedArrayTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class NewFixedArrayTypeCheckedSyntax : ISyntax {
         private int counter = 0;
 
         public FixedArrayType ArrayType { get; set; }
@@ -44,11 +44,11 @@ namespace Attempt20.Features.Containers.Arrays {
 
         public string RegionName { get; set; }
 
-        public LanguageType ReturnType => this.ArrayType;
+        public TrophyType ReturnType => this.ArrayType;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var arrayName = "$fixed_array_" + counter++;
             var arrayType = declWriter.ConvertType(this.ReturnType);
             var dataExpr = CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "data");

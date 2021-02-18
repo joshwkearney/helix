@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.CodeGeneration;
-using Attempt20.Features.Arrays;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.Containers.Arrays;
 using Attempt20.Features.Primitives;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Containers {
     public class StructArgument<T> {
@@ -19,7 +20,7 @@ namespace Attempt20.Features.Containers {
 
         public IReadOnlyList<StructArgument<IParsedSyntax>> Arguments { get; set; }
 
-        public LanguageType Target { get; set; }
+        public TrophyType Target { get; set; }
 
         public IdentifierPath TargetPath { get; private set; }
 
@@ -93,9 +94,9 @@ namespace Attempt20.Features.Containers {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var structSig = types.TryGetStruct(this.TargetPath).GetValue();
-            var structType = LanguageType.FromPath(this.TargetPath);
+            var structType = new NamedType(this.TargetPath);
 
             var undefinedFields = this.Arguments
                 .Select(x => x.MemberName)
@@ -126,7 +127,7 @@ namespace Attempt20.Features.Containers {
 
             // Generate syntax for the missing fields
             var restoredAbsentFields = absentFields
-                .Select(x => new StructArgument<ITypeCheckedSyntax>() {
+                .Select(x => new StructArgument<ISyntax>() {
                     MemberName = x.MemberName,
                     MemberValue = types.TryUnifyTo(voidLiteral, x.MemberType).GetValue()
                 })
@@ -134,7 +135,7 @@ namespace Attempt20.Features.Containers {
 
             // Type check and merge the fields together
             var allFields = this.Arguments
-                .Select(x => new StructArgument<ITypeCheckedSyntax>() {
+                .Select(x => new StructArgument<ISyntax>() {
                     MemberName = x.MemberName,
                     MemberValue = x.MemberValue.CheckTypes(names, types)
                 })
@@ -163,20 +164,20 @@ namespace Attempt20.Features.Containers {
         }
     }
 
-    public class NewStructTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class NewStructTypeCheckedSyntax : ISyntax {
         private static int tempCounter = 0;
 
         public TokenLocation Location { get; set; }
 
-        public IReadOnlyList<StructArgument<ITypeCheckedSyntax>> Arguments { get; set; }
+        public IReadOnlyList<StructArgument<ISyntax>> Arguments { get; set; }
 
         public IdentifierPath TargetPath { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var ctype = declWriter.ConvertType(this.ReturnType);
             var cname = "$new_struct_" + tempCounter++;
             var mems = this.Arguments.Select(x => new StructArgument<CExpression>() {

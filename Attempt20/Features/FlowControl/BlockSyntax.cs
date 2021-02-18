@@ -1,8 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.FlowControl {
     public class BlockParseSyntax : IParsedSyntax {
@@ -22,12 +24,12 @@ namespace Attempt20.Features.FlowControl {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             names.PushScope(names.CurrentScope.Append("$block" + this.blockId));
             var stats = this.Statements.Select(x => x.CheckTypes(names, types)).ToArray();
             names.PopScope();
 
-            var returnType = LanguageType.Void;
+            var returnType = TrophyType.Void;
             var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
             if (stats.Any()) {
@@ -44,16 +46,16 @@ namespace Attempt20.Features.FlowControl {
         }
     }
 
-    public class BlockTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class BlockTypeCheckedSyntax : ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public IReadOnlyList<ITypeCheckedSyntax> Statements { get; set; }
+        public IReadOnlyList<ISyntax> Statements { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             if (this.Statements.Any()) {
                 foreach (var stat in this.Statements.SkipLast(1)) {
                     var expr = stat.GenerateCode(declWriter, statWriter);

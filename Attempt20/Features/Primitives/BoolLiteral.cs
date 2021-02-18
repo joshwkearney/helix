@@ -1,14 +1,16 @@
-﻿using System;
-using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
+﻿using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Primitives {
-    public class BoolLiteralSyntax : IParsedSyntax, ITypeCheckedSyntax {
+    public class BoolLiteralSyntax : IParsedSyntax, ISyntax {
         public bool Value { get; set; }
 
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType => LanguageType.Boolean;
+        public TrophyType ReturnType => TrophyType.Boolean;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
@@ -16,11 +18,11 @@ namespace Attempt20.Features.Primitives {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             return this;
         }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             return this.Value ? CExpression.IntLiteral(1) : CExpression.IntLiteral(0);
         }
 

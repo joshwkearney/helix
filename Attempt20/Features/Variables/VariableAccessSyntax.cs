@@ -1,7 +1,9 @@
-﻿using System;
-using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
+﻿using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.Functions;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Variables {
     public enum VariableAccessKind {
@@ -42,7 +44,7 @@ namespace Attempt20.Features.Variables {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             if (!types.TryGetVariable(this.VariablePath).TryGetValue(out var info)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.VariableName);
             }
@@ -88,20 +90,20 @@ namespace Attempt20.Features.Variables {
         }
     };
 
-    public class VariableAccessTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class VariableAccessTypeCheckedSyntax : ISyntax {
         public string VariableName { get; set; }
 
         public VariableInfo VariableInfo { get; set; }
 
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
         public VariableAccessKind AccessKind { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             if (this.AccessKind == VariableAccessKind.ValueAccess) {
                 if (this.VariableInfo.Type is VariableType && this.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter) {
                     return CExpression.Dereference(CExpression.VariableLiteral(this.VariableName));

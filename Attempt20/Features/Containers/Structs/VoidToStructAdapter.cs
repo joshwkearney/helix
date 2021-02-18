@@ -1,24 +1,26 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.Primitives;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Containers {
-    public class VoidToStructAdapter : ITypeCheckedSyntax {
-        public ITypeCheckedSyntax Target { get; }
+    public class VoidToStructAdapter : ISyntax {
+        public ISyntax Target { get; }
 
-        public LanguageType ReturnType { get; }
+        public TrophyType ReturnType { get; }
 
         public TokenLocation Location => this.Target.Location;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.Target.Lifetimes;
 
-        public VoidToStructAdapter(ITypeCheckedSyntax target, StructSignature sig, LanguageType retType, ITypeRecorder types) {
+        public VoidToStructAdapter(ISyntax target, StructSignature sig, TrophyType retType, ITypeRecorder types) {
             var voidLiteral = new VoidLiteralSyntax() { Location = target.Location };
 
             var args = sig.Members
-                .Select(x => new StructArgument<ITypeCheckedSyntax>() {
+                .Select(x => new StructArgument<ISyntax>() {
                     MemberName = x.MemberName,
                     MemberValue = types.TryUnifyTo(voidLiteral, x.MemberType).GetValue()
                 })
@@ -35,7 +37,7 @@ namespace Attempt20.Features.Containers {
             this.ReturnType = retType;
         }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             return this.Target.GenerateCode(declWriter, statWriter);
         }
     }

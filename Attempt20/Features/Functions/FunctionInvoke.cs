@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Functions {
     public class FunctionInvokeParseSyntax : IParsedSyntax {
@@ -28,7 +31,7 @@ namespace Attempt20.Features.Functions {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var target = this.Target.CheckTypes(names, types);
             var args = this.Arguments.Select(x => x.CheckTypes(names, types)).ToArray();
 
@@ -78,10 +81,10 @@ namespace Attempt20.Features.Functions {
         }
     }
 
-    public class FunctionInvokeTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class FunctionInvokeTypeCheckedSyntax : ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
@@ -89,11 +92,11 @@ namespace Attempt20.Features.Functions {
 
         public IdentifierPath TargetPath { get; set; }
 
-        public IReadOnlyList<ITypeCheckedSyntax> Arguments { get; set; }
+        public IReadOnlyList<ISyntax> Arguments { get; set; }
 
         public string RegionName { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var args = this.Arguments.Select(x => x.GenerateCode(declWriter, statWriter)).Prepend(CExpression.VariableLiteral(this.RegionName)).ToArray();
             var target = CExpression.VariableLiteral(this.TargetPath.ToString());
 

@@ -1,46 +1,47 @@
-﻿using System;
+﻿using Attempt20.Analysis;
+using System;
 
-namespace Attempt20 {
+namespace Attempt20.Parsing {
     public static class ParsingErrors {
         public static Exception EndOfFile(TokenLocation location) {
-            return new CompilerException(
+            return new ParseException(
                 location,
-                "Unexpected End of File",
+                "Parse Exception: Unexpected End of File",
                 "A token was expected, but the end of the file was reached");
         }
 
         public static Exception UnexpectedToken(TokenKind expected, IToken actual) {
-            return new CompilerException(
+            return new ParseException(
                 actual.Location,
-                "Unexpected Token",
+                "Parse Exception: Unexpected Token",
                 $"Expected token '{expected}', received '{actual.Kind}'");
         }
 
         public static Exception UnexpectedToken(IToken actual) {
-            return new CompilerException(
+            return new ParseException(
                 actual.Location,
-                "Unexpected Token",
+                "Parse Exception: Unexpected Token",
                 $"Unexpected token '{actual.Kind}'");
         }
 
         public static Exception UnexpectedCharacter(TokenLocation loc, char c) {
-            return new CompilerException(
+            return new ParseException(
                 loc,
-                "Unexpected Character",
+                "Parse Exception: Unexpected Character",
                 $"Unexpected character '{c}'");
         }
 
         public static Exception UnexpectedSequence(TokenLocation loc) {
-            return new CompilerException(
+            return new ParseException(
                 loc,
-                "Unexpected Sequence",
+                "Parse Exception: Unexpected Sequence",
                 $"Unexpected sequence of characters");
         }
 
         public static Exception InvalidNumber(TokenLocation loc, string num) {
-            return new CompilerException(
+            return new ParseException(
                 loc,
-                "Invalid Numeric Literal",
+                "Parse Exception: Invalid Numeric Literal",
                 $"Unsuccessfully attempted to parse invalid numeric literal '{num}'");
         }
     }

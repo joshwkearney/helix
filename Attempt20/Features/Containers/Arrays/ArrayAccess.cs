@@ -1,8 +1,10 @@
-﻿using System;
-using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
+﻿using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
-namespace Attempt20.Features.Arrays {
+namespace Attempt20.Features.Containers.Arrays {
     public enum ArrayAccessKind {
         ValueAccess, LiteralAccess
     }
@@ -23,11 +25,11 @@ namespace Attempt20.Features.Arrays {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var target = this.Target.CheckTypes(names, types);
             var index = this.Index.CheckTypes(names, types);
             var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
-            var elementType = LanguageType.Void;
+            var elementType = TrophyType.Void;
 
             // Make sure the target is an array
             if (target.ReturnType.AsArrayType().TryGetValue(out var arrayType)) {
@@ -41,11 +43,11 @@ namespace Attempt20.Features.Arrays {
             }
 
             // Make sure the index in an int
-            if (types.TryUnifyTo(index, LanguageType.Integer).TryGetValue(out var newIndex)) {
+            if (types.TryUnifyTo(index, TrophyType.Integer).TryGetValue(out var newIndex)) {
                 index = newIndex;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(index.Location, LanguageType.Integer, index.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(index.Location, TrophyType.Integer, index.ReturnType);
             }
 
             // We only need lifetimes if the array type is conditionally copiable
@@ -69,20 +71,20 @@ namespace Attempt20.Features.Arrays {
         }
     }
 
-    public class ArrayIndexTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class ArrayIndexTypeCheckedSyntax : ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public ITypeCheckedSyntax Target { get; set; }
+        public ISyntax Target { get; set; }
 
-        public ITypeCheckedSyntax Index { get; set; }
+        public ISyntax Index { get; set; }
 
         public ArrayAccessKind AccessKind { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var index = this.Index.GenerateCode(declWriter, statWriter);
             var target = this.Target.GenerateCode(declWriter, statWriter);
             var targetSize = CExpression.MemberAccess(target, "size");

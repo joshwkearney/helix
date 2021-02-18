@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.Parsing;
+
 namespace Attempt20.Features.Primitives {
     public class AsParsedSyntax : IParsedSyntax {
         public IParsedSyntax Argument { get; set; }
 
-        public LanguageType TargetType { get; set; }
+        public TrophyType TargetType { get; set; }
 
         public TokenLocation Location { get; set; }
 
@@ -16,7 +19,7 @@ namespace Attempt20.Features.Primitives {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var arg = this.Argument.CheckTypes(names, types);
 
             if (types.TryUnifyTo(arg, this.TargetType).TryGetValue(out var newArg)) {

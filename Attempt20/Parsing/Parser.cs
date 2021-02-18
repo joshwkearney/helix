@@ -1,15 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.Features.Arrays;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
 using Attempt20.Features.Containers;
+using Attempt20.Features.Containers.Arrays;
 using Attempt20.Features.FlowControl;
 using Attempt20.Features.Functions;
 using Attempt20.Features.Primitives;
 using Attempt20.Features.Variables;
 
-namespace Attempt20 {
+namespace Attempt20.Parsing {
     public class Parser {
         private int pos = 0;
         private readonly IReadOnlyList<IToken> tokens;
@@ -78,14 +79,14 @@ namespace Attempt20 {
         }
 
         /** Type Parsing **/
-        private LanguageType VarTypeExpression() {
+        private TrophyType VarTypeExpression() {
             this.Advance(TokenKind.VarKeyword);
             var inner = this.TypeExpression();
 
             return new VariableType(inner);
         }
 
-        private LanguageType TypeExpression() {
+        private TrophyType TypeExpression() {
             if (this.Peek(TokenKind.VarKeyword)) {
                 return this.VarTypeExpression();
             }
@@ -93,7 +94,7 @@ namespace Attempt20 {
             return this.ArrayTypeExpression();
         }
 
-        private LanguageType ArrayTypeExpression() {
+        private TrophyType ArrayTypeExpression() {
             var start = this.TypeAtom();
 
             while (this.Peek(TokenKind.OpenBracket)) {
@@ -113,18 +114,18 @@ namespace Attempt20 {
             return start;
         }
 
-        private LanguageType TypeAtom() {
+        private TrophyType TypeAtom() {
             if (this.TryAdvance(TokenKind.IntKeyword)) {
-                return LanguageType.Integer;
+                return TrophyType.Integer;
             }
             else if (this.TryAdvance(TokenKind.VoidKeyword)) {
-                return LanguageType.Void;
+                return TrophyType.Void;
             }
             else if (this.TryAdvance(TokenKind.BoolKeyword)) {
-                return LanguageType.Boolean;
+                return TrophyType.Boolean;
             }
             else {
-                return LanguageType.FromPath(new IdentifierPath(this.Advance<string>()));
+                return new NamedType(new IdentifierPath(this.Advance<string>()));
             }
         }
 
@@ -148,7 +149,7 @@ namespace Attempt20 {
             string funcName = this.Advance<string>();
             this.Advance(TokenKind.OpenParenthesis);
 
-            var pars = ImmutableList<Parameter>.Empty;
+            var pars = ImmutableList<FunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
                 var parType = this.TypeExpression();
                 var parName = this.Advance<string>();
@@ -157,7 +158,7 @@ namespace Attempt20 {
                     this.Advance(TokenKind.Comma);
                 }
 
-                pars = pars.Add(new Parameter(parName, parType));
+                pars = pars.Add(new FunctionParameter(parName, parType));
             }
 
             this.Advance(TokenKind.CloseParenthesis);

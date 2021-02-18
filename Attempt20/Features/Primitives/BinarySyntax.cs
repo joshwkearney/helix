@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Primitives {
     public enum BinaryOperation {
@@ -21,31 +24,31 @@ namespace Attempt20.Features.Primitives {
 
         public TokenLocation Location { get; set; }
 
-        private static readonly Dictionary<BinaryOperation, LanguageType> intOperations
-            = new Dictionary<BinaryOperation, LanguageType>() {
+        private static readonly Dictionary<BinaryOperation, TrophyType> intOperations
+            = new Dictionary<BinaryOperation, TrophyType>() {
 
-            { BinaryOperation.Add, LanguageType.Integer },
-            { BinaryOperation.Subtract, LanguageType.Integer },
-            { BinaryOperation.Multiply, LanguageType.Integer },
-            { BinaryOperation.And, LanguageType.Integer },
-            { BinaryOperation.Or, LanguageType.Integer },
-            { BinaryOperation.Xor, LanguageType.Integer },
-            { BinaryOperation.EqualTo, LanguageType.Boolean },
-            { BinaryOperation.NotEqualTo, LanguageType.Boolean },
-            { BinaryOperation.GreaterThan, LanguageType.Boolean },
-            { BinaryOperation.LessThan, LanguageType.Boolean },
-            { BinaryOperation.GreaterThanOrEqualTo, LanguageType.Boolean },
-            { BinaryOperation.LessThanOrEqualTo, LanguageType.Boolean },
+            { BinaryOperation.Add, TrophyType.Integer },
+            { BinaryOperation.Subtract, TrophyType.Integer },
+            { BinaryOperation.Multiply, TrophyType.Integer },
+            { BinaryOperation.And, TrophyType.Integer },
+            { BinaryOperation.Or, TrophyType.Integer },
+            { BinaryOperation.Xor, TrophyType.Integer },
+            { BinaryOperation.EqualTo, TrophyType.Boolean },
+            { BinaryOperation.NotEqualTo, TrophyType.Boolean },
+            { BinaryOperation.GreaterThan, TrophyType.Boolean },
+            { BinaryOperation.LessThan, TrophyType.Boolean },
+            { BinaryOperation.GreaterThanOrEqualTo, TrophyType.Boolean },
+            { BinaryOperation.LessThanOrEqualTo, TrophyType.Boolean },
         };
 
-        private static readonly Dictionary<BinaryOperation, LanguageType> boolOperations
-            = new Dictionary<BinaryOperation, LanguageType>() {
+        private static readonly Dictionary<BinaryOperation, TrophyType> boolOperations
+            = new Dictionary<BinaryOperation, TrophyType>() {
 
-            { BinaryOperation.And, LanguageType.Boolean },
-            { BinaryOperation.Or, LanguageType.Boolean },
-            { BinaryOperation.Xor, LanguageType.Boolean },
-            { BinaryOperation.EqualTo, LanguageType.Boolean },
-            { BinaryOperation.NotEqualTo, LanguageType.Boolean },
+            { BinaryOperation.And, TrophyType.Boolean },
+            { BinaryOperation.Or, TrophyType.Boolean },
+            { BinaryOperation.Xor, TrophyType.Boolean },
+            { BinaryOperation.EqualTo, TrophyType.Boolean },
+            { BinaryOperation.NotEqualTo, TrophyType.Boolean },
         };
 
         public IParsedSyntax CheckNames(INameRecorder names) {
@@ -55,11 +58,11 @@ namespace Attempt20.Features.Primitives {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             // Delegate type resolution
             var left = this.LeftArgument.CheckTypes(names, types);
             var right = this.RightArgument.CheckTypes(names, types);
-            var returnType = LanguageType.Void;
+            var returnType = TrophyType.Void;
 
             // Check if left is a valid type
             if (!left.ReturnType.IsIntType && !left.ReturnType.IsBoolType) {
@@ -106,20 +109,20 @@ namespace Attempt20.Features.Primitives {
         }
     }
 
-    public class BinaryTypeCheckedSyntax : ITypeCheckedSyntax {
-        public ITypeCheckedSyntax LeftArgument { get; set; }
+    public class BinaryTypeCheckedSyntax : ISyntax {
+        public ISyntax LeftArgument { get; set; }
 
-        public ITypeCheckedSyntax RightArgument { get; set; }
+        public ISyntax RightArgument { get; set; }
 
         public BinaryOperation Operation { get; set; }
 
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var left = this.LeftArgument.GenerateCode(declWriter, statWriter);
             var right = this.RightArgument.GenerateCode(declWriter, statWriter);
 

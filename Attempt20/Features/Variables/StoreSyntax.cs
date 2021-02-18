@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Immutable;
-using Attempt20.CodeGeneration;
+﻿using System.Collections.Immutable;
+using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Parsing;
 
 namespace Attempt20.Features.Variables {
     public class StoreParsedSyntax : IParsedSyntax {
@@ -17,7 +19,7 @@ namespace Attempt20.Features.Variables {
             return this;
         }
 
-        public ITypeCheckedSyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var target = this.Target.CheckTypes(names, types);
             var assign = this.AssignExpression.CheckTypes(names, types);
 
@@ -48,24 +50,24 @@ namespace Attempt20.Features.Variables {
                 Location = this.Location,
                 Target = target,
                 AssignExpression = assign,
-                ReturnType = LanguageType.Void,
+                ReturnType = TrophyType.Void,
                 Lifetimes = ImmutableHashSet.Create<IdentifierPath>()
             };
         }
     }
 
-    public class StoreTypeCheckedSyntax : ITypeCheckedSyntax {
+    public class StoreTypeCheckedSyntax : ISyntax {
         public TokenLocation Location { get; set; }
 
-        public LanguageType ReturnType { get; set; }
+        public TrophyType ReturnType { get; set; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
 
-        public ITypeCheckedSyntax Target { get; set; }
+        public ISyntax Target { get; set; }
 
-        public ITypeCheckedSyntax AssignExpression { get; set; }
+        public ISyntax AssignExpression { get; set; }
 
-        public CExpression GenerateCode(ICDeclarationWriter declWriter, ICStatementWriter statWriter) {
+        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var target = CExpression.Dereference(this.Target.GenerateCode(declWriter, statWriter));
             var assign = this.AssignExpression.GenerateCode(declWriter, statWriter);
 
