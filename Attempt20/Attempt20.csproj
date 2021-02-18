@@ -15,17 +15,17 @@
     <None Remove="LineCount.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Features\Primitives\" />
-    <Folder Include="Features\Variables\" />
-    <Folder Include="Features\FlowControl\" />
-    <Folder Include="Features\Functions\" />
-    <Folder Include="Resources\" />
+    <Folder Include="src\Features\Primitives\" />
+    <Folder Include="src\Features\Variables\" />
+    <Folder Include="src\Features\FlowControl\" />
+    <Folder Include="src\Features\Functions\" />
+    <Folder Include="resources\" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="Resources\Program.txt">
+    <None Update="resources\Program.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Parser.txt">
+    <None Update="resources\Parser.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
