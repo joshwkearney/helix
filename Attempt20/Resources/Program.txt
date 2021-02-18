@@ -1,0 +1,19 @@
+﻿function main() => int[]: {
+    var x <- new Point { x = 8, y = 3 };
+    #var y <- x.norm();
+
+    var z <- new int[][7];
+
+    #z[2]@[4] <- 2;
+
+    region some {
+        from heap do [1, 2, 3];
+    };
+};
+
+struct Point {
+    int x;
+    int y;
+
+    # function norm () => int: (this.x * this.x) + (this.y * this.y);
+};

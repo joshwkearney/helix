@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <LangVersion>latestmajor</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <LangVersion>latestmajor</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Parsing\" />
+    <Folder Include="Features\" />
+    <Folder Include="Features\Primitives\" />
+    <Folder Include="Features\Variables\" />
+    <Folder Include="Features\FlowControl\" />
+    <Folder Include="Features\Functions\" />
+    <Folder Include="Resources\" />
+    <Folder Include="CodeGeneration\" />
+    <Folder Include="Features\Containers\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Resources\Program.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Parser.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,119 @@
+﻿function parse() => int: {
+    # "3 + 4 * 2"
+    var input <- [ 51, 32, 43, 32, 52, 32, 42, 32, 50 ];
+    var pos <- 0;
+
+    to_tokens(input);
+    add_expr(input, @pos);
+};
+
+function selection_sort(int[] array) => void: { 
+    var i <- 0;
+
+    # Find the smallest element and put it in position i
+    while i < array.size do {
+        var j <- i + 1;
+
+        var smallest <- array[i];
+        var smallest_index <- i;
+
+        # Find the smallest element
+        while j < array.size do {
+            if array[j] < smallest do {
+                @smallest_index <- j;
+                @smallest <- array[j];
+            };
+
+            @j <- j + 1;
+        };
+
+        # Swap the smallest with the ith position
+        var swap <- array[i];
+
+        array@[i] <- smallest;
+        array@[smallest_index] <- swap;
+
+        @i <- i + 1;
+    };
+};
+
+function open_paren() => int: 0-1;
+function close_paren() => int: 0-2;
+function plus() => int: 0-3;
+function minus() => int: 0-4;
+function times1() => int: 0-5;
+function eof() => int: 0-6;
+
+function is_number(int c) => bool: (c >= 48) and (c <= 57);
+
+function char_to_token(int c) => int: {
+    if c == 40 then open_paren()
+    else if c == 41 then close_paren()
+    else if c == 43 then plus()
+    else if c == 45 then minus()
+    else if c == 42 then times1()
+    else if is_number(c) then c - 48
+    else eof();
+};
+
+function to_tokens(int[] chars) => void: {
+    var pos <- 0;
+    var i <- 0;
+    
+    while i < chars.size do {
+        var tok <- char_to_token(chars[i]);
+
+        chars@[pos] <- tok;
+        @i <- i + 1;
+
+        if tok != eof() do {
+            @pos <- pos + 1;
+        };
+    };
+
+    while pos < chars.size do {
+        chars@[pos] <- eof();
+        @pos <- pos + 1;
+    };
+};
+
+function add_expr(int[] chars, var int pos) => int: {
+    var first <- mult_expr(chars, @pos);
+
+    while (chars[pos] == plus()) or (chars[pos] == minus()) do {
+        var op <- chars[pos];
+        @pos <- pos + 1;
+
+        if op == plus() then {
+            @first <- first + mult_expr(chars, @pos);
+        }
+        else {
+            @first <- first - mult_expr(chars, @pos);
+        };
+    };
+
+    first;
+};
+
+function mult_expr(int[] chars, var int pos) => int: {
+    var first <- atom(chars, @pos);
+
+    while chars[pos] == times1() do {
+        @pos <- pos + 1;
+
+        @first <- first * atom(chars, @pos);
+    };
+
+    first;
+};
+
+function atom(int[] chars, var int pos) => int: {
+    var result <- 0;
+
+    while chars[pos] >= 0 do {
+        @result <- result * 10 + chars[pos];
+        @pos <- pos + 1;
+    };
+
+    result;
+};

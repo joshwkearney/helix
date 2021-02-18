@@ -1,0 +1,20 @@
+﻿DONE 1. literal variable access
+DONE 2. store syntax
+DONE 3. type unification
+DONE     - booleans to int
+DONE     - void to int, void, bool, and arrays
+DONE     - if branches unify
+DONE     - store syntax unifies
+DONE     - function returns unify
+DONE 4. as syntax
+DONE 5. function invoking
+DONE 5. from ... alloc syntax
+DONE 6. array literals
+DONE 7. array indexing
+DONE 8. literal array indexing
+DONE 9. array slicing
+DONE 9. new regions
+DONE 10. while loops
+10. structs
+11. unions
+12. generics

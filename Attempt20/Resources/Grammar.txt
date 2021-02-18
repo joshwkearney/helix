@@ -1,0 +1,41 @@
+﻿Program					::=		Declaration*
+Declaration				::=		FunctionDeclaration
+FunctionDeclaration		::=		'function' Id '(' (Type Id (',' Type Id)*)? ')' '=>' Type ':' TopExpression
+
+TopExpression			::=		AsExpression
+AsExpression			::=		OrExpression ('as' Type)*
+OrExpression			::=		XorExpression ('or' XorExpression)*
+XorExpression			::=		ComparisonExpression ('xor' ComparisionExpression)*
+ComparisionExpression	::=		AndExpression (('==' | '!=' | '<' | '>' | '<=' | '>=') AndExperession)*
+AndExpression			::=		AddExpression ('and' AddExpression)*
+AddExpression			::=		MultiplyExpression (('+' | '-') MultiplyExpression)*
+MultiplyExpression		::=		InvokeExpression ('*' InvokeExpression)*
+InvokeExpression		::=		Atom ('(' (Atom (',' Atom)*)? ')')*
+
+Atom					::=		Id | IntLiteral | BoolLiteral | VoidLiteral
+								| '@' Id
+								| ParenExpression
+								| Block
+								| IfExpression
+								| FromExpression
+
+IntLiteral				::=		(0-9)+
+BoolLiteral				::=		'true' | 'false'
+VoidLiteral				::=		'void'
+ArrayLiteral			::=		'[' (TopExpression (',' TopExpression)*)? ']'
+
+ParenExpression			::=		'(' TopExpression ')'
+Block					::=		'{' Statement* '}'
+Statement				::=		VarStatement | StoreStatement
+VarStatement			::=		'var' Id '<-' TopExpression ';'
+StoreStatement			::=		TopExpression ('<-' TopExpressioin)?
+
+IfExpression			::=		'if' TopExpression 'then' TopExpression 'else' TopExpression
+
+FromExpression			::=		'from' Id (AllocFromExpression)
+AllocExpression			::=		'alloc' (VarStatement | ArrayLiteral)
+
+Type					::=		VariableType | ArrayType
+VariableType			::=		'var' Type
+ArrayType				::=		TypeAtom '[]'*
+TypeAtom				::=		'int' | 'void' | 'bool'
