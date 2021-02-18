@@ -14,6 +14,8 @@ namespace Attempt20 {
         }
 
         public string CreateConsoleMessage(string file_contents) {
+            file_contents = file_contents.Replace("\r\n", "\n").Replace('\r', '\n');
+
             // Calculate line number and start index on that line
             var lines = file_contents.Split(new[] { "\n" }, StringSplitOptions.None);
             int line = 1 + file_contents.Substring(0, this.Location.StartIndex).Count(x => x == '\n');

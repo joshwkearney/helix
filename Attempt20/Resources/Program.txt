@@ -2,7 +2,7 @@
     var x <- new Point { x = 8, y = 3 };
     #var y <- x.norm();
 
-    var z <- new int[][7];
+    var z <- new int[][7] { x = 8 };
 
     #z[2]@[4] <- 2;
 
