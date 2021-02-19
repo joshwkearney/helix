@@ -48,7 +48,7 @@ namespace Attempt20.Features.Containers {
                         return new MemberAccessTypeCheckedSyntax() {
                             Location = this.Location,
                             ReturnType = field.MemberType,
-                            Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
+                            Lifetimes = target.Lifetimes,
                             MemberName = this.MemberName,
                             Target = target
                         };
