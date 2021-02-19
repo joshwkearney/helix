@@ -3,6 +3,8 @@ using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
 using Attempt20.Features.Containers;
 using Attempt20.Features.Containers.Arrays;
+using Attempt20.Features.Containers.Structs;
+using Attempt20.Features.Containers.Unions;
 using Attempt20.Features.Primitives;
 
 namespace Attempt20.Compiling {
@@ -58,6 +60,9 @@ namespace Attempt20.Compiling {
                 else if (newType.AsNamedType().TryGetValue(out var path)) {
                     if (this.TryGetStruct(path).TryGetValue(out var sig) && newType.HasDefaultValue(this)) {
                         return Option.Some(new VoidToStructAdapter(target, sig, newType, this));
+                    }
+                    else if (this.TryGetUnion(path).TryGetValue(out var unionSig) && newType.HasDefaultValue(this)) {
+                        return Option.Some(new VoidToUnionAdapter(target, unionSig, newType, this));
                     }
                 }
             }

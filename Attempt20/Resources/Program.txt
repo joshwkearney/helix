@@ -1,5 +1,5 @@
 ﻿function main() => void: {
-    var x <- void as OptionalInt;
+    var x <- new OptionalInt;
 
     void;
 };

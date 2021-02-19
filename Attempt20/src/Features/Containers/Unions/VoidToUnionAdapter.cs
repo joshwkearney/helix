@@ -6,9 +6,10 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.Primitives;
 using Attempt20.Parsing;
 using Attempt20.src.Features.Containers.Structs;
+using Attempt20.src.Features.Containers.Unions;
 
-namespace Attempt20.Features.Containers.Structs {
-    public class VoidToStructAdapter : ISyntax {
+namespace Attempt20.Features.Containers.Unions {
+    public class VoidToUnionAdapter : ISyntax {
         public ISyntax Target { get; }
 
         public TrophyType ReturnType { get; }
@@ -17,22 +18,22 @@ namespace Attempt20.Features.Containers.Structs {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.Target.Lifetimes;
 
-        public VoidToStructAdapter(ISyntax target, StructSignature sig, TrophyType retType, ITypeRecorder types) {
+        public VoidToUnionAdapter(ISyntax target, StructSignature sig, TrophyType retType, ITypeRecorder types) {
             var voidLiteral = new VoidLiteralSyntax() { Location = target.Location };
 
-            var args = sig.Members
-                .Select(x => new StructArgument<ISyntax>() {
-                    MemberName = x.MemberName,
-                    MemberValue = types.TryUnifyTo(voidLiteral, x.MemberType).GetValue()
-                })
-                .ToArray();
+            var mem = sig.Members.First();
+            var arg = new StructArgument<ISyntax>() {
+                MemberName = mem.MemberName,
+                MemberValue = types.TryUnifyTo(voidLiteral, mem.MemberType).GetValue()
+            };
 
-            this.Target = new NewStructTypeCheckedSyntax() {
+            this.Target = new NewUnionTypeCheckedSyntax() {
                 ReturnType = retType,
-                Arguments = args,
                 Lifetimes = target.Lifetimes,
                 Location = target.Location,
-                TargetPath = retType.AsNamedType().GetValue()
+                TargetPath = retType.AsNamedType().GetValue(),
+                Argument = arg,
+                UnionTag = 0
             };
 
             this.ReturnType = retType;
