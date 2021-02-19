@@ -1,17 +1,20 @@
-﻿using System;
+﻿using Attempt20.Analysis;
+using Attempt20.Analysis.Types;
+using Attempt20.Features.Functions;
+using Attempt20.Parsing;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Parsing;
+using System.Text;
 
-namespace Attempt20.Features.Functions {
-    public class FunctionInvokeParsedSyntax : IParsedSyntax {
+namespace Attempt20.Features.Containers {
+    public class MemberInvokeParsedSyntax : IParsedSyntax {
         private IdentifierPath region;
 
         public TokenLocation Location { get; set; }
+
+        public string MemberName { get; set; }
 
         public IParsedSyntax Target { get; set; }
 
@@ -33,16 +36,15 @@ namespace Attempt20.Features.Functions {
 
         public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var target = this.Target.CheckTypes(names, types);
-            var args = this.Arguments.Select(x => x.CheckTypes(names, types)).ToArray();
+            var args = this.Arguments.Select(x => x.CheckTypes(names, types)).Prepend(target).ToArray();
 
-            // Make sure the target is a function
-            if (!target.ReturnType.AsSingularFunctionType().TryGetValue(out var funcType)) {
-                throw TypeCheckingErrors.ExpectedFunctionType(target.Location, target.ReturnType);
+            // Make sure this method exists
+            if (!types.TryGetMethodPath(target.ReturnType, this.MemberName).TryGetValue(out var path)) {
+                throw TypeCheckingErrors.MemberUndefined(this.Location, target.ReturnType, this.MemberName);
             }
 
-            if (!types.TryGetFunction(funcType.FunctionPath).TryGetValue(out var func)) {
-                throw new Exception("Internal compiler inconsistency");
-            }
+            // Get the function
+            var func = types.TryGetFunction(path).GetValue();
 
             // Make sure the arg count lines up
             if (args.Length != func.Parameters.Count) {
@@ -77,31 +79,8 @@ namespace Attempt20.Features.Functions {
                 Arguments = args,
                 Target = func,
                 RegionName = this.region.Segments.Last(),
-                TargetPath = funcType.FunctionPath
+                TargetPath = path
             };
-        }
-    }
-
-    public class FunctionInvokeSyntax : ISyntax {
-        public TokenLocation Location { get; set; }
-
-        public TrophyType ReturnType { get; set; }
-
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
-
-        public FunctionSignature Target { get; set; }
-
-        public IdentifierPath TargetPath { get; set; }
-
-        public IReadOnlyList<ISyntax> Arguments { get; set; }
-
-        public string RegionName { get; set; }
-
-        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var args = this.Arguments.Select(x => x.GenerateCode(declWriter, statWriter)).Prepend(CExpression.VariableLiteral(this.RegionName)).ToArray();
-            var target = CExpression.VariableLiteral(this.TargetPath.ToString());
-
-            return CExpression.Invoke(target, args);
         }
     }
 }

@@ -191,10 +191,11 @@ namespace Attempt20.Parsing {
             var start = this.Advance(TokenKind.StructKeyword);
             var name = this.Advance<string>();
             var mems = new List<StructMember>();
+            var decls = new List<IParsedDeclaration>();
 
             this.Advance(TokenKind.OpenBrace);
 
-            while (!this.Peek(TokenKind.CloseBrace)) {
+            while (!this.Peek(TokenKind.FunctionKeyword) && !this.Peek(TokenKind.StructKeyword) && !this.Peek(TokenKind.CloseBrace)) {
                 var memType = this.TypeExpression();
                 var memName = this.Advance<string>();
 
@@ -202,12 +203,17 @@ namespace Attempt20.Parsing {
                 mems.Add(new StructMember(memName, memType));
             }
 
+            while (!this.Peek(TokenKind.CloseBrace)) {
+                decls.Add(this.Declaration());
+            }
+
             this.Advance(TokenKind.CloseBrace);
             var last = this.Advance(TokenKind.Semicolon);
 
             return new StructParsedDeclaration() {
                 Location = start.Location.Span(last.Location),
-                Signature = new StructSignature(name, mems)
+                Signature = new StructSignature(name, mems),
+                Declarations = decls
             };
         }
 
@@ -397,11 +403,33 @@ namespace Attempt20.Parsing {
             this.Advance(TokenKind.Dot);
             var tok = (Token<string>)this.Advance(TokenKind.Identifier);
 
-            return new MemberAccessParsedSyntax {
-                Location = first.Location.Span(tok.Location),
-                MemberName = tok.Value,
-                Target = first
-            };
+            if (this.TryAdvance(TokenKind.OpenParenthesis)) {
+                var args = new List<IParsedSyntax>();
+
+                while (!this.Peek(TokenKind.CloseParenthesis)) {
+                    args.Add(this.TopExpression());
+
+                    if (!this.TryAdvance(TokenKind.Comma)) {
+                        break;
+                    }
+                }
+
+                var last = this.Advance(TokenKind.CloseParenthesis);
+
+                return new MemberInvokeParsedSyntax() {
+                    Location = first.Location.Span(last.Location),
+                    Target = first,
+                    Arguments = args,
+                    MemberName = tok.Value
+                };
+            }
+            else {
+                return new MemberAccessParsedSyntax {
+                    Location = first.Location.Span(tok.Location),
+                    MemberName = tok.Value,
+                    Target = first
+                };
+            }
         }
 
         private IParsedSyntax InvokeExpression(IParsedSyntax first) {
@@ -419,7 +447,7 @@ namespace Attempt20.Parsing {
 
             var last = this.Advance(TokenKind.CloseParenthesis);
 
-            return new FunctionInvokeParseSyntax() {
+            return new FunctionInvokeParsedSyntax() {
                 Location = first.Location.Span(last.Location),
                 Target = first,
                 Arguments = args

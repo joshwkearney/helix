@@ -10,6 +10,7 @@ namespace Attempt20.Compiling {
         private readonly Dictionary<IdentifierPath, VariableInfo> variables = new Dictionary<IdentifierPath, VariableInfo>();
         private readonly Dictionary<IdentifierPath, FunctionSignature> functions = new Dictionary<IdentifierPath, FunctionSignature>();
         private readonly Dictionary<IdentifierPath, StructSignature> structs = new Dictionary<IdentifierPath, StructSignature>();
+        private readonly Dictionary<TrophyType, Dictionary<string, IdentifierPath>> methods = new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>();
 
         public void DeclareVariable(IdentifierPath path, VariableInfo info) {
             this.variables[path] = info;
@@ -72,6 +73,18 @@ namespace Attempt20.Compiling {
 
 
             return Option.None<ISyntax>();
+        }
+
+        public void DeclareMethodPath(TrophyType type, string name, IdentifierPath path) {
+            if (!this.methods.ContainsKey(type)) {
+                this.methods[type] = new Dictionary<string, IdentifierPath>();
+            }
+
+            this.methods[type][name] = path;
+        }
+
+        public IOption<IdentifierPath> TryGetMethodPath(TrophyType type, string name) {
+            return this.methods.GetValueOption(type).SelectMany(x => x.GetValueOption(name));
         }
     };
 }

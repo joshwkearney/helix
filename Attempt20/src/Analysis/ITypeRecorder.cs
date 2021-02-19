@@ -8,11 +8,15 @@ namespace Attempt20.Analysis {
 
         public void DeclareStruct(IdentifierPath path, StructSignature sig);
 
+        public void DeclareMethodPath(TrophyType type, string name, IdentifierPath path);
+
         public IOption<VariableInfo> TryGetVariable(IdentifierPath path);
 
         public IOption<FunctionSignature> TryGetFunction(IdentifierPath path);
 
         public IOption<StructSignature> TryGetStruct(IdentifierPath path);
+
+        public IOption<IdentifierPath> TryGetMethodPath(TrophyType type, string name);
 
         public IOption<ISyntax> TryUnifyTo(ISyntax target, TrophyType newType);
     }
