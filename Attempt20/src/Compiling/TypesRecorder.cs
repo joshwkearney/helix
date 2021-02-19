@@ -10,6 +10,7 @@ namespace Attempt20.Compiling {
         private readonly Dictionary<IdentifierPath, VariableInfo> variables = new Dictionary<IdentifierPath, VariableInfo>();
         private readonly Dictionary<IdentifierPath, FunctionSignature> functions = new Dictionary<IdentifierPath, FunctionSignature>();
         private readonly Dictionary<IdentifierPath, StructSignature> structs = new Dictionary<IdentifierPath, StructSignature>();
+        private readonly Dictionary<IdentifierPath, StructSignature> unions = new Dictionary<IdentifierPath, StructSignature>();
         private readonly Dictionary<TrophyType, Dictionary<string, IdentifierPath>> methods = new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>();
 
         public void DeclareVariable(IdentifierPath path, VariableInfo info) {
@@ -85,6 +86,14 @@ namespace Attempt20.Compiling {
 
         public IOption<IdentifierPath> TryGetMethodPath(TrophyType type, string name) {
             return this.methods.GetValueOption(type).SelectMany(x => x.GetValueOption(name));
+        }
+
+        public void DeclareUnion(IdentifierPath path, StructSignature sig) {
+            this.unions[path] = sig;
+        }
+
+        public IOption<StructSignature> TryGetUnion(IdentifierPath path) {
+            return this.unions.GetValueOption(path);
         }
     };
 }

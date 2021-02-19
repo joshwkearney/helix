@@ -24,6 +24,9 @@ namespace Attempt20.Analysis.Types {
             else if (types.TryGetStruct(this.SignaturePath).TryGetValue(out var structSig)) {
                 return structSig.Members.All(x => x.MemberType.HasDefaultValue(types));
             }
+            else if (types.TryGetUnion(this.SignaturePath).TryGetValue(out var unionSig)) {
+                return unionSig.Members.First().MemberType.HasDefaultValue(types);
+            }
             else {
                 throw new NotImplementedException();
             }
@@ -34,6 +37,14 @@ namespace Attempt20.Analysis.Types {
                 return TypeCopiability.Unconditional;
             }
             else if (types.TryGetStruct(this.SignaturePath).TryGetValue(out var structSig)) {
+                if (structSig.Members.All(x => x.MemberType.GetCopiability(types) == TypeCopiability.Unconditional)) {
+                    return TypeCopiability.Unconditional;
+                }
+                else {
+                    return TypeCopiability.Conditional;
+                }
+            }
+            else if (types.TryGetUnion(this.SignaturePath).TryGetValue(out var unionSig)) {
                 if (structSig.Members.All(x => x.MemberType.GetCopiability(types) == TypeCopiability.Unconditional)) {
                     return TypeCopiability.Unconditional;
                 }

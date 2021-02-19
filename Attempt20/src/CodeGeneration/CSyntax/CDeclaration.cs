@@ -32,11 +32,19 @@ namespace Attempt20.CodeGeneration.CSyntax {
         }
 
         public static CDeclaration Struct(string name, IReadOnlyList<CParameter> members) {
-            return new CStructDeclaration(name, Option.Some(members));
+            return new CAggregateDeclaration(false, name, Option.Some(members));
         }
 
         public static CDeclaration StructPrototype(string name) {
-            return new CStructDeclaration(name, Option.None<IReadOnlyList<CParameter>>());
+            return new CAggregateDeclaration(false, name, Option.None<IReadOnlyList<CParameter>>());
+        }
+
+        public static CDeclaration Union(string name, IReadOnlyList<CParameter> members) {
+            return new CAggregateDeclaration(false, name, Option.Some(members));
+        }
+
+        public static CDeclaration UnionPrototype(string name) {
+            return new CAggregateDeclaration(false, name, Option.None<IReadOnlyList<CParameter>>());
         }
 
         public static CDeclaration EmptyLine() {
@@ -53,20 +61,23 @@ namespace Attempt20.CodeGeneration.CSyntax {
             }
         }
 
-        private class CStructDeclaration : CDeclaration {
+        private class CAggregateDeclaration : CDeclaration {
             private readonly string Name;
             private readonly IOption<IReadOnlyList<CParameter>> members;
+            private readonly bool isUnion;
 
-            public CStructDeclaration(string name, IOption<IReadOnlyList<CParameter>> members) {
+            public CAggregateDeclaration(bool isUnion, string name, IOption<IReadOnlyList<CParameter>> members) {
                 this.Name = name;
                 this.members = members;
+                this.isUnion = isUnion;
             }
 
             public override void WriteToC(int indentLevel, StringBuilder sb) {
                 CHelper.Indent(indentLevel, sb);
+                var type = this.isUnion ? "union" : "struct";
 
                 if (this.members.TryGetValue(out var mems)) {
-                    sb.Append("struct ").Append(this.Name).AppendLine(" {");
+                    sb.Append(type).Append(" ").Append(this.Name).AppendLine(" {");
 
                     foreach (var mem in mems) {
                         CHelper.Indent(indentLevel + 1, sb);
@@ -77,7 +88,7 @@ namespace Attempt20.CodeGeneration.CSyntax {
                     sb.AppendLine("};");
                 }
                 else {
-                    sb.Append("typedef struct ").Append(this.Name).Append(" ").Append(this.Name).AppendLine(";");
+                    sb.Append("typedef ").Append(type).Append(" ").Append(this.Name).Append(" ").Append(this.Name).AppendLine(";");
                 }
             }
         }

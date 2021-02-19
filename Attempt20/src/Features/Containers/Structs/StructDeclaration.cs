@@ -8,12 +8,18 @@ using System.Collections.Immutable;
 using System.Linq;
 
 namespace Attempt20.Features.Containers {
-    public class StructParsedDeclaration : IParsedDeclaration {
+    public enum AggregateKind {
+        Struct, Union
+    }
+
+    public class AggregateParsedDeclaration : IParsedDeclaration {
         public TokenLocation Location { get; set; }
 
         public StructSignature Signature { get; set; }
 
         public IReadOnlyList<IParsedDeclaration> Declarations { get; set; }
+
+        public AggregateKind Kind { get; set; }
 
         public void DeclareNames(INameRecorder names) {
             // Make sure this name isn't taken
@@ -23,10 +29,15 @@ namespace Attempt20.Features.Containers {
 
             var structPath = names.CurrentScope.Append(this.Signature.Name);
 
-            // Declare this struct
-            names.DeclareGlobalName(structPath, NameTarget.Struct);
+            // Declare this aggregate
+            if (this.Kind == AggregateKind.Struct) {
+                names.DeclareGlobalName(structPath, NameTarget.Struct);
+            }
+            else {
+                names.DeclareGlobalName(structPath, NameTarget.Union);
+            }
 
-            // Declare this struct's members
+            // Declare the members
             foreach (var mem in this.Signature.Members) {
                 names.DeclareGlobalName(structPath.Append(mem.MemberName), NameTarget.Reserved);
             }
@@ -69,27 +80,6 @@ namespace Attempt20.Features.Containers {
             names.PopScope();
         }
 
-        public void DeclareTypes(INameRecorder names, ITypeRecorder types) {
-            var structPath = names.CurrentScope.Append(this.Signature.Name);
-            var structType = new NamedType(structPath);
-
-            types.DeclareStruct(structPath, this.Signature);
-
-            // Process the rest of the nested declarations
-            names.PushScope(names.CurrentScope.Append(this.Signature.Name));
-            foreach (var decl in this.Declarations) {
-                decl.DeclareTypes(names, types);
-            }
-            names.PopScope();
-
-            // Register methods
-            foreach (var decl in this.Declarations) {
-                if (decl is FunctionParseDeclaration func) {
-                    types.DeclareMethodPath(structType, func.Signature.Name, structPath.Append(func.Signature.Name));
-                }
-            }
-        }
-
         public void ResolveNames(INameRecorder names) {
             // Resolve members
             var mems = this.Signature
@@ -107,18 +97,87 @@ namespace Attempt20.Features.Containers {
             names.PopScope();
         }
 
+        public void DeclareTypes(INameRecorder names, ITypeRecorder types) {
+            var structPath = names.CurrentScope.Append(this.Signature.Name);
+            var structType = new NamedType(structPath);
+
+            if (this.Kind == AggregateKind.Struct) {
+                types.DeclareStruct(structPath, this.Signature);
+            }
+            else {
+                types.DeclareUnion(structPath, this.Signature);
+            }
+
+            // Process the rest of the nested declarations
+            names.PushScope(names.CurrentScope.Append(this.Signature.Name));
+            foreach (var decl in this.Declarations) {
+                decl.DeclareTypes(names, types);
+            }
+            names.PopScope();
+
+            // Register methods
+            foreach (var decl in this.Declarations) {
+                if (decl is FunctionParseDeclaration func) {
+                    types.DeclareMethodPath(structType, func.Signature.Name, structPath.Append(func.Signature.Name));
+                }
+            }
+        }
+
         public IDeclaration ResolveTypes(INameRecorder names, ITypeRecorder types) {
             // Process the rest of the nested declarations
             names.PushScope(names.CurrentScope.Append(this.Signature.Name));
             var decls = this.Declarations.Select(x => x.ResolveTypes(names, types)).ToArray();
             names.PopScope();
 
-            return new StructTypeCheckedDeclaration() {
-                Location = this.Location,
-                Signature = this.Signature,
-                StructPath = names.CurrentScope.Append(this.Signature.Name),
-                Declarations = decls
-            };
+            if (this.Kind == AggregateKind.Struct) {
+                return new StructTypeCheckedDeclaration() {
+                    Location = this.Location,
+                    Signature = this.Signature,
+                    StructPath = names.CurrentScope.Append(this.Signature.Name),
+                    Declarations = decls
+                };
+            }
+            else {
+                return new UnionTypeCheckedDeclaration() {
+                    Location = this.Location,
+                    Signature = this.Signature,
+                    StructPath = names.CurrentScope.Append(this.Signature.Name),
+                    Declarations = decls
+                };
+            }
+        }
+    }
+
+    public class UnionTypeCheckedDeclaration : IDeclaration {
+        private static int counter = 0;
+
+        public TokenLocation Location { get; set; }
+
+        public StructSignature Signature { get; set; }
+
+        public IdentifierPath StructPath { get; set; }
+
+        public IReadOnlyList<IDeclaration> Declarations { get; set; }
+
+        public void GenerateCode(ICWriter writer) {
+            var unionName = $"$UnionType_" + counter++;
+            var structName = this.StructPath.ToString();
+            var mems = this.Signature.Members
+                    .Select(x => new CParameter(writer.ConvertType(x.MemberType), x.MemberName))
+                    .ToArray();
+
+            // Write the union declarations
+            writer.WriteForwardDeclaration(CDeclaration.UnionPrototype(unionName));
+            writer.WriteDeclaration(CDeclaration.Union(unionName, mems));
+            writer.WriteDeclaration(CDeclaration.EmptyLine());
+
+            // Write the struct declarations
+            writer.WriteForwardDeclaration(CDeclaration.StructPrototype(structName));
+            writer.WriteDeclaration(CDeclaration.Struct(structName, new[] { 
+                new CParameter(CType.Integer, "tag"),
+                new CParameter(CType.NamedType(unionName), "data")
+            }));
+            writer.WriteDeclaration(CDeclaration.EmptyLine());
         }
     }
 

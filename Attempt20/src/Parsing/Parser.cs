@@ -187,8 +187,15 @@ namespace Attempt20.Parsing {
             };
         }
 
-        private IParsedDeclaration StructDeclaration() {
-            var start = this.Advance(TokenKind.StructKeyword);
+        private IParsedDeclaration AggregateDeclaration() {
+            IToken start;
+            if (this.Peek(TokenKind.StructKeyword)) {
+                start = this.Advance(TokenKind.StructKeyword);
+            }
+            else {
+                start = this.Advance(TokenKind.UnionKeyword);
+            }
+
             var name = this.Advance<string>();
             var mems = new List<StructMember>();
             var decls = new List<IParsedDeclaration>();
@@ -210,10 +217,11 @@ namespace Attempt20.Parsing {
             this.Advance(TokenKind.CloseBrace);
             var last = this.Advance(TokenKind.Semicolon);
 
-            return new StructParsedDeclaration() {
+            return new AggregateParsedDeclaration() {
                 Location = start.Location.Span(last.Location),
                 Signature = new StructSignature(name, mems),
-                Declarations = decls
+                Declarations = decls,
+                Kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union
             };
         }
 
@@ -221,8 +229,8 @@ namespace Attempt20.Parsing {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
-            else if (this.Peek(TokenKind.StructKeyword)) {
-                return this.StructDeclaration();
+            else if (this.Peek(TokenKind.StructKeyword) || this.Peek(TokenKind.UnionKeyword)) {
+                return this.AggregateDeclaration();
             }
 
             throw ParsingErrors.UnexpectedToken(this.Advance());

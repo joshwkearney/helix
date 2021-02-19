@@ -27,6 +27,6 @@ namespace Attempt20.Analysis {
     }
 
     public enum NameTarget {
-        Variable, Function, Region, Struct, Reserved
+        Variable, Function, Region, Struct, Union, Reserved
     }
 }
