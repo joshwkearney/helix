@@ -83,6 +83,13 @@ namespace Attempt20.Analysis {
                 $"Expected a struct type, but recieved '{actual}'");
         }
 
+        public static Exception ExpectedUnionType(TokenLocation location, TrophyType actual) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: Expected Union Type",
+                $"Expected a union type, but recieved '{actual}'");
+        }
+
         public static Exception TypeUndefined(TokenLocation loc, string name) {
             return new TypeCheckingException(
                 loc,

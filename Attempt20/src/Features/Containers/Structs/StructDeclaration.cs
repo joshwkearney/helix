@@ -168,16 +168,16 @@ namespace Attempt20.Features.Containers {
 
             // Write the union declarations
             writer.WriteForwardDeclaration(CDeclaration.UnionPrototype(unionName));
-            writer.WriteDeclaration(CDeclaration.Union(unionName, mems));
-            writer.WriteDeclaration(CDeclaration.EmptyLine());
+            writer.WriteForwardDeclaration(CDeclaration.Union(unionName, mems));
+            writer.WriteForwardDeclaration(CDeclaration.EmptyLine());
 
             // Write the struct declarations
             writer.WriteForwardDeclaration(CDeclaration.StructPrototype(structName));
-            writer.WriteDeclaration(CDeclaration.Struct(structName, new[] { 
+            writer.WriteForwardDeclaration(CDeclaration.Struct(structName, new[] { 
                 new CParameter(CType.Integer, "tag"),
                 new CParameter(CType.NamedType(unionName), "data")
             }));
-            writer.WriteDeclaration(CDeclaration.EmptyLine());
+            writer.WriteForwardDeclaration(CDeclaration.EmptyLine());
         }
     }
 

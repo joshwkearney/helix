@@ -105,7 +105,7 @@ namespace Attempt20.Compiling {
                 if (target == NameTarget.Function) {
                     return new SingularFunctionType(path);
                 }
-                else if (target == NameTarget.Struct) {
+                else if (target == NameTarget.Struct || target == NameTarget.Union) {
                     return new NamedType(path);
                 }
                 else {

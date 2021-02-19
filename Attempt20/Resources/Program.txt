@@ -1,9 +1,8 @@
 ﻿function main() => void: {
-    var x <- new OptionalInt { some = 6 };
+    var x <- void as OptionalInt;
 
     void;
 };
-
  
 union OptionalInt {
     void none;
