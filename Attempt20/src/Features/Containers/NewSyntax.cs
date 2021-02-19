@@ -6,10 +6,10 @@ using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.Containers.Arrays;
+using Attempt20.Features.Containers.Structs;
+using Attempt20.Features.Containers.Unions;
 using Attempt20.Features.Primitives;
 using Attempt20.Parsing;
-using Attempt20.src.Features.Containers.Structs;
-using Attempt20.src.Features.Containers.Unions;
 
 namespace Attempt20.Features.Containers {
     public class StructArgument<T> {

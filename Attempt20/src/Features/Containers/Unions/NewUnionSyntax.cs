@@ -2,6 +2,7 @@
 using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Features.Containers;
+using Attempt20.Features.Primitives;
 using Attempt20.Parsing;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
-namespace Attempt20.src.Features.Containers.Unions {
+namespace Attempt20.Features.Containers.Unions {
     public class NewUnionParsedSyntax : IParsedSyntax {
         public TokenLocation Location { get; set; }
 
@@ -39,10 +40,7 @@ namespace Attempt20.src.Features.Containers.Unions {
             this.TargetPath = path;
 
             // Make sure that there is exactly one argument
-            if (this.Arguments.Count < 1) {
-                throw TypeCheckingErrors.NewObjectMissingFields(this.Location, this.Target, new string[0]);
-            }
-            else if (this.Arguments.Count > 1) {
+            if (this.Arguments.Count > 1) {
                 throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.Target, this.Arguments.Select(x => x.MemberName));
             }
 
@@ -60,6 +58,13 @@ namespace Attempt20.src.Features.Containers.Unions {
         public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
             var unionType = new NamedType(this.TargetPath);
             var unionSig = types.TryGetUnion(this.TargetPath).GetValue();
+
+            // If there are no arguments return an empty union
+            if (!this.Arguments.Any()) {
+                var voidLiteral = new VoidLiteralSyntax() { Location = this.Location };
+
+                return new VoidToUnionAdapter(voidLiteral, unionSig, unionType, types);
+            }
 
             var arg = this.Arguments.First();
             var memberOpt = unionSig.Members.Where(x => x.MemberName == arg.MemberName).FirstOrNone();

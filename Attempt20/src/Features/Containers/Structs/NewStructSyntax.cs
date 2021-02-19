@@ -10,7 +10,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
-namespace Attempt20.src.Features.Containers.Structs {
+namespace Attempt20.Features.Containers.Structs {
     public class NewStructParsedSyntax : IParsedSyntax {
         public TokenLocation Location { get; set; }
 
