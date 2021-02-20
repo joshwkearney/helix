@@ -9,7 +9,7 @@ namespace Attempt20.Compiling {
     public class NamesRecorder : INameRecorder {
         private readonly Stack<IdentifierPath> scopes = new Stack<IdentifierPath>();
         private readonly Stack<IdentifierPath> regions = new Stack<IdentifierPath>();
-
+        private int nameCounter = 0;
 
         private readonly Dictionary<IdentifierPath, NameTarget> globalNames
                     = new Dictionary<IdentifierPath, NameTarget>();
@@ -115,6 +115,10 @@ namespace Attempt20.Compiling {
             else {
                 throw new Exception();
             }
+        }
+
+        public int GetNewVariableId() {
+            return this.nameCounter++;
         }
     }
 }

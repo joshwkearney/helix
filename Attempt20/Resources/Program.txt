@@ -1,10 +1,21 @@
-﻿function main() => void: {
-    var x <- new OptionalInt;
+﻿function void main() => {
+    var x <- new OptionalInt { some = 4 };    
 
     void;
 };
- 
+
 union OptionalInt {
     void none;
     int some;
+};
+
+union Token {
+    void eof;
+    void open_paren;
+    void close_paren;
+    void plus;
+    void times;
+    void minus;
+    
+    int int_literal;
 };

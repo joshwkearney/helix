@@ -11,9 +11,12 @@ namespace Attempt20.Analysis {
 
         public ImmutableHashSet<IdentifierPath> VariableLifetimes { get; }
 
+        public int UniqueId { get; }
+
         public VariableInfo(
             TrophyType innerType,
             VariableDefinitionKind alias,
+            int id,
             ImmutableHashSet<IdentifierPath> valueLifetimes,
             ImmutableHashSet<IdentifierPath> variableLifetimes) {
 
@@ -21,6 +24,7 @@ namespace Attempt20.Analysis {
             this.DefinitionKind = alias;
             this.ValueLifetimes = valueLifetimes;
             this.VariableLifetimes = variableLifetimes;
+            this.UniqueId = id;
         }
     }
 

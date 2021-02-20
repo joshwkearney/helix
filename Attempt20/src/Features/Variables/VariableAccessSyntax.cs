@@ -104,26 +104,28 @@ namespace Attempt20.Features.Variables {
         public VariableAccessKind AccessKind { get; set; }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
+            var cname = this.VariableName + this.VariableInfo.UniqueId;
+
             if (this.AccessKind == VariableAccessKind.ValueAccess) {
                 if (this.VariableInfo.Type is VariableType && this.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter) {
-                    return CExpression.Dereference(CExpression.VariableLiteral(this.VariableName));
+                    return CExpression.Dereference(CExpression.VariableLiteral(cname));
                 }
                 else if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.LocalAllocated) {
-                    return CExpression.Dereference(CExpression.VariableLiteral(this.VariableName));
+                    return CExpression.Dereference(CExpression.VariableLiteral(cname));
                 }
                 else {
-                    return CExpression.VariableLiteral(this.VariableName);
+                    return CExpression.VariableLiteral(cname);
                 }
             }
             else {
                 if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter) {
-                    return CExpression.VariableLiteral(this.VariableName);
+                    return CExpression.VariableLiteral(cname);
                 }
                 else if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.LocalAllocated) {
-                    return CExpression.VariableLiteral(this.VariableName);
+                    return CExpression.VariableLiteral(cname);
                 }
                 else {
-                    return CExpression.AddressOf(CExpression.VariableLiteral(this.VariableName));
+                    return CExpression.AddressOf(CExpression.VariableLiteral(cname));
                 }
             }
         }

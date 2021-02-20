@@ -146,7 +146,9 @@ namespace Attempt20.Parsing {
         private FunctionSignature FunctionSignature() {
             this.Advance(TokenKind.FunctionKeyword);
 
-            string funcName = this.Advance<string>();
+            var returnType = this.TypeExpression();
+            var funcName = this.Advance<string>();
+
             this.Advance(TokenKind.OpenParenthesis);
 
             var pars = ImmutableList<FunctionParameter>.Empty;
@@ -162,9 +164,7 @@ namespace Attempt20.Parsing {
             }
 
             this.Advance(TokenKind.CloseParenthesis);
-            this.Advance(TokenKind.YieldSign);
 
-            var returnType = this.TypeExpression();
             var sig = new FunctionSignature(funcName, returnType, pars);
 
             return sig;
@@ -173,7 +173,7 @@ namespace Attempt20.Parsing {
         private IParsedDeclaration FunctionDeclaration() {
             var start = this.tokens[this.pos];
             var sig = this.FunctionSignature();
-            var end = this.Advance(TokenKind.Colon);
+            var end = this.Advance(TokenKind.YieldSign);
 
             var body = this.TopExpression();
             var loc = start.Location.Span(end.Location);

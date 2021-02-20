@@ -17,7 +17,6 @@
   <ItemGroup>
     <Folder Include="src\Features\Primitives\" />
     <Folder Include="src\Features\Variables\" />
-    <Folder Include="src\Features\FlowControl\" />
     <Folder Include="src\Features\Functions\" />
     <Folder Include="resources\" />
   </ItemGroup>

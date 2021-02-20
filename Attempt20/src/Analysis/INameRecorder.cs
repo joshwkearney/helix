@@ -7,6 +7,8 @@ namespace Attempt20.Analysis {
 
         public IdentifierPath CurrentRegion { get; }
 
+        public int GetNewVariableId();
+
         public void DeclareGlobalName(IdentifierPath path, NameTarget target);
 
         public void DeclareLocalName(IdentifierPath path, NameTarget target);

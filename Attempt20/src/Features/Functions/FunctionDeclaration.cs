@@ -80,6 +80,7 @@ namespace Attempt20.Features.Functions {
                 var info = new VariableInfo(
                     par.Type,
                     VariableDefinitionKind.Parameter,
+                    names.GetNewVariableId(),
                     new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet(),
                     new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet());
 

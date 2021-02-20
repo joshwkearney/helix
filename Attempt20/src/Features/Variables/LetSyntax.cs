@@ -38,10 +38,20 @@ namespace Attempt20.Features.Variables {
 
             VariableInfo info;
             if (this.region == IdentifierPath.StackPath) {
-                info = new VariableInfo(assign.ReturnType, VariableDefinitionKind.Local, assign.Lifetimes, new[] { this.region }.ToImmutableHashSet());
+                info = new VariableInfo(
+                    assign.ReturnType, 
+                    VariableDefinitionKind.Local, 
+                    names.GetNewVariableId(),
+                    assign.Lifetimes, 
+                    new[] { this.region }.ToImmutableHashSet());
             }
             else {
-                info = new VariableInfo(assign.ReturnType, VariableDefinitionKind.LocalAllocated, assign.Lifetimes, new[] { this.region }.ToImmutableHashSet());
+                info = new VariableInfo(
+                    assign.ReturnType, 
+                    VariableDefinitionKind.LocalAllocated, 
+                    names.GetNewVariableId(),
+                    assign.Lifetimes, 
+                    new[] { this.region }.ToImmutableHashSet());
             }
 
             // Declare this variable
@@ -81,7 +91,7 @@ namespace Attempt20.Features.Variables {
             if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.Local) {
                 var stat = CStatement.VariableDeclaration(
                     typeName,
-                    this.VariableName,
+                    this.VariableName + this.VariableInfo.UniqueId,
                     assign);
 
                 statWriter.WriteStatement(stat);
@@ -93,7 +103,7 @@ namespace Attempt20.Features.Variables {
                 var regionName = this.Region.Segments.Last();
                 var stat = CStatement.VariableDeclaration(
                     CType.Pointer(typeName),
-                    this.VariableName,
+                    this.VariableName + this.VariableInfo.UniqueId,
                     CExpression.Invoke(CExpression.VariableLiteral("$region_alloc"), new[] {
                         CExpression.VariableLiteral(regionName), CExpression.Sizeof(typeName)
                     }));
