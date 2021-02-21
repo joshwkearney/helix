@@ -1,4 +1,4 @@
-﻿function void main() => {
+﻿func void main() => {
     var x <- new OptionalInt { some = 4 };    
 
     void;

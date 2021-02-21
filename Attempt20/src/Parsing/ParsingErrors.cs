@@ -1,5 +1,4 @@
-﻿using Attempt20.Analysis;
-using System;
+﻿using System;
 
 namespace Attempt20.Parsing {
     public static class ParsingErrors {

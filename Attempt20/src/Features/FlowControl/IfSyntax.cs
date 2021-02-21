@@ -4,119 +4,124 @@ using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration;
 using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Features.Primitives;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.FlowControl {
-    public class IfParsedSyntax : IParsedSyntax {
-        public TokenLocation Location { get; set; }
+    public class IfSyntaxA : ISyntaxA {
+        private readonly ISyntaxA cond, iftrue;
+        private readonly IOption<ISyntaxA> iffalse;
 
-        public IParsedSyntax Condition { get; set; }
-
-        public IParsedSyntax TrueBranch { get; set; }
-
-        public IOption<IParsedSyntax> FalseBranch { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.Condition = this.Condition.CheckNames(names);
-            this.TrueBranch = this.TrueBranch.CheckNames(names);
-            this.FalseBranch = this.FalseBranch.Select(x => x.CheckNames(names));
-
-            return this;
+        public IfSyntaxA(TokenLocation location, ISyntaxA cond, ISyntaxA iftrue) {
+            this.Location = location;
+            this.cond = cond;
+            this.iftrue = iftrue;
+            this.iffalse = Option.None<ISyntaxA>();
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var cond = this.Condition.CheckTypes(names, types);
-            var affirm = this.TrueBranch.CheckTypes(names, types);
-            var negOpt = this.FalseBranch.Select(x => x.CheckTypes(names, types));
+        public IfSyntaxA(TokenLocation location, ISyntaxA cond, ISyntaxA iftrue, ISyntaxA iffalse)
+            : this(location, cond, iftrue) {
 
-            // Make sure that the condition is a boolean
-            if (!cond.ReturnType.IsBoolType) {
-                throw TypeCheckingErrors.UnexpectedType(cond.Location, TrophyType.Boolean, cond.ReturnType);
+            this.iffalse = Option.Some(iffalse);
+        }
+
+        public TokenLocation Location { get; }
+
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var iftrue = this.iftrue;
+
+            if (!this.iffalse.TryGetValue(out var iffalse)) {
+                iffalse = new VoidLiteralAB(this.Location);
+                iftrue = new BlockSyntaxA(this.Location, new[] {
+                    iftrue, new VoidLiteralAB(this.Location)
+                });
             }
 
-            if (negOpt.TryGetValue(out var neg)) {
-                // Make sure that the branches are the same type
-                if (types.TryUnifyTo(neg, affirm.ReturnType).TryGetValue(out var newNeg)) {
-                    neg = newNeg;
-                }
-                else if (types.TryUnifyTo(affirm, neg.ReturnType).TryGetValue(out var newAffirm)) {
-                    affirm = newAffirm;
-                }
-                else {
-                    throw TypeCheckingErrors.UnexpectedType(cond.Location, affirm.ReturnType, neg.ReturnType);
-                }
-
-                return new IfTypeCheckedSyntax() {
-                    Location = this.Location,
-                    ReturnType = affirm.ReturnType,
-                    Lifetimes = cond.Lifetimes.Union(affirm.Lifetimes).Union(neg.Lifetimes),
-                    Condition = cond,
-                    TrueBranch = affirm,
-                    FalseBranch = Option.Some(neg)
-                };
-            }
-            else {
-                return new IfTypeCheckedSyntax() {
-                    Location = this.Location,
-                    ReturnType = TrophyType.Void,
-                    Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
-                    Condition = cond,
-                    TrueBranch = affirm,
-                    FalseBranch = Option.None<ISyntax>()
-                };
-            }
+            return new IfSyntaxB(
+                this.Location, 
+                this.cond.CheckNames(names), 
+                iftrue.CheckNames(names),
+                iffalse.CheckNames(names));
         }
     }
 
-    public class IfTypeCheckedSyntax : ISyntax {
+    public class IfSyntaxB : ISyntaxB {
+        private readonly ISyntaxB cond, iftrue, iffalse;
+
+        public IfSyntaxB(TokenLocation location, ISyntaxB cond, ISyntaxB iftrue, ISyntaxB iffalse) {
+            this.Location = location;
+            this.cond = cond;
+            this.iftrue = iftrue;
+            this.iffalse = iffalse;
+        }
+
+        public TokenLocation Location { get; }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var cond = this.cond.CheckTypes(types);
+            var iftrue = this.iftrue.CheckTypes(types);
+            var iffalse = this.iffalse.CheckTypes(types);
+
+            // Make sure that the condition is a boolean
+            if (!cond.ReturnType.IsBoolType) {
+                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, TrophyType.Boolean, cond.ReturnType);
+            }
+
+            // Make sure that the branches are the same type
+            if (types.TryUnifyTo(iffalse, iftrue.ReturnType).TryGetValue(out var newNeg)) {
+                iffalse = newNeg;
+            }
+            else if (types.TryUnifyTo(iftrue, iffalse.ReturnType).TryGetValue(out var newAffirm)) {
+                iftrue = newAffirm;
+            }
+            else {
+                throw TypeCheckingErrors.UnexpectedType(this.Location, iftrue.ReturnType, iffalse.ReturnType);
+            }
+
+            return new IfSyntaxC(cond, iftrue, iffalse);
+        }
+    }
+
+    public class IfSyntaxC : ISyntaxC {
         private static int ifTemp = 0;
 
-        public TokenLocation Location { get; set; }
+        private readonly ISyntaxC cond, iftrue, iffalse;
 
-        public TrophyType ReturnType { get; set; }
+        public TrophyType ReturnType => this.iftrue.ReturnType;
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes => this.iftrue.Lifetimes.Union(this.iffalse.Lifetimes);
 
-        public ISyntax Condition { get; set; }
-
-        public ISyntax TrueBranch { get; set; }
-
-        public IOption<ISyntax> FalseBranch { get; set; }
+        public IfSyntaxC(ISyntaxC cond, ISyntaxC iftrue, ISyntaxC iffalse) {
+            this.cond = cond;
+            this.iftrue = iftrue;
+            this.iffalse = iffalse;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var affirmList = new List<CStatement>();
+            var negList = new List<CStatement>();
+
             var affirmWriter = new CStatementWriter();
+            var negWriter = new CStatementWriter();
 
             affirmWriter.StatementWritten += (s, e) => affirmList.Add(e);
+            negWriter.StatementWritten += (s, e) => negList.Add(e);
 
-            var cond = this.Condition.GenerateCode(declWriter, statWriter);
-            var affirm = this.TrueBranch.GenerateCode(declWriter, affirmWriter);
+            var cond = this.cond.GenerateCode(declWriter, statWriter);
+            var affirm = this.iftrue.GenerateCode(declWriter, affirmWriter);
+            var neg = this.iffalse.GenerateCode(declWriter, negWriter);
 
-            if (this.FalseBranch.TryGetValue(out var negTree)) {
-                var negList = new List<CStatement>();
-                var negWriter = new CStatementWriter();
+            var tempName = "$if_temp_" + ifTemp++;
+            var returnType = declWriter.ConvertType(this.ReturnType);
 
-                negWriter.StatementWritten += (s, e) => negList.Add(e);
+            affirmList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), affirm));
+            negList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), neg));
 
-                var neg = negTree.GenerateCode(declWriter, negWriter);
-                var tempName = "$if_temp_" + ifTemp++;
-                var returnType = declWriter.ConvertType(this.ReturnType);
+            statWriter.WriteStatement(CStatement.VariableDeclaration(returnType, tempName));
+            statWriter.WriteStatement(CStatement.If(cond, affirmList, negList));
+            statWriter.WriteStatement(CStatement.NewLine());
 
-                affirmList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), affirm));
-                negList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), neg));
-
-                statWriter.WriteStatement(CStatement.VariableDeclaration(returnType, tempName));
-                statWriter.WriteStatement(CStatement.If(cond, affirmList, negList));
-                statWriter.WriteStatement(CStatement.NewLine());
-
-                return CExpression.VariableLiteral(tempName);
-            }
-            else {
-                statWriter.WriteStatement(CStatement.If(cond, affirmList));
-                statWriter.WriteStatement(CStatement.NewLine());
-
-                return CExpression.IntLiteral(0);
-            }
+            return CExpression.VariableLiteral(tempName);
         }
     }
 }

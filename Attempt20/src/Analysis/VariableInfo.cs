@@ -3,6 +3,8 @@ using System.Collections.Immutable;
 
 namespace Attempt20.Analysis {
     public class VariableInfo {
+        public string Name { get; }
+
         public VariableDefinitionKind DefinitionKind { get; }
 
         public TrophyType Type { get; }
@@ -14,21 +16,23 @@ namespace Attempt20.Analysis {
         public int UniqueId { get; }
 
         public VariableInfo(
+            string name,
             TrophyType innerType,
-            VariableDefinitionKind alias,
+            VariableDefinitionKind kind,
             int id,
             ImmutableHashSet<IdentifierPath> valueLifetimes,
             ImmutableHashSet<IdentifierPath> variableLifetimes) {
 
             this.Type = innerType;
-            this.DefinitionKind = alias;
+            this.DefinitionKind = kind;
             this.ValueLifetimes = valueLifetimes;
             this.VariableLifetimes = variableLifetimes;
             this.UniqueId = id;
+            this.Name = name;
         }
     }
 
     public enum VariableDefinitionKind {
-        Local, LocalAllocated, Parameter
+        Local, Parameter
     }
 }

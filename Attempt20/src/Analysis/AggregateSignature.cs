@@ -4,17 +4,17 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Attempt20.Analysis {
-    public class StructSignature : IEquatable<StructSignature> {
+    public class AggregateSignature : IEquatable<AggregateSignature> {
         public string Name { get; }
 
         public IReadOnlyList<StructMember> Members { get; }
 
-        public StructSignature(string name, IReadOnlyList<StructMember> mems) {
+        public AggregateSignature(string name, IReadOnlyList<StructMember> mems) {
             this.Name = name;
             this.Members = mems;
         }
 
-        public bool Equals(StructSignature other) {
+        public bool Equals(AggregateSignature other) {
             if (other is null) {
                 return false;
             }
@@ -23,7 +23,7 @@ namespace Attempt20.Analysis {
         }
 
         public override bool Equals(object obj) {
-            return obj is StructSignature sig && this.Equals(sig);
+            return obj is AggregateSignature sig && this.Equals(sig);
         }
 
         public override int GetHashCode() {

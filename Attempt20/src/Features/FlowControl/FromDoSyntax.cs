@@ -3,44 +3,34 @@ using Attempt20.Parsing;
 using System.Linq;
 
 namespace Attempt20.Features.FlowControl {
-    public class FromDoParsedSyntax : IParsedSyntax {
-        private IdentifierPath region;
+    public class FromSyntaxA : ISyntaxA {
+        private readonly string region;
+        private readonly ISyntaxA arg;
 
-        public TokenLocation Location { get; set; }
+        public TokenLocation Location { get; }
 
-        public string RegionName { get; set; }
+        public FromSyntaxA(TokenLocation location, string region, ISyntaxA arg) {
+            this.Location = location;
+            this.region = region;
+            this.arg = arg;
+        }
 
-        public IParsedSyntax Target { get; set; }
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var region = IdentifierPath.StackPath;
 
-        public IParsedSyntax CheckNames(INameRecorder names) {
             // Make sure that our region exists
-            if (this.RegionName == "stack") {
-                this.region = IdentifierPath.StackPath;
-            }
-            else {
+            if (this.region != "stack") {
                 var segments = names.CurrentRegion.Segments;
-                if (!segments.Contains(this.RegionName)) {
-                    throw TypeCheckingErrors.RegionUndefined(this.Location, this.RegionName);
+                if (!segments.Contains(this.region)) {
+                    throw TypeCheckingErrors.RegionUndefined(this.Location, this.region);
                 }
 
-                this.region = new IdentifierPath(segments.TakeWhile(x => x != this.RegionName)).Append(this.RegionName);
+                region = new IdentifierPath(segments.TakeWhile(x => x != this.region)).Append(this.region);
             }
 
             // Push our region
-            names.PushRegion(this.region);
-
-            this.Target = this.Target.CheckNames(names);
-
-            names.PopRegion();
-
-            return this;
-        }
-
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            names.PushRegion(this.region);
-
-            var target = this.Target.CheckTypes(names, types);
-
+            names.PushRegion(region);
+            var target = this.arg.CheckNames(names);
             names.PopRegion();
 
             return target;

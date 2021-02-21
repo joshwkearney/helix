@@ -2,6 +2,7 @@
 using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Features.Variables;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Containers.Arrays {
@@ -9,26 +10,46 @@ namespace Attempt20.Features.Containers.Arrays {
         ValueAccess, LiteralAccess
     }
 
-    public class ArrayAccessParsedSyntax : IParsedSyntax {
-        public TokenLocation Location { get; set; }
+    public class ArrayAccessSyntaxA : ISyntaxA {
+        private readonly ISyntaxA target, index;
+        private readonly ArrayAccessKind accessKind;
+        public TokenLocation Location { get; }
 
-        public IParsedSyntax Target { get; set; }
-
-        public IParsedSyntax Index { get; set; }
-
-        public ArrayAccessKind AccessKind { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.Target = this.Target.CheckNames(names);
-            this.Index = this.Index.CheckNames(names);
-
-            return this;
+        public ArrayAccessSyntaxA(TokenLocation location, ISyntaxA target, ISyntaxA index, ArrayAccessKind accessKind) {
+            this.Location = location;
+            this.target = target;
+            this.index = index;
+            this.accessKind = accessKind;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var target = this.Target.CheckTypes(names, types);
-            var index = this.Index.CheckTypes(names, types);
-            var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var target = this.target.CheckNames(names);
+            var index = this.index.CheckNames(names);
+            var result = new ArrayLiteralAccessSyntaxB(this.Location, target, index);
+
+            if (this.accessKind == ArrayAccessKind.ValueAccess) {
+                return new DereferenceSyntaxB(result);
+            }
+            else {
+                return result;
+            }
+        }
+    }
+
+    public class ArrayLiteralAccessSyntaxB : ISyntaxB {
+        private readonly ISyntaxB target, index;
+
+        public TokenLocation Location { get; }
+
+        public ArrayLiteralAccessSyntaxB(TokenLocation location, ISyntaxB target, ISyntaxB index) {
+            this.Location = location;
+            this.target = target;
+            this.index = index;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var target = this.target.CheckTypes(types);
+            var index = this.index.CheckTypes(types);
             var elementType = TrophyType.Void;
 
             // Make sure the target is an array
@@ -39,7 +60,7 @@ namespace Attempt20.Features.Containers.Arrays {
                 elementType = fixedArrayType.ElementType;
             }
             else {
-                throw TypeCheckingErrors.ExpectedArrayType(target.Location, target.ReturnType);
+                throw TypeCheckingErrors.ExpectedArrayType(this.target.Location, target.ReturnType);
             }
 
             // Make sure the index in an int
@@ -47,46 +68,29 @@ namespace Attempt20.Features.Containers.Arrays {
                 index = newIndex;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(index.Location, TrophyType.Integer, index.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.index.Location, TrophyType.Integer, index.ReturnType);
             }
 
-            // We only need lifetimes if the array type is conditionally copiable
-            if (this.AccessKind == ArrayAccessKind.LiteralAccess || elementType.GetCopiability(types) == TypeCopiability.Conditional) {
-                lifetimes = target.Lifetimes;
-            }
-
-            var returnType = elementType;
-            if (this.AccessKind == ArrayAccessKind.LiteralAccess) {
-                returnType = new VariableType(returnType);
-            }
-
-            return new ArrayIndexTypeCheckedSyntax() {
-                Location = this.Location,
-                Index = index,
-                Target = target,
-                Lifetimes = lifetimes,
-                ReturnType = returnType,
-                AccessKind = this.AccessKind
-            };
+            return new ArrayLiteralAccessSyntaxC(target, index, new VariableType(elementType));
         }
     }
 
-    public class ArrayIndexTypeCheckedSyntax : ISyntax {
-        public TokenLocation Location { get; set; }
+    public class ArrayLiteralAccessSyntaxC : ISyntaxC {
+        private readonly ISyntaxC target, index;
 
-        public TrophyType ReturnType { get; set; }
+        public TrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public ISyntax Target { get; set; }
-
-        public ISyntax Index { get; set; }
-
-        public ArrayAccessKind AccessKind { get; set; }
+        public ArrayLiteralAccessSyntaxC(ISyntaxC target, ISyntaxC index, TrophyType returnType) {
+            this.target = target;
+            this.index = index;
+            this.ReturnType = returnType;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var index = this.Index.GenerateCode(declWriter, statWriter);
-            var target = this.Target.GenerateCode(declWriter, statWriter);
+            var index = this.index.GenerateCode(declWriter, statWriter);
+            var target = this.target.GenerateCode(declWriter, statWriter);
             var targetSize = CExpression.MemberAccess(target, "size");
             var targetData = CExpression.MemberAccess(target, "data");
 
@@ -98,7 +102,7 @@ namespace Attempt20.Features.Containers.Arrays {
             var ifStat = CStatement.If(cond, new[] {
                 CStatement.FromExpression(CExpression.Invoke(CExpression.VariableLiteral("fprintf"), new[] {
                     CExpression.VariableLiteral("stderr"),
-                    CExpression.StringLiteral("array_out_of_bounds at " + this.Location.StartIndex + ":" + this.Location.Length) })),
+                    CExpression.StringLiteral("array_out_of_bounds") })),
                 CStatement.FromExpression(CExpression.Invoke(CExpression.VariableLiteral("exit"), new[]{
                     CExpression.IntLiteral(-1) }))
             });
@@ -106,12 +110,7 @@ namespace Attempt20.Features.Containers.Arrays {
             statWriter.WriteStatement(ifStat);
             statWriter.WriteStatement(CStatement.NewLine());
 
-            if (this.AccessKind == ArrayAccessKind.ValueAccess) {
-                return CExpression.ArrayIndex(targetData, index);
-            }
-            else {
-                return CExpression.BinaryExpression(targetData, index, Primitives.BinaryOperation.Add);
-            }
+            return CExpression.BinaryExpression(targetData, index, Primitives.BinaryOperation.Add);
         }
     }
 }

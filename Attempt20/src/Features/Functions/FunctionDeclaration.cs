@@ -7,14 +7,20 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Functions {
-    public class FunctionParseDeclaration : IParsedDeclaration {
-        public TokenLocation Location { get; set; }
+    public class FunctionDeclarationA : IDeclarationA {
+        public ISyntaxA Body { get; }
 
-        public FunctionSignature Signature { get; set; }
+        public FunctionSignature Signature { get; }
 
-        public IParsedSyntax Body { get; set; }
+        public TokenLocation Location { get; }
 
-        public void DeclareNames(INameRecorder names) {
+        public FunctionDeclarationA(TokenLocation location, FunctionSignature sig, ISyntaxA body) {
+            this.Location = location;
+            this.Signature = sig;
+            this.Body = body;
+        }
+
+        public IDeclarationA DeclareNames(INameRecorder names) {
             // Make sure this name isn't taken
             if (names.TryFindName(this.Signature.Name, out _, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.Signature.Name);
@@ -38,13 +44,11 @@ namespace Attempt20.Features.Functions {
             if (dups.Any()) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, dups.First());
             }
+
+            return this;
         }
 
-        public void DeclareTypes(INameRecorder names, ITypeRecorder types) {
-            types.DeclareFunction(names.CurrentScope.Append(this.Signature.Name), this.Signature);
-        }
-
-        public void ResolveNames(INameRecorder names) {            
+        public IDeclarationB ResolveNames(INameRecorder names) {
             // Resolve the type names
             var returnType = names.ResolveTypeNames(this.Signature.ReturnType, this.Location);
             var pars = this.Signature
@@ -52,35 +56,72 @@ namespace Attempt20.Features.Functions {
                 .Select(x => new FunctionParameter(x.Name, names.ResolveTypeNames(x.Type, this.Location)))
                 .ToImmutableList();
 
-            this.Signature = new FunctionSignature(this.Signature.Name, returnType, pars);
+            var sig = new FunctionSignature(this.Signature.Name, returnType, pars);
+            var funcPath = names.CurrentScope.Append(sig.Name);
 
             // Push this function name as the new scope
-            names.PushScope(names.CurrentScope.Append(this.Signature.Name));
+            names.PushScope(funcPath);
             names.PushRegion(IdentifierPath.StackPath);
 
             // Declare the parameters
-            foreach (var par in this.Signature.Parameters) {
-                names.DeclareLocalName(names.CurrentScope.Append(par.Name), NameTarget.Variable);
+            foreach (var par in sig.Parameters) {
+                names.DeclareLocalName(funcPath.Append(par.Name), NameTarget.Variable);
             }
 
             // Pop the new scope out
-            this.Body = this.Body.CheckNames(names);
+            var body = this.Body.CheckNames(names);
 
             names.PopRegion();
             names.PopScope();
+
+            // Reserve ids for the parameters
+            var ids = pars.Select(_ => names.GetNewVariableId()).ToArray();
+
+            return new FunctionDeclarationB(this.Location, funcPath, sig, body, ids);
+        }
+    }
+
+    public class FunctionDeclarationB : IDeclarationB {
+        private readonly ISyntaxB body;
+        private readonly IdentifierPath funcPath;
+        private readonly IReadOnlyList<int> parIds;
+
+        public FunctionSignature Signature { get; }
+
+        public TokenLocation Location { get; }
+
+        public FunctionDeclarationB(
+            TokenLocation location, 
+            IdentifierPath funcPath, 
+            FunctionSignature sig, 
+            ISyntaxB body, 
+            IReadOnlyList<int> parIds) {
+
+            this.Location = location;
+            this.funcPath = funcPath;
+            this.Signature = sig;
+            this.body = body;
+            this.parIds = parIds;
         }
 
-        public IDeclaration ResolveTypes(INameRecorder names, ITypeRecorder types) {
-            names.PushScope(names.CurrentScope.Append(this.Signature.Name));
-            names.PushRegion(IdentifierPath.StackPath);
+        public IDeclarationB DeclareTypes(ITypeRecorder types) {
+            types.DeclareFunction(this.funcPath, this.Signature);
 
+            return this;
+        }
+
+        public IDeclarationC ResolveTypes(ITypeRecorder types) {
             // Declare the parameters
-            foreach (var par in this.Signature.Parameters) {
-                var path = names.CurrentScope.Append(par.Name);
+            for (int i = 0; i < this.Signature.Parameters.Count; i++) {
+                var par = this.Signature.Parameters[i];
+                var id = this.parIds[i];
+
+                var path = this.funcPath.Append(par.Name);
                 var info = new VariableInfo(
+                    par.Name,
                     par.Type,
                     VariableDefinitionKind.Parameter,
-                    names.GetNewVariableId(),
+                    id,
                     new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet(),
                     new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet());
 
@@ -88,19 +129,18 @@ namespace Attempt20.Features.Functions {
             }
 
             // Type check the body
-            var body = this.Body.CheckTypes(names, types);
+            var body = this.body.CheckTypes(types);
 
             // Make sure the return types line up
             if (types.TryUnifyTo(body, this.Signature.ReturnType).TryGetValue(out var newbody)) {
                 body = newbody;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(body.Location,
-                        this.Signature.ReturnType, body.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(
+                    this.body.Location,
+                    this.Signature.ReturnType, 
+                    body.ReturnType);
             }
-
-            names.PopRegion();
-            names.PopScope();
 
             // The return value must be allocated on the heap or be one of the arguments
             foreach (var capLifetime in body.Lifetimes) {
@@ -109,33 +149,30 @@ namespace Attempt20.Features.Functions {
                 }
 
                 if (!capLifetime.Outlives(IdentifierPath.HeapPath)) { 
-                    throw TypeCheckingErrors.LifetimeExceeded(body.Location, IdentifierPath.HeapPath, capLifetime);
+                    throw TypeCheckingErrors.LifetimeExceeded(this.body.Location, IdentifierPath.HeapPath, capLifetime);
                 }
             }
 
-            return new FunctionTypeCheckedDeclaration() {
-                Location = this.Location,
-                Signature = this.Signature,
-                FunctionPath = names.CurrentScope.Append(this.Signature.Name),
-                Body = body
-            };
+            return new FunctionDeclarationC(this.Signature, this.funcPath, body);
         }
     }
 
-    public class FunctionTypeCheckedDeclaration : IDeclaration {
-        public TokenLocation Location { get; set; }
+    public class FunctionDeclarationC : IDeclarationC {
+        public readonly FunctionSignature sig;
+        private readonly IdentifierPath funcPath;
+        private readonly ISyntaxC body;
 
-        public FunctionSignature Signature { get; set; }
-
-        public IdentifierPath FunctionPath { get; set; }
-
-        public ISyntax Body { get; set; }
+        public FunctionDeclarationC(FunctionSignature sig, IdentifierPath funcPath, ISyntaxC body) {
+            this.sig = sig;
+            this.funcPath = funcPath;
+            this.body = body;
+        }
 
         public void GenerateCode(ICWriter declWriter) {
             declWriter.RequireRegions();
 
-            var returnType = declWriter.ConvertType(this.Signature.ReturnType);
-            var pars = this.Signature
+            var returnType = declWriter.ConvertType(this.sig.ReturnType);
+            var pars = this.sig
                 .Parameters
                 .Select(x => new CParameter(declWriter.ConvertType(x.Type), x.Name))
                 .Prepend(new CParameter(CType.NamedType("$Region*"), "heap"))
@@ -145,11 +182,11 @@ namespace Attempt20.Features.Functions {
             var stats = new List<CStatement>();
             statWriter.StatementWritten += (s, e) => stats.Add(e);
 
-            var retExpr = this.Body.GenerateCode(declWriter, statWriter);
+            var retExpr = this.body.GenerateCode(declWriter, statWriter);
             stats.Add(CStatement.Return(retExpr));
 
-            var decl = CDeclaration.Function(returnType, this.FunctionPath.ToString(), pars, stats);
-            var forwardDecl = CDeclaration.FunctionPrototype(returnType, this.FunctionPath.ToString(), pars);
+            var decl = CDeclaration.Function(returnType, this.funcPath.ToString(), pars, stats);
+            var forwardDecl = CDeclaration.FunctionPrototype(returnType, this.funcPath.ToString(), pars);
 
             declWriter.WriteDeclaration(decl);
             declWriter.WriteDeclaration(CDeclaration.EmptyLine());

@@ -5,20 +5,26 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Primitives {
-    public class VoidLiteralSyntax : IParsedSyntax, ISyntax {
-        public TokenLocation Location { get; set; }
+    public class VoidLiteralAB : ISyntaxA, ISyntaxB {
+        public TokenLocation Location { get; }
 
+        public VoidLiteralAB(TokenLocation loc) {
+            this.Location = loc;
+        }
+
+        public ISyntaxB CheckNames(INameRecorder names) {
+            return this;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            return new VoidLiteralC();
+        }
+    }
+
+    public class VoidLiteralC : ISyntaxC {
         public TrophyType ReturnType => TrophyType.Void;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            return this;
-        }
-
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            return this;
-        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             return CExpression.IntLiteral(0);

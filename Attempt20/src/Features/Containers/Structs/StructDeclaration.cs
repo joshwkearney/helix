@@ -5,30 +5,32 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Attempt20.Features.Containers {
-    public class StructTypeCheckedDeclaration : IDeclaration {
-        public TokenLocation Location { get; set; }
+    public class StructDeclarationC : IDeclarationC {
+        private readonly AggregateSignature sig;
+        private readonly IdentifierPath structPath;
+        private readonly IReadOnlyList<IDeclarationC> decls;
 
-        public StructSignature Signature { get; set; }
-
-        public IdentifierPath StructPath { get; set; }
-
-        public IReadOnlyList<IDeclaration> Declarations { get; set; }
+        public StructDeclarationC(AggregateSignature sig, IdentifierPath structPath, IReadOnlyList<IDeclarationC> decls) {
+            this.sig = sig;
+            this.structPath = structPath;
+            this.decls = decls;
+        }
 
         public void GenerateCode(ICWriter declWriter) {
             // Write forward declaration
-            declWriter.WriteForwardDeclaration(CDeclaration.StructPrototype(this.StructPath.ToString()));
+            declWriter.WriteForwardDeclaration(CDeclaration.StructPrototype(this.structPath.ToString()));
 
             // Write full struct
             declWriter.WriteForwardDeclaration(CDeclaration.Struct(
-                this.StructPath.ToString(),
-                this.Signature.Members
+                this.structPath.ToString(),
+                this.sig.Members
                     .Select(x => new CParameter(declWriter.ConvertType(x.MemberType), x.MemberName))
                     .ToArray()));
 
             declWriter.WriteForwardDeclaration(CDeclaration.EmptyLine());
 
             // Write nested declarations
-            foreach (var decl in this.Declarations) {
+            foreach (var decl in this.decls) {
                 decl.GenerateCode(declWriter);
             }
         }

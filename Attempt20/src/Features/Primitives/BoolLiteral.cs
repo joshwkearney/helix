@@ -5,29 +5,34 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Primitives {
-    public class BoolLiteralSyntax : IParsedSyntax, ISyntax {
-        public bool Value { get; set; }
+    public class BoolLiteralSyntax : ISyntaxA, ISyntaxB, ISyntaxC {
+        private readonly bool value;
 
-        public TokenLocation Location { get; set; }
+        public TokenLocation Location { get; }
 
         public TrophyType ReturnType => TrophyType.Boolean;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
-        public IParsedSyntax CheckNames(INameRecorder names) {
+        public BoolLiteralSyntax(TokenLocation loc, bool value) {
+            this.Location = loc;
+            this.value = value;
+        }
+
+        public ISyntaxB CheckNames(INameRecorder names) {
             return this;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
             return this;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            return this.Value ? CExpression.IntLiteral(1) : CExpression.IntLiteral(0);
+            return this.value ? CExpression.IntLiteral(1) : CExpression.IntLiteral(0);
         }
 
         public override string ToString() {
-            return this.Value.ToString().ToLower();
+            return this.value.ToString().ToLower();
         }
     }
 }

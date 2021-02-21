@@ -1,7 +1,6 @@
 ﻿using Attempt20.Analysis;
 using Attempt20.Compiling;
 using Attempt20.Parsing;
-using System;
 using System.Linq;
 
 namespace Attempt20 {
@@ -18,28 +17,16 @@ namespace Attempt20 {
             var names = new NamesRecorder();
             var types = new TypesRecorder();
             var writer = new CWriter();
-            var declarations = parser.Parse();
 
-            // Declare the heap and the stack for all code
-            names.DeclareGlobalName(new IdentifierPath("heap"), NameTarget.Region);
-            names.DeclareGlobalName(new IdentifierPath("stack"), NameTarget.Region);
-
-            foreach (var decl in declarations) {
-                decl.DeclareNames(names);
-            }
-
-            foreach (var decl in declarations) {
-                decl.ResolveNames(names);
-            }
-
-            foreach (var decl in declarations) {
-                decl.DeclareTypes(names, types);
-            }
-
-            foreach (var decl in declarations) {
-                var tree = decl.ResolveTypes(names, types);
-                tree.GenerateCode(writer);
-            }
+            // ToList() is after each step so lazy evaluation doesn't mess
+            // up the order of the steps
+            parser
+                .Parse()
+                .Select(x => x.DeclareNames(names)).ToList()
+                .Select(x => x.ResolveNames(names)).ToList()
+                .Select(x => x.DeclareTypes(types)).ToList()
+                .Select(x => x.ResolveTypes(types)).ToList()
+                .ForEach(x => x.GenerateCode(writer));
 
             return writer.ToString();
         }

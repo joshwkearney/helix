@@ -1,7 +1,4 @@
 ﻿using Attempt20.Parsing;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Attempt20.Analysis {
     public class TypeCheckingException : TrophyException {

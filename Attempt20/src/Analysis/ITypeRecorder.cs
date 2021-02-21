@@ -1,4 +1,5 @@
 ﻿using Attempt20.Analysis.Types;
+using Attempt20.Parsing;
 
 namespace Attempt20.Analysis {
     public interface ITypeRecorder {
@@ -6,9 +7,9 @@ namespace Attempt20.Analysis {
 
         public void DeclareFunction(IdentifierPath path, FunctionSignature sig);
 
-        public void DeclareStruct(IdentifierPath path, StructSignature sig);
+        public void DeclareStruct(IdentifierPath path, AggregateSignature sig);
 
-        public void DeclareUnion(IdentifierPath path, StructSignature sig);
+        public void DeclareUnion(IdentifierPath path, AggregateSignature sig);
 
         public void DeclareMethodPath(TrophyType type, string name, IdentifierPath path);
 
@@ -16,12 +17,12 @@ namespace Attempt20.Analysis {
 
         public IOption<FunctionSignature> TryGetFunction(IdentifierPath path);
 
-        public IOption<StructSignature> TryGetStruct(IdentifierPath path);
+        public IOption<AggregateSignature> TryGetStruct(IdentifierPath path);
 
-        public IOption<StructSignature> TryGetUnion(IdentifierPath path);
+        public IOption<AggregateSignature> TryGetUnion(IdentifierPath path);
 
         public IOption<IdentifierPath> TryGetMethodPath(TrophyType type, string name);
 
-        public IOption<ISyntax> TryUnifyTo(ISyntax target, TrophyType newType);
+        public IOption<ISyntaxC> TryUnifyTo(ISyntaxC target, TrophyType newType);
     }
 }

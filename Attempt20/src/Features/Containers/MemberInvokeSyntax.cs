@@ -2,45 +2,67 @@
 using Attempt20.Analysis.Types;
 using Attempt20.Features.Functions;
 using Attempt20.Parsing;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 
 namespace Attempt20.Features.Containers {
-    public class MemberInvokeParsedSyntax : IParsedSyntax {
-        private IdentifierPath region;
+    public class MemberInvokeSyntaxA : ISyntaxA {
+        private readonly string memberName;
+        private readonly ISyntaxA target;
+        private readonly IReadOnlyList<ISyntaxA> args;
+
+        public TokenLocation Location { get; }
+
+        public MemberInvokeSyntaxA(TokenLocation location, ISyntaxA target, string memberName, IReadOnlyList<ISyntaxA> args) {
+            this.Location = location;
+            this.target = target;
+            this.memberName = memberName;
+            this.args = args;
+        }
+
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var target = this.target.CheckNames(names);
+            var args = this.args.Select(x => x.CheckNames(names)).ToArray();
+            var region = IdentifierPath.HeapPath;
+
+            if (names.CurrentRegion != IdentifierPath.StackPath) {
+                region = names.CurrentRegion;
+            }
+
+            return new MemberInvokeSyntaxB(this.Location, target, this.memberName, args, region);
+        }
+    }
+
+    public class MemberInvokeSyntaxB : ISyntaxB {
+        private readonly IdentifierPath region;
+        private readonly string memberName;
+        private readonly ISyntaxB target;
+        private readonly IReadOnlyList<ISyntaxB> args;
+
+        public MemberInvokeSyntaxB(
+            TokenLocation location,
+            ISyntaxB target, 
+            string memberName, 
+            IReadOnlyList<ISyntaxB> args, 
+            IdentifierPath region) {
+
+            this.target = target;
+            this.memberName = memberName;
+            this.args = args;
+            this.region = region;
+            this.Location = location;
+        }
 
         public TokenLocation Location { get; set; }
 
-        public string MemberName { get; set; }
-
-        public IParsedSyntax Target { get; set; }
-
-        public IReadOnlyList<IParsedSyntax> Arguments { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.Target = this.Target.CheckNames(names);
-            this.Arguments = this.Arguments.Select(x => x.CheckNames(names)).ToArray();
-
-            if (names.CurrentRegion == IdentifierPath.StackPath) {
-                this.region = IdentifierPath.HeapPath;
-            }
-            else {
-                this.region = names.CurrentRegion;
-            }
-
-            return this;
-        }
-
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var target = this.Target.CheckTypes(names, types);
-            var args = this.Arguments.Select(x => x.CheckTypes(names, types)).Prepend(target).ToArray();
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var target = this.target.CheckTypes(types);
+            var args = this.args.Select(x => x.CheckTypes(types)).Prepend(target).ToArray();
 
             // Make sure this method exists
-            if (!types.TryGetMethodPath(target.ReturnType, this.MemberName).TryGetValue(out var path)) {
-                throw TypeCheckingErrors.MemberUndefined(this.Location, target.ReturnType, this.MemberName);
+            if (!types.TryGetMethodPath(target.ReturnType, this.memberName).TryGetValue(out var path)) {
+                throw TypeCheckingErrors.MemberUndefined(this.Location, target.ReturnType, this.memberName);
             }
 
             // Get the function
@@ -61,26 +83,18 @@ namespace Attempt20.Features.Containers {
                 }
             }
 
-            var lifetimes = args
-                .Select(x => x.Lifetimes)
-                .Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y))
-                .Union(target.Lifetimes)
-                .Add(this.region)
-                .Remove(IdentifierPath.StackPath);
+            var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
-            if (func.ReturnType.GetCopiability(types) == TypeCopiability.Unconditional) {
-                lifetimes = lifetimes.Clear();
+            if (func.ReturnType.GetCopiability(types) == TypeCopiability.Conditional) {
+                lifetimes = args
+                    .Select(x => x.Lifetimes)
+                    .Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y))
+                    .Union(target.Lifetimes)
+                    .Add(this.region)
+                    .Remove(IdentifierPath.StackPath);
             }
 
-            return new FunctionInvokeSyntax() {
-                Location = this.Location,
-                ReturnType = func.ReturnType,
-                Lifetimes = lifetimes,
-                Arguments = args,
-                Target = func,
-                RegionName = this.region.Segments.Last(),
-                TargetPath = path
-            };
+            return new SingularFunctionInvokeSyntaxC(path, args, this.region.Segments.Last(), func.ReturnType, lifetimes);
         }
     }
 }

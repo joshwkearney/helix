@@ -11,37 +11,42 @@ namespace Attempt20.Features.Containers {
         Struct, Union
     }
 
-    public class AggregateParsedDeclaration : IParsedDeclaration {
-        public TokenLocation Location { get; set; }
+    public class AggregateDeclarationA : IDeclarationA {
+        private readonly AggregateSignature sig;
+        private readonly IReadOnlyList<IDeclarationA> decls;
+        private readonly AggregateKind kind;
 
-        public StructSignature Signature { get; set; }
+        public TokenLocation Location { get; }
 
-        public IReadOnlyList<IParsedDeclaration> Declarations { get; set; }
+        public AggregateDeclarationA(TokenLocation location, AggregateSignature sig, AggregateKind kind, IReadOnlyList<IDeclarationA> decls) {
+            this.Location = location;
+            this.sig = sig;
+            this.kind = kind;
+            this.decls = decls;
+        }
 
-        public AggregateKind Kind { get; set; }
-
-        public void DeclareNames(INameRecorder names) {
+        public IDeclarationA DeclareNames(INameRecorder names) {
             // Make sure this name isn't taken
-            if (names.TryFindName(this.Signature.Name, out _, out _)) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.Signature.Name);
+            if (names.TryFindName(this.sig.Name, out _, out _)) {
+                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.sig.Name);
             }
 
-            var structPath = names.CurrentScope.Append(this.Signature.Name);
+            var aggPath = names.CurrentScope.Append(this.sig.Name);
 
             // Declare this aggregate
-            if (this.Kind == AggregateKind.Struct) {
-                names.DeclareGlobalName(structPath, NameTarget.Struct);
+            if (this.kind == AggregateKind.Struct) {
+                names.DeclareGlobalName(aggPath, NameTarget.Struct);
             }
             else {
-                names.DeclareGlobalName(structPath, NameTarget.Union);
+                names.DeclareGlobalName(aggPath, NameTarget.Union);
             }
 
             // Declare the members
-            foreach (var mem in this.Signature.Members) {
-                names.DeclareGlobalName(structPath.Append(mem.MemberName), NameTarget.Reserved);
+            foreach (var mem in this.sig.Members) {
+                names.DeclareGlobalName(aggPath.Append(mem.MemberName), NameTarget.Reserved);
             }
 
-            var parNames = this.Signature.Members.Select(x => x.MemberName).ToArray();
+            var parNames = this.sig.Members.Select(x => x.MemberName).ToArray();
             var unique = parNames.Distinct().ToArray();
 
             // Check for duplicate member names
@@ -51,98 +56,106 @@ namespace Attempt20.Features.Containers {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, dup);
             }
 
+            // Process the rest of the nested declarations
+            names.PushScope(names.CurrentScope.Append(this.sig.Name));
+
             // Rewrite function declarations to be methods
-            this.Declarations = this.Declarations
+            var decls = this.decls
                 .Select(x => {
-                    if (x is FunctionParseDeclaration func) {
-                        var structType = new NamedType(names.CurrentScope.Append(this.Signature.Name));
+                    if (x is FunctionDeclarationA func) {
+                        var structType = new NamedType(names.CurrentScope.Append(this.sig.Name));
                         var newPars = func.Signature.Parameters.Prepend(new FunctionParameter("this", structType)).ToImmutableList();
                         var newSig = new FunctionSignature(func.Signature.Name, func.Signature.ReturnType, newPars);
 
-                        return new FunctionParseDeclaration() {
-                            Body = func.Body,
-                            Location = func.Location,
-                            Signature = newSig
-                        };
+                        return new FunctionDeclarationA(func.Location, newSig, func.Body);
                     }
                     else {
                         return x;
                     }
                 })
+                .Select(x => x.DeclareNames(names))
                 .ToArray();
 
-            // Process the rest of the nested declarations
-            names.PushScope(names.CurrentScope.Append(this.Signature.Name));
-            foreach (var decl in this.Declarations) {
-                decl.DeclareNames(names);
-            }
             names.PopScope();
+
+            return new AggregateDeclarationA(this.Location, this.sig, this.kind, decls);
         }
 
-        public void ResolveNames(INameRecorder names) {
+        public IDeclarationB ResolveNames(INameRecorder names) {
             // Resolve members
-            var mems = this.Signature
+            var mems = this.sig
                 .Members
                 .Select(x => new StructMember(x.MemberName, names.ResolveTypeNames(x.MemberType, this.Location)))
                 .ToArray();
 
-            this.Signature = new StructSignature(this.Signature.Name, mems);
+            var aggPath = names.CurrentScope.Append(this.sig.Name);
+            var sig = new AggregateSignature(this.sig.Name, mems);
 
             // Process the rest of the nested declarations
-            names.PushScope(names.CurrentScope.Append(this.Signature.Name));
-            foreach (var decl in this.Declarations) {
-                decl.ResolveNames(names);
-            }
+            names.PushScope(names.CurrentScope.Append(this.sig.Name));
+            var decls = this.decls.Select(x => x.ResolveNames(names)).ToArray();
             names.PopScope();
+
+            return new AggregateDeclarationB(this.Location, this.kind, aggPath, this.sig, decls);
+        }
+    }
+
+    public class AggregateDeclarationB : IDeclarationB {
+        private readonly AggregateSignature sig;
+        private readonly IReadOnlyList<IDeclarationB> decls;
+        private readonly AggregateKind kind;
+        private readonly IdentifierPath aggPath;
+
+        public AggregateDeclarationB(
+            TokenLocation location, 
+            AggregateKind kind, 
+            IdentifierPath aggPath, 
+            AggregateSignature sig, 
+            IReadOnlyList<IDeclarationB> decls) {
+
+            this.Location = location;
+            this.kind = kind;
+            this.aggPath = aggPath;
+            this.sig = sig;
+            this.decls = decls;
         }
 
-        public void DeclareTypes(INameRecorder names, ITypeRecorder types) {
-            var structPath = names.CurrentScope.Append(this.Signature.Name);
-            var structType = new NamedType(structPath);
+        public TokenLocation Location { get; }
 
-            if (this.Kind == AggregateKind.Struct) {
-                types.DeclareStruct(structPath, this.Signature);
+        public IDeclarationB DeclareTypes(ITypeRecorder types) {
+            var structType = new NamedType(this.aggPath);
+
+            if (this.kind == AggregateKind.Struct) {
+                types.DeclareStruct(this.aggPath, this.sig);
             }
             else {
-                types.DeclareUnion(structPath, this.Signature);
+                types.DeclareUnion(this.aggPath, this.sig);
             }
 
             // Process the rest of the nested declarations
-            names.PushScope(names.CurrentScope.Append(this.Signature.Name));
-            foreach (var decl in this.Declarations) {
-                decl.DeclareTypes(names, types);
+            foreach (var decl in this.decls) {
+                decl.DeclareTypes(types);
             }
-            names.PopScope();
 
             // Register methods
-            foreach (var decl in this.Declarations) {
-                if (decl is FunctionParseDeclaration func) {
-                    types.DeclareMethodPath(structType, func.Signature.Name, structPath.Append(func.Signature.Name));
+            foreach (var decl in this.decls) {
+                if (decl is FunctionDeclarationB func) {
+                    types.DeclareMethodPath(structType, func.Signature.Name, this.aggPath.Append(func.Signature.Name));
                 }
             }
+
+            return this;
         }
 
-        public IDeclaration ResolveTypes(INameRecorder names, ITypeRecorder types) {
+        public IDeclarationC ResolveTypes(ITypeRecorder types) {
             // Process the rest of the nested declarations
-            names.PushScope(names.CurrentScope.Append(this.Signature.Name));
-            var decls = this.Declarations.Select(x => x.ResolveTypes(names, types)).ToArray();
-            names.PopScope();
+            var decls = this.decls.Select(x => x.ResolveTypes(types)).ToArray();
 
-            if (this.Kind == AggregateKind.Struct) {
-                return new StructTypeCheckedDeclaration() {
-                    Location = this.Location,
-                    Signature = this.Signature,
-                    StructPath = names.CurrentScope.Append(this.Signature.Name),
-                    Declarations = decls
-                };
+            if (this.kind == AggregateKind.Struct) {
+                return new StructDeclarationC(this.sig, this.aggPath, decls);
             }
             else {
-                return new UnionTypeCheckedDeclaration() {
-                    Location = this.Location,
-                    Signature = this.Signature,
-                    StructPath = names.CurrentScope.Append(this.Signature.Name),
-                    Declarations = decls
-                };
+                return new UnionDeclarationC(this.sig, this.aggPath, decls);
             }
         }
     }

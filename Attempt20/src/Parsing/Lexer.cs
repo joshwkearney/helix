@@ -141,7 +141,7 @@ namespace Attempt20.Parsing {
             else if (id == "else") {
                 return new Token(TokenKind.ElseKeyword, location);
             }
-            else if (id == "function") {
+            else if (id == "func") {
                 return new Token(TokenKind.FunctionKeyword, location);
             }
             else if (id == "while") {

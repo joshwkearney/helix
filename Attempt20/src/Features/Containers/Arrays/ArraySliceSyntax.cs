@@ -2,31 +2,76 @@
 using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
+using Attempt20.Features.FlowControl;
 using Attempt20.Features.Primitives;
+using Attempt20.Features.Variables;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Containers.Arrays {
-    public class ArraySliceParsedSyntax : IParsedSyntax {
-        public TokenLocation Location { get; set; }
+    public class ArraySliceSyntaxA : ISyntaxA {
+        private readonly ISyntaxA target;
+        private readonly IOption<ISyntaxA> startIndex, endIndex;
 
-        public IParsedSyntax Target { get; set; }
+        public ArraySliceSyntaxA(
+            TokenLocation location, 
+            ISyntaxA target, 
+            IOption<ISyntaxA> startIndex, 
+            IOption<ISyntaxA> endIndex) {
 
-        public IOption<IParsedSyntax> StartIndex { get; set; }
-
-        public IOption<IParsedSyntax> EndIndex { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.Target = this.Target.CheckNames(names);
-            this.StartIndex = this.StartIndex.Select(x => x.CheckNames(names));
-            this.EndIndex = this.EndIndex.Select(x => x.CheckNames(names));
-
-            return this;
+            this.Location = location;
+            this.target = target;
+            this.startIndex = startIndex;
+            this.endIndex = endIndex;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var target = this.Target.CheckTypes(names, types);
-            var startIndex = this.StartIndex.Select(x => x.CheckTypes(names, types));
-            var endIndex = this.EndIndex.Select(x => x.CheckTypes(names, types));
+        public TokenLocation Location { get; set; }
+
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var target = this.target;
+            var start = this.startIndex.GetValueOr(() => new IntLiteralSyntax(this.Location, 0));
+            
+            // If end is defined then move on, otherwise rewrite it to access target.size
+            if (this.endIndex.TryGetValue(out var end)) {
+                return new ArraySliceSyntaxB(
+                    this.Location, 
+                    target.CheckNames(names), 
+                    start.CheckNames(names), 
+                    end.CheckNames(names));
+            }
+            else {
+                var tempName = "$slice_temp" + names.GetNewVariableId();
+                var letSyntax = new LetSyntaxA(this.Location, tempName, target);
+                var accessSyntax = new IdentifierAccessSyntaxA(this.Location, tempName, VariableAccessKind.ValueAccess);
+
+                return new BlockSyntaxA(this.Location, new ISyntaxA[] {
+                    letSyntax,
+                    new ArraySliceSyntaxA(
+                        this.Location,
+                        accessSyntax,
+                        Option.Some(start),
+                        Option.Some(new MemberAccessSyntaxA(this.Location, accessSyntax, "size")))
+                })
+                .CheckNames(names);
+            }
+        }
+    }
+
+    public class ArraySliceSyntaxB : ISyntaxB {
+        private readonly ISyntaxB target, startIndex, endIndex;
+
+        public TokenLocation Location { get; }
+
+        public ArraySliceSyntaxB(TokenLocation location, ISyntaxB target, ISyntaxB startIndex, ISyntaxB endIndex) {
+            this.Location = location;
+            this.target = target;
+            this.startIndex = startIndex;
+            this.endIndex = endIndex;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var target = this.target.CheckTypes(types);
+            var startIndex = this.startIndex.CheckTypes(types);
+            var endIndex = this.endIndex.CheckTypes(types);
             var returnType = TrophyType.Void;
 
             // Make sure the target is an array
@@ -37,66 +82,44 @@ namespace Attempt20.Features.Containers.Arrays {
                 returnType = new ArrayType(fixedArrayType.ElementType);
             }
             else {
-                throw TypeCheckingErrors.ExpectedArrayType(target.Location, target.ReturnType);
+                throw TypeCheckingErrors.ExpectedArrayType(this.target.Location, target.ReturnType);
             }
 
-            // Make sure the index in an int
-            startIndex = startIndex.Select(x => {
-                if (types.TryUnifyTo(x, TrophyType.Integer).TryGetValue(out var newStart)) {
-                    return newStart;
-                }
-                else {
-                    throw TypeCheckingErrors.UnexpectedType(x.Location, TrophyType.Integer, x.ReturnType);
-                }
-            });
+            // Make sure the start index in an int
+            if (!types.TryUnifyTo(startIndex, TrophyType.Integer).TryGetValue(out startIndex)) {
+                throw TypeCheckingErrors.UnexpectedType(this.startIndex.Location, TrophyType.Integer, startIndex.ReturnType);
+            }
 
-            // Make sure the length in an int
-            endIndex = endIndex.Select(x => {
-                if (types.TryUnifyTo(x, TrophyType.Integer).TryGetValue(out var newEnd)) {
-                    return newEnd;
-                }
-                else {
-                    throw TypeCheckingErrors.UnexpectedType(x.Location, TrophyType.Integer, x.ReturnType);
-                }
-            });
+            // Make sure the end index in an int
+            if (!types.TryUnifyTo(endIndex, TrophyType.Integer).TryGetValue(out endIndex)) {
+                throw TypeCheckingErrors.UnexpectedType(this.endIndex.Location, TrophyType.Integer, endIndex.ReturnType);
+            }
 
-            return new ArraySliceTypeCheckedSyntax() {
-                Location = this.Location,
-                ReturnType = returnType,
-                Lifetimes = target.Lifetimes,
-                Target = target,
-                StartIndex = startIndex,
-                EndIndex = endIndex
-            };
+            return new ArraySliceSyntaxC(returnType, target, startIndex, endIndex);
         }
     }
-
-    public class ArraySliceTypeCheckedSyntax : ISyntax {
+    public class ArraySliceSyntaxC : ISyntaxC {
         private static int sliceCounter = 0;
 
-        public TokenLocation Location { get; set; }
+        private readonly ISyntaxC target, start, end;
 
-        public TrophyType ReturnType { get; set; }
+        public TrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public ISyntax Target { get; set; }
-
-        public IOption<ISyntax> StartIndex { get; set; }
-
-        public IOption<ISyntax> EndIndex { get; set; }
+        public ArraySliceSyntaxC(TrophyType returnType, ISyntaxC target, ISyntaxC start, ISyntaxC end) {
+            this.ReturnType = returnType;
+            this.target = target;
+            this.start = start;
+            this.end = end;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var target = this.Target.GenerateCode(declWriter, statWriter);
+            var target = this.target.GenerateCode(declWriter, statWriter);
             var sizeExpr = CExpression.MemberAccess(target, "size");
 
-            var start = this.StartIndex
-                .Select(x => x.GenerateCode(declWriter, statWriter))
-                .GetValueOr(() => CExpression.IntLiteral(0));
-
-            var end = this.EndIndex
-                .Select(x => x.GenerateCode(declWriter, statWriter))
-                .GetValueOr(() => sizeExpr);
+            var start = this.start.GenerateCode(declWriter, statWriter);
+            var end = this.end.GenerateCode(declWriter, statWriter);
 
             var cond = CExpression.BinaryExpression(
                 CExpression.BinaryExpression(start, CExpression.IntLiteral(0), BinaryOperation.LessThan),
@@ -109,7 +132,7 @@ namespace Attempt20.Features.Containers.Arrays {
             var ifStat = CStatement.If(cond, new[] {
                 CStatement.FromExpression(CExpression.Invoke(CExpression.VariableLiteral("fprintf"), new[] {
                     CExpression.VariableLiteral("stderr"),
-                    CExpression.StringLiteral("array_slice_out_of_bounds at " + this.Location.StartIndex + ":" + this.Location.Length) })),
+                    CExpression.StringLiteral("array_slice_out_of_bounds") })),
                 CStatement.FromExpression(CExpression.Invoke(CExpression.VariableLiteral("exit"), new[]{
                     CExpression.IntLiteral(-1) }))
             });

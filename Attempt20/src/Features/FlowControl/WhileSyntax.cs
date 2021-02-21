@@ -7,52 +7,63 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.FlowControl {
-    public class WhileParsedSyntax : IParsedSyntax {
+    public class WhileSyntaxA : ISyntaxA {
+        private readonly ISyntaxA cond, body;
+
         public TokenLocation Location { get; set; }
 
-        public IParsedSyntax Condition { get; set; }
-
-        public IParsedSyntax Body { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.Condition = this.Condition.CheckNames(names);
-            this.Body = this.Body.CheckNames(names);
-
-            return this;
+        public WhileSyntaxA(TokenLocation location, ISyntaxA cond, ISyntaxA body) {
+            this.Location = location;
+            this.cond = cond;
+            this.body = body;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var cond = this.Condition.CheckTypes(names, types);
-            var body = this.Body.CheckTypes(names, types);
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var cond = this.cond.CheckNames(names);
+            var body = this.body.CheckNames(names);
+
+            return new WhileSyntaxB(this.Location, cond, body);
+        }
+    }
+
+    public class WhileSyntaxB : ISyntaxB {
+        private readonly ISyntaxB cond, body;
+
+        public TokenLocation Location { get; }
+
+        public WhileSyntaxB(TokenLocation loc, ISyntaxB cond, ISyntaxB body) {
+            this.Location = loc;
+            this.cond = cond;
+            this.body = body;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var cond = this.cond.CheckTypes(types);
+            var body = this.body.CheckTypes(types);
 
             // Make sure the condition is a boolean
             if (types.TryUnifyTo(cond, TrophyType.Boolean).TryGetValue(out var newCond)) {
                 cond = newCond;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(cond.Location, TrophyType.Boolean, cond.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, TrophyType.Boolean, cond.ReturnType);
             }
 
-            return new WhileTypeCheckedSyntax() {
-                Location = this.Location,
-                Body = body,
-                Condition = cond,
-                Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
-                ReturnType = TrophyType.Void
-            };
+            return new WhileSyntaxC(cond, body);
         }
     }
 
-    public class WhileTypeCheckedSyntax : ISyntax {
-        public TokenLocation Location { get; set; }
+    public class WhileSyntaxC : ISyntaxC {
+        private readonly ISyntaxC cond, body;
 
-        public TrophyType ReturnType { get; set; }
+        public TrophyType ReturnType => TrophyType.Void;
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
-        public ISyntax Condition { get; set; }
-
-        public ISyntax Body { get; set; }
+        public WhileSyntaxC(ISyntaxC cond, ISyntaxC body) {
+            this.cond = cond;
+            this.body = body;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var loopBody = new List<CStatement>();
@@ -60,12 +71,12 @@ namespace Attempt20.Features.FlowControl {
 
             writer.StatementWritten += (s, e) => loopBody.Add(e);
 
-            var cond = this.Condition.GenerateCode(declWriter, writer);
+            var cond = this.cond.GenerateCode(declWriter, writer);
 
             loopBody.Add(CStatement.If(CExpression.Not(cond), new[] { CStatement.Break() }));
             loopBody.Add(CStatement.NewLine());
 
-            var body = this.Body.GenerateCode(declWriter, writer);
+            var body = this.body.GenerateCode(declWriter, writer);
 
             statWriter.WriteStatement(CStatement.While(CExpression.IntLiteral(1), loopBody));
             statWriter.WriteStatement(CStatement.NewLine());

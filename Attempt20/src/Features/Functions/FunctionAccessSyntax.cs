@@ -4,23 +4,19 @@ using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
-namespace Attempt20.Features.Primitives {
-    public class IntLiteralSyntax : ISyntaxA, ISyntaxB, ISyntaxC {
-        private readonly int value;
+namespace Attempt20.Features.Functions {
+    public class FunctionAccessSyntaxBC : ISyntaxB, ISyntaxC {
+        private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
 
-        public TrophyType ReturnType => TrophyType.Integer;
+        public TrophyType ReturnType => new NamedType(this.path);
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
-        public IntLiteralSyntax(TokenLocation loc, int value) {
+        public FunctionAccessSyntaxBC(TokenLocation loc, IdentifierPath path) {
             this.Location = loc;
-            this.value = value;
-        }
-
-        public ISyntaxB CheckNames(INameRecorder names) {
-            return this;
+            this.path = path;
         }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
@@ -28,11 +24,7 @@ namespace Attempt20.Features.Primitives {
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            return CExpression.IntLiteral(this.value);
-        }
-
-        public override string ToString() {
-            return this.value.ToString();
+            return CExpression.IntLiteral(0);
         }
     }
 }

@@ -1,53 +1,50 @@
 ﻿using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Features.Containers;
 using Attempt20.Features.Primitives;
 using Attempt20.Parsing;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 
 namespace Attempt20.Features.Containers.Structs {
-    public class NewStructParsedSyntax : IParsedSyntax {
-        public TokenLocation Location { get; set; }
+    public class NewStructSyntaxA : ISyntaxA {
+        private readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
+        private readonly TrophyType targetType;
 
-        public IReadOnlyList<StructArgument<IParsedSyntax>> Arguments { get; set; }
+        public TokenLocation Location { get; }
 
-        public TrophyType Target { get; set; }
+        public NewStructSyntaxA(TokenLocation location, TrophyType targetType, IReadOnlyList<StructArgument<ISyntaxA>> args) {
+            this.Location = location;
+            this.targetType = targetType;
+            this.args = args;
+        }
 
-        public IdentifierPath TargetPath { get; private set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INameRecorder names) {
             // Make sure the target is defined
-            if (!this.Target.AsNamedType().TryGetValue(out var path)) {
-                throw TypeCheckingErrors.ExpectedStructType(this.Location, this.Target);
+            if (!this.targetType.AsNamedType().TryGetValue(out var path)) {
+                throw TypeCheckingErrors.ExpectedStructType(this.Location, this.targetType);
             }
 
             // Make sure the target's path is defined
             if (!names.TryGetName(path, out var target)) {
-                throw TypeCheckingErrors.ExpectedStructType(this.Location, this.Target);
+                throw TypeCheckingErrors.ExpectedStructType(this.Location, this.targetType);
             }
 
             // Make sure the path is to a struct
             if (target != NameTarget.Struct) {
-                throw TypeCheckingErrors.ExpectedStructType(this.Location, this.Target);
+                throw TypeCheckingErrors.ExpectedStructType(this.Location, this.targetType);
             }
 
-            // Save the struct path
-            this.TargetPath = path;
-
             // Check argument names
-            this.Arguments = this.Arguments
-                .Select(x => new StructArgument<IParsedSyntax>() {
+            var args = this.args
+                .Select(x => new StructArgument<ISyntaxB>() {
                     MemberName = x.MemberName,
                     MemberValue = x.MemberValue.CheckNames(names)
                 })
                 .ToArray();
 
-            var dups = this.Arguments
+            var dups = this.args
                 .Select(x => x.MemberName)
                 .GroupBy(x => x)
                 .Where(x => x.Count() > 1)
@@ -59,14 +56,31 @@ namespace Attempt20.Features.Containers.Structs {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, dups.First());
             }
 
-            return this;
+            return new NewStructSyntaxB(this.Location, path, args);
+        }
+    }
+
+    public class NewStructSyntaxB : ISyntaxB {
+        private readonly IReadOnlyList<StructArgument<ISyntaxB>> args;
+        private readonly IdentifierPath targetPath;
+
+        public TokenLocation Location { get; }
+
+        public NewStructSyntaxB(
+            TokenLocation location, 
+            IdentifierPath targetPath, 
+            IReadOnlyList<StructArgument<ISyntaxB>> args) {
+
+            this.Location = location;
+            this.targetPath = targetPath;
+            this.args = args;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var structType = new NamedType(this.TargetPath);
-            var structSig = types.TryGetStruct(this.TargetPath).GetValue();
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var structType = new NamedType(this.targetPath);
+            var structSig = types.TryGetStruct(this.targetPath).GetValue();
 
-            var undefinedFields = this.Arguments
+            var undefinedFields = this.args
                 .Select(x => x.MemberName)
                 .Except(structSig.Members.Select(x => x.MemberName))
                 .ToArray();
@@ -78,7 +92,7 @@ namespace Attempt20.Features.Containers.Structs {
 
             var absentFields = structSig.Members
                 .Select(x => x.MemberName)
-                .Except(this.Arguments.Select(x => x.MemberName))
+                .Except(this.args.Select(x => x.MemberName))
                 .Select(x => structSig.Members.First(y => x == y.MemberName))
                 .ToArray();
 
@@ -88,24 +102,27 @@ namespace Attempt20.Features.Containers.Structs {
 
             // Make sure that all the missing members have a default value
             if (requiredAbsentFields.Any()) {
-                throw TypeCheckingErrors.NewObjectMissingFields(this.Location, structType, requiredAbsentFields.Select(x => x.MemberName));
+                throw TypeCheckingErrors.NewObjectMissingFields(
+                    this.Location, 
+                    structType, 
+                    requiredAbsentFields.Select(x => x.MemberName));
             }
 
-            var voidLiteral = new VoidLiteralSyntax() { Location = this.Location };
+            var voidLiteral = new VoidLiteralC();
 
             // Generate syntax for the missing fields
             var restoredAbsentFields = absentFields
-                .Select(x => new StructArgument<ISyntax>() {
+                .Select(x => new StructArgument<ISyntaxC>() {
                     MemberName = x.MemberName,
                     MemberValue = types.TryUnifyTo(voidLiteral, x.MemberType).GetValue()
                 })
                 .ToArray();
 
             // Type check and merge the fields together
-            var allFields = this.Arguments
-                .Select(x => new StructArgument<ISyntax>() {
+            var allFields = this.args
+                .Select(x => new StructArgument<ISyntaxC>() {
                     MemberName = x.MemberName,
-                    MemberValue = x.MemberValue.CheckTypes(names, types)
+                    MemberValue = x.MemberValue.CheckTypes(types)
                 })
                 .Concat(restoredAbsentFields)
                 .ToArray();
@@ -118,37 +135,43 @@ namespace Attempt20.Features.Containers.Structs {
                     field.MemberValue = newValue;
                 }
                 else {
-                    throw TypeCheckingErrors.UnexpectedType(field.MemberValue.Location, field.MemberValue.ReturnType);
+                    throw TypeCheckingErrors.UnexpectedType(this.Location, field.MemberValue.ReturnType);
                 }
             }
 
-            return new NewStructTypeCheckedSyntax() {
-                Location = this.Location,
-                Arguments = allFields,
-                Lifetimes = allFields.Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y.MemberValue.Lifetimes)),
-                ReturnType = structType,
-                TargetPath = this.TargetPath
-            };
+            return new NewStructSyntaxC(allFields, structType);
         }
     }
 
-    public class NewStructTypeCheckedSyntax : ISyntax {
+    public class NewStructSyntaxC : ISyntaxC {
         private static int tempCounter = 0;
 
-        public TokenLocation Location { get; set; }
+        private readonly IReadOnlyList<StructArgument<ISyntaxC>> args;
 
-        public IReadOnlyList<StructArgument<ISyntax>> Arguments { get; set; }
+        public TrophyType ReturnType { get; }
 
-        public IdentifierPath TargetPath { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes {
+            get {
+                var seed = ImmutableHashSet.Create<IdentifierPath>();
 
-        public TrophyType ReturnType { get; set; }
+                return this.args
+                    .Select(x => x.MemberValue.Lifetimes)
+                    .Aggregate(seed, (x, y) => x.Union(y));
+            }
+        }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+        public NewStructSyntaxC(
+            IReadOnlyList<StructArgument<ISyntaxC>> args, 
+            TrophyType returnType) {
+
+            this.args = args;
+            this.ReturnType = returnType;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var ctype = declWriter.ConvertType(this.ReturnType);
             var cname = "$new_struct_" + tempCounter++;
-            var mems = this.Arguments.Select(x => new StructArgument<CExpression>() {
+            var mems = this.args.Select(x => new StructArgument<CExpression>() {
                 MemberName = x.MemberName,
                 MemberValue = x.MemberValue.GenerateCode(declWriter, statWriter)
             })

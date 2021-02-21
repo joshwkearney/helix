@@ -10,49 +10,59 @@ namespace Attempt20.Features.Variables {
         ValueAccess, LiteralAccess
     }
 
-    public class VariableAccessParseSyntax : IParsedSyntax {
-        public string VariableName { get; set; }
+    public class IdentifierAccessSyntaxA : ISyntaxA {
+        private readonly string name;
+        private readonly VariableAccessKind kind;
 
-        public IdentifierPath VariablePath { get; private set; }
+        public TokenLocation Location { get; }
 
-        public TokenLocation Location { get; set; }
-
-        public VariableAccessKind AccessKind { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            // Make sure this name exists
-            if (!names.TryFindName(this.VariableName, out var target, out var path)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.VariableName);
-            }
-
-            // If the name is a function return a different syntax tree
-            if (target == NameTarget.Function) {
-                return new FunctionAccessParsedSyntax() {
-                    Location = this.Location,
-                    FunctionPath = path
-                };
-            }
-
-            // Make sure this name is a variable
-            if (target != NameTarget.Variable) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.VariableName);
-            }
-
-            // Store the variable path for later
-            this.VariablePath = path;
-
-            return this;
+        public IdentifierAccessSyntaxA(TokenLocation location, string name, VariableAccessKind kind) {
+            this.Location = location;
+            this.name = name;
+            this.kind = kind;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            if (!types.TryGetVariable(this.VariablePath).TryGetValue(out var info)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.VariableName);
+        public ISyntaxB CheckNames(INameRecorder names) {
+            // Make sure this name exists
+            if (!names.TryFindName(this.name, out var target, out var path)) {
+                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
+            if (target == NameTarget.Function) {
+                return new FunctionAccessSyntaxBC(this.Location, path);
+            }
+            else if (target == NameTarget.Variable) {
+                if (this.kind == VariableAccessKind.ValueAccess) {
+                    return new VariableAccessSyntaxB(this.Location, path, this.kind);
+                }
+                else {
+                    return new VariableAccessSyntaxB(this.Location, path, this.kind);
+                }
+            }
+            else {
+                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
+            }
+        }
+    }
+
+    public class VariableAccessSyntaxB : ISyntaxB {
+        private readonly IdentifierPath path;
+        private readonly VariableAccessKind kind;
+
+        public TokenLocation Location { get; }
+
+        public VariableAccessSyntaxB(TokenLocation loc, IdentifierPath path, VariableAccessKind kind) {
+            this.Location = loc;
+            this.path = path;
+            this.kind = kind;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var info = types.TryGetVariable(this.path).GetValue();
             var returnType = info.Type;
             var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
-            if (this.AccessKind == VariableAccessKind.ValueAccess) {
+            if (this.kind == VariableAccessKind.ValueAccess) {
                 lifetimes = info.ValueLifetimes;
 
                 // If we're accessing a parameter, automatically dereference it
@@ -74,43 +84,35 @@ namespace Attempt20.Features.Variables {
                 }
 
                 // For non-parameter access, return a variable type of the accessed variable
-                if (info.DefinitionKind == VariableDefinitionKind.Local || info.DefinitionKind == VariableDefinitionKind.LocalAllocated) {
+                if (info.DefinitionKind == VariableDefinitionKind.Local) {
                     returnType = new VariableType(returnType);
                 }
             }
 
-            return new VariableAccessTypeCheckedSyntax() {
-                Location = this.Location,
-                VariableName = this.VariableName,
-                VariableInfo = info,
-                ReturnType = returnType,
-                Lifetimes = lifetimes,
-                AccessKind = this.AccessKind
-            };
+            return new VariableAccessdSyntaxC(info, this.kind, returnType, lifetimes);
         }
-    };
+    }
 
-    public class VariableAccessTypeCheckedSyntax : ISyntax {
-        public string VariableName { get; set; }
+    public class VariableAccessdSyntaxC : ISyntaxC {
+        private readonly VariableInfo info;
+        private readonly VariableAccessKind kind;
 
-        public VariableInfo VariableInfo { get; set; }
+        public TrophyType ReturnType { get; }
 
-        public TokenLocation Location { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
-        public TrophyType ReturnType { get; set; }
-
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
-
-        public VariableAccessKind AccessKind { get; set; }
+        public VariableAccessdSyntaxC(VariableInfo info, VariableAccessKind kind, TrophyType type, ImmutableHashSet<IdentifierPath> lifetimes) {
+            this.info = info;
+            this.kind = kind;
+            this.ReturnType = type;
+            this.Lifetimes = lifetimes;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var cname = this.VariableName + this.VariableInfo.UniqueId;
+            var cname = this.info.Name + this.info.UniqueId;
 
-            if (this.AccessKind == VariableAccessKind.ValueAccess) {
-                if (this.VariableInfo.Type is VariableType && this.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter) {
-                    return CExpression.Dereference(CExpression.VariableLiteral(cname));
-                }
-                else if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.LocalAllocated) {
+            if (this.kind == VariableAccessKind.ValueAccess) {
+                if (this.info.Type is VariableType && this.info.DefinitionKind == VariableDefinitionKind.Parameter) {
                     return CExpression.Dereference(CExpression.VariableLiteral(cname));
                 }
                 else {
@@ -118,10 +120,7 @@ namespace Attempt20.Features.Variables {
                 }
             }
             else {
-                if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.Parameter) {
-                    return CExpression.VariableLiteral(cname);
-                }
-                else if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.LocalAllocated) {
+                if (this.info.DefinitionKind == VariableDefinitionKind.Parameter) {
                     return CExpression.VariableLiteral(cname);
                 }
                 else {

@@ -8,36 +8,52 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Functions {
-    public class FunctionInvokeParsedSyntax : IParsedSyntax {
-        private IdentifierPath region;
+    public class FunctionInvokeSyntaxA : ISyntaxA {
+        private readonly ISyntaxA target;
+        private readonly IReadOnlyList<ISyntaxA> args;
 
-        public TokenLocation Location { get; set; }
+        public TokenLocation Location { get; }
 
-        public IParsedSyntax Target { get; set; }
-
-        public IReadOnlyList<IParsedSyntax> Arguments { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.Target = this.Target.CheckNames(names);
-            this.Arguments = this.Arguments.Select(x => x.CheckNames(names)).ToArray();
-
-            if (names.CurrentRegion == IdentifierPath.StackPath) {
-                this.region = IdentifierPath.HeapPath;
-            }
-            else {
-                this.region = names.CurrentRegion;
-            }
-
-            return this;
+        public FunctionInvokeSyntaxA(TokenLocation loc, ISyntaxA target, IReadOnlyList<ISyntaxA> args) {
+            this.Location = loc;
+            this.target = target;
+            this.args = args;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var target = this.Target.CheckTypes(names, types);
-            var args = this.Arguments.Select(x => x.CheckTypes(names, types)).ToArray();
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var target = this.target.CheckNames(names);
+            var args = this.args.Select(x => x.CheckNames(names)).ToArray();
+            var region = IdentifierPath.HeapPath;
+
+            if (names.CurrentRegion != IdentifierPath.StackPath) {
+                region = names.CurrentRegion;
+            }
+
+            return new FunctionInvokeSyntaxB(this.Location, target, args, region);
+        }
+    }
+
+    public class FunctionInvokeSyntaxB : ISyntaxB {
+        private readonly ISyntaxB target;
+        private readonly IReadOnlyList<ISyntaxB> args;
+        private readonly IdentifierPath region;
+
+        public TokenLocation Location { get; }
+
+        public FunctionInvokeSyntaxB(TokenLocation location, ISyntaxB target, IReadOnlyList<ISyntaxB> args, IdentifierPath region) {
+            this.Location = location;
+            this.target = target;
+            this.args = args;
+            this.region = region;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var target = this.target.CheckTypes(types);
+            var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
 
             // Make sure the target is a function
             if (!target.ReturnType.AsSingularFunctionType().TryGetValue(out var funcType)) {
-                throw TypeCheckingErrors.ExpectedFunctionType(target.Location, target.ReturnType);
+                throw TypeCheckingErrors.ExpectedFunctionType(this.target.Location, target.ReturnType);
             }
 
             if (!types.TryGetFunction(funcType.FunctionPath).TryGetValue(out var func)) {
@@ -70,36 +86,37 @@ namespace Attempt20.Features.Functions {
                 lifetimes = lifetimes.Clear();
             }
 
-            return new FunctionInvokeSyntax() {
-                Location = this.Location,
-                ReturnType = func.ReturnType,
-                Lifetimes = lifetimes,
-                Arguments = args,
-                Target = func,
-                RegionName = this.region.Segments.Last(),
-                TargetPath = funcType.FunctionPath
-            };
+            return new SingularFunctionInvokeSyntaxC(
+                target: funcType.FunctionPath,
+                args: args,
+                region: this.region.Segments.Last(),
+                returnType: func.ReturnType,
+                lifetimes: lifetimes);
         }
     }
 
-    public class FunctionInvokeSyntax : ISyntax {
-        public TokenLocation Location { get; set; }
+    public class SingularFunctionInvokeSyntaxC : ISyntaxC {
+        private readonly IdentifierPath target;
+        private readonly IReadOnlyList<ISyntaxC> args;
+        private readonly string region;
 
-        public TrophyType ReturnType { get; set; }
+        public TrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
-        public FunctionSignature Target { get; set; }
+        public SingularFunctionInvokeSyntaxC(IdentifierPath target, IReadOnlyList<ISyntaxC> args, 
+            string region, TrophyType returnType, ImmutableHashSet<IdentifierPath> lifetimes) {
 
-        public IdentifierPath TargetPath { get; set; }
-
-        public IReadOnlyList<ISyntax> Arguments { get; set; }
-
-        public string RegionName { get; set; }
+            this.target = target;
+            this.args = args;
+            this.region = region;
+            this.ReturnType = returnType;
+            this.Lifetimes = lifetimes;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var args = this.Arguments.Select(x => x.GenerateCode(declWriter, statWriter)).Prepend(CExpression.VariableLiteral(this.RegionName)).ToArray();
-            var target = CExpression.VariableLiteral(this.TargetPath.ToString());
+            var args = this.args.Select(x => x.GenerateCode(declWriter, statWriter)).Prepend(CExpression.VariableLiteral(this.region)).ToArray();
+            var target = CExpression.VariableLiteral(this.target.ToString());
 
             return CExpression.Invoke(target, args);
         }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
 using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
@@ -7,117 +6,101 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Variables {
-    public class LetParseSyntax : IParsedSyntax {
-        private IdentifierPath region;
+    public class LetSyntaxA : ISyntaxA {
+        private readonly string name;
+        private readonly ISyntaxA assign;
 
-        public TokenLocation Location { get; set; }
+        public TokenLocation Location { get; }
 
-        public string VariableName { get; set; }
-
-        public IParsedSyntax AssignExpression { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.AssignExpression = this.AssignExpression.CheckNames(names);
-
-            // Make sure we're not shadowing another variable
-            if (names.TryFindName(this.VariableName, out _, out _)) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.VariableName);
-            }
-
-            // Save the region
-            this.region = names.CurrentRegion;
-
-            // Declare this variable
-            names.DeclareLocalName(names.CurrentScope.Append(this.VariableName), NameTarget.Variable);
-
-            return this;
+        public LetSyntaxA(TokenLocation loc, string name, ISyntaxA assign) {
+            this.Location = loc;
+            this.name = name;
+            this.assign = assign;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var assign = this.AssignExpression.CheckTypes(names, types);
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var assign = this.assign.CheckNames(names);
+            var path = names.CurrentScope.Append(this.name);
 
-            VariableInfo info;
-            if (this.region == IdentifierPath.StackPath) {
-                info = new VariableInfo(
-                    assign.ReturnType, 
-                    VariableDefinitionKind.Local, 
-                    names.GetNewVariableId(),
-                    assign.Lifetimes, 
-                    new[] { this.region }.ToImmutableHashSet());
-            }
-            else {
-                info = new VariableInfo(
-                    assign.ReturnType, 
-                    VariableDefinitionKind.LocalAllocated, 
-                    names.GetNewVariableId(),
-                    assign.Lifetimes, 
-                    new[] { this.region }.ToImmutableHashSet());
+            // Make sure we're not shadowing another variable
+            if (names.TryFindName(this.name, out _, out _)) {
+                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.name);
             }
 
             // Declare this variable
-            types.DeclareVariable(names.CurrentScope.Append(this.VariableName), info);
+            names.DeclareLocalName(path, NameTarget.Variable);
 
-            return new LetTypeCheckedSyntax() {
-                Location = this.Location,
-                VariableName = this.VariableName,
-                VariableInfo = info,
-                AssignExpression = assign,
-                ReturnType = TrophyType.Void,
-                Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
-                Region = this.region
-            };
+            return new LetSyntaxB(
+                loc: this.Location, 
+                path: path, 
+                id: names.GetNewVariableId(),
+                region: names.CurrentRegion, 
+                assign: assign);
         }
     }
 
-    public class LetTypeCheckedSyntax : ISyntax {
-        public string VariableName { get; set; }
+    public class LetSyntaxB : ISyntaxB {
+        private readonly IdentifierPath path;
+        private readonly IdentifierPath region;
+        private readonly int id;
+        private readonly ISyntaxB assign;
 
-        public VariableInfo VariableInfo { get; set; }
+        public TokenLocation Location { get; }
 
-        public ISyntax AssignExpression { get; set; }
+        public LetSyntaxB(TokenLocation loc, IdentifierPath path, int id, IdentifierPath region, ISyntaxB assign) {
+            this.Location = loc;
+            this.path = path;
+            this.id = id;
+            this.assign = assign;
+            this.region = region;
+        }
 
-        public TokenLocation Location { get; set; }
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var assign = this.assign.CheckTypes(types);
 
-        public TrophyType ReturnType { get; set; }
+            var info = new VariableInfo(
+                name: this.path.Segments.Last(),
+                innerType: assign.ReturnType,
+                kind: VariableDefinitionKind.Local,
+                id: this.id,
+                valueLifetimes: assign.Lifetimes,
+                variableLifetimes: new[] { this.region }.ToImmutableHashSet());
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+            // Declare this variable
+            types.DeclareVariable(this.path, info);
 
-        public IdentifierPath Region { get; set; }
+            return new LetSyntaxC(
+                info: info,
+                assign: assign,
+                returnType: TrophyType.Void);
+        }
+    }
+
+    public class LetSyntaxC : ISyntaxC {
+        private readonly VariableInfo info;
+        private readonly ISyntaxC assign;
+
+        public TrophyType ReturnType { get; }
+
+        public ImmutableHashSet<IdentifierPath> Lifetimes => new IdentifierPath[0].ToImmutableHashSet();
+
+        public LetSyntaxC(VariableInfo info, ISyntaxC assign, TrophyType returnType) {
+            this.info = info;
+            this.assign = assign;
+            this.ReturnType = returnType;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var assign = this.AssignExpression.GenerateCode(declWriter, statWriter);
-            var typeName = declWriter.ConvertType(this.AssignExpression.ReturnType);
+            var assign = this.assign.GenerateCode(declWriter, statWriter);
+            var typeName = declWriter.ConvertType(this.assign.ReturnType);
 
-            if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.Local) {
-                var stat = CStatement.VariableDeclaration(
-                    typeName,
-                    this.VariableName + this.VariableInfo.UniqueId,
-                    assign);
+            var stat = CStatement.VariableDeclaration(
+                   typeName,
+                   this.info.Name + this.info.UniqueId,
+                   assign);
 
-                statWriter.WriteStatement(stat);
-                statWriter.WriteStatement(CStatement.NewLine());
-            }
-            else if (this.VariableInfo.DefinitionKind == VariableDefinitionKind.LocalAllocated) {
-                declWriter.RequireRegions();
-
-                var regionName = this.Region.Segments.Last();
-                var stat = CStatement.VariableDeclaration(
-                    CType.Pointer(typeName),
-                    this.VariableName + this.VariableInfo.UniqueId,
-                    CExpression.Invoke(CExpression.VariableLiteral("$region_alloc"), new[] {
-                        CExpression.VariableLiteral(regionName), CExpression.Sizeof(typeName)
-                    }));
-                var stat2 = CStatement.Assignment(
-                    CExpression.Dereference(CExpression.VariableLiteral(this.VariableName)),
-                    assign);
-
-                statWriter.WriteStatement(stat);
-                statWriter.WriteStatement(stat2);
-                statWriter.WriteStatement(CStatement.NewLine());
-            }
-            else {
-                throw new Exception("This should never happen");
-            }
+            statWriter.WriteStatement(stat);
+            statWriter.WriteStatement(CStatement.NewLine());
 
             return CExpression.IntLiteral(0);
         }

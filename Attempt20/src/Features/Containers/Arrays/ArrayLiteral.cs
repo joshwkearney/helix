@@ -7,22 +7,37 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Containers.Arrays {
-    public class ArrayParsedLiteral : IParsedSyntax {
-        private IdentifierPath region;
+    public class ArrayLiteralSyntaxA : ISyntaxA {
+        private readonly IReadOnlyList<ISyntaxA> args;
 
-        public TokenLocation Location { get; set; }
+        public TokenLocation Location { get; }
 
-        public IReadOnlyList<IParsedSyntax> Arguments { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.Arguments = this.Arguments.Select(x => x.CheckNames(names)).ToArray();
-            this.region = names.CurrentRegion;
-
-            return this;
+        public ArrayLiteralSyntaxA(TokenLocation location, IReadOnlyList<ISyntaxA> args) {
+            this.Location = location;
+            this.args = args;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var args = this.Arguments.Select(x => x.CheckTypes(names, types)).ToArray();
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var args = this.args.Select(x => x.CheckNames(names)).ToArray();
+
+            return new ArrayLiteralSyntaxB(this.Location, names.CurrentRegion, args);
+        }
+    }
+
+    public class ArrayLiteralSyntaxB : ISyntaxB {
+        private readonly IdentifierPath region;
+        private readonly IReadOnlyList<ISyntaxB> args;
+
+        public ArrayLiteralSyntaxB(TokenLocation location, IdentifierPath region, IReadOnlyList<ISyntaxB> args) {
+            this.Location = location;
+            this.region = region;
+            this.args = args;
+        }
+
+        public TokenLocation Location { get; }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
 
             // Make sure all the types line up
             if (args.Any()) {
@@ -33,60 +48,63 @@ namespace Attempt20.Features.Containers.Arrays {
                         args[i] = newArg;
                     }
                     else {
-                        throw TypeCheckingErrors.UnexpectedType(args[i].Location, expectedType, args[i].ReturnType);
+                        throw TypeCheckingErrors.UnexpectedType(this.args[i].Location, expectedType, args[i].ReturnType);
                     }
                 }
+            }
 
-                return new ArrayTypeCheckedLiteral() {
-                    Arguments = args,
-                    Lifetimes = args.Select(x => x.Lifetimes).Aggregate((x, y) => x.Union(y)).Add(this.region),
-                    Location = this.Location,
-                    ReturnType = new FixedArrayType(expectedType, args.Length),
-                    RegionName = this.region.Segments.Last()
-                };
-            }
-            else {
-                return new ArrayTypeCheckedLiteral() {
-                    Arguments = new ISyntax[0],
-                    Lifetimes = ImmutableHashSet.Create<IdentifierPath>(),
-                    Location = this.Location,
-                    ReturnType = new ArrayType(TrophyType.Void),
-                    RegionName = "stack"
-                };
-            }
+            return new ArrayLiteralSyntaxC(this.region, args);
         }
     }
 
-    public class ArrayTypeCheckedLiteral : ISyntax {
+    public class ArrayLiteralSyntaxC : ISyntaxC {
         private static int arrayTempCounter = 0;
 
-        public TokenLocation Location { get; set; }
+        private readonly IReadOnlyList<ISyntaxC> args;
+        private readonly IdentifierPath region;
 
-        public TrophyType ReturnType { get; set; }
+        public TrophyType ReturnType {
+            get {
+                return this.args
+                    .FirstOrNone()
+                    .Select(x => x.ReturnType)
+                    .GetValueOr(() => TrophyType.Void);
+            }
+        }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes {
+            get {
+                var seed = ImmutableHashSet.Create<IdentifierPath>();
 
-        public IReadOnlyList<ISyntax> Arguments { get; set; }
+                return this.args
+                    .Select(x => x.Lifetimes)
+                    .Aggregate(seed, (x, y) => x.Union(y));
+            }
+        }
 
-        public string RegionName { get; set; }
+        public ArrayLiteralSyntaxC(IdentifierPath regionName, IReadOnlyList<ISyntaxC> args) {
+            this.args = args;
+            this.region = regionName;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var args = this.Arguments.Select(x => x.GenerateCode(declWriter, statWriter)).ToArray();
+            var args = this.args.Select(x => x.GenerateCode(declWriter, statWriter)).ToArray();
             var arrayName = "$array_" + arrayTempCounter++;
             var arrayType = declWriter.ConvertType(this.ReturnType);
             var dataExpr = CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "data");
+            var regionName = this.region.Segments.Last();
 
             // Write array declaration
             statWriter.WriteStatement(CStatement.VariableDeclaration(arrayType, arrayName));
 
-            if (!this.Arguments.Any()) {
+            if (!this.args.Any()) {
                 // Write data assignment
                 statWriter.WriteStatement(CStatement.Assignment(dataExpr, CExpression.IntLiteral(0)));
             }
-            else if (this.RegionName == "stack") {
-                var elementType = declWriter.ConvertType(this.Arguments.First().ReturnType);
+            else if (regionName == "stack") {
+                var elementType = declWriter.ConvertType(this.args.First().ReturnType);
                 var cArrayName = "$array_temp_" + arrayTempCounter++;
-                var cArraySize = CExpression.IntLiteral(this.Arguments.Count);
+                var cArraySize = CExpression.IntLiteral(this.args.Count);
 
                 // Write c array declaration
                 statWriter.WriteStatement(CStatement.ArrayDeclaration(elementType, cArrayName, cArraySize));
@@ -97,15 +115,15 @@ namespace Attempt20.Features.Containers.Arrays {
                     CExpression.VariableLiteral(cArrayName)));
             }
             else {
-                var elementType = declWriter.ConvertType(this.Arguments.First().ReturnType);
+                var elementType = declWriter.ConvertType(this.args.First().ReturnType);
 
                 // Write data assignment
                 statWriter.WriteStatement(CStatement.Assignment(
                     dataExpr,
                     CExpression.Invoke(CExpression.VariableLiteral("$region_alloc"), new[] {
-                        CExpression.VariableLiteral(this.RegionName),
+                        CExpression.VariableLiteral(regionName),
                         CExpression.BinaryExpression(
-                            CExpression.IntLiteral(this.Arguments.Count),
+                            CExpression.IntLiteral(this.args.Count),
                             CExpression.Sizeof(elementType),
                             Primitives.BinaryOperation.Multiply)
                     })));
@@ -114,10 +132,10 @@ namespace Attempt20.Features.Containers.Arrays {
             // Write size assignment
             statWriter.WriteStatement(CStatement.Assignment(
                     CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "size"),
-                    CExpression.IntLiteral(this.Arguments.Count)));
+                    CExpression.IntLiteral(this.args.Count)));
 
             // Write array values
-            for (int i = 0; i < this.Arguments.Count; i++) {
+            for (int i = 0; i < this.args.Count; i++) {
                 statWriter.WriteStatement(CStatement.Assignment(
                     CExpression.ArrayIndex(dataExpr, CExpression.IntLiteral(i)),
                     args[i]));

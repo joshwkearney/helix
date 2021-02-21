@@ -3,30 +3,46 @@ using Attempt20.Analysis.Types;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Primitives {
-    public class AsParsedSyntax : IParsedSyntax {
-        public IParsedSyntax Argument { get; set; }
+    public class AsSyntaxA : ISyntaxA {
+        private readonly ISyntaxA arg;
+        private readonly TrophyType target;
 
-        public TrophyType TargetType { get; set; }
+        public TokenLocation Location { get; }
 
-        public TokenLocation Location { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.Argument = this.Argument.CheckNames(names);
-
-            // Resolve types
-            this.TargetType = names.ResolveTypeNames(this.TargetType, this.Location);
-
-            return this;
+        public AsSyntaxA(TokenLocation loc, ISyntaxA arg, TrophyType target) {
+            this.Location = loc;
+            this.arg = arg;
+            this.target = target;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var arg = this.Argument.CheckTypes(names, types);
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var arg = this.arg.CheckNames(names);
+            var target = names.ResolveTypeNames(this.target, this.Location);
 
-            if (types.TryUnifyTo(arg, this.TargetType).TryGetValue(out var newArg)) {
+            return new AsSyntaxB(this.Location, arg, target);
+        }
+    }
+
+    public class AsSyntaxB : ISyntaxB {
+        private readonly ISyntaxB arg;
+        private readonly TrophyType target;
+
+        public TokenLocation Location { get; }
+
+        public AsSyntaxB(TokenLocation loc, ISyntaxB arg, TrophyType target) {
+            this.Location = loc;
+            this.target = target;
+            this.arg = arg;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var arg = this.arg.CheckTypes(types);
+
+            if (types.TryUnifyTo(arg, this.target).TryGetValue(out var newArg)) {
                 return newArg;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(arg.Location, this.TargetType, arg.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.Location, this.target, arg.ReturnType);
             }
         }
     }

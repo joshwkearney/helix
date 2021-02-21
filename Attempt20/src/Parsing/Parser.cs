@@ -19,8 +19,8 @@ namespace Attempt20.Parsing {
             this.tokens = tokens;
         }
 
-        public IReadOnlyList<IParsedDeclaration> Parse() {
-            var list = new List<IParsedDeclaration>();
+        public IReadOnlyList<IDeclarationA> Parse() {
+            var list = new List<IDeclarationA>();
 
             while (pos < tokens.Count) {
                 list.Add(this.Declaration());
@@ -170,7 +170,7 @@ namespace Attempt20.Parsing {
             return sig;
         }
 
-        private IParsedDeclaration FunctionDeclaration() {
+        private IDeclarationA FunctionDeclaration() {
             var start = this.tokens[this.pos];
             var sig = this.FunctionSignature();
             var end = this.Advance(TokenKind.YieldSign);
@@ -180,14 +180,10 @@ namespace Attempt20.Parsing {
 
             this.Advance(TokenKind.Semicolon);
 
-            return new FunctionParseDeclaration() {
-                Location = loc,
-                Body = body,
-                Signature = sig
-            };
+            return new FunctionDeclarationA(loc, sig, body);
         }
 
-        private IParsedDeclaration AggregateDeclaration() {
+        private IDeclarationA AggregateDeclaration() {
             IToken start;
             if (this.Peek(TokenKind.StructKeyword)) {
                 start = this.Advance(TokenKind.StructKeyword);
@@ -198,7 +194,7 @@ namespace Attempt20.Parsing {
 
             var name = this.Advance<string>();
             var mems = new List<StructMember>();
-            var decls = new List<IParsedDeclaration>();
+            var decls = new List<IDeclarationA>();
 
             this.Advance(TokenKind.OpenBrace);
 
@@ -216,16 +212,14 @@ namespace Attempt20.Parsing {
 
             this.Advance(TokenKind.CloseBrace);
             var last = this.Advance(TokenKind.Semicolon);
+            var loc = start.Location.Span(last.Location);
+            var sig = new AggregateSignature(name, mems);
+            var kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union;
 
-            return new AggregateParsedDeclaration() {
-                Location = start.Location.Span(last.Location),
-                Signature = new StructSignature(name, mems),
-                Declarations = decls,
-                Kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union
-            };
+            return new AggregateDeclarationA(loc, sig, kind, decls);
         }
 
-        private IParsedDeclaration Declaration() {
+        private IDeclarationA Declaration() {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
@@ -237,59 +231,50 @@ namespace Attempt20.Parsing {
         }
 
         /** Expression Parsing **/
-        private IParsedSyntax TopExpression() => this.AsExpression();
+        private ISyntaxA TopExpression() => this.AsExpression();
 
-        private IParsedSyntax AsExpression() {
+        private ISyntaxA AsExpression() {
             var first = this.OrExpression();
 
             while (this.TryAdvance(TokenKind.AsKeyword)) {
                 var target = this.TypeExpression();
 
-                first = new AsParsedSyntax() {
-                    Location = first.Location.Span(this.tokens[this.pos - 1].Location),
-                    Argument = first,
-                    TargetType = target
-                };
+                first = new AsSyntaxA(
+                    first.Location.Span(this.tokens[this.pos - 1].Location),
+                    first,
+                    target);
             }
 
             return first;
         }
 
-        private IParsedSyntax OrExpression() {
+        private ISyntaxA OrExpression() {
             var first = this.XorExpression();
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
                 var second = this.XorExpression();
+                var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseSyntax() {
-                    Location = first.Location.Span(second.Location),
-                    Operation = BinaryOperation.Or,
-                    LeftArgument = first,
-                    RightArgument = second
-                };
+                first = new BinarySyntaxA(loc, first, second, BinaryOperation.Or);
             }
 
             return first;
         }
 
-        private IParsedSyntax XorExpression() {
+        private ISyntaxA XorExpression() {
             var first = this.ComparisonExpression();
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
                 var second = this.ComparisonExpression();
+                var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseSyntax() {
-                    Location = first.Location.Span(second.Location),
-                    Operation = BinaryOperation.Xor,
-                    LeftArgument = first,
-                    RightArgument = second
-                };
+                first = new BinarySyntaxA(loc, first, second, BinaryOperation.Xor);
             }
 
             return first;
         }
 
-        private IParsedSyntax ComparisonExpression() {
+        private ISyntaxA ComparisonExpression() {
             var first = this.AndExpression();
             var comparators = new Dictionary<TokenKind, BinaryOperation>() {
                 { TokenKind.EqualSign, BinaryOperation.EqualTo }, { TokenKind.NotEqualSign, BinaryOperation.NotEqualTo },
@@ -311,36 +296,28 @@ namespace Attempt20.Parsing {
 
                 var op = comparators[this.Advance().Kind];
                 var second = this.AndExpression();
+                var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseSyntax() {
-                    Location = first.Location.Span(second.Location),
-                    Operation = op,
-                    LeftArgument = first,
-                    RightArgument = second
-                };
+                first = new BinarySyntaxA(loc, first, second, op);
             }
 
             return first;
         }
 
-        private IParsedSyntax AndExpression() {
+        private ISyntaxA AndExpression() {
             var first = this.AddExpression();
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
                 var second = this.AddExpression();
+                var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseSyntax() {
-                    Location = first.Location.Span(second.Location),
-                    Operation = BinaryOperation.And,
-                    LeftArgument = first,
-                    RightArgument = second
-                };
+                first = new BinarySyntaxA(loc, first, second, BinaryOperation.And);
             }
 
             return first;
         }
 
-        private IParsedSyntax AddExpression() {
+        private ISyntaxA AddExpression() {
             var first = this.MultiplyExpression();
 
             while (true) {
@@ -351,19 +328,15 @@ namespace Attempt20.Parsing {
                 var tok = this.Advance().Kind;
                 var op = tok == TokenKind.AddSign ? BinaryOperation.Add : BinaryOperation.Subtract;
                 var second = this.MultiplyExpression();
+                var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseSyntax() {
-                    Location = first.Location.Span(second.Location),
-                    Operation = op,
-                    LeftArgument = first,
-                    RightArgument = second
-                };
+                first = new BinarySyntaxA(loc, first, second, op);
             }
 
             return first;
         }
 
-        private IParsedSyntax MultiplyExpression() {
+        private ISyntaxA MultiplyExpression() {
             var first = this.SuffixExpression();
 
             while (true) {
@@ -374,19 +347,15 @@ namespace Attempt20.Parsing {
                 var tok = this.Advance().Kind;
                 var op = tok == TokenKind.MultiplySign ? BinaryOperation.Multiply : BinaryOperation.Multiply;
                 var second = this.SuffixExpression();
+                var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseSyntax() {
-                    Location = first.Location.Span(second.Location),
-                    Operation = op,
-                    LeftArgument = first,
-                    RightArgument = second
-                };
+                first = new BinarySyntaxA(loc, first, second, op);
             }
 
             return first;
         }
 
-        private IParsedSyntax SuffixExpression() {
+        private ISyntaxA SuffixExpression() {
             var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) || this.Peek(TokenKind.OpenBracket) || this.Peek(TokenKind.LiteralSign) || this.Peek(TokenKind.Dot)) {
@@ -407,12 +376,12 @@ namespace Attempt20.Parsing {
             return first;
         }
 
-        private IParsedSyntax MemberAccess(IParsedSyntax first) {
+        private ISyntaxA MemberAccess(ISyntaxA first) {
             this.Advance(TokenKind.Dot);
             var tok = (Token<string>)this.Advance(TokenKind.Identifier);
 
             if (this.TryAdvance(TokenKind.OpenParenthesis)) {
-                var args = new List<IParsedSyntax>();
+                var args = new List<ISyntaxA>();
 
                 while (!this.Peek(TokenKind.CloseParenthesis)) {
                     args.Add(this.TopExpression());
@@ -423,27 +392,21 @@ namespace Attempt20.Parsing {
                 }
 
                 var last = this.Advance(TokenKind.CloseParenthesis);
+                var loc = first.Location.Span(last.Location);
 
-                return new MemberInvokeParsedSyntax() {
-                    Location = first.Location.Span(last.Location),
-                    Target = first,
-                    Arguments = args,
-                    MemberName = tok.Value
-                };
+                return new MemberInvokeSyntaxA(loc, first, tok.Value, args);
             }
             else {
-                return new MemberAccessParsedSyntax {
-                    Location = first.Location.Span(tok.Location),
-                    MemberName = tok.Value,
-                    Target = first
-                };
+                var loc = first.Location.Span(tok.Location);
+
+                return new MemberAccessSyntaxA(loc, first, tok.Value);
             }
         }
 
-        private IParsedSyntax InvokeExpression(IParsedSyntax first) {
+        private ISyntaxA InvokeExpression(ISyntaxA first) {
             this.Advance(TokenKind.OpenParenthesis);
 
-            var args = new List<IParsedSyntax>();
+            var args = new List<ISyntaxA>();
 
             while (!this.Peek(TokenKind.CloseParenthesis)) {
                 args.Add(this.TopExpression());
@@ -454,41 +417,30 @@ namespace Attempt20.Parsing {
             }
 
             var last = this.Advance(TokenKind.CloseParenthesis);
+            var loc = first.Location.Span(last.Location);
 
-            return new FunctionInvokeParsedSyntax() {
-                Location = first.Location.Span(last.Location),
-                Target = first,
-                Arguments = args
-            };
+            return new FunctionInvokeSyntaxA(loc, first, args);
         }
 
-        private IParsedSyntax ArrayIndexExpression(IParsedSyntax first) {
+        private ISyntaxA ArrayIndexExpression(ISyntaxA first) {
             this.Advance(TokenKind.OpenBracket);
             var index = this.TopExpression();
             var last = this.Advance(TokenKind.CloseBracket);
+            var loc = first.Location.Span(last.Location);
 
-            return new ArrayAccessParsedSyntax() {
-                Location = first.Location.Span(last.Location),
-                Index = index,
-                Target = first,
-                AccessKind = ArrayAccessKind.ValueAccess
-            };
+            return new ArrayAccessSyntaxA(loc, first, index, ArrayAccessKind.ValueAccess);
         }
 
-        private IParsedSyntax LiteralArrayIndexExpression(IParsedSyntax first) {
+        private ISyntaxA LiteralArrayIndexExpression(ISyntaxA first) {
             this.Advance(TokenKind.LiteralSign);
             this.Advance(TokenKind.OpenBracket);
 
             if (this.TryAdvance(TokenKind.Colon)) {
                 var index2 = this.TopExpression();
                 var last = this.Advance(TokenKind.CloseBracket);
+                var loc = first.Location.Span(last.Location);
 
-                return new ArraySliceParsedSyntax() {
-                    Location = first.Location.Span(last.Location),
-                    StartIndex = Option.None<IParsedSyntax>(),
-                    EndIndex = Option.Some(index2),
-                    Target = first
-                };
+                return new ArraySliceSyntaxA(loc, first, Option.None<ISyntaxA>(), Option.Some(index2));
             }
             else {
                 var index = this.TopExpression();
@@ -496,40 +448,28 @@ namespace Attempt20.Parsing {
                 if (this.TryAdvance(TokenKind.Colon)) {
                     if (this.Peek(TokenKind.CloseBracket)) {
                         var last = this.Advance(TokenKind.CloseBracket);
+                        var loc = first.Location.Span(last.Location);
 
-                        return new ArraySliceParsedSyntax() {
-                            Location = first.Location.Span(last.Location),
-                            StartIndex = Option.Some(index),
-                            EndIndex = Option.None<IParsedSyntax>(),
-                            Target = first
-                        };
+                        return new ArraySliceSyntaxA(loc, first, Option.Some(index), Option.None<ISyntaxA>());
                     }
                     else {
                         var index2 = this.TopExpression();
                         var last = this.Advance(TokenKind.CloseBracket);
+                        var loc = first.Location.Span(last.Location);
 
-                        return new ArraySliceParsedSyntax() {
-                            Location = first.Location.Span(last.Location),
-                            StartIndex = Option.Some(index),
-                            EndIndex = Option.Some(index2),
-                            Target = first
-                        };
+                        return new ArraySliceSyntaxA(loc, first, Option.Some(index), Option.Some(index2));
                     }
                 }
                 else {
                     var last = this.Advance(TokenKind.CloseBracket);
+                    var loc = first.Location.Span(last.Location);
 
-                    return new ArrayAccessParsedSyntax() {
-                        Location = first.Location.Span(last.Location),
-                        Index = index,
-                        Target = first,
-                        AccessKind = ArrayAccessKind.LiteralAccess
-                    };
+                    return new ArrayAccessSyntaxA(loc, first, index, ArrayAccessKind.LiteralAccess);
                 }
             }
         }
 
-        private IParsedSyntax Atom() {
+        private ISyntaxA Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -573,56 +513,41 @@ namespace Attempt20.Parsing {
             }
         }
 
-        private IParsedSyntax LiteralVariableAccess() {
+        private ISyntaxA LiteralVariableAccess() {
             var start = this.Advance(TokenKind.LiteralSign);
             var tok = (Token<string>)this.Advance(TokenKind.Identifier);
+            var loc = start.Location.Span(tok.Location);
 
-            return new VariableAccessParseSyntax() {
-                Location = start.Location.Span(tok.Location),
-                VariableName = tok.Value,
-                AccessKind = VariableAccessKind.LiteralAccess
-            };
+            return new IdentifierAccessSyntaxA(loc, tok.Value, VariableAccessKind.LiteralAccess);
         }
 
-        private IParsedSyntax VariableAccess() {
+        private ISyntaxA VariableAccess() {
             var tok = (Token<string>)this.Advance(TokenKind.Identifier);
 
-            return new VariableAccessParseSyntax() {
-                Location = tok.Location,
-                VariableName = tok.Value,
-                AccessKind = VariableAccessKind.ValueAccess
-            };
+            return new IdentifierAccessSyntaxA(tok.Location, tok.Value, VariableAccessKind.ValueAccess);
         }
 
-        private IParsedSyntax IntLiteral() {
+        private ISyntaxA IntLiteral() {
             var tok = (Token<int>)this.Advance(TokenKind.IntLiteral);
 
-            return new IntLiteralSyntax() {
-                Location = tok.Location,
-                Value = tok.Value
-            };
+            return new IntLiteralSyntax(tok.Location, tok.Value);
         }
 
-        private IParsedSyntax BoolLiteral() {
+        private ISyntaxA BoolLiteral() {
             var start = (Token<bool>)this.Advance(TokenKind.BoolLiteral);
 
-            return new BoolLiteralSyntax() {
-                Location = start.Location,
-                Value = start.Value
-            };
+            return new BoolLiteralSyntax(start.Location, start.Value);
         }
 
-        private IParsedSyntax VoidLiteral() {
+        private ISyntaxA VoidLiteral() {
             var tok = this.Advance(TokenKind.VoidKeyword);
 
-            return new VoidLiteralSyntax() {
-                Location = tok.Location
-            };
+            return new VoidLiteralAB(tok.Location);
         }
 
-        private IParsedSyntax ArrayLiteral() {
+        private ISyntaxA ArrayLiteral() {
             var start = this.Advance(TokenKind.OpenBracket);
-            var args = new List<IParsedSyntax>();
+            var args = new List<ISyntaxA>();
 
             while (!this.Peek(TokenKind.CloseBracket)) {
                 args.Add(this.TopExpression());
@@ -633,14 +558,12 @@ namespace Attempt20.Parsing {
             }
 
             var end = this.Advance(TokenKind.CloseBracket);
+            var loc = start.Location.Span(end.Location);
 
-            return new ArrayParsedLiteral() {
-                Arguments = args,
-                Location = start.Location.Span(end.Location)
-            };
+            return new ArrayLiteralSyntaxA(loc, args);
         }
 
-        private IParsedSyntax ParenExpression() {
+        private ISyntaxA ParenExpression() {
             this.Advance(TokenKind.OpenParenthesis);
             var result = this.TopExpression();
             this.Advance(TokenKind.CloseParenthesis);
@@ -648,24 +571,22 @@ namespace Attempt20.Parsing {
             return result;
         }
 
-        private IParsedSyntax Block() {
+        private ISyntaxA Block() {
             var start = this.Advance(TokenKind.OpenBrace);
-            var list = new List<IParsedSyntax>();
+            var stats = new List<ISyntaxA>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                list.Add(this.Statement());
+                stats.Add(this.Statement());
             }
 
             var end = this.Advance(TokenKind.CloseBrace);
+            var loc = start.Location.Span(end.Location);
 
-            return new BlockParseSyntax() {
-                Location = start.Location.Span(end.Location),
-                Statements = list
-            };
+            return new BlockSyntaxA(loc, stats);
         }
 
-        private IParsedSyntax Statement() {
-            IParsedSyntax result;
+        private ISyntaxA Statement() {
+            ISyntaxA result;
 
             if (this.Peek(TokenKind.WhileKeyword)) {
                 result = this.WhileStatement();
@@ -682,52 +603,43 @@ namespace Attempt20.Parsing {
             return result;
         }
 
-        private IParsedSyntax WhileStatement() {
+        private ISyntaxA WhileStatement() {
             var start = this.Advance(TokenKind.WhileKeyword);
             var cond = this.TopExpression();
 
             this.Advance(TokenKind.DoKeyword);
             var body = this.TopExpression();
+            var loc = start.Location.Span(body.Location);
 
-            return new WhileParsedSyntax() {
-                Location = start.Location.Span(body.Location),
-                Body = body,
-                Condition = cond
-            };
+            return new WhileSyntaxA(loc, cond, body);
         }
 
-        private IParsedSyntax VariableDeclarationStatement() {
+        private ISyntaxA VariableDeclarationStatement() {
             var tok = this.Advance(TokenKind.VarKeyword);
             var name = this.Advance<string>();
 
             this.Advance(TokenKind.LeftArrow);
 
-            var value = this.TopExpression();
+            var assign = this.TopExpression();
+            var loc = tok.Location.Span(assign.Location);
 
-            return new LetParseSyntax() {
-                Location = tok.Location.Span(value.Location),
-                VariableName = name,
-                AssignExpression = value
-            };
+            return new LetSyntaxA(loc, name, assign);
         }
 
-        private IParsedSyntax StoreStatement() {
+        private ISyntaxA StoreStatement() {
             var start = this.TopExpression();
 
             if (this.TryAdvance(TokenKind.LeftArrow)) {
                 var assign = this.TopExpression();
+                var loc = start.Location.Span(assign.Location);
 
-                start = new StoreParsedSyntax() {
-                    Target = start,
-                    AssignExpression = assign,
-                    Location = start.Location.Span(assign.Location)
-                };
+                return new StoreSyntaxA(loc, start, assign);
             }
 
             return start;
         }
 
-        private IParsedSyntax IfExpression() {
+        private ISyntaxA IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
             var cond = this.TopExpression();
 
@@ -736,76 +648,55 @@ namespace Attempt20.Parsing {
 
                 this.Advance(TokenKind.ElseKeyword);
                 var neg = this.TopExpression();
+                var loc = start.Location.Span(neg.Location);
 
-                return new IfParsedSyntax() {
-                    Condition = cond,
-                    TrueBranch = affirm,
-                    FalseBranch = Option.Some(neg),
-                    Location = start.Location.Span(neg.Location)
-                };
+                return new IfSyntaxA(loc, cond, affirm, neg);
             }
             else {
                 this.Advance(TokenKind.DoKeyword);
                 var affirm = this.TopExpression();
+                var loc = start.Location.Span(affirm.Location);
 
-                return new IfParsedSyntax() {
-                    Condition = cond,
-                    TrueBranch = affirm,
-                    FalseBranch = Option.None<IParsedSyntax>(),
-                    Location = start.Location.Span(affirm.Location)
-                };
+                return new IfSyntaxA(loc, cond, affirm);
             }
         }
 
-        private IParsedSyntax FromExpression() {
+        private ISyntaxA FromExpression() {
             var start = this.Advance(TokenKind.FromKeyword);
             var region = this.Lifetime();
 
             this.Advance(TokenKind.DoKeyword);
             var expr = this.TopExpression();
+            var loc = start.Location.Span(expr.Location);
 
-            return new FromDoParsedSyntax() {
-                Location = start.Location.Span(expr.Location),
-                RegionName = region,
-                Target = expr
-            };
+            return new FromSyntaxA(loc, region, expr);
         }
 
-        private IParsedSyntax RegionExpression() {
+        private ISyntaxA RegionExpression() {
             var start = this.Advance(TokenKind.RegionKeyword);
 
             if (this.Peek(TokenKind.OpenBrace)) {
                 var body = this.Block();
+                var loc = start.Location.Span(body.Location);
 
-                return new RegionBlockParsedSyntax() {
-                    Location = start.Location.Span(body.Location),
-                    Body = body,
-                    RegionName = Option.None<string>()
-                };
+                return new RegionBlockSyntaxA(loc, body);
             }
             else {
                 var name = this.Advance<string>();
                 var body = this.Block();
+                var loc = start.Location.Span(body.Location);
 
-                return new RegionBlockParsedSyntax() {
-                    Location = start.Location.Span(body.Location),
-                    Body = body,
-                    RegionName = Option.Some(name)
-                };
+                return new RegionBlockSyntaxA(loc, body, name);
             }
         }
 
-        private IParsedSyntax NewExpression() {
+        private ISyntaxA NewExpression() {
             var start = this.Advance(TokenKind.NewKeyword);
-            var name = this.TypeExpression();
-            var mems = new List<StructArgument<IParsedSyntax>>();
+            var targetType = this.TypeExpression();
+            var mems = new List<StructArgument<ISyntaxA>>();
 
             if (!this.TryAdvance(TokenKind.OpenBrace)) {
-                return new NewParsedSyntax() {
-                    Location = start.Location,
-                    Target = name,
-                    Arguments = mems
-                };
+                return new NewSyntaxA(start.Location, targetType, mems);
             }
 
             while (!this.Peek(TokenKind.CloseBrace)) {
@@ -814,7 +705,7 @@ namespace Attempt20.Parsing {
 
                 var memValue = this.TopExpression();
 
-                mems.Add(new StructArgument<IParsedSyntax>() {
+                mems.Add(new StructArgument<ISyntaxA>() {
                     MemberName = memName,
                     MemberValue = memValue
                 });
@@ -825,12 +716,9 @@ namespace Attempt20.Parsing {
             }
 
             var end = this.Advance(TokenKind.CloseBrace);
+            var loc = start.Location.Span(end.Location);
 
-            return new NewParsedSyntax() {
-                Location = start.Location.Span(end.Location),
-                Target = name,
-                Arguments = mems
-            };
+            return new NewSyntaxA(loc, targetType, mems);
         }
     }
 }

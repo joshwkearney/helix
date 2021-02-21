@@ -5,21 +5,23 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Attempt20.Features.Containers {
-    public class UnionTypeCheckedDeclaration : IDeclaration {
+    public class UnionDeclarationC : IDeclarationC {
         private static int counter = 0;
 
-        public TokenLocation Location { get; set; }
+        public AggregateSignature sig;
+        public IdentifierPath unionPath;
+        public IReadOnlyList<IDeclarationC> decls;
 
-        public StructSignature Signature { get; set; }
-
-        public IdentifierPath StructPath { get; set; }
-
-        public IReadOnlyList<IDeclaration> Declarations { get; set; }
+        public UnionDeclarationC(AggregateSignature sig, IdentifierPath unionPath, IReadOnlyList<IDeclarationC> decls) {
+            this.sig = sig;
+            this.unionPath = unionPath;
+            this.decls = decls;
+        }
 
         public void GenerateCode(ICWriter writer) {
             var unionName = $"$UnionType_" + counter++;
-            var structName = this.StructPath.ToString();
-            var mems = this.Signature.Members
+            var structName = this.unionPath.ToString();
+            var mems = this.sig.Members
                     .Select(x => new CParameter(writer.ConvertType(x.MemberType), x.MemberName))
                     .ToArray();
 

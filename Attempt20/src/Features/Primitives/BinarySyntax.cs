@@ -15,14 +15,33 @@ namespace Attempt20.Features.Primitives {
         GreaterThanOrEqualTo, LessThanOrEqualTo
     }
 
-    public class BinaryParseSyntax : IParsedSyntax {
-        public IParsedSyntax LeftArgument { get; set; }
+    public class BinarySyntaxA : ISyntaxA {
+        private readonly ISyntaxA left, right;
+        private readonly BinaryOperation op;
 
-        public IParsedSyntax RightArgument { get; set; }
+        public TokenLocation Location { get; }
 
-        public BinaryOperation Operation { get; set; }
+        public BinarySyntaxA(TokenLocation loc, ISyntaxA left, ISyntaxA right, BinaryOperation op) {
+            this.Location = loc;
+            this.left = left;
+            this.right = right;
+            this.op = op;
+        }
 
-        public TokenLocation Location { get; set; }
+        public ISyntaxB CheckNames(INameRecorder names) {
+            return new BinarySyntaxB(
+                loc: this.Location,
+                left: this.left.CheckNames(names),
+                right: this.right.CheckNames(names),
+                op: this.op);
+        }
+    }
+
+    public class BinarySyntaxB : ISyntaxB {
+        private readonly ISyntaxB left, right;
+        private readonly BinaryOperation op;
+
+        public TokenLocation Location { get; }
 
         private static readonly Dictionary<BinaryOperation, TrophyType> intOperations
             = new Dictionary<BinaryOperation, TrophyType>() {
@@ -51,45 +70,45 @@ namespace Attempt20.Features.Primitives {
             { BinaryOperation.NotEqualTo, TrophyType.Boolean },
         };
 
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.LeftArgument = this.LeftArgument.CheckNames(names);
-            this.RightArgument = this.RightArgument.CheckNames(names);
-
-            return this;
+        public BinarySyntaxB(TokenLocation loc, ISyntaxB left, ISyntaxB right, BinaryOperation op) {
+            this.Location = loc;
+            this.left = left;
+            this.right = right;
+            this.op = op;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
             // Delegate type resolution
-            var left = this.LeftArgument.CheckTypes(names, types);
-            var right = this.RightArgument.CheckTypes(names, types);
+            var left = this.left.CheckTypes(types);
+            var right = this.right.CheckTypes(types);
             var returnType = TrophyType.Void;
 
             // Check if left is a valid type
             if (!left.ReturnType.IsIntType && !left.ReturnType.IsBoolType) {
-                throw TypeCheckingErrors.UnexpectedType(left.Location, left.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.left.Location, left.ReturnType);
             }
 
             // Check if right is a valid type
             if (!right.ReturnType.IsIntType && !right.ReturnType.IsBoolType) {
-                throw TypeCheckingErrors.UnexpectedType(right.Location, right.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.right.Location, right.ReturnType);
             }
 
             // Make sure types match
             if (left.ReturnType != right.ReturnType) {
-                throw TypeCheckingErrors.UnexpectedType(right.Location, left.ReturnType, right.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.right.Location, left.ReturnType, right.ReturnType);
             }
 
             // Make sure this is a valid operation
             if (left.ReturnType.IsIntType) {
-                if (!intOperations.TryGetValue(this.Operation, out var ret)) {
-                    throw TypeCheckingErrors.UnexpectedType(left.Location, left.ReturnType);
+                if (!intOperations.TryGetValue(this.op, out var ret)) {
+                    throw TypeCheckingErrors.UnexpectedType(this.left.Location, left.ReturnType);
                 }
 
                 returnType = ret;
             }
             else if (left.ReturnType.IsBoolType) {
-                if (!boolOperations.TryGetValue(this.Operation, out var ret)) {
-                    throw TypeCheckingErrors.UnexpectedType(left.Location, left.ReturnType);
+                if (!boolOperations.TryGetValue(this.op, out var ret)) {
+                    throw TypeCheckingErrors.UnexpectedType(this.left.Location, left.ReturnType);
                 }
 
                 returnType = ret;
@@ -98,35 +117,30 @@ namespace Attempt20.Features.Primitives {
                 throw new Exception("This should never happen");
             }
 
-            return new BinaryTypeCheckedSyntax() {
-                Operation = this.Operation,
-                LeftArgument = left,
-                RightArgument = right,
-                Location = this.Location,
-                ReturnType = returnType,
-                Lifetimes = left.Lifetimes.Union(right.Lifetimes)
-            };
+            return new BinarySyntaxC(left, right, this.op, returnType);
         }
     }
 
-    public class BinaryTypeCheckedSyntax : ISyntax {
-        public ISyntax LeftArgument { get; set; }
+    public class BinarySyntaxC : ISyntaxC {
+        private readonly ISyntaxC left, right;
+        private readonly BinaryOperation op;
 
-        public ISyntax RightArgument { get; set; }
+        public TrophyType ReturnType { get; }
 
-        public BinaryOperation Operation { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes => this.left.Lifetimes.Union(this.right.Lifetimes);
 
-        public TokenLocation Location { get; set; }
-
-        public TrophyType ReturnType { get; set; }
-
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
+        public BinarySyntaxC(ISyntaxC left, ISyntaxC right, BinaryOperation op, TrophyType returnType) {
+            this.left = left;
+            this.right = right;
+            this.op = op;
+            this.ReturnType = returnType;
+        }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var left = this.LeftArgument.GenerateCode(declWriter, statWriter);
-            var right = this.RightArgument.GenerateCode(declWriter, statWriter);
+            var left = this.left.GenerateCode(declWriter, statWriter);
+            var right = this.right.GenerateCode(declWriter, statWriter);
 
-            return CExpression.BinaryExpression(left, right, this.Operation);
+            return CExpression.BinaryExpression(left, right, this.op);
         }
     }
 }

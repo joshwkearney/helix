@@ -1,119 +1,143 @@
 ﻿using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Features.Containers;
 using Attempt20.Features.Primitives;
 using Attempt20.Parsing;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 
 namespace Attempt20.Features.Containers.Unions {
-    public class NewUnionParsedSyntax : IParsedSyntax {
-        public TokenLocation Location { get; set; }
+    public class NewUnionSyntaxA : ISyntaxA {
+        private readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
+        private readonly TrophyType targetType;
 
-        public IReadOnlyList<StructArgument<IParsedSyntax>> Arguments { get; set; }
+        public TokenLocation Location { get; }
 
-        public TrophyType Target { get; set; }
+        public NewUnionSyntaxA(TokenLocation location, TrophyType target, IReadOnlyList<StructArgument<ISyntaxA>> args) {
+            this.Location = location;
+            this.targetType = target;
+            this.args = args;
+        }
 
-        public IdentifierPath TargetPath { get; private set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INameRecorder names) {
             // Make sure the target is defined
-            if (!this.Target.AsNamedType().TryGetValue(out var path)) {
-                throw TypeCheckingErrors.ExpectedUnionType(this.Location, this.Target);
+            if (!this.targetType.AsNamedType().TryGetValue(out var path)) {
+                throw TypeCheckingErrors.ExpectedUnionType(this.Location, this.targetType);
             }
 
             // Make sure the target's path is defined
             if (!names.TryGetName(path, out var target)) {
-                throw TypeCheckingErrors.ExpectedUnionType(this.Location, this.Target);
+                throw TypeCheckingErrors.ExpectedUnionType(this.Location, this.targetType);
             }
 
-            // Make sure the path is to a struct
+            // Make sure the path is to a union
             if (target != NameTarget.Union) {
-                throw TypeCheckingErrors.ExpectedUnionType(this.Location, this.Target);
+                throw TypeCheckingErrors.ExpectedUnionType(this.Location, this.targetType);
             }
 
-            // Save the struct path
-            this.TargetPath = path;
-
-            // Make sure that there is exactly one argument
-            if (this.Arguments.Count > 1) {
-                throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.Target, this.Arguments.Select(x => x.MemberName));
+            // Make sure that there is at most one argument
+            if (this.args.Count > 1) {
+                throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.targetType, this.args.Select(x => x.MemberName));
             }
 
             // Check argument names
-            this.Arguments = this.Arguments
-                .Select(x => new StructArgument<IParsedSyntax>() {
+            var arg = this.args
+                .Select(x => new StructArgument<ISyntaxB>() {
                     MemberName = x.MemberName,
                     MemberValue = x.MemberValue.CheckNames(names)
                 })
-                .ToArray();
+                .FirstOrNone();
 
-            return this;
+            return new NewUnionSyntaxB(this.Location, this.targetType, arg, path);
+        }
+    }
+
+    public class NewUnionSyntaxB : ISyntaxB {
+        private readonly IOption<StructArgument<ISyntaxB>> args;
+        private readonly TrophyType target;
+        private readonly IdentifierPath path;
+
+        public TokenLocation Location { get; }
+
+        public NewUnionSyntaxB(
+            TokenLocation location, 
+            TrophyType target, 
+            IOption<StructArgument<ISyntaxB>> args, 
+            IdentifierPath path) {
+
+            this.Location = location;
+            this.target = target;
+            this.args = args;
+            this.path = path;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            var unionType = new NamedType(this.TargetPath);
-            var unionSig = types.TryGetUnion(this.TargetPath).GetValue();
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var unionType = new NamedType(this.path);
+            var unionSig = types.TryGetUnion(this.path).GetValue();
 
             // If there are no arguments return an empty union
-            if (!this.Arguments.Any()) {
-                var voidLiteral = new VoidLiteralSyntax() { Location = this.Location };
+            if (!this.args.TryGetValue(out var arg)) {
+                var mem = unionSig.Members.First();
 
-                return new VoidToUnionAdapter(voidLiteral, unionSig, unionType, types);
+                if (!mem.MemberType.HasDefaultValue(types)) {
+                    throw TypeCheckingErrors.TypeWithoutDefaultValue(this.Location, unionType);
+                }
+
+                var voidLiteral = new VoidLiteralC();
+                var arg2 = new StructArgument<ISyntaxC>() {
+                    MemberName = mem.MemberName,
+                    MemberValue = types.TryUnifyTo(voidLiteral, mem.MemberType).GetValue()
+                };
+
+                // TODO - MAGIC ZERO
+                return new NewUnionSyntaxC(arg2, 0, unionType);
             }
 
-            var arg = this.Arguments.First();
             var memberOpt = unionSig.Members.Where(x => x.MemberName == arg.MemberName).FirstOrNone();
 
             // Make sure the argument is defined on this union
             if (!memberOpt.TryGetValue(out var member)) {
-                throw TypeCheckingErrors.MemberUndefined(this.Location, this.Target, arg.MemberName);
+                throw TypeCheckingErrors.MemberUndefined(this.Location, this.target, arg.MemberName);
             }
 
-            var argVal = this.Arguments.First().MemberValue.CheckTypes(names, types);
+            var argVal = arg.MemberValue.CheckTypes(types);
 
             // Make sure the types can match
             if (!types.TryUnifyTo(argVal, member.MemberType).TryGetValue(out var newArgVal)) {
                 throw TypeCheckingErrors.UnexpectedType(this.Location, member.MemberType, argVal.ReturnType);
             }
 
-            return new NewUnionTypeCheckedSyntax() {
-                Location = this.Location,
-                Argument = new StructArgument<ISyntax>() {
-                    MemberName = member.MemberName,
-                    MemberValue = newArgVal
-                },
-                Lifetimes = newArgVal.Lifetimes,
-                ReturnType = unionType,
-                TargetPath = this.TargetPath,
-                UnionTag = unionSig.Members.ToList().IndexOf(member)
+            var tag = unionSig.Members.ToList().IndexOf(member);
+            var argc = new StructArgument<ISyntaxC>() {
+                MemberName = member.MemberName,
+                MemberValue = newArgVal
             };
-        }
-    }
 
-    public class NewUnionTypeCheckedSyntax : ISyntax {
+            return new NewUnionSyntaxC(argc, tag, unionType);
+        }
+    };
+
+    public class NewUnionSyntaxC : ISyntaxC {
         private static int tempCounter = 0;
 
-        public TokenLocation Location { get; set; }
+        private readonly StructArgument<ISyntaxC> arg;
+        public readonly int tag;
 
-        public StructArgument<ISyntax> Argument { get; set; }
+        public TrophyType ReturnType { get; }
 
-        public IdentifierPath TargetPath { get; set; }
+        public ImmutableHashSet<IdentifierPath> Lifetimes => arg.MemberValue.Lifetimes;
 
-        public TrophyType ReturnType { get; set; }
-
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
-
-        public int UnionTag { get; set; }
+        public NewUnionSyntaxC(StructArgument<ISyntaxC> arg, int tag, TrophyType returnType) {
+            this.arg = arg;
+            this.tag = tag;
+            this.ReturnType = returnType;
+        }
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {
             var ctype = writer.ConvertType(this.ReturnType);
             var cname = "$new_union_" + tempCounter++;
-            var argVal = this.Argument.MemberValue.GenerateCode(writer, statWriter);
+            var argVal = this.arg.MemberValue.GenerateCode(writer, statWriter);
 
             // Write union variable
             statWriter.WriteStatement(CStatement.VariableDeclaration(ctype, cname));
@@ -121,11 +145,11 @@ namespace Attempt20.Features.Containers.Unions {
             // Write tag assignment
             statWriter.WriteStatement(CStatement.Assignment(
                 CExpression.MemberAccess(CExpression.VariableLiteral(cname), "tag"),
-                CExpression.IntLiteral(this.UnionTag)));
+                CExpression.IntLiteral(this.tag)));
 
             // Write member assignment
             statWriter.WriteStatement(CStatement.Assignment(
-                CExpression.MemberAccess(CExpression.MemberAccess(CExpression.VariableLiteral(cname), "data"), this.Argument.MemberName),
+                CExpression.MemberAccess(CExpression.MemberAccess(CExpression.VariableLiteral(cname), "data"), this.arg.MemberName),
                 argVal));
 
             statWriter.WriteStatement(CStatement.NewLine());

@@ -7,101 +7,104 @@ using System.Collections.Immutable;
 using System.Linq;
 
 namespace Attempt20.Features.Containers.Arrays {
-    public class NewFixedArraySyntax : IParsedSyntax {
-        private IdentifierPath region;
+    public class NewFixedArraySyntaxA : ISyntaxA {
+        private readonly FixedArrayType arrayType;
 
-        public FixedArrayType ArrayType { get; set; }
+        public TokenLocation Location { get; }
 
-        public TokenLocation Location { get; set; }
-
-        public IParsedSyntax CheckNames(INameRecorder names) {
-            this.region = names.CurrentRegion;
-
-            return this;
+        public NewFixedArraySyntaxA(TokenLocation loc, FixedArrayType type) {
+            this.Location = loc;
+            this.arrayType = type;
         }
 
-        public ISyntax CheckTypes(INameRecorder names, ITypeRecorder types) {
-            // Make sure that the element type has a default value
-            if (!this.ArrayType.ElementType.HasDefaultValue(types)) {
-                throw TypeCheckingErrors.TypeWithoutDefaultValue(this.Location, this.ArrayType.ElementType);
-            }
+        public ISyntaxB CheckNames(INameRecorder names) {
+            var region = names.CurrentRegion;
 
-            return new NewFixedArrayTypeCheckedSyntax() {
-                ArrayType = this.ArrayType,
-                Location = this.Location,
-                RegionName = this.region.Segments.Last(),
-                Lifetimes = new[] { this.region }.ToImmutableHashSet()
-            };
+            return new NewFixedArraySyntaxBC(this.Location, this.arrayType, region);
         }
-    }
 
-    public class NewFixedArrayTypeCheckedSyntax : ISyntax {
-        private int counter = 0;
+        public class NewFixedArraySyntaxBC : ISyntaxB, ISyntaxC {
+            private static int counter;
 
-        public FixedArrayType ArrayType { get; set; }
+            private readonly FixedArrayType arrayType;
+            private readonly IdentifierPath region;
 
-        public TokenLocation Location { get; set; }
+            public TokenLocation Location { get; }
 
-        public string RegionName { get; set; }
+            public TrophyType ReturnType => this.arrayType;
 
-        public TrophyType ReturnType => this.ArrayType;
+            public ImmutableHashSet<IdentifierPath> Lifetimes => new[] { this.region }.ToImmutableHashSet();
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; set; }
-
-        public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var arrayName = "$fixed_array_" + counter++;
-            var arrayType = declWriter.ConvertType(this.ReturnType);
-            var dataExpr = CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "data");
-            var sizeExpr = CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "size");
-            var elementType = declWriter.ConvertType(this.ArrayType.ElementType);
-
-            // Write array declaration
-            statWriter.WriteStatement(CStatement.VariableDeclaration(arrayType, arrayName));
-
-            if (this.RegionName == "stack") {
-                var cArrayName = "$array_temp_" + counter++;
-                var cArraySize = CExpression.IntLiteral(this.ArrayType.Size);
-
-                // Write c array declaration
-                statWriter.WriteStatement(CStatement.ArrayDeclaration(elementType, cArrayName, cArraySize));
-
-                // Write data assignment
-                statWriter.WriteStatement(CStatement.Assignment(
-                    dataExpr,
-                    CExpression.VariableLiteral(cArrayName)));
+            public NewFixedArraySyntaxBC(TokenLocation location, FixedArrayType arrayType, IdentifierPath region) {
+                this.Location = location;
+                this.arrayType = arrayType;
+                this.region = region;
             }
-            else {
-                // Write data assignment
-                statWriter.WriteStatement(CStatement.Assignment(
-                    dataExpr,
-                    CExpression.Invoke(CExpression.VariableLiteral("$region_alloc"), new[] {
-                        CExpression.VariableLiteral(this.RegionName),
+
+            public ISyntaxC CheckTypes(ITypeRecorder types) {
+                // Make sure that the element type has a default value
+                if (!this.arrayType.ElementType.HasDefaultValue(types)) {
+                    throw TypeCheckingErrors.TypeWithoutDefaultValue(this.Location, this.arrayType.ElementType);
+                }
+
+                return this;
+            }
+
+            public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {
+                var arrayName = "$fixed_array_" + counter++;
+                var arrayType = writer.ConvertType(this.ReturnType);
+                var dataExpr = CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "data");
+                var sizeExpr = CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "size");
+                var elementType = writer.ConvertType(this.arrayType.ElementType);
+
+                // Write array declaration
+                statWriter.WriteStatement(CStatement.VariableDeclaration(arrayType, arrayName));
+
+                if (this.region == IdentifierPath.StackPath) {
+                    var cArrayName = "$array_temp_" + counter++;
+                    var cArraySize = CExpression.IntLiteral(this.arrayType.Size);
+
+                    // Write c array declaration
+                    statWriter.WriteStatement(CStatement.ArrayDeclaration(elementType, cArrayName, cArraySize));
+
+                    // Write data assignment
+                    statWriter.WriteStatement(CStatement.Assignment(
+                        dataExpr,
+                        CExpression.VariableLiteral(cArrayName)));
+                }
+                else {
+                    // Write data assignment
+                    statWriter.WriteStatement(CStatement.Assignment(
+                        dataExpr,
+                        CExpression.Invoke(CExpression.VariableLiteral("$region_alloc"), new[] {
+                        CExpression.VariableLiteral(this.region.Segments.Last()),
                         CExpression.BinaryExpression(
-                            CExpression.IntLiteral(this.ArrayType.Size),
+                            CExpression.IntLiteral(this.arrayType.Size),
                             CExpression.Sizeof(elementType),
                             Primitives.BinaryOperation.Multiply)
-                    })));
-            }
+                        })));
+                }
 
-            // Write size assignment
-            statWriter.WriteStatement(CStatement.Assignment(sizeExpr, CExpression.IntLiteral(this.ArrayType.Size)));
+                // Write size assignment
+                statWriter.WriteStatement(CStatement.Assignment(sizeExpr, CExpression.IntLiteral(this.arrayType.Size)));
 
-            // Memset the data
-            statWriter.WriteStatement(CStatement.FromExpression(
-                CExpression.Invoke(
-                    CExpression.VariableLiteral("memset"),
-                    new[] { 
+                // Memset the data
+                statWriter.WriteStatement(CStatement.FromExpression(
+                    CExpression.Invoke(
+                        CExpression.VariableLiteral("memset"),
+                        new[] {
                         dataExpr,
                         CExpression.IntLiteral(0),
                         CExpression.BinaryExpression(
-                            CExpression.IntLiteral(this.ArrayType.Size),
+                            CExpression.IntLiteral(this.arrayType.Size),
                             CExpression.Sizeof(elementType),
                         BinaryOperation.Multiply)
-                    })));
+                        })));
 
-            statWriter.WriteStatement(CStatement.NewLine());
+                statWriter.WriteStatement(CStatement.NewLine());
 
-            return CExpression.VariableLiteral(arrayName);
+                return CExpression.VariableLiteral(arrayName);
+            }
         }
     }
 }
