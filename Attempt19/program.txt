@@ -1,9 +1,0 @@
-﻿function main () => void: {
-	void;
-};
-
-function test (var int[] x) => int[]: {
-	x@[0] <- 45;
-
-	[heap | 1, 2, 3, 4];
-};
