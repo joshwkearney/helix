@@ -201,6 +201,12 @@ namespace Attempt20.Parsing {
             else if (id == "region") {
                 return new Token(TokenKind.RegionKeyword, location);
             }
+            else if (id == "to") {
+                return new Token(TokenKind.ToKeyword, location);
+            }
+            else if (id == "for") {
+                return new Token(TokenKind.ForKeyword, location);
+            }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);
             }

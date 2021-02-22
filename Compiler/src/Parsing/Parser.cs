@@ -9,6 +9,7 @@ using Attempt20.Features.FlowControl;
 using Attempt20.Features.Functions;
 using Attempt20.Features.Primitives;
 using Attempt20.Features.Variables;
+using Compiler.Features.FlowControl;
 
 namespace Attempt20.Parsing {
     public class Parser {
@@ -593,6 +594,9 @@ namespace Attempt20.Parsing {
             if (this.Peek(TokenKind.WhileKeyword)) {
                 result = this.WhileStatement();
             }
+            else if (this.Peek(TokenKind.ForKeyword)) {
+                result = this.ForStatement();
+            }
             else if (this.Peek(TokenKind.VarKeyword)) {
                 result = this.VariableDeclarationStatement();
             }
@@ -614,6 +618,23 @@ namespace Attempt20.Parsing {
             var loc = start.Location.Span(body.Location);
 
             return new WhileSyntaxA(loc, cond, body);
+        }
+
+        private ISyntaxA ForStatement() {
+            var start = this.Advance(TokenKind.ForKeyword);
+            var id = this.Advance<string>();
+
+            this.Advance(TokenKind.AssignmentSign);
+            var startIndex = this.TopExpression();
+
+            this.Advance(TokenKind.ToKeyword);
+            var endIndex = this.TopExpression();
+
+            this.Advance(TokenKind.DoKeyword);
+            var body = this.TopExpression();
+            var loc = start.Location.Span(body.Location);
+
+            return new ForSyntaxA(loc, id, startIndex, endIndex, body);
         }
 
         private ISyntaxA VariableDeclarationStatement() {

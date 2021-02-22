@@ -25,4 +25,5 @@ DONE unions
 DONE	union declarations
 DONE	new unions
 DONE	void unions
-for loops
+DONE for loops
+	make for variables immutable

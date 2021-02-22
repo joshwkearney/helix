@@ -10,14 +10,14 @@
         Comma, Colon, Dot, Semicolon, Pipe,
 
         VarKeyword, RefKeyword, IntKeyword, VoidKeyword, BoolKeyword,
-        IfKeyword, ThenKeyword, ElseKeyword, WhileKeyword, DoKeyword,
+        IfKeyword, ThenKeyword, ElseKeyword, WhileKeyword, ForKeyword, DoKeyword, ToKeyword,
         FunctionKeyword, NewKeyword, StructKeyword, ClassKeyword, UnionKeyword,
         AsKeyword, AllocKeyword, FromKeyword,
         TrueKeyword, FalseKeyword,
         AndKeyword, OrKeyword, XorKeyword,
         StackKeyword, HeapKeyword, RegionKeyword,
 
-        Identifier, Whitespace, 
+        Identifier, Whitespace,
         IntLiteral, BoolLiteral,
 
         MultiplySign, AddSign, SubtractSign
