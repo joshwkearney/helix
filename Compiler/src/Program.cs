@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Attempt20.Experimental;
 
 namespace Attempt20 {
     public class Program {
@@ -7,16 +8,40 @@ namespace Attempt20 {
             var file = File.ReadAllText("resources/Program.txt");
 
             try {
-                var c = new TrophyCompiler(file).Compile();
+                var expr1 = BoolSyntax.Not(
+                    BoolSyntax.Or(
+                        BoolSyntax.Atom(new UnionIsAtom(true, "x", "some")),
+                        BoolSyntax.Atom(new UnionIsAtom(true, "x", "other")))
+                );
 
-                Console.WriteLine(c);
-                File.WriteAllText("resources/Output.txt", c);
+                var expr2 = BoolSyntax.Not(
+                    BoolSyntax.Or(
+                        BoolSyntax.Atom(new ComparisonAtom(
+                            ComparisonArgument.String("x"),
+                            ComparisonArgument.Constant(5),
+                            ComparisonKind.LessThan
+                        )),
+                        BoolSyntax.Atom(new ComparisonAtom(
+                            ComparisonArgument.Constant(10), 
+                            ComparisonArgument.String("x"),
+                            ComparisonKind.LessThan
+                        ))
+                    )
+                );
+
+                System.Console.WriteLine(expr2);
+                System.Console.WriteLine(expr2.ToCNF().Simplify());
+
+                //var c = new TrophyCompiler(file).Compile();
+
+                //Console.WriteLine(c);
+               // File.WriteAllText("resources/Output.txt", c);
             }
             catch (TrophyException ex) {
                 Console.WriteLine(ex.CreateConsoleMessage(file));
             }
 
-            Console.ReadLine();
+            // Console.ReadLine();
         }
     }
 }
