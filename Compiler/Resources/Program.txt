@@ -1,5 +1,9 @@
-﻿func main(x) as void => {
+﻿func main() as void => {
     var x <- new OptionalInt { some = 4 };    
+
+    var y <- new int[5];
+
+    var z <- y[1];
 
     void;
 };
