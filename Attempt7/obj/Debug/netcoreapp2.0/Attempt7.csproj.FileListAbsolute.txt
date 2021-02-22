@@ -1,3 +1,0 @@
-C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt7\obj\Debug\netcoreapp2.0\Attempt7.csprojAssemblyReference.cache
-C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt7\obj\Debug\netcoreapp2.0\Attempt7.AssemblyInfoInputs.cache
-C:\Users\mwkea\Source\Repos\Blue0500\Compiler\Attempt7\obj\Debug\netcoreapp2.0\Attempt7.AssemblyInfo.cs

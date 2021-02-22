@@ -1,5 +1,0 @@
-﻿{		
-	let f = function real64 (real64 x) -> x * x;
-
-	f(5.0)	
-}

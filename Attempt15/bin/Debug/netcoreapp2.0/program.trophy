@@ -1,6 +1,0 @@
-﻿{
-	let f = function () -> 0
-
-	let z = |3, 4, f|
-	9
-}

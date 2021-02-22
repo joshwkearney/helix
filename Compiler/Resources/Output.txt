@@ -1,0 +1,51 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+typedef struct $Region $Region;
+void* $region_alloc($Region* region, int bytes);
+$Region* $region_create();
+void $region_delete($Region* region);
+
+int main($Region* heap);
+
+typedef struct $UnionType_0 $UnionType_0;
+struct $UnionType_0 {
+    int none;
+    int some;
+};
+
+typedef struct OptionalInt OptionalInt;
+struct OptionalInt {
+    int tag;
+    $UnionType_0 data;
+};
+
+typedef struct $UnionType_1 $UnionType_1;
+struct $UnionType_1 {
+    int eof;
+    int open_paren;
+    int close_paren;
+    int plus;
+    int times;
+    int minus;
+    int int_literal;
+};
+
+typedef struct Token Token;
+struct Token {
+    int tag;
+    $UnionType_1 data;
+};
+
+int main($Region* heap) {
+    OptionalInt $new_union_0;
+    ($new_union_0.tag) = 1;
+    (($new_union_0.data).some) = 4;
+
+    OptionalInt x1 = $new_union_0;
+
+    0;
+    return 0;
+}
+

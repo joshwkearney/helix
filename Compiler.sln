@@ -1,45 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt2", "Attempt2\Attempt2.csproj", "{6BA996C7-BC4F-4049-9AA6-58D2660E6C0F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt3", "Attempt3\Attempt3.csproj", "{7F9C6E04-08CC-41CE-9C53-9359DF5CE94F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt4", "Attempt4\Attempt4.csproj", "{372FBD1C-6595-4E2C-81D7-46141C1D8C9C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt5", "Attempt5\Attempt5.csproj", "{A6B70F3B-6E17-4F8F-8349-9B1ED09BAF17}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt6", "Attempt6\Attempt6.csproj", "{CB3032CD-5D0F-48C8-B428-A8E9E5C4DF7F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt7", "Attempt7\Attempt7.csproj", "{6D228AD6-94EA-4C85-B140-CF32E0D79BF4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt8", "Attempt8\Attempt8.csproj", "{008E6798-73C7-4123-A525-B6F4945D7789}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt9", "Attempt9\Attempt9.csproj", "{770A49FD-5265-4BE2-8F18-45F4D860569B}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CTesting", "CTesting\CTesting.vcxproj", "{64D304AA-F417-48FE-81D8-81ADD393438F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt10", "Attempt10\Attempt10.csproj", "{EDF94BB7-26AD-419A-9D7F-ECDB8EF71D39}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt11", "Attempt11\Attempt11.csproj", "{B5EE1398-686A-40FC-B01C-3F20E41FF19D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt12", "Attempt12\Attempt12.csproj", "{7CDA49A3-8B8B-48D0-9F39-4D973C74482B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt13", "Attempt13\Attempt13.csproj", "{FACA3B77-1AA2-41F8-BA2B-79162078F85C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt14", "Attempt14\Attempt14.csproj", "{24D1D4C6-2B11-405A-903A-42B26BA3525C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt15", "Attempt15\Attempt15.csproj", "{F265BB43-6915-4734-A726-5378D8AD8C10}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt16", "Attempt16\Attempt16.csproj", "{33348FF7-BE2F-42F7-BBA6-05E60F3C6810}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt17", "Attempt17\Attempt17.csproj", "{7354E56A-8B6A-4D83-A1AE-B4C4E0A4C32D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt18", "Attempt18\Attempt18.csproj", "{5E8AE746-430A-4BFE-B0FF-5CE83301825D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Attempt19", "Attempt19\Attempt19.csproj", "{CEEFB707-F41F-4635-A543-5096942C8338}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compiler", "Compiler\Compiler.csproj", "{AB9EA283-17C3-45D2-9537-141204D5028C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -277,6 +241,18 @@ Global
 		{CEEFB707-F41F-4635-A543-5096942C8338}.Release|x64.Build.0 = Release|Any CPU
 		{CEEFB707-F41F-4635-A543-5096942C8338}.Release|x86.ActiveCfg = Release|Any CPU
 		{CEEFB707-F41F-4635-A543-5096942C8338}.Release|x86.Build.0 = Release|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Debug|x64.Build.0 = Debug|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Debug|x86.Build.0 = Debug|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Release|x64.ActiveCfg = Release|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Release|x64.Build.0 = Release|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Release|x86.ActiveCfg = Release|Any CPU
+		{AB9EA283-17C3-45D2-9537-141204D5028C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
