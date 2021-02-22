@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using Attempt20.Experimental;
 
@@ -44,8 +45,14 @@ namespace Attempt20 {
                 System.Console.WriteLine(expr2);
                 System.Console.WriteLine(expr2.ToCNF().Simplify());*/
 
-                var c = new TrophyCompiler(file).Compile();
+                var watch = new Stopwatch();
 
+                watch.Start();
+                var c = new TrophyCompiler(file).Compile();
+                var time = watch.ElapsedMilliseconds;
+
+                Console.WriteLine("Compiled 'Program.txt' in " + time + " ms");
+                Console.WriteLine();
                 Console.WriteLine(c);
                 File.WriteAllText("resources/Output.txt", c);
             }
