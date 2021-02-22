@@ -13,6 +13,7 @@ namespace Attempt20.Features.Primitives {
 
         public VoidToPrimitiveAdapterC(ISyntaxC target, TrophyType returnType) {
             this.target = target;
+            this.ReturnType = returnType;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
