@@ -145,16 +145,15 @@ namespace Attempt20.Parsing {
         /** Declaration Parsing **/
         private FunctionSignature FunctionSignature() {
             this.Advance(TokenKind.FunctionKeyword);
-
-            var returnType = this.TypeExpression();
             var funcName = this.Advance<string>();
 
             this.Advance(TokenKind.OpenParenthesis);
 
             var pars = ImmutableList<FunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
-                var parType = this.TypeExpression();
                 var parName = this.Advance<string>();
+                this.Advance(TokenKind.AsKeyword);
+                var parType = this.TypeExpression();
 
                 if (!this.Peek(TokenKind.CloseParenthesis)) {
                     this.Advance(TokenKind.Comma);
@@ -164,7 +163,9 @@ namespace Attempt20.Parsing {
             }
 
             this.Advance(TokenKind.CloseParenthesis);
-
+            this.Advance(TokenKind.AsKeyword);            
+            
+            var returnType = this.TypeExpression();
             var sig = new FunctionSignature(funcName, returnType, pars);
 
             return sig;
@@ -199,8 +200,9 @@ namespace Attempt20.Parsing {
             this.Advance(TokenKind.OpenBrace);
 
             while (!this.Peek(TokenKind.FunctionKeyword) && !this.Peek(TokenKind.StructKeyword) && !this.Peek(TokenKind.CloseBrace)) {
-                var memType = this.TypeExpression();
                 var memName = this.Advance<string>();
+                this.Advance(TokenKind.AsKeyword);
+                var memType = this.TypeExpression();
 
                 this.Advance(TokenKind.Semicolon);
                 mems.Add(new StructMember(memName, memType));

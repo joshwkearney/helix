@@ -1,21 +1,20 @@
-﻿func void main() => {
+﻿func main(x) as void => {
     var x <- new OptionalInt { some = 4 };    
 
     void;
 };
 
 union OptionalInt {
-    void none;
-    int some;
+    none as void;
+    some as int;
 };
 
 union Token {
-    void eof;
-    void open_paren;
-    void close_paren;
-    void plus;
-    void times;
-    void minus;
-    
-    int int_literal;
+    eof         as void;
+    open_paren  as void;
+    close_paren as void;
+    plus        as void;
+    minus       as void;
+    times       as void;
+    int_literal as int;
 };
