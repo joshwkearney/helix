@@ -41,8 +41,13 @@ namespace Attempt20.Features.Variables {
             var assign = this.assign.CheckTypes(types);
 
             // Make sure the target is a variable type
-            if (target.ReturnType is not VariableType varType) {
+            if (target.ReturnType is not VarRefType varType) {
                 throw TypeCheckingErrors.ExpectedVariableType(this.target.Location, target.ReturnType);
+            }
+
+            // Make sure the taret is writable
+            if (varType.IsReadOnly) {
+                throw TypeCheckingErrors.ExpectedVariableType(this.Location, varType);
             }
 
             // Make sure the assign expression matches the target' inner type

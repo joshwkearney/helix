@@ -33,6 +33,6 @@ namespace Attempt20.Analysis {
     }
 
     public enum VariableDefinitionKind {
-        Local, Parameter
+        LocalVar, LocalRef, Parameter
     }
 }

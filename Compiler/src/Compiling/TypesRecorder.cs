@@ -6,6 +6,7 @@ using Attempt20.Features.Containers.Structs;
 using Attempt20.Features.Containers.Unions;
 using Attempt20.Features.Primitives;
 using Attempt20.Parsing;
+using Compiler.Features.Variables;
 
 namespace Attempt20.Compiling {
     public class TypesRecorder : ITypeRecorder {
@@ -74,6 +75,13 @@ namespace Attempt20.Compiling {
             else if (target.ReturnType.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
                 if (newType.AsArrayType().TryGetValue(out var arrayType) && fixedArrayType.ElementType == arrayType.ElementType) {
                     return Option.Some(new FixedArrayToArrayAdapter(target, newType));
+                }
+            }
+            else if (target.ReturnType.AsVariableType().TryGetValue(out var varRef1)) {
+                if (newType.AsVariableType().TryGetValue(out var varRef2)) {
+                    if (varRef1.InnerType == varRef2.InnerType && varRef2.IsReadOnly) {
+                        return Option.Some(new VarToRefAdapter(target, varRef2));
+                    }
                 }
             }
 

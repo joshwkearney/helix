@@ -71,7 +71,7 @@ namespace Attempt20.Features.Containers.Arrays {
                 throw TypeCheckingErrors.UnexpectedType(this.index.Location, TrophyType.Integer, index.ReturnType);
             }
 
-            return new ArrayLiteralAccessSyntaxC(target, index, new VariableType(elementType));
+            return new ArrayLiteralAccessSyntaxC(target, index, new VarRefType(elementType, false));
         }
     }
 

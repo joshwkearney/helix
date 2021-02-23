@@ -28,7 +28,7 @@
 
         public virtual IOption<FixedArrayType> AsFixedArrayType() { return Option.None<FixedArrayType>(); }
 
-        public virtual IOption<VariableType> AsVariableType() { return Option.None<VariableType>(); }
+        public virtual IOption<VarRefType> AsVariableType() { return Option.None<VarRefType>(); }
 
         public virtual IOption<SingularFunctionType> AsSingularFunctionType() { return Option.None<SingularFunctionType>(); }
 

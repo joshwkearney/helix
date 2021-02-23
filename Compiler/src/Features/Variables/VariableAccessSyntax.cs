@@ -66,7 +66,7 @@ namespace Attempt20.Features.Variables {
                 lifetimes = info.ValueLifetimes;
 
                 // If we're accessing a parameter, automatically dereference it
-                if (info.DefinitionKind == VariableDefinitionKind.Parameter && info.Type is VariableType varType) {
+                if (info.DefinitionKind == VariableDefinitionKind.Parameter && info.Type is VarRefType varType) {
                     returnType = varType.InnerType;
                 }
 
@@ -79,13 +79,16 @@ namespace Attempt20.Features.Variables {
                 lifetimes = info.VariableLifetimes;
 
                 // Make sure we're not literally accessing a non-variable parameter
-                if (info.DefinitionKind == VariableDefinitionKind.Parameter && info.Type is not VariableType) {
+                if (info.DefinitionKind == VariableDefinitionKind.Parameter && info.Type is not VarRefType) {
                     throw TypeCheckingErrors.ExpectedVariableType(this.Location, info.Type);
                 }
 
                 // For non-parameter access, return a variable type of the accessed variable
-                if (info.DefinitionKind == VariableDefinitionKind.Local) {
-                    returnType = new VariableType(returnType);
+                if (info.DefinitionKind == VariableDefinitionKind.LocalVar) {
+                    returnType = new VarRefType(returnType, false);
+                }
+                else if (info.DefinitionKind == VariableDefinitionKind.LocalRef) {
+                    returnType = new VarRefType(returnType, true);
                 }
             }
 
@@ -112,7 +115,7 @@ namespace Attempt20.Features.Variables {
             var cname = this.info.Name + this.info.UniqueId;
 
             if (this.kind == VariableAccessKind.ValueAccess) {
-                if (this.info.Type is VariableType && this.info.DefinitionKind == VariableDefinitionKind.Parameter) {
+                if (this.info.Type is VarRefType && this.info.DefinitionKind == VariableDefinitionKind.Parameter) {
                     return CExpression.Dereference(CExpression.VariableLiteral(cname));
                 }
                 else {

@@ -95,7 +95,7 @@ namespace Attempt20.Compiling {
                 return new FixedArrayType(this.ResolveTypeNames(fixedArrayType.ElementType, loc), fixedArrayType.Size);
             }
             else if (type.AsVariableType().TryGetValue(out var varType)) {
-                return new VariableType(this.ResolveTypeNames(varType.InnerType, loc));
+                return new VarRefType(this.ResolveTypeNames(varType.InnerType, loc), varType.IsReadOnly);
             }
             else if (type.AsNamedType().TryGetValue(out var name)) {
                 if (!this.TryFindName(name.ToString(), out var target, out var path)) {

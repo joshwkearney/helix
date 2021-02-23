@@ -81,14 +81,22 @@ namespace Attempt20.Parsing {
 
         /** Type Parsing **/
         private TrophyType VarTypeExpression() {
-            this.Advance(TokenKind.VarKeyword);
-            var inner = this.TypeExpression();
+            if (this.TryAdvance(TokenKind.VarKeyword)) {
+                this.Advance(TokenKind.VarKeyword);
+                var inner = this.TypeExpression();
 
-            return new VariableType(inner);
+                return new VarRefType(inner, false);
+            }
+            else {
+                this.Advance(TokenKind.RefKeyword);
+                var inner = this.TypeExpression();
+
+                return new VarRefType(inner, true);
+            }
         }
 
         private TrophyType TypeExpression() {
-            if (this.Peek(TokenKind.VarKeyword)) {
+            if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.RefKeyword)) {
                 return this.VarTypeExpression();
             }
 
@@ -597,8 +605,8 @@ namespace Attempt20.Parsing {
             else if (this.Peek(TokenKind.ForKeyword)) {
                 result = this.ForStatement();
             }
-            else if (this.Peek(TokenKind.VarKeyword)) {
-                result = this.VariableDeclarationStatement();
+            else if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.RefKeyword)) {
+                result = this.VarRefStatement();
             }
             else {
                 result = this.StoreStatement();
@@ -637,16 +645,26 @@ namespace Attempt20.Parsing {
             return new ForSyntaxA(loc, id, startIndex, endIndex, body);
         }
 
-        private ISyntaxA VariableDeclarationStatement() {
-            var tok = this.Advance(TokenKind.VarKeyword);
-            var name = this.Advance<string>();
+        private ISyntaxA VarRefStatement() {
+            IToken tok;
+            bool isReadOnly;
 
+            if (this.Peek(TokenKind.VarKeyword)) {
+                tok = this.Advance(TokenKind.VarKeyword);
+                isReadOnly = false;
+            }
+            else {
+                tok = this.Advance(TokenKind.RefKeyword);
+                isReadOnly = true;
+            }
+
+            var name = this.Advance<string>();
             this.Advance(TokenKind.LeftArrow);
 
             var assign = this.TopExpression();
             var loc = tok.Location.Span(assign.Location);
 
-            return new LetSyntaxA(loc, name, assign);
+            return new VarRefSyntaxA(loc, name, assign, isReadOnly);
         }
 
         private ISyntaxA StoreStatement() {

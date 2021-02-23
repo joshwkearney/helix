@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
@@ -67,7 +69,7 @@ namespace Attempt20.Features.Containers.Arrays {
             get {
                 return this.args
                     .FirstOrNone()
-                    .Select(x => x.ReturnType)
+                    .Select(x => new ArrayType(x.ReturnType))
                     .GetValueOr(() => TrophyType.Void);
             }
         }

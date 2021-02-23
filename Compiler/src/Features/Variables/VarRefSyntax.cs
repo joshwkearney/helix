@@ -6,16 +6,18 @@ using Attempt20.CodeGeneration.CSyntax;
 using Attempt20.Parsing;
 
 namespace Attempt20.Features.Variables {
-    public class LetSyntaxA : ISyntaxA {
+    public class VarRefSyntaxA : ISyntaxA {
         private readonly string name;
         private readonly ISyntaxA assign;
+        private readonly bool isreadonly;
 
         public TokenLocation Location { get; }
 
-        public LetSyntaxA(TokenLocation loc, string name, ISyntaxA assign) {
+        public VarRefSyntaxA(TokenLocation loc, string name, ISyntaxA assign, bool isreadonly) {
             this.Location = loc;
             this.name = name;
             this.assign = assign;
+            this.isreadonly = isreadonly;
         }
 
         public ISyntaxB CheckNames(INameRecorder names) {
@@ -30,29 +32,32 @@ namespace Attempt20.Features.Variables {
             // Declare this variable
             names.DeclareLocalName(path, NameTarget.Variable);
 
-            return new LetSyntaxB(
+            return new VarRefSyntaxB(
                 loc: this.Location, 
                 path: path, 
                 id: names.GetNewVariableId(),
                 region: names.CurrentRegion, 
-                assign: assign);
+                assign: assign,
+                this.isreadonly);
         }
     }
 
-    public class LetSyntaxB : ISyntaxB {
+    public class VarRefSyntaxB : ISyntaxB {
         private readonly IdentifierPath path;
         private readonly IdentifierPath region;
         private readonly int id;
         private readonly ISyntaxB assign;
+        private readonly bool isreadonly;
 
         public TokenLocation Location { get; }
 
-        public LetSyntaxB(TokenLocation loc, IdentifierPath path, int id, IdentifierPath region, ISyntaxB assign) {
+        public VarRefSyntaxB(TokenLocation loc, IdentifierPath path, int id, IdentifierPath region, ISyntaxB assign, bool isreadonly) {
             this.Location = loc;
             this.path = path;
             this.id = id;
             this.assign = assign;
             this.region = region;
+            this.isreadonly = isreadonly;
         }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
@@ -61,7 +66,7 @@ namespace Attempt20.Features.Variables {
             var info = new VariableInfo(
                 name: this.path.Segments.Last(),
                 innerType: assign.ReturnType,
-                kind: VariableDefinitionKind.Local,
+                kind: this.isreadonly ? VariableDefinitionKind.LocalRef : VariableDefinitionKind.LocalVar,
                 id: this.id,
                 valueLifetimes: assign.Lifetimes,
                 variableLifetimes: new[] { this.region }.ToImmutableHashSet());
@@ -69,14 +74,14 @@ namespace Attempt20.Features.Variables {
             // Declare this variable
             types.DeclareVariable(this.path, info);
 
-            return new LetSyntaxC(
+            return new VarRefSyntaxC(
                 info: info,
                 assign: assign,
                 returnType: TrophyType.Void);
         }
     }
 
-    public class LetSyntaxC : ISyntaxC {
+    public class VarRefSyntaxC : ISyntaxC {
         private readonly VariableInfo info;
         private readonly ISyntaxC assign;
 
@@ -84,7 +89,7 @@ namespace Attempt20.Features.Variables {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => new IdentifierPath[0].ToImmutableHashSet();
 
-        public LetSyntaxC(VariableInfo info, ISyntaxC assign, TrophyType returnType) {
+        public VarRefSyntaxC(VariableInfo info, ISyntaxC assign, TrophyType returnType) {
             this.info = info;
             this.assign = assign;
             this.ReturnType = returnType;

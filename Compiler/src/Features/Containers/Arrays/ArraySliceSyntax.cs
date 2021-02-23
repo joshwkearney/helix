@@ -40,7 +40,7 @@ namespace Attempt20.Features.Containers.Arrays {
             }
             else {
                 var tempName = "$slice_temp" + names.GetNewVariableId();
-                var letSyntax = new LetSyntaxA(this.Location, tempName, target);
+                var letSyntax = new VarRefSyntaxA(this.Location, tempName, target, false);
                 var accessSyntax = new IdentifierAccessSyntaxA(this.Location, tempName, VariableAccessKind.ValueAccess);
 
                 return new BlockSyntaxA(this.Location, new ISyntaxA[] {
