@@ -26,23 +26,30 @@ namespace Compiler.Features.FlowControl {
 
         public ISyntaxB CheckNames(INameRecorder names) {
             // Rewrite for syntax to use while loops
+            var counterName = "$for_counter_" + names.GetNewVariableId();
             var start = new AsSyntaxA(this.startIndex.Location, this.startIndex, TrophyType.Integer);
             var end = new AsSyntaxA(this.startIndex.Location, this.endIndex, TrophyType.Integer);
 
-            var counterDecl = new LetSyntaxA(this.Location, this.id, start);
+            var counterDecl = new VarRefSyntaxA(this.Location, counterName, start, false);
+
+            var idDecl = new VarRefSyntaxA(
+                this.Location, 
+                this.id, 
+                new IdentifierAccessSyntaxA(this.Location, counterName, VariableAccessKind.ValueAccess), 
+                true);
 
             var comp = new BinarySyntaxA(
                 this.Location,
-                new IdentifierAccessSyntaxA(this.Location, this.id, VariableAccessKind.ValueAccess),
+                new IdentifierAccessSyntaxA(this.Location, counterName, VariableAccessKind.ValueAccess),
                 end,
                 BinaryOperation.LessThanOrEqualTo);
 
             var store = new StoreSyntaxA(
                 this.Location,
-                new IdentifierAccessSyntaxA(this.Location, this.id, VariableAccessKind.LiteralAccess),
+                new IdentifierAccessSyntaxA(this.Location, counterName, VariableAccessKind.LiteralAccess),
                 new BinarySyntaxA(
                     this.Location,
-                    new IdentifierAccessSyntaxA(this.Location, this.id, VariableAccessKind.ValueAccess),
+                    new IdentifierAccessSyntaxA(this.Location, counterName, VariableAccessKind.ValueAccess),
                     new IntLiteralSyntax(this.Location, 1),
                     BinaryOperation.Add));
 
@@ -52,6 +59,7 @@ namespace Compiler.Features.FlowControl {
                     this.Location,
                     comp,
                     new BlockSyntaxA(this.Location, new ISyntaxA[] { 
+                        idDecl,
                         this.body,
                         store
                     }))
