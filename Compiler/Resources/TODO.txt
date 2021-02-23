@@ -1,4 +1,27 @@
-﻿Phase 1 =================
+﻿Phase 3 - Toolchain Features =================
+
+whole-module compilation
+intra-module compilation
+command line interface
+integrate with build system
+integrate with c compiler
+cross-compile to wasm
+
+
+Phase 2 - Complex Features =================
+
+closures
+generics
+interfaces
+type extensions
+modules
+operator overloading
+dependent int types
+preserve whitespace in pass A
+toString() and auto-formatting of AST
+
+
+Phase 1 - Basic Features =================
 
 DONE literal variable access
 DONE store syntax
@@ -26,4 +49,6 @@ DONE	union declarations
 DONE	new unions
 DONE	void unions
 DONE for loops
-	make for variables immutable
+DONE 	make for variables immutable
+DONE ref type (immutable variables)
+immutable arrays
