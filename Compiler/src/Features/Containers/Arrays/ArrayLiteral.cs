@@ -11,35 +11,40 @@ using Attempt20.Parsing;
 namespace Attempt20.Features.Containers.Arrays {
     public class ArrayLiteralSyntaxA : ISyntaxA {
         private readonly IReadOnlyList<ISyntaxA> args;
+        private readonly bool isreadonly;
 
         public TokenLocation Location { get; }
 
-        public ArrayLiteralSyntaxA(TokenLocation location, IReadOnlyList<ISyntaxA> args) {
+        public ArrayLiteralSyntaxA(TokenLocation location, bool isreadonly, IReadOnlyList<ISyntaxA> args) {
             this.Location = location;
             this.args = args;
+            this.isreadonly = isreadonly;
         }
 
         public ISyntaxB CheckNames(INameRecorder names) {
             var args = this.args.Select(x => x.CheckNames(names)).ToArray();
 
-            return new ArrayLiteralSyntaxB(this.Location, names.CurrentRegion, args);
+            return new ArrayLiteralSyntaxB(this.Location, this.isreadonly, names.CurrentRegion, args);
         }
     }
 
     public class ArrayLiteralSyntaxB : ISyntaxB {
         private readonly IdentifierPath region;
         private readonly IReadOnlyList<ISyntaxB> args;
+        private readonly bool isreadonly;
 
-        public ArrayLiteralSyntaxB(TokenLocation location, IdentifierPath region, IReadOnlyList<ISyntaxB> args) {
+        public ArrayLiteralSyntaxB(TokenLocation location, bool isreadonly, IdentifierPath region, IReadOnlyList<ISyntaxB> args) {
             this.Location = location;
             this.region = region;
             this.args = args;
+            this.isreadonly = isreadonly;
         }
 
         public TokenLocation Location { get; }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
+            var returnType = new FixedArrayType(TrophyType.Void, args.Length, this.isreadonly);
 
             // Make sure all the types line up
             if (args.Any()) {
@@ -53,9 +58,11 @@ namespace Attempt20.Features.Containers.Arrays {
                         throw TypeCheckingErrors.UnexpectedType(this.args[i].Location, expectedType, args[i].ReturnType);
                     }
                 }
+
+                returnType = new FixedArrayType(expectedType, args.Length, this.isreadonly);
             }
 
-            return new ArrayLiteralSyntaxC(this.region, args);
+            return new ArrayLiteralSyntaxC(this.region, args, returnType);
         }
     }
 
@@ -65,14 +72,7 @@ namespace Attempt20.Features.Containers.Arrays {
         private readonly IReadOnlyList<ISyntaxC> args;
         private readonly IdentifierPath region;
 
-        public TrophyType ReturnType {
-            get {
-                return this.args
-                    .FirstOrNone()
-                    .Select(x => new ArrayType(x.ReturnType))
-                    .GetValueOr(() => TrophyType.Void);
-            }
-        }
+        public TrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes {
             get {
@@ -84,9 +84,10 @@ namespace Attempt20.Features.Containers.Arrays {
             }
         }
 
-        public ArrayLiteralSyntaxC(IdentifierPath regionName, IReadOnlyList<ISyntaxC> args) {
+        public ArrayLiteralSyntaxC(IdentifierPath regionName, IReadOnlyList<ISyntaxC> args, TrophyType returnType) {
             this.args = args;
             this.region = regionName;
+            this.ReturnType = returnType;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {

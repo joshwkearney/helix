@@ -54,7 +54,7 @@ namespace Attempt20.Features.Containers {
                     throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.targetType, this.args.Select(x => x.MemberName));
                 }
 
-                var arrayLiteral = new NewFixedArraySyntaxA(this.Location, new FixedArrayType(arrayType.ElementType, 0));
+                var arrayLiteral = new NewFixedArraySyntaxA(this.Location, new FixedArrayType(arrayType.ElementType, 0, arrayType.IsReadOnly));
                 var asSyntax = new AsSyntaxA(this.Location, arrayLiteral, arrayType);
 
                 return asSyntax.CheckNames(names);

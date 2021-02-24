@@ -89,10 +89,10 @@ namespace Attempt20.Compiling {
                 return type;
             }
             else if (type.AsArrayType().TryGetValue(out var arrayType)) {
-                return new ArrayType(this.ResolveTypeNames(arrayType.ElementType, loc));
+                return new ArrayType(this.ResolveTypeNames((TrophyType)arrayType.ElementType, loc), (bool)arrayType.IsReadOnly);
             }
             else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                return new FixedArrayType(this.ResolveTypeNames(fixedArrayType.ElementType, loc), fixedArrayType.Size);
+                return new FixedArrayType(this.ResolveTypeNames((TrophyType)fixedArrayType.ElementType, loc), fixedArrayType.Size, (bool)fixedArrayType.IsReadOnly);
             }
             else if (type.AsVariableType().TryGetValue(out var varType)) {
                 return new VarRefType(this.ResolveTypeNames(varType.InnerType, loc), varType.IsReadOnly);

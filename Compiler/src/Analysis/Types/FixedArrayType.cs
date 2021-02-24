@@ -4,13 +4,19 @@
 
         public TrophyType ElementType { get; }
 
-        public FixedArrayType(TrophyType elemType, int size) {
+        public bool IsReadOnly { get; }
+
+        public FixedArrayType(TrophyType elemType, int size, bool isReadOnly) {
             this.ElementType = elemType;
             this.Size = size;
+            this.IsReadOnly = isReadOnly;
         }
 
         public override bool Equals(object obj) {
-            return obj is FixedArrayType other && this.ElementType.Equals(other.ElementType) && this.Size == other.Size; 
+            return obj is FixedArrayType other 
+                && this.ElementType.Equals(other.ElementType) 
+                && this.Size == other.Size
+                && this.IsReadOnly == other.IsReadOnly; 
         }
 
         public override TypeCopiability GetCopiability(ITypeRecorder types) {
@@ -18,7 +24,9 @@
         }
 
         public override int GetHashCode() {
-            return this.Size + 7 * this.ElementType.GetHashCode();
+            return this.IsReadOnly.GetHashCode() 
+                + 3 * this.Size 
+                + 7 * this.ElementType.GetHashCode();
         }
 
         public override bool HasDefaultValue(ITypeRecorder types) {
@@ -26,7 +34,7 @@
         }
 
         public override string ToString() {
-            return this.ElementType.ToString() + "[" + this.Size.ToString() + "]";
+            return "array[" + (this.IsReadOnly ? "ref " : "var ") + this.ElementType + ", " + this.Size + "]";
         }
 
         public override IOption<FixedArrayType> AsFixedArrayType() {

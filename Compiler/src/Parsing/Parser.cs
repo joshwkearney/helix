@@ -100,27 +100,7 @@ namespace Attempt20.Parsing {
                 return this.VarTypeExpression();
             }
 
-            return this.ArrayTypeExpression();
-        }
-
-        private TrophyType ArrayTypeExpression() {
-            var start = this.TypeAtom();
-
-            while (this.Peek(TokenKind.OpenBracket)) {
-                this.Advance(TokenKind.OpenBracket);
-
-                if (this.Peek(TokenKind.IntLiteral)) {
-                    var size = this.Advance<int>();
-                    this.Advance(TokenKind.CloseBracket);
-                    start = new FixedArrayType(start, size);
-                }
-                else {
-                    this.Advance(TokenKind.CloseBracket);
-                    start = new ArrayType(start);
-                }
-            }
-
-            return start;
+            return this.TypeAtom();
         }
 
         private TrophyType TypeAtom() {
@@ -132,6 +112,29 @@ namespace Attempt20.Parsing {
             }
             else if (this.TryAdvance(TokenKind.BoolKeyword)) {
                 return TrophyType.Boolean;
+            }
+            else if (this.TryAdvance(TokenKind.ArrayKeyword)) {
+                this.Advance(TokenKind.OpenBracket);
+                bool isreadonly = false;
+
+                if (!this.TryAdvance(TokenKind.VarKeyword)) {
+                    this.Advance(TokenKind.RefKeyword);
+                    isreadonly = true;
+                }
+
+                var inner = this.TypeExpression();
+
+                if (this.TryAdvance(TokenKind.Comma)) {
+                    var count = this.Advance<int>();
+                    this.Advance(TokenKind.CloseBracket);
+
+                    return new FixedArrayType(inner, count, isreadonly);
+                }
+                else {
+                    this.Advance(TokenKind.CloseBracket);
+
+                    return new ArrayType(inner, isreadonly);
+                }
             }
             else {
                 return new NamedType(new IdentifierPath(this.Advance<string>()));
@@ -499,6 +502,9 @@ namespace Attempt20.Parsing {
             else if (this.Peek(TokenKind.OpenBracket)) {
                 return this.ArrayLiteral();
             }
+            else if (this.Peek(TokenKind.Pipe)) {
+                return this.ReadOnlyArrayLiteral();
+            }
             else if (this.Peek(TokenKind.OpenParenthesis)) {
                 return this.ParenExpression();
             }
@@ -571,7 +577,25 @@ namespace Attempt20.Parsing {
             var end = this.Advance(TokenKind.CloseBracket);
             var loc = start.Location.Span(end.Location);
 
-            return new ArrayLiteralSyntaxA(loc, args);
+            return new ArrayLiteralSyntaxA(loc, false, args);
+        }
+
+        private ISyntaxA ReadOnlyArrayLiteral() {
+            var start = this.Advance(TokenKind.Pipe);
+            var args = new List<ISyntaxA>();
+
+            while (!this.Peek(TokenKind.Pipe)) {
+                args.Add(this.TopExpression());
+
+                if (!this.TryAdvance(TokenKind.Comma)) {
+                    break;
+                }
+            }
+
+            var end = this.Advance(TokenKind.Pipe);
+            var loc = start.Location.Span(end.Location);
+
+            return new ArrayLiteralSyntaxA(loc, true, args);
         }
 
         private ISyntaxA ParenExpression() {

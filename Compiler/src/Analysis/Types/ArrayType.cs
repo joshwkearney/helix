@@ -1,9 +1,12 @@
 ﻿namespace Attempt20.Analysis.Types {
     public class ArrayType : TrophyType {
+        public bool IsReadOnly { get; }
+
         public TrophyType ElementType { get; }
 
-        public ArrayType(TrophyType elemType) {
+        public ArrayType(TrophyType elemType, bool isReadOnly) {
             this.ElementType = elemType;
+            this.IsReadOnly = isReadOnly;
         }
 
         public override bool Equals(object other) {
@@ -12,18 +15,18 @@
             }
 
             if (other is ArrayType arrType) {
-                return this.ElementType == arrType.ElementType;
+                return this.ElementType == arrType.ElementType && this.IsReadOnly == arrType.IsReadOnly;
             }
 
             return false;
         }
 
         public override int GetHashCode() {
-            return ElementType.GetHashCode();
+            return this.IsReadOnly.GetHashCode() + ElementType.GetHashCode();
         }
 
         public override string ToString() {
-            return this.ElementType.ToString() + "[]";
+            return "array[" + (this.IsReadOnly ? "ref " : "var ") + this.ElementType.ToString() + "]";
         }
 
         public override bool HasDefaultValue(ITypeRecorder types) => true;

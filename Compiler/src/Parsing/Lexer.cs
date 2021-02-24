@@ -207,6 +207,9 @@ namespace Attempt20.Parsing {
             else if (id == "for") {
                 return new Token(TokenKind.ForKeyword, location);
             }
+            else if (id == "array") {
+                return new Token(TokenKind.ArrayKeyword, location);
+            }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);
             }

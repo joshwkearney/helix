@@ -41,12 +41,23 @@ namespace Attempt20.Features.Containers {
             var target = this.target.CheckTypes(types);
 
             // If this is an array we can get the size
-            if (target.ReturnType.AsArrayType().TryGetValue(out var arrayType)) {
+            if (target.ReturnType.AsArrayType().TryGetValue(out _)) {
                 if (this.memberName == "size") {
                     return new MemberAccessTypeCheckedSyntax(
                         target, 
                         this.memberName, 
                         TrophyType.Integer, 
+                        ImmutableHashSet.Create<IdentifierPath>());
+                }
+            }
+
+            // If this is a fixed array we can get the size
+            if (target.ReturnType.AsFixedArrayType().TryGetValue(out _)) {
+                if (this.memberName == "size") {
+                    return new MemberAccessTypeCheckedSyntax(
+                        target,
+                        this.memberName,
+                        TrophyType.Integer,
                         ImmutableHashSet.Create<IdentifierPath>());
                 }
             }
@@ -101,6 +112,11 @@ namespace Attempt20.Features.Containers {
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
+            // Optimization: insert a fixed array's size directly instead of a member access
+            if (this.target.ReturnType.AsFixedArrayType().TryGetValue(out var fixedArray)) {
+                return CExpression.IntLiteral(fixedArray.Size);
+            }
+
             var target = this.target.GenerateCode(declWriter, statWriter);
 
             return CExpression.MemberAccess(target, this.memberName);

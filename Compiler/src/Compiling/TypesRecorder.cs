@@ -73,8 +73,17 @@ namespace Attempt20.Compiling {
                 }
             }
             else if (target.ReturnType.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                if (newType.AsArrayType().TryGetValue(out var arrayType) && fixedArrayType.ElementType == arrayType.ElementType) {
-                    return Option.Some(new FixedArrayToArrayAdapter(target, newType));
+                if (newType.AsArrayType().TryGetValue(out var fixedArrayType2) && fixedArrayType.ElementType == fixedArrayType2.ElementType) {
+                    if (!(fixedArrayType.IsReadOnly && !fixedArrayType2.IsReadOnly)) {
+                        return Option.Some(new ArrayToArrayAdapter(target, newType));
+                    }
+                }
+            }
+            else if (target.ReturnType.AsArrayType().TryGetValue(out var arrayType)) {
+                if (newType.AsArrayType().TryGetValue(out var arrayType2) && arrayType.ElementType == arrayType2.ElementType) {
+                    if (!(arrayType.IsReadOnly && !arrayType2.IsReadOnly)) {
+                        return Option.Some(new ArrayToArrayAdapter(target, newType));
+                    }
                 }
             }
             else if (target.ReturnType.AsVariableType().TryGetValue(out var varRef1)) {

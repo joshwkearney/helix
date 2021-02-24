@@ -20,7 +20,7 @@ namespace Attempt20.Features.Containers.Arrays {
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var syntax = new BlockSyntaxC(new[] {
                 this.target,
-                new ArrayLiteralSyntaxC(IdentifierPath.StackPath, new ISyntaxC[0])
+                new ArrayLiteralSyntaxC(IdentifierPath.StackPath, new ISyntaxC[0], this.ReturnType)
             });
 
             return syntax.GenerateCode(declWriter, statWriter);

@@ -79,7 +79,7 @@ namespace Attempt20.Features.Containers.Arrays {
                 returnType = arrayType;
             }
             else if (target.ReturnType.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                returnType = new ArrayType(fixedArrayType.ElementType);
+                returnType = new ArrayType(fixedArrayType.ElementType, fixedArrayType.IsReadOnly);
             }
             else {
                 throw TypeCheckingErrors.ExpectedArrayType(this.target.Location, target.ReturnType);

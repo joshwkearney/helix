@@ -51,13 +51,16 @@ namespace Attempt20.Features.Containers.Arrays {
             var target = this.target.CheckTypes(types);
             var index = this.index.CheckTypes(types);
             var elementType = TrophyType.Void;
+            var isreadonly = false;
 
             // Make sure the target is an array
             if (target.ReturnType.AsArrayType().TryGetValue(out var arrayType)) {
                 elementType = arrayType.ElementType;
+                isreadonly = arrayType.IsReadOnly;
             }
             else if (target.ReturnType.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
                 elementType = fixedArrayType.ElementType;
+                isreadonly = fixedArrayType.IsReadOnly;
             }
             else {
                 throw TypeCheckingErrors.ExpectedArrayType(this.target.Location, target.ReturnType);
@@ -71,7 +74,7 @@ namespace Attempt20.Features.Containers.Arrays {
                 throw TypeCheckingErrors.UnexpectedType(this.index.Location, TrophyType.Integer, index.ReturnType);
             }
 
-            return new ArrayLiteralAccessSyntaxC(target, index, new VarRefType(elementType, false));
+            return new ArrayLiteralAccessSyntaxC(target, index, new VarRefType(elementType, isreadonly));
         }
     }
 

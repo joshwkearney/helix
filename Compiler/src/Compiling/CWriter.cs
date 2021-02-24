@@ -73,7 +73,7 @@ namespace Attempt20.Compiling {
                 return this.MakeArrayType(arrayType);
             }
             else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                return this.MakeArrayType(new ArrayType(fixedArrayType.ElementType));
+                return this.MakeArrayType(new ArrayType(fixedArrayType.ElementType, fixedArrayType.IsReadOnly));
             }
             else if (type.AsVariableType().TryGetValue(out var type2)) {
                 return CType.Pointer(ConvertType(type2.InnerType));

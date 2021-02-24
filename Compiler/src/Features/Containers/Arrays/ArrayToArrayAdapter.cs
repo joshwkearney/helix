@@ -4,12 +4,12 @@ using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
 
 namespace Attempt20.Features.Containers.Arrays {
-    public class FixedArrayToArrayAdapter : ISyntaxC {
+    public class ArrayToArrayAdapter : ISyntaxC {
         private readonly ISyntaxC target;
 
         public TrophyType ReturnType { get; }
 
-        public FixedArrayToArrayAdapter(ISyntaxC target, TrophyType returnType) {
+        public ArrayToArrayAdapter(ISyntaxC target, TrophyType returnType) {
             this.target = target;
             this.ReturnType = returnType;
         }
