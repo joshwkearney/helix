@@ -63,6 +63,15 @@ namespace Attempt20.Features.Variables {
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var assign = this.assign.CheckTypes(types);
 
+            // If this is a var declaration and the type is a dependent type (singular int type, 
+            // singular function type, or fixed array type, convert it to the more abstract form
+            // so the type system doesn't get in the way
+            if (!this.isreadonly) {
+                if (assign.ReturnType.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
+                    assign = types.TryUnifyTo(assign, new ArrayType(fixedArrayType.ElementType, fixedArrayType.IsReadOnly)).GetValue();
+                }
+            }
+
             var info = new VariableInfo(
                 name: this.path.Segments.Last(),
                 innerType: assign.ReturnType,
