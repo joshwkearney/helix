@@ -1,12 +1,12 @@
-﻿using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.Features.Functions;
-using Attempt20.Parsing;
+﻿using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.Features.Functions;
+using Trophy.Parsing;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt20.Features.Containers {
+namespace Trophy.Features.Containers {
     public class MemberInvokeSyntaxA : ISyntaxA {
         private readonly string memberName;
         private readonly ISyntaxA target;

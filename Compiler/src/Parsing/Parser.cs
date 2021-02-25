@@ -1,18 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.Features.Containers;
-using Attempt20.Features.Containers.Arrays;
-using Attempt20.Features.FlowControl;
-using Attempt20.Features.Functions;
-using Attempt20.Features.Primitives;
-using Attempt20.Features.Variables;
-using Compiler.Analysis.Types;
-using Compiler.Features.FlowControl;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.Features.Containers;
+using Trophy.Features.Containers.Arrays;
+using Trophy.Features.FlowControl;
+using Trophy.Features.Functions;
+using Trophy.Features.Primitives;
+using Trophy.Features.Variables;
+using Trophy.Analysis.Types;
+using Trophy.Features.FlowControl;
 
-namespace Attempt20.Parsing {
+namespace Trophy.Parsing {
     public class Parser {
         private int pos = 0;
         private readonly IReadOnlyList<IToken> tokens;

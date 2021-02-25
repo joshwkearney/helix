@@ -1,7 +1,7 @@
-﻿using Attempt20.CodeGeneration.CSyntax;
+﻿using Trophy.CodeGeneration.CSyntax;
 using System;
 
-namespace Attempt20.CodeGeneration {
+namespace Trophy.CodeGeneration {
     public class CStatementWriter : ICStatementWriter {
         public event EventHandler<CStatement> StatementWritten;
 

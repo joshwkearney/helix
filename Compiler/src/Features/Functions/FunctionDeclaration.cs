@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.Analysis;
-using Attempt20.CodeGeneration;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.CodeGeneration;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.Functions {
+namespace Trophy.Features.Functions {
     public class FunctionDeclarationA : IDeclarationA {
         public ISyntaxA Body { get; }
 

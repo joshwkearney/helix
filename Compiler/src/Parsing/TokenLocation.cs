@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Attempt20.Parsing {
+namespace Trophy.Parsing {
     public class TokenLocation {
         public int StartIndex { get; }
 

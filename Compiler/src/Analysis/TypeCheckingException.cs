@@ -1,6 +1,6 @@
-﻿using Attempt20.Parsing;
+﻿using Trophy.Parsing;
 
-namespace Attempt20.Analysis {
+namespace Trophy.Analysis {
     public class TypeCheckingException : TrophyException {
         public TypeCheckingException(TokenLocation location, string title, string message) : base(location, title, message) { }
     }

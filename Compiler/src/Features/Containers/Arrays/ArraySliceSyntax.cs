@@ -1,13 +1,13 @@
 ﻿using System.Collections.Immutable;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Features.FlowControl;
-using Attempt20.Features.Primitives;
-using Attempt20.Features.Variables;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Features.FlowControl;
+using Trophy.Features.Primitives;
+using Trophy.Features.Variables;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.Containers.Arrays {
+namespace Trophy.Features.Containers.Arrays {
     public class ArraySliceSyntaxA : ISyntaxA {
         private readonly ISyntaxA target;
         private readonly IOption<ISyntaxA> startIndex, endIndex;

@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace Attempt20.CodeGeneration.CSyntax {
+namespace Trophy.CodeGeneration.CSyntax {
     public abstract class CStatement {
         public static CStatement VariableDeclaration(CType type, string name, CExpression assign) {
             return new CVariableDeclaration(type, name, Option.Some(assign));

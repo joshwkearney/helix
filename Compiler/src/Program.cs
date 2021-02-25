@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using Attempt20.Experimental;
+using Trophy.Experimental;
 
-namespace Attempt20 {
+namespace Trophy {
     public class Program {
         public static void Main(string[] args) {
             var file = File.ReadAllText("resources/Program.txt");

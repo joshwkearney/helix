@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace Attempt20.Analysis.Types {
+namespace Trophy.Analysis.Types {
     public class SingularFunctionType : TrophyType {
         public IdentifierPath FunctionPath { get; }
 

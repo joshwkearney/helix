@@ -1,9 +1,9 @@
-﻿using Attempt20.Analysis;
-using Attempt20.Compiling;
-using Attempt20.Parsing;
+﻿using Trophy.Analysis;
+using Trophy.Compiling;
+using Trophy.Parsing;
 using System.Linq;
 
-namespace Attempt20 {
+namespace Trophy {
     public partial class TrophyCompiler {
         private readonly string input;
 

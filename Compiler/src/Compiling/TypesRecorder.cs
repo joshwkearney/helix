@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.Features.Containers.Arrays;
-using Attempt20.Features.Containers.Structs;
-using Attempt20.Features.Containers.Unions;
-using Attempt20.Features.Primitives;
-using Attempt20.Parsing;
-using Compiler.Features.Variables;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.Features.Containers.Arrays;
+using Trophy.Features.Containers.Structs;
+using Trophy.Features.Containers.Unions;
+using Trophy.Features.Primitives;
+using Trophy.Parsing;
+using Trophy.Features.Variables;
 
-namespace Attempt20.Compiling {
+namespace Trophy.Compiling {
     public class TypesRecorder : ITypeRecorder {
         private readonly Dictionary<IdentifierPath, VariableInfo> variables = new Dictionary<IdentifierPath, VariableInfo>();
         private readonly Dictionary<IdentifierPath, FunctionSignature> functions = new Dictionary<IdentifierPath, FunctionSignature>();

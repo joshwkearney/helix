@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Attempt20.Experimental {
+namespace Trophy.Experimental {
     public abstract class BoolSyntax {
         public static BoolSyntax And(params BoolSyntax[] terms) {
             if (terms.Length == 1) {

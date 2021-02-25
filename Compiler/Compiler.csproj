@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>Trophy</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -13,9 +14,6 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="LineCount.ps1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="resources\" />
   </ItemGroup>
   <ItemGroup>
     <None Update="resources\Program.txt">

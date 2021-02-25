@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.Primitives {
+namespace Trophy.Features.Primitives {
     public enum BinaryOperation {
         Add, Subtract, Multiply,
         And, Or, Xor,

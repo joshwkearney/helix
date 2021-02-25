@@ -1,8 +1,8 @@
-﻿using Attempt20.Analysis;
-using Attempt20.Parsing;
+﻿using Trophy.Analysis;
+using Trophy.Parsing;
 using System.Linq;
 
-namespace Attempt20.Features.FlowControl {
+namespace Trophy.Features.FlowControl {
     public class FromSyntaxA : ISyntaxA {
         private readonly string region;
         private readonly ISyntaxA arg;

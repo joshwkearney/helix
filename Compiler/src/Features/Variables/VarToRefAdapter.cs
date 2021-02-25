@@ -1,13 +1,13 @@
-﻿using Attempt20;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
+﻿using Trophy;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 
-namespace Compiler.Features.Variables {
+namespace Trophy.Features.Variables {
     public class VarToRefAdapter : ISyntaxC {
         private readonly ISyntaxC target;
 

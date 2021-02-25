@@ -1,10 +1,10 @@
 ﻿using System.Collections.Immutable;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.Variables {
+namespace Trophy.Features.Variables {
 
     public class StoreSyntaxA : ISyntaxA {
         private readonly ISyntaxA target, assign;

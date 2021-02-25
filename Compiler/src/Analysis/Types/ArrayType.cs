@@ -1,4 +1,4 @@
-﻿namespace Attempt20.Analysis.Types {
+﻿namespace Trophy.Analysis.Types {
     public class ArrayType : TrophyType {
         public bool IsReadOnly { get; }
 

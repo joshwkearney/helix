@@ -1,7 +1,7 @@
-﻿using Attempt20.Analysis.Types;
-using Attempt20.Parsing;
+﻿using Trophy.Analysis.Types;
+using Trophy.Parsing;
 
-namespace Attempt20.Analysis {
+namespace Trophy.Analysis {
     public interface INameRecorder {
         public IdentifierPath CurrentScope { get; }
 

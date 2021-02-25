@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt20.Analysis {
+namespace Trophy.Analysis {
     public struct IdentifierPath : IEquatable<IdentifierPath> {
         public static IdentifierPath HeapPath { get; } = new IdentifierPath("heap");
         public static IdentifierPath StackPath { get; } = new IdentifierPath("heap", "stack");

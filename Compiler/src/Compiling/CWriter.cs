@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Compiler.Analysis.Types;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Analysis.Types;
 
-namespace Attempt20.Compiling {
+namespace Trophy.Compiling {
     public class CWriter : ICWriter {
         private bool regionHeadersGenerated = false;
 

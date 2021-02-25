@@ -1,4 +1,4 @@
-﻿namespace Attempt20.Analysis.Types {
+﻿namespace Trophy.Analysis.Types {
     public class BoolType : TrophyType {
         public override bool IsBoolType => true;
 

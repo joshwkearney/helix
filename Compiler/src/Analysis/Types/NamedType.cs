@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace Attempt20.Analysis.Types {
+namespace Trophy.Analysis.Types {
     public class NamedType : TrophyType {
         public IdentifierPath SignaturePath { get; }
 

@@ -1,6 +1,6 @@
-﻿using Compiler.Analysis.Types;
+﻿using Trophy.Analysis.Types;
 
-namespace Attempt20.Analysis.Types {
+namespace Trophy.Analysis.Types {
     public enum TypeCopiability {
         Unconditional, Conditional
     }

@@ -1,9 +1,9 @@
-﻿using Attempt20.Analysis.Types;
+﻿using Trophy.Analysis.Types;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt20.Analysis {
+namespace Trophy.Analysis {
     public class FunctionSignature : IEquatable<FunctionSignature> {
         public TrophyType ReturnType { get; }
 

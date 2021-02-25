@@ -1,13 +1,13 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Features.FlowControl;
-using Attempt20.Features.Primitives;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Features.FlowControl;
+using Trophy.Features.Primitives;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.Containers.Unions {
+namespace Trophy.Features.Containers.Unions {
     public class VoidToUnionAdapterC : ISyntaxC {
         private readonly ISyntaxC target;
 

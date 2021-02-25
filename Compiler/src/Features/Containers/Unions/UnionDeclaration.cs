@@ -1,10 +1,10 @@
-﻿using Attempt20.Analysis;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Parsing;
+﻿using Trophy.Analysis;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Parsing;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Attempt20.Features.Containers {
+namespace Trophy.Features.Containers {
     public class UnionDeclarationC : IDeclarationC {
         private static int counter = 0;
 

@@ -1,10 +1,10 @@
 ﻿using System.Collections.Immutable;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Features.FlowControl;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Features.FlowControl;
 
-namespace Attempt20.Features.Containers.Arrays {
+namespace Trophy.Features.Containers.Arrays {
     public class VoidToArrayAdapterC : ISyntaxC {
         public readonly ISyntaxC target;
 

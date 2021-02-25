@@ -1,4 +1,4 @@
-﻿namespace Attempt20.Parsing {
+﻿namespace Trophy.Parsing {
     public enum TokenKind {
         OpenParenthesis, CloseParenthesis,
         OpenBrace, CloseBrace,

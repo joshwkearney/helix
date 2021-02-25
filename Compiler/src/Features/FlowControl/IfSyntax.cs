@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Features.Primitives;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Features.Primitives;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.FlowControl {
+namespace Trophy.Features.FlowControl {
     public class IfSyntaxA : ISyntaxA {
         private readonly ISyntaxA cond, iftrue;
         private readonly IOption<ISyntaxA> iffalse;

@@ -1,13 +1,13 @@
-﻿using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Features.Primitives;
-using Attempt20.Parsing;
+﻿using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Features.Primitives;
+using Trophy.Parsing;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Attempt20.Features.Containers.Structs {
+namespace Trophy.Features.Containers.Structs {
     public class NewStructSyntaxA : ISyntaxA {
         private readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
         private readonly TrophyType targetType;

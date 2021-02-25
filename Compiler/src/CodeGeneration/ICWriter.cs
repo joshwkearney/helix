@@ -1,7 +1,7 @@
-﻿using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
+﻿using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
 
-namespace Attempt20 {
+namespace Trophy {
     public interface ICWriter {
         public void WriteDeclaration(CDeclaration decl);
 

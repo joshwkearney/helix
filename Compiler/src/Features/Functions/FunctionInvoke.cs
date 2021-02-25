@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.Functions {
+namespace Trophy.Features.Functions {
     public class FunctionInvokeSyntaxA : ISyntaxA {
         private readonly ISyntaxA target;
         private readonly IReadOnlyList<ISyntaxA> args;

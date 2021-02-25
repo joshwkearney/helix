@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Attempt20.Parsing {
+namespace Trophy.Parsing {
     public class Lexer {
         private readonly string text;
 

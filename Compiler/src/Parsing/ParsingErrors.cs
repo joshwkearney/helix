@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Attempt20.Parsing {
+namespace Trophy.Parsing {
     public static class ParsingErrors {
         public static Exception EndOfFile(TokenLocation location) {
             return new ParseException(

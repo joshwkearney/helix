@@ -1,11 +1,11 @@
 ﻿using System.Collections.Immutable;
 using System.Linq;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.FlowControl {
+namespace Trophy.Features.FlowControl {
     public class RegionBlockSyntaxA : ISyntaxA {
         private readonly IOption<string> regionName;
         private readonly ISyntaxA body;

@@ -1,12 +1,12 @@
-﻿using Attempt20;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
+﻿using Trophy;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Compiler.Analysis.Types {
+namespace Trophy.Analysis.Types {
     public class FunctionType : TrophyType {
         public TrophyType ReturnType { get; }
 

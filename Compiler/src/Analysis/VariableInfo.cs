@@ -1,7 +1,7 @@
-﻿using Attempt20.Analysis.Types;
+﻿using Trophy.Analysis.Types;
 using System.Collections.Immutable;
 
-namespace Attempt20.Analysis {
+namespace Trophy.Analysis {
     public class VariableInfo {
         public string Name { get; }
 

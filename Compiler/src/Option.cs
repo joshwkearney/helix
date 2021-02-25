@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Attempt20 {
+namespace Trophy {
     public interface IOption<out T> {
         E Match<E>(Func<T, E> ifsome, Func<E> ifnone);
     }

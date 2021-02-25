@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.Features.Containers.Arrays;
-using Attempt20.Features.Containers.Structs;
-using Attempt20.Features.Containers.Unions;
-using Attempt20.Features.Primitives;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.Features.Containers.Arrays;
+using Trophy.Features.Containers.Structs;
+using Trophy.Features.Containers.Unions;
+using Trophy.Features.Primitives;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.Containers {
+namespace Trophy.Features.Containers {
     public class StructArgument<T> {
         public string MemberName { get; set; }
 

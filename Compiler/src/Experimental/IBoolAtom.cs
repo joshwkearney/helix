@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Attempt20.Experimental {
+namespace Trophy.Experimental {
     public interface IBoolAtom {
         public IEnumerable<IBoolAtom> TryUnionWith(IBoolAtom other);
 

@@ -1,8 +1,8 @@
-﻿using Attempt20.Parsing;
+﻿using Trophy.Parsing;
 using System;
 using System.Linq;
 
-namespace Attempt20 {
+namespace Trophy {
     public class TrophyException : Exception {
         public string Title { get; }
 

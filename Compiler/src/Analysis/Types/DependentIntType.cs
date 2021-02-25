@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Attempt20.Experimental;
+using Trophy.Experimental;
 using System.Linq;
 
-namespace Attempt20.Analysis.Types {
+namespace Trophy.Analysis.Types {
     public class DependentIntType : TrophyType {
         public override bool IsIntType => true;
 

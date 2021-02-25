@@ -1,12 +1,12 @@
-﻿using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.Parsing;
-using Compiler.Analysis.Types;
+﻿using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.Parsing;
+using Trophy.Analysis.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Attempt20.Compiling {
+namespace Trophy.Compiling {
     public class NamesRecorder : INameRecorder {
         private readonly Stack<IdentifierPath> scopes = new Stack<IdentifierPath>();
         private readonly Stack<IdentifierPath> regions = new Stack<IdentifierPath>();

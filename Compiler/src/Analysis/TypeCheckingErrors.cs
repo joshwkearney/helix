@@ -1,10 +1,10 @@
-﻿using Attempt20.Analysis.Types;
-using Attempt20.Parsing;
+﻿using Trophy.Analysis.Types;
+using Trophy.Parsing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Attempt20.Analysis {
+namespace Trophy.Analysis {
     public static class TypeCheckingErrors {
         public static Exception UnexpectedType(TokenLocation location, TrophyType expected, TrophyType actual) {
             return new TypeCheckingException(

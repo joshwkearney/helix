@@ -1,15 +1,15 @@
-﻿using Attempt20;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.Features.FlowControl;
-using Attempt20.Features.Primitives;
-using Attempt20.Features.Variables;
-using Attempt20.Parsing;
+﻿using Trophy;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.Features.FlowControl;
+using Trophy.Features.Primitives;
+using Trophy.Features.Variables;
+using Trophy.Parsing;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Compiler.Features.FlowControl {
+namespace Trophy.Features.FlowControl {
     public class ForSyntaxA : ISyntaxA {
         private readonly string id;
         private readonly ISyntaxA startIndex, endIndex, body;

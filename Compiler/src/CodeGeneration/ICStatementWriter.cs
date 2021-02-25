@@ -1,6 +1,6 @@
-﻿using Attempt20.CodeGeneration.CSyntax;
+﻿using Trophy.CodeGeneration.CSyntax;
 
-namespace Attempt20 {
+namespace Trophy {
     public interface ICStatementWriter {
         public void WriteStatement(CStatement stat);
     }

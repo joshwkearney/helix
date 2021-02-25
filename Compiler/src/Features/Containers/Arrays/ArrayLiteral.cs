@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Attempt20.Analysis;
-using Attempt20.Analysis.Types;
-using Attempt20.CodeGeneration.CSyntax;
-using Attempt20.Parsing;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
+using Trophy.CodeGeneration.CSyntax;
+using Trophy.Parsing;
 
-namespace Attempt20.Features.Containers.Arrays {
+namespace Trophy.Features.Containers.Arrays {
     public class ArrayLiteralSyntaxA : ISyntaxA {
         private readonly IReadOnlyList<ISyntaxA> args;
         private readonly bool isreadonly;

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Attempt20.Features.Primitives;
+using Trophy.Features.Primitives;
 
-namespace Attempt20.CodeGeneration.CSyntax {
+namespace Trophy.CodeGeneration.CSyntax {
     public abstract class CExpression {
         public static CExpression IntLiteral(int value) {
             return new CIntExpression(value, CIntKind.Standard);
