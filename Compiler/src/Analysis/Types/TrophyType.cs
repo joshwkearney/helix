@@ -1,4 +1,6 @@
-﻿namespace Attempt20.Analysis.Types {
+﻿using Compiler.Analysis.Types;
+
+namespace Attempt20.Analysis.Types {
     public enum TypeCopiability {
         Unconditional, Conditional
     }
@@ -33,6 +35,8 @@
         public virtual IOption<SingularFunctionType> AsSingularFunctionType() { return Option.None<SingularFunctionType>(); }
 
         public virtual IOption<IdentifierPath> AsNamedType() { return Option.None<IdentifierPath>(); }
+
+        public virtual IOption<FunctionType> AsFunctionType() { return Option.None<FunctionType>(); }
 
         public static bool operator ==(TrophyType type1, TrophyType type2) {
             return type1.Equals(type2);

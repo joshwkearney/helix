@@ -89,6 +89,23 @@ namespace Attempt20.Parsing {
             }
         }
 
+        private IToken GetMinusOrRightArrow() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '>') {
+                    pos++;
+
+                    return new Token(TokenKind.RightArrow, new TokenLocation(pos - 1, 2));
+                }
+                else {
+                    return new Token(TokenKind.SubtractSign, location);
+                }
+            }
+            else {
+                throw ParsingErrors.EndOfFile(new TokenLocation(pos, 1));
+            }
+        }
+
+
         private IToken GetNumber() {
             int start = pos;
             string strNum = "";
@@ -275,6 +292,9 @@ namespace Attempt20.Parsing {
             else if (current == '>') {
                 return this.GetGreaterThanOrGreaterThanOrEqualTo();
             }
+            else if (current == '-') {
+                return this.GetMinusOrRightArrow();
+            }
             else if (current == '!') {
                 return this.GetNotOrNotEqual();
             }
@@ -283,9 +303,6 @@ namespace Attempt20.Parsing {
             }
             else if (current == '+') {
                 return new Token(TokenKind.AddSign, location);
-            }
-            else if (current == '-') {
-                return new Token(TokenKind.SubtractSign, location);
             }
             else if (current == '|') {
                 return new Token(TokenKind.Pipe, location);

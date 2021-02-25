@@ -40,5 +40,9 @@
         public override IOption<FixedArrayType> AsFixedArrayType() {
             return Option.Some(this);
         }
+
+        public override IOption<ArrayType> AsArrayType() {
+            return Option.Some(new ArrayType(this.ElementType, this.IsReadOnly));
+        }
     }
 }

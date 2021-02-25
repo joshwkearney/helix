@@ -47,6 +47,10 @@ namespace Attempt20.CodeGeneration.CSyntax {
             return new CAggregateDeclaration(false, name, Option.None<IReadOnlyList<CParameter>>());
         }
 
+        public static CDeclaration FunctionPointer(string name, CType returnType, IReadOnlyList<CParameter> pars) {
+            return new CFunctionPointerDeclaration(name, returnType, pars);
+        }
+
         public static CDeclaration EmptyLine() {
             return new CEmptyLine();
         }
@@ -58,6 +62,26 @@ namespace Attempt20.CodeGeneration.CSyntax {
         private class CEmptyLine : CDeclaration {
             public override void WriteToC(int indentLevel, StringBuilder sb) {
                 sb.AppendLine();
+            }
+        }
+
+        private class CFunctionPointerDeclaration : CDeclaration {
+            private readonly IReadOnlyList<CParameter> pars;
+            private readonly CType returnType;
+            private readonly string name;
+
+            public CFunctionPointerDeclaration(string name, CType returnType, IReadOnlyList<CParameter> pars) {
+                this.name = name;
+                this.returnType = returnType;
+                this.pars = pars;
+            }
+
+            public override void WriteToC(int indentLevel, StringBuilder sb) {
+                CHelper.Indent(indentLevel, sb);
+
+                sb.Append("typedef ").Append(this.returnType).Append(" (*").Append(this.name).Append(")(");
+                sb.Append(string.Join(", ", this.pars.Select(x => x.Type + " " + x.Name)));
+                sb.AppendLine(");");
             }
         }
 

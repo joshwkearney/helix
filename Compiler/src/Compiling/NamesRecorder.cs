@@ -1,6 +1,7 @@
 ﻿using Attempt20.Analysis;
 using Attempt20.Analysis.Types;
 using Attempt20.Parsing;
+using Compiler.Analysis.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -89,10 +90,10 @@ namespace Attempt20.Compiling {
                 return type;
             }
             else if (type.AsArrayType().TryGetValue(out var arrayType)) {
-                return new ArrayType(this.ResolveTypeNames((TrophyType)arrayType.ElementType, loc), (bool)arrayType.IsReadOnly);
+                return new ArrayType(this.ResolveTypeNames(arrayType.ElementType, loc), arrayType.IsReadOnly);
             }
             else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                return new FixedArrayType(this.ResolveTypeNames((TrophyType)fixedArrayType.ElementType, loc), fixedArrayType.Size, (bool)fixedArrayType.IsReadOnly);
+                return new FixedArrayType(this.ResolveTypeNames(fixedArrayType.ElementType, loc), fixedArrayType.Size, fixedArrayType.IsReadOnly);
             }
             else if (type.AsVariableType().TryGetValue(out var varType)) {
                 return new VarRefType(this.ResolveTypeNames(varType.InnerType, loc), varType.IsReadOnly);
@@ -111,6 +112,11 @@ namespace Attempt20.Compiling {
                 else {
                     throw TypeCheckingErrors.TypeUndefined(loc, name.ToString());
                 }
+            }
+            else if (type.AsFunctionType().TryGetValue(out var funcType)) {
+                return new FunctionType(
+                    this.ResolveTypeNames(funcType.ReturnType, loc),
+                    funcType.ParameterTypes.Select(x => this.ResolveTypeNames(x, loc)).ToArray());
             }
             else {
                 throw new Exception();

@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Attempt20.Analysis.Types;
 using Attempt20.CodeGeneration.CSyntax;
+using Compiler.Analysis.Types;
 
 namespace Attempt20.Compiling {
     public class CWriter : ICWriter {
         private bool regionHeadersGenerated = false;
 
-        private int arrayTypeCounter = 0;
-        private readonly Dictionary<ArrayType, CType> arrayTypeNames = new Dictionary<ArrayType, CType>();
+        private int typeCounter = 0;
+        private readonly Dictionary<TrophyType, CType> typeNames = new Dictionary<TrophyType, CType>();
 
         private readonly StringBuilder forwardDeclSb = new StringBuilder();
         private readonly StringBuilder declSb = new StringBuilder();
@@ -69,11 +71,11 @@ namespace Attempt20.Compiling {
             if (type.IsBoolType || type.IsIntType || type.IsVoidType || type.AsSingularFunctionType().Any()) {
                 return CType.Integer;
             }
-            else if (type.AsArrayType().TryGetValue(out var arrayType)) {
-                return this.MakeArrayType(arrayType);
-            }
             else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
                 return this.MakeArrayType(new ArrayType(fixedArrayType.ElementType, fixedArrayType.IsReadOnly));
+            }
+            else if (type.AsArrayType().TryGetValue(out var arrayType)) {
+                return this.MakeArrayType(arrayType);
             }
             else if (type.AsVariableType().TryGetValue(out var type2)) {
                 return CType.Pointer(ConvertType(type2.InnerType));
@@ -81,17 +83,52 @@ namespace Attempt20.Compiling {
             else if (type.AsNamedType().TryGetValue(out var path)) {
                 return CType.NamedType(path.ToString());
             }
+            else if (type.AsFunctionType().TryGetValue(out var funcType)) {
+                return this.MakeFunctionType(funcType);
+            }
             else {
                 throw new Exception();
             }
         }
 
-        private CType MakeArrayType(ArrayType arrayType) {
-            if (this.arrayTypeNames.TryGetValue(arrayType, out var ctype)) {
+        private CType MakeFunctionType(FunctionType funcType) {
+            if (this.typeNames.TryGetValue(funcType, out var ctype)) {
                 return ctype;
             }
 
-            var name = "$ArrayType" + arrayTypeCounter++;
+            var returnType = CType.Pointer(this.ConvertType(funcType.ReturnType));
+            var parTypes = funcType
+                .ParameterTypes
+                .Select((x, i) => new CParameter(this.ConvertType(x), "arg" + i))
+                .ToArray();
+
+            var pointerName = "$FuncType_" + typeCounter++;
+            var structName = "$ClosureType_" + typeCounter++;
+
+            var members = new[] {
+                new CParameter(CType.VoidPointer, "environment"), 
+                new CParameter(CType.NamedType(pointerName), "function")
+            };
+
+            this.WriteForwardDeclaration(CDeclaration.FunctionPointer(pointerName, returnType, parTypes));
+            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+
+            this.WriteForwardDeclaration(CDeclaration.StructPrototype(structName));
+            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+
+            this.WriteForwardDeclaration(CDeclaration.Struct(structName, members));
+            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+
+            return this.typeNames[funcType] = CType.NamedType(structName);
+        }
+
+
+        private CType MakeArrayType(ArrayType arrayType) {
+            if (this.typeNames.TryGetValue(arrayType, out var ctype)) {
+                return ctype;
+            }
+
+            var name = "$ArrayType" + typeCounter++;
             var innerType = CType.Pointer(this.ConvertType(arrayType.ElementType));
             var members = new[] {
                     new CParameter(CType.Integer, "size"), new CParameter(innerType, "data")
@@ -100,10 +137,10 @@ namespace Attempt20.Compiling {
             this.WriteForwardDeclaration(CDeclaration.StructPrototype(name));
             this.WriteForwardDeclaration(CDeclaration.EmptyLine());
 
-            this.WriteDeclaration(CDeclaration.Struct(name, members));
-            this.WriteDeclaration(CDeclaration.EmptyLine());
+            this.WriteForwardDeclaration(CDeclaration.Struct(name, members));
+            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
 
-            return this.arrayTypeNames[arrayType] = CType.NamedType(name);
+            return this.typeNames[arrayType] = CType.NamedType(name);
         }
     }
 }

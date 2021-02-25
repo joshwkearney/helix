@@ -4,7 +4,7 @@
         OpenBrace, CloseBrace,
         OpenBracket, CloseBracket,
 
-        AssignmentSign, LeftArrow, LiteralSign, YieldSign,
+        AssignmentSign, LeftArrow, RightArrow, LiteralSign, YieldSign,
         NotSign, EqualSign, NotEqualSign, GreaterThanSign, LessThanSign,
         LessThanOrEqualToSign, GreaterThanOrEqualToSign,
         Comma, Colon, Dot, Semicolon, Pipe,

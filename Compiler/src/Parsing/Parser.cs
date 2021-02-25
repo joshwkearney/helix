@@ -9,6 +9,7 @@ using Attempt20.Features.FlowControl;
 using Attempt20.Features.Functions;
 using Attempt20.Features.Primitives;
 using Attempt20.Features.Variables;
+using Compiler.Analysis.Types;
 using Compiler.Features.FlowControl;
 
 namespace Attempt20.Parsing {
@@ -136,6 +137,25 @@ namespace Attempt20.Parsing {
                     return new ArrayType(inner, isreadonly);
                 }
             }
+            else if (this.TryAdvance(TokenKind.FunctionKeyword)) {
+                this.Advance(TokenKind.OpenBracket);
+                var args = new List<TrophyType>();
+
+                while (true) {
+                    args.Add(this.TypeExpression());
+
+                    if (!this.TryAdvance(TokenKind.Comma)) {
+                        break;
+                    }
+                }
+
+                this.Advance(TokenKind.RightArrow);
+                var returnType = this.TypeAtom();
+
+                this.Advance(TokenKind.CloseBracket);
+
+                return new FunctionType(returnType, args);
+            }
             else {
                 return new NamedType(new IdentifierPath(this.Advance<string>()));
             }
@@ -186,7 +206,7 @@ namespace Attempt20.Parsing {
         private IDeclarationA FunctionDeclaration() {
             var start = this.tokens[this.pos];
             var sig = this.FunctionSignature();
-            var end = this.Advance(TokenKind.YieldSign);
+            var end = this.Advance(TokenKind.RightArrow);
 
             var body = this.TopExpression();
             var loc = start.Location.Span(end.Location);

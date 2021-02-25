@@ -1,14 +1,19 @@
-﻿func main() as void => {
-    var x <- new OptionalInt { some = 4 };    
+﻿func main() as void -> {
+    ref x <- new OptionalInt { some = 4 };    
+    ref y <- [1, 2, 3, 4, 5, 6];
+    ref z <- [4, 5, 6, 8];
 
-    for i = 0 to 10 do { };
+   #  @z <- [1, 2, 3];
 
-    var y <- [1, 2, 3, 4, 5, 6];
-    @y <- y@[1:5]; 
+    if (z.size < 10) do {
 
-    ref z <- @y as ref int[];
+    };
 
     void;
+};
+
+func test(other as func[int->int]) as void -> {
+    
 };
 
 union OptionalInt {
