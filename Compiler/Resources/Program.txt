@@ -9,6 +9,8 @@
 
     };
 
+    test(func (int x) -> x + 45);
+
     void;
 };
 

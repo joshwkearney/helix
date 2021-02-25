@@ -3,7 +3,7 @@
 whole-module compilation
 intra-module compilation
 command line interface
-integrate with build system
+integrate with build system (cmake?)
 integrate with c compiler
 cross-compile to wasm
 
