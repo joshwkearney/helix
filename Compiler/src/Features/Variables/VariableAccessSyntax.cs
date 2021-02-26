@@ -51,6 +51,10 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>().Add(this.path, VariableUsageKind.Captured);
+        }
+
         public VariableAccessSyntaxB(TokenLocation loc, IdentifierPath path, VariableAccessKind kind) {
             this.Location = loc;
             this.path = path;
@@ -65,11 +69,6 @@ namespace Trophy.Features.Variables {
             if (this.kind == VariableAccessKind.ValueAccess) {
                 lifetimes = info.ValueLifetimes;
 
-                // If we're accessing a parameter, automatically dereference it
-                if (info.DefinitionKind == VariableDefinitionKind.Parameter && info.Type is VarRefType varType) {
-                    returnType = varType.InnerType;
-                }
-
                 // If the variable type is copiable, don't propagate any lifetimes
                 if (returnType.GetCopiability(types) == TypeCopiability.Unconditional) {
                     lifetimes = ImmutableHashSet.Create<IdentifierPath>();
@@ -79,15 +78,15 @@ namespace Trophy.Features.Variables {
                 lifetimes = info.VariableLifetimes;
 
                 // Make sure we're not literally accessing a non-variable parameter
-                if (info.DefinitionKind == VariableDefinitionKind.Parameter && info.Type is not VarRefType) {
+                if (info.DefinitionKind == VariableDefinitionKind.Parameter) {
                     throw TypeCheckingErrors.ExpectedVariableType(this.Location, info.Type);
                 }
 
                 // For non-parameter access, return a variable type of the accessed variable
-                if (info.DefinitionKind == VariableDefinitionKind.LocalVar) {
+                if (info.DefinitionKind == VariableDefinitionKind.LocalVar || info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
                     returnType = new VarRefType(returnType, false);
                 }
-                else if (info.DefinitionKind == VariableDefinitionKind.LocalRef) {
+                else {
                     returnType = new VarRefType(returnType, true);
                 }
             }
@@ -104,6 +103,8 @@ namespace Trophy.Features.Variables {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage { get; }
+
         public VariableAccessdSyntaxC(VariableInfo info, VariableAccessKind kind, TrophyType type, ImmutableHashSet<IdentifierPath> lifetimes) {
             this.info = info;
             this.kind = kind;
@@ -115,7 +116,7 @@ namespace Trophy.Features.Variables {
             var cname = this.info.Name + this.info.UniqueId;
 
             if (this.kind == VariableAccessKind.ValueAccess) {
-                if (this.info.Type is VarRefType && this.info.DefinitionKind == VariableDefinitionKind.Parameter) {
+                if (this.info.DefinitionKind == VariableDefinitionKind.ParameterRef || this.info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
                     return CExpression.Dereference(CExpression.VariableLiteral(cname));
                 }
                 else {
@@ -123,7 +124,7 @@ namespace Trophy.Features.Variables {
                 }
             }
             else {
-                if (this.info.DefinitionKind == VariableDefinitionKind.Parameter) {
+                if (this.info.DefinitionKind == VariableDefinitionKind.ParameterRef || this.info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
                     return CExpression.VariableLiteral(cname);
                 }
                 else {

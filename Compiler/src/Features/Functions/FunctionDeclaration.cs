@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Trophy.Analysis;
+using Trophy.Analysis.Types;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Parsing;
@@ -31,14 +32,7 @@ namespace Trophy.Features.Functions {
 
             var parNames = this.Signature.Parameters.Select(x => x.Name).ToArray();
             var unique = parNames.Distinct().ToArray();
-
-            var dups = this.Signature
-                .Parameters
-                .Select(x => x.Name)
-                .GroupBy(x => x)
-                .Where(x => x.Count() > 1)
-                .Select(x => x.Key)
-                .ToArray();
+            var dups = FunctionsHelper.FindDuplicateParameters(this.Signature.Parameters);
 
             // Check for duplicate parameter names
             if (dups.Any()) {
@@ -115,15 +109,22 @@ namespace Trophy.Features.Functions {
             for (int i = 0; i < this.Signature.Parameters.Count; i++) {
                 var par = this.Signature.Parameters[i];
                 var id = this.parIds[i];
+                var type = par.Type;
+                var defKind = VariableDefinitionKind.Parameter;
+
+                if (type is VarRefType varRefType) {
+                    type = varRefType.InnerType;
+                    defKind = varRefType.IsReadOnly ? VariableDefinitionKind.ParameterRef : VariableDefinitionKind.ParameterVar;
+                }
 
                 var path = this.funcPath.Append(par.Name);
                 var info = new VariableInfo(
-                    par.Name,
-                    par.Type,
-                    VariableDefinitionKind.Parameter,
-                    id,
-                    new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet(),
-                    new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet());
+                    name:               par.Name,
+                    innerType:          type,
+                    kind:               defKind,
+                    id:                 id,
+                    valueLifetimes:     new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet(),
+                    variableLifetimes:  new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet());
 
                 types.DeclareVariable(path, info);
             }
@@ -148,12 +149,12 @@ namespace Trophy.Features.Functions {
                     continue;
                 }
 
-                if (!capLifetime.Outlives(IdentifierPath.HeapPath)) { 
+                if (!capLifetime.Outlives(IdentifierPath.StackPath)) { 
                     throw TypeCheckingErrors.LifetimeExceeded(this.body.Location, IdentifierPath.HeapPath, capLifetime);
                 }
             }
 
-            return new FunctionDeclarationC(this.Signature, this.funcPath, body);
+            return new FunctionDeclarationC(this.Signature, this.funcPath, body, this.parIds);
         }
     }
 
@@ -161,11 +162,13 @@ namespace Trophy.Features.Functions {
         public readonly FunctionSignature sig;
         private readonly IdentifierPath funcPath;
         private readonly ISyntaxC body;
+        private readonly IReadOnlyList<int> parIds;
 
-        public FunctionDeclarationC(FunctionSignature sig, IdentifierPath funcPath, ISyntaxC body) {
+        public FunctionDeclarationC(FunctionSignature sig, IdentifierPath funcPath, ISyntaxC body, IReadOnlyList<int> parIds) {
             this.sig = sig;
             this.funcPath = funcPath;
             this.body = body;
+            this.parIds = parIds;
         }
 
         public void GenerateCode(ICWriter declWriter) {
@@ -174,7 +177,7 @@ namespace Trophy.Features.Functions {
             var returnType = declWriter.ConvertType(this.sig.ReturnType);
             var pars = this.sig
                 .Parameters
-                .Select(x => new CParameter(declWriter.ConvertType(x.Type), x.Name))
+                .Select((x, i) => new CParameter(declWriter.ConvertType(x.Type), x.Name + this.parIds[i]))
                 .Prepend(new CParameter(CType.NamedType("$Region*"), "heap"))
                 .ToArray();
 

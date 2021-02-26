@@ -7,37 +7,53 @@ using Trophy.Features.Containers.Unions;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Features.Variables;
+using System.Linq;
 
 namespace Trophy.Compiling {
     public class TypesRecorder : ITypeRecorder {
-        private readonly Dictionary<IdentifierPath, VariableInfo> variables = new Dictionary<IdentifierPath, VariableInfo>();
-        private readonly Dictionary<IdentifierPath, FunctionSignature> functions = new Dictionary<IdentifierPath, FunctionSignature>();
-        private readonly Dictionary<IdentifierPath, AggregateSignature> structs = new Dictionary<IdentifierPath, AggregateSignature>();
-        private readonly Dictionary<IdentifierPath, AggregateSignature> unions = new Dictionary<IdentifierPath, AggregateSignature>();
-        private readonly Dictionary<TrophyType, Dictionary<string, IdentifierPath>> methods = new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>();
+        private readonly Stack<Dictionary<IdentifierPath, VariableInfo>> variables = new Stack<Dictionary<IdentifierPath, VariableInfo>>();
+        private readonly Stack<Dictionary<IdentifierPath, FunctionSignature>> functions = new Stack<Dictionary<IdentifierPath, FunctionSignature>>();
+        private readonly Stack<Dictionary<IdentifierPath, AggregateSignature>> structs = new Stack<Dictionary<IdentifierPath, AggregateSignature>>();
+        private readonly Stack<Dictionary<TrophyType, Dictionary<string, IdentifierPath>>> methods = new Stack<Dictionary<TrophyType, Dictionary<string, IdentifierPath>>>();
+
+        public TypesRecorder() {
+            this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
+            this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
+            this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
+            this.methods.Push(new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>());
+        }
 
         public void DeclareVariable(IdentifierPath path, VariableInfo info) {
-            this.variables[path] = info;
+            this.variables.Peek()[path] = info;
         }
 
         public void DeclareFunction(IdentifierPath path, FunctionSignature sig) {
-            this.functions[path] = sig;
+            this.functions.Peek()[path] = sig;
         }
 
         public void DeclareStruct(IdentifierPath path, AggregateSignature sig) {
-            this.structs[path] = sig;
+            this.structs.Peek()[path] = sig;
         }
 
         public IOption<FunctionSignature> TryGetFunction(IdentifierPath path) {
-            return this.functions.GetValueOption(path);
+            return this.functions
+                .Select(x => x.GetValueOption(path))
+                .SelectMany(x => x.AsEnumerable())
+                .FirstOrNone();
         }
 
         public IOption<VariableInfo> TryGetVariable(IdentifierPath path) {
-            return this.variables.GetValueOption(path);
+            return this.variables
+                .Select(x => x.GetValueOption(path))
+                .SelectMany(x => x.AsEnumerable())
+                .FirstOrNone();
         }
 
         public IOption<AggregateSignature> TryGetStruct(IdentifierPath path) {
-            return structs.GetValueOption(path);
+            return this.structs
+                .Select(x => x.GetValueOption(path))
+                .SelectMany(x => x.AsEnumerable())
+                .FirstOrNone();
         }
 
         public IOption<ISyntaxC> TryUnifyTo(ISyntaxC target, TrophyType newType) {
@@ -99,23 +115,45 @@ namespace Trophy.Compiling {
         }
 
         public void DeclareMethodPath(TrophyType type, string name, IdentifierPath path) {
-            if (!this.methods.ContainsKey(type)) {
-                this.methods[type] = new Dictionary<string, IdentifierPath>();
+            var methods = this.methods.Peek();
+
+            if (!methods.ContainsKey(type)) {
+                methods[type] = new Dictionary<string, IdentifierPath>();
             }
 
-            this.methods[type][name] = path;
+            methods[type][name] = path;
         }
 
         public IOption<IdentifierPath> TryGetMethodPath(TrophyType type, string name) {
-            return this.methods.GetValueOption(type).SelectMany(x => x.GetValueOption(name));
+            return this.methods
+                .SelectMany(x => x.GetValueOption(type).AsEnumerable())
+                .SelectMany(x => x.GetValueOption(name).AsEnumerable())
+                .FirstOrNone();
         }
 
         public void DeclareUnion(IdentifierPath path, AggregateSignature sig) {
-            this.unions[path] = sig;
+            this.structs.Peek()[path] = sig;
         }
 
         public IOption<AggregateSignature> TryGetUnion(IdentifierPath path) {
-            return this.unions.GetValueOption(path);
+            return this.structs
+                .Select(x => x.GetValueOption(path))
+                .SelectMany(x => x.AsEnumerable())
+                .FirstOrNone();
+        }
+
+        public void PushFlow() {
+            this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
+            this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
+            this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
+            this.methods.Push(new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>()); this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
+        }
+
+        public void PopFlow() {
+            this.variables.Pop();
+            this.functions.Pop();
+            this.structs.Pop();
+            this.methods.Pop();
         }
     };
 }

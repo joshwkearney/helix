@@ -57,6 +57,12 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.cond.VariableUsage
+                .AddRange(this.iftrue.VariableUsage)
+                .AddRange(this.iffalse.VariableUsage);
+        }
+
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var cond = this.cond.CheckTypes(types);
             var iftrue = this.iftrue.CheckTypes(types);

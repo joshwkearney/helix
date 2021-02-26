@@ -49,13 +49,17 @@ namespace Trophy.Features.FlowControl {
         private readonly ISyntaxB body;
         private readonly IdentifierPath region;
 
+        public TokenLocation Location { get; }
+
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.body.VariableUsage;
+        }
+
         public RegionBlockSyntaxB(TokenLocation location, ISyntaxB body, IdentifierPath region) {
             this.Location = location;
             this.body = body;
             this.region = region;
         }
-
-        public TokenLocation Location { get; }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var body = this.body.CheckTypes(types);

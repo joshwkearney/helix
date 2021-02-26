@@ -33,6 +33,6 @@ namespace Trophy.Analysis {
     }
 
     public enum VariableDefinitionKind {
-        LocalVar, LocalRef, Parameter
+        LocalVar, LocalRef, Parameter, ParameterVar, ParameterRef
     }
 }

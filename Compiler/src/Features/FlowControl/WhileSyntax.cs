@@ -31,6 +31,10 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.cond.VariableUsage.AddRange(body.VariableUsage);
+        }
+
         public WhileSyntaxB(TokenLocation loc, ISyntaxB cond, ISyntaxB body) {
             this.Location = loc;
             this.cond = cond;

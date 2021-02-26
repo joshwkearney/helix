@@ -96,10 +96,11 @@ namespace Trophy.Compiling {
                 return ctype;
             }
 
-            var returnType = CType.Pointer(this.ConvertType(funcType.ReturnType));
+            var returnType = this.ConvertType(funcType.ReturnType);
             var parTypes = funcType
                 .ParameterTypes
                 .Select((x, i) => new CParameter(this.ConvertType(x), "arg" + i))
+                .Prepend(new CParameter(CType.VoidPointer, "environment"))
                 .ToArray();
 
             var pointerName = "$FuncType_" + typeCounter++;

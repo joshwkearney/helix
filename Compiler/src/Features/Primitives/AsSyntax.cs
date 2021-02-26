@@ -1,4 +1,5 @@
-﻿using Trophy.Analysis;
+﻿using System.Collections.Immutable;
+using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Parsing;
 
@@ -28,6 +29,10 @@ namespace Trophy.Features.Primitives {
         private readonly TrophyType target;
 
         public TokenLocation Location { get; }
+
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.arg.VariableUsage;
+        }
 
         public AsSyntaxB(TokenLocation loc, ISyntaxB arg, TrophyType target) {
             this.Location = loc;

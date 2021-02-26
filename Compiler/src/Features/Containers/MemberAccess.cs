@@ -30,6 +30,10 @@ namespace Trophy.Features.Containers {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.target.VariableUsage;
+        }
+
         public MemberAccessSyntaxB(TokenLocation location, ISyntaxB target, string memberName) {
             this.Location = location;
             this.target = target;

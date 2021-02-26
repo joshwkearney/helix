@@ -42,6 +42,15 @@ namespace Trophy.Features.Containers.Arrays {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get {
+                return this.args
+                    .Select(x => x.VariableUsage)
+                    .Append(ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>())
+                    .Aggregate((x, y) => x.AddRange(y));
+            }
+        }
+
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
             var returnType = new FixedArrayType(TrophyType.Void, args.Length, this.isreadonly);

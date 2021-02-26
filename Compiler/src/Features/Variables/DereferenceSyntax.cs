@@ -10,6 +10,10 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location => this.target.Location;
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.target.VariableUsage;
+        }
+
         public DereferenceSyntaxB(ISyntaxB target) {
             this.target = target;
         }
@@ -39,7 +43,11 @@ namespace Trophy.Features.Variables {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
-        public DereferenceSyntaxC(ISyntaxC target, TrophyType returnType, ImmutableHashSet<IdentifierPath> lifetimes) {
+        public DereferenceSyntaxC(
+            ISyntaxC target, 
+            TrophyType returnType, 
+            ImmutableHashSet<IdentifierPath> lifetimes) {
+
             this.target = target;
             this.ReturnType = returnType;
             this.Lifetimes = lifetimes;

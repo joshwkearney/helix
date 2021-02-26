@@ -14,6 +14,10 @@ namespace Trophy.Features.Functions {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>();
+        }
+
         public FunctionAccessSyntaxBC(TokenLocation loc, IdentifierPath path) {
             this.Location = loc;
             this.path = path;

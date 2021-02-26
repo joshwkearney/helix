@@ -24,5 +24,9 @@ namespace Trophy.Analysis {
         public IOption<IdentifierPath> TryGetMethodPath(TrophyType type, string name);
 
         public IOption<ISyntaxC> TryUnifyTo(ISyntaxC target, TrophyType newType);
+
+        public void PushFlow();
+
+        public void PopFlow();
     }
 }

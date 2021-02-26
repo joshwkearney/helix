@@ -5,6 +5,10 @@ using Trophy.CodeGeneration.CSyntax;
 using Trophy.Parsing;
 
 namespace Trophy {
+    public enum VariableUsageKind {
+        Captured, CapturedAndMutated 
+    }
+
     public interface ISyntaxA {
         public TokenLocation Location { get; }
 
@@ -13,6 +17,8 @@ namespace Trophy {
 
     public interface ISyntaxB {
         public TokenLocation Location { get; }
+
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage { get; }
 
         public ISyntaxC CheckTypes(ITypeRecorder types);
     }

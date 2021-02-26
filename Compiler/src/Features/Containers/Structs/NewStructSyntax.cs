@@ -66,6 +66,13 @@ namespace Trophy.Features.Containers.Structs {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.args
+                .Select(x => x.MemberValue.VariableUsage)
+                .Append(ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>())
+                .Aggregate((x, y) => x.AddRange(y));
+        }
+
         public NewStructSyntaxB(
             TokenLocation location, 
             IdentifierPath targetPath, 

@@ -40,6 +40,13 @@ namespace Trophy.Features.Functions {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.args
+                .Select(x => x.VariableUsage)
+                .Append(this.target.VariableUsage)
+                .Aggregate((x, y) => x.AddRange(y));
+        }
+
         public FunctionInvokeSyntaxB(TokenLocation location, ISyntaxB target, IReadOnlyList<ISyntaxB> args, IdentifierPath region) {
             this.Location = location;
             this.target = target;

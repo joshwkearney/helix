@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Linq;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
@@ -29,6 +30,13 @@ namespace Trophy.Features.Variables {
         private readonly ISyntaxB target, assign;
 
         public TokenLocation Location { get; }
+
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get  => this.target.VariableUsage
+                .Select(x => new { id = x.Key, kind = VariableUsageKind.CapturedAndMutated })
+                .ToImmutableDictionary(x => x.id, x => x.kind)
+                .AddRange(this.assign.VariableUsage);
+        }
 
         public StoreSyntaxB(TokenLocation loc, ISyntaxB target, ISyntaxB assign) {
             this.Location = loc;

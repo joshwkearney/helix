@@ -14,6 +14,10 @@ namespace Trophy.Features.Primitives {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>();
+        }
+
         public IntLiteralSyntax(TokenLocation loc, int value) {
             this.Location = loc;
             this.value = value;

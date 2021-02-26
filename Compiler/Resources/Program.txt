@@ -1,34 +1,12 @@
-﻿func main() as void -> {
-    ref x <- new OptionalInt { some = 4 };    
-    ref y <- [1, 2, 3, 4, 5, 6];
-    ref z <- [4, 5, 6, 8];
-
-   #  @z <- [1, 2, 3];
-
-    if (z.size < 10) do {
-
+﻿func main () as void => {
+    region other {
+        func (x as int) => from heap do func (y as int) => x + y;
+        void;
     };
-
-    test(func (int x) -> x + 45);
 
     void;
 };
 
-func test(other as func[int->int]) as void -> {
-    
-};
-
-union OptionalInt {
-    none as void;
-    some as int;
-};
-
-union Token {
-    eof         as void;
-    open_paren  as void;
-    close_paren as void;
-    plus        as void;
-    minus       as void;
-    times       as void;
-    int_literal as int;
+func test (x as var int) as void => {
+    @x <- 5;
 };

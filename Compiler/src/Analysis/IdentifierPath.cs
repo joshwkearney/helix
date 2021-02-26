@@ -50,6 +50,10 @@ namespace Trophy.Analysis {
         }
 
         public bool Outlives(IdentifierPath other) {
+            if (this == other) {
+                return false;
+            }
+
             return other.StartsWith(this);
         }
 

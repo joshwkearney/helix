@@ -51,6 +51,10 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.assign.VariableUsage.Remove(this.path);
+        }
+
         public VarRefSyntaxB(TokenLocation loc, IdentifierPath path, int id, IdentifierPath region, ISyntaxB assign, bool isreadonly) {
             this.Location = loc;
             this.path = path;

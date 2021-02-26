@@ -34,6 +34,13 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.statements
+                .Select(x => x.VariableUsage)
+                .Append(ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>())
+                .Aggregate((x, y) => x.AddRange(y));
+        }
+
         public BlockSyntaxB(TokenLocation location, int id, IReadOnlyList<ISyntaxB> statements) {
             this.Location = location;
             this.id = id;

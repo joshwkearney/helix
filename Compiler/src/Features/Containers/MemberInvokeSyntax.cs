@@ -40,11 +40,20 @@ namespace Trophy.Features.Containers {
         private readonly ISyntaxB target;
         private readonly IReadOnlyList<ISyntaxB> args;
 
+        public TokenLocation Location { get; set; }
+
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.args
+                .Select(x => x.VariableUsage)
+                .Append(this.target.VariableUsage)
+                .Aggregate((x, y) => x.AddRange(y));
+        }
+
         public MemberInvokeSyntaxB(
             TokenLocation location,
-            ISyntaxB target, 
-            string memberName, 
-            IReadOnlyList<ISyntaxB> args, 
+            ISyntaxB target,
+            string memberName,
+            IReadOnlyList<ISyntaxB> args,
             IdentifierPath region) {
 
             this.target = target;
@@ -53,8 +62,6 @@ namespace Trophy.Features.Containers {
             this.region = region;
             this.Location = location;
         }
-
-        public TokenLocation Location { get; set; }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var target = this.target.CheckTypes(types);

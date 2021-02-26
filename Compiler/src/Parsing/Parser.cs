@@ -83,7 +83,6 @@ namespace Trophy.Parsing {
         /** Type Parsing **/
         private TrophyType VarTypeExpression() {
             if (this.TryAdvance(TokenKind.VarKeyword)) {
-                this.Advance(TokenKind.VarKeyword);
                 var inner = this.TypeExpression();
 
                 return new VarRefType(inner, false);
@@ -206,7 +205,7 @@ namespace Trophy.Parsing {
         private IDeclarationA FunctionDeclaration() {
             var start = this.tokens[this.pos];
             var sig = this.FunctionSignature();
-            var end = this.Advance(TokenKind.RightArrow);
+            var end = this.Advance(TokenKind.YieldSign);
 
             var body = this.TopExpression();
             var loc = start.Location.Span(end.Location);
@@ -543,6 +542,9 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.NewKeyword)) {
                 return this.NewExpression();
             }
+            else if (this.Peek(TokenKind.FunctionKeyword)) {
+                return this.ClosureExpression();
+            }
             else {
                 var next = this.Advance();
 
@@ -804,6 +806,33 @@ namespace Trophy.Parsing {
             var loc = start.Location.Span(end.Location);
 
             return new NewSyntaxA(loc, targetType, mems);
+        }
+
+        private ISyntaxA ClosureExpression() {
+            var start = this.Advance(TokenKind.FunctionKeyword);
+
+            this.Advance(TokenKind.OpenParenthesis);
+
+            var pars = ImmutableList<FunctionParameter>.Empty;
+            while (!this.Peek(TokenKind.CloseParenthesis)) {
+                var parName = this.Advance<string>();
+                this.Advance(TokenKind.AsKeyword);
+                var parType = this.TypeExpression();
+
+                if (!this.Peek(TokenKind.CloseParenthesis)) {
+                    this.Advance(TokenKind.Comma);
+                }
+
+                pars = pars.Add(new FunctionParameter(parName, parType));
+            }
+
+            this.Advance(TokenKind.CloseParenthesis);
+            this.Advance(TokenKind.YieldSign);
+
+            var body = this.TopExpression();
+            var loc = start.Location.Span(body.Location);
+
+            return new LambdaSyntaxA(loc, body, pars);
         }
     }
 }

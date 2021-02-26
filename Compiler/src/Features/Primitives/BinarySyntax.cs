@@ -43,6 +43,10 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.left.VariableUsage.AddRange(this.right.VariableUsage);
+        }
+
         private static readonly Dictionary<BinaryOperation, TrophyType> intOperations
             = new Dictionary<BinaryOperation, TrophyType>() {
 
