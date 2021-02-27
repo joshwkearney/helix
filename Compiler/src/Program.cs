@@ -51,8 +51,8 @@ namespace Trophy {
                 var c = new TrophyCompiler(file).Compile();
                 var time = watch.ElapsedMilliseconds;
 
-                Console.WriteLine("Compiled 'Program.txt' in " + time + " ms");
-                Console.WriteLine();
+                //Console.WriteLine("Compiled 'Program.txt' in " + time + " ms");
+                //Console.WriteLine();
                 Console.WriteLine(c);
                 File.WriteAllText("resources/Output.txt", c);
             }

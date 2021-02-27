@@ -30,14 +30,8 @@ namespace Trophy.Features.Functions {
             // Declare this function
             names.DeclareGlobalName(names.CurrentScope.Append(this.Signature.Name), NameTarget.Function);
 
-            var parNames = this.Signature.Parameters.Select(x => x.Name).ToArray();
-            var unique = parNames.Distinct().ToArray();
-            var dups = FunctionsHelper.FindDuplicateParameters(this.Signature.Parameters);
-
             // Check for duplicate parameter names
-            if (dups.Any()) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, dups.First());
-            }
+            FunctionsHelper.CheckForDuplicateParameters(this.Location, this.Signature.Parameters);
 
             return this;
         }
@@ -52,21 +46,7 @@ namespace Trophy.Features.Functions {
 
             var sig = new FunctionSignature(this.Signature.Name, returnType, pars);
             var funcPath = names.CurrentScope.Append(sig.Name);
-
-            // Push this function name as the new scope
-            names.PushScope(funcPath);
-            names.PushRegion(IdentifierPath.StackPath);
-
-            // Declare the parameters
-            foreach (var par in sig.Parameters) {
-                names.DeclareLocalName(funcPath.Append(par.Name), NameTarget.Variable);
-            }
-
-            // Pop the new scope out
-            var body = this.Body.CheckNames(names);
-
-            names.PopRegion();
-            names.PopScope();
+            var body = FunctionsHelper.ResolveBodyNames(names, funcPath, this.Body, pars);
 
             // Reserve ids for the parameters
             var ids = pars.Select(_ => names.GetNewVariableId()).ToArray();
@@ -106,28 +86,7 @@ namespace Trophy.Features.Functions {
 
         public IDeclarationC ResolveTypes(ITypeRecorder types) {
             // Declare the parameters
-            for (int i = 0; i < this.Signature.Parameters.Count; i++) {
-                var par = this.Signature.Parameters[i];
-                var id = this.parIds[i];
-                var type = par.Type;
-                var defKind = VariableDefinitionKind.Parameter;
-
-                if (type is VarRefType varRefType) {
-                    type = varRefType.InnerType;
-                    defKind = varRefType.IsReadOnly ? VariableDefinitionKind.ParameterRef : VariableDefinitionKind.ParameterVar;
-                }
-
-                var path = this.funcPath.Append(par.Name);
-                var info = new VariableInfo(
-                    name:               par.Name,
-                    innerType:          type,
-                    kind:               defKind,
-                    id:                 id,
-                    valueLifetimes:     new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet(),
-                    variableLifetimes:  new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet());
-
-                types.DeclareVariable(path, info);
-            }
+            FunctionsHelper.DeclareParameters(types, this.funcPath, this.Signature.Parameters, this.parIds);
 
             // Type check the body
             var body = this.body.CheckTypes(types);
@@ -144,15 +103,7 @@ namespace Trophy.Features.Functions {
             }
 
             // The return value must be allocated on the heap or be one of the arguments
-            foreach (var capLifetime in body.Lifetimes) {
-                if (capLifetime.Segments.Any() && capLifetime.Segments.First().StartsWith("$args_")) {
-                    continue;
-                }
-
-                if (!capLifetime.Outlives(IdentifierPath.StackPath)) { 
-                    throw TypeCheckingErrors.LifetimeExceeded(this.body.Location, IdentifierPath.HeapPath, capLifetime);
-                }
-            }
+            FunctionsHelper.CheckForInvalidReturnScope(this.body.Location, body);
 
             return new FunctionDeclarationC(this.Signature, this.funcPath, body, this.parIds);
         }

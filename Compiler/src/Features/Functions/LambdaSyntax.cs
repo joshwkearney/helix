@@ -29,27 +29,12 @@ namespace Trophy.Features.Functions {
                 .Select(x => new FunctionParameter(x.Name, names.ResolveTypeNames(x.Type, this.Location)))
                 .ToArray();
             var region = names.CurrentRegion;
-            var dups = FunctionsHelper.FindDuplicateParameters(pars);
 
             // Check for duplicate parameter names
-            if (dups.Any()) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, dups.First());
-            }
+            FunctionsHelper.CheckForDuplicateParameters(this.Location, pars);
 
-            // Push this function name as the new scope
-            names.PushScope(path);
-            names.PushRegion(IdentifierPath.StackPath);
-
-            // Declare the parameters
-            foreach (var par in pars) {
-                names.DeclareLocalName(path.Append(par.Name), NameTarget.Variable);
-            }
-
-            // Pop the new scope out
-            var body = this.Body.CheckNames(names);
-
-            names.PopRegion();
-            names.PopScope();
+            // Resolve body names
+            var body = FunctionsHelper.ResolveBodyNames(names, path, this.Body, pars);
 
             // Reserve ids for the parameters
             var ids = pars.Select(_ => names.GetNewVariableId()).ToArray();
@@ -126,29 +111,7 @@ namespace Trophy.Features.Functions {
             }
 
             // Declare the explicit parameters
-            for (int i = 0; i < this.Parameters.Count; i++) {
-                var par = this.Parameters[i];
-                var id = this.ParameterIds[i];
-
-                var type = par.Type;
-                var defKind = VariableDefinitionKind.Parameter;
-
-                if (type is VarRefType varRefType) {
-                    type = varRefType.InnerType;
-                    defKind = varRefType.IsReadOnly ? VariableDefinitionKind.ParameterRef : VariableDefinitionKind.ParameterVar;
-                }
-
-                var path = this.FunctionPath.Append(par.Name);
-                var info = new VariableInfo(
-                    name:               par.Name,
-                    innerType:          par.Type,
-                    kind:               defKind,
-                    id:                 id,
-                    valueLifetimes:     new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet(),
-                    variableLifetimes:  new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet());
-
-                types.DeclareVariable(path, info);
-            }
+            FunctionsHelper.DeclareParameters(types, this.FunctionPath, this.Parameters, this.ParameterIds);
 
             // Type check the body
             var body = this.Body.CheckTypes(types);
@@ -157,15 +120,7 @@ namespace Trophy.Features.Functions {
             types.PopFlow();
 
             // The return value must be allocated on our region or be one of the arguments
-            foreach (var capLifetime in body.Lifetimes) {
-                if (capLifetime.Segments.Any() && capLifetime.Segments.First().StartsWith("$args_")) {
-                    continue;
-                }
-
-                if (!capLifetime.Outlives(IdentifierPath.StackPath)) {
-                    throw TypeCheckingErrors.LifetimeExceeded(this.Body.Location, IdentifierPath.HeapPath, capLifetime);
-                }
-            }
+            FunctionsHelper.CheckForInvalidReturnScope(this.Body.Location, body);
 
             var name = this.FunctionPath.Segments.Last();
             var sig = new FunctionSignature(name, body.ReturnType, this.Parameters.ToImmutableList());
