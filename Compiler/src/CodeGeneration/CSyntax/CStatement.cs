@@ -94,8 +94,12 @@ namespace Trophy.CodeGeneration.CSyntax {
             public CExpression Expression { get; set; }
 
             public override void WriteToC(int indentLevel, StringBuilder sb) {
-                CHelper.Indent(indentLevel, sb);
-                sb.Append(this.Expression).AppendLine(";");
+                var expr = this.Expression.ToString();
+
+                if (expr != "0") {
+                    CHelper.Indent(indentLevel, sb);
+                    sb.Append(this.Expression).AppendLine(";");
+                }
             }
         }
 
