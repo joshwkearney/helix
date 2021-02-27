@@ -77,9 +77,11 @@ namespace Trophy.Features.Functions {
                 var expected = func.Parameters[i].Type;
                 var actual = args[i].ReturnType;
 
-                if (expected != actual) {
+                if (!types.TryUnifyTo(args[i], expected).TryGetValue(out var newArg)) {
                     throw TypeCheckingErrors.UnexpectedType(this.Location, expected, actual);
                 }
+
+                args[i] = newArg;
             }
 
             var lifetimes = args
