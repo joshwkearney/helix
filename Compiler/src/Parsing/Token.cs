@@ -20,7 +20,7 @@
         Identifier, Whitespace,
         IntLiteral, BoolLiteral,
 
-        MultiplySign, AddSign, SubtractSign
+        MultiplySign, AddSign, SubtractSign, ModuloSign
     }
 
     public interface IToken {

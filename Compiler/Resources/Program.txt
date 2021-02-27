@@ -1,12 +1,43 @@
-﻿func main () as void => {
-    region other {
-        func (x as int) => from heap do func (y as int) => x + y;
-        void;
-    };
-
-    void;
+﻿func partitions (int n) as int => {
+    return x;
 };
 
-func test (x as var int) as void => {
-    @x <- 5;
+func sum (arr as array[ref int]) as int => {
+    var s <- 0;
+
+    for i = 0 to arr.size-1 do {
+        @s <- s + arr[i];
+    };
+    
+    s;
+};
+
+func selection_sort(arr as array[var int]) as void => { 
+    var i <- 0;
+
+    # Find the smallest element and put it in position i
+    while i < arr.size do {
+        var j <- i + 1;
+
+        var smallest <- arr[i];
+        var smallest_index <- i;
+
+        # Find the smallest element
+        while j < arr.size do {
+            if arr[j] < smallest do {
+                @smallest_index <- j;
+                @smallest <- arr[j];
+            };
+
+            @j <- j + 1;
+        };
+
+        # Swap the smallest with the ith position
+        var swap <- arr[i];
+
+        arr@[i] <- smallest;
+        arr@[smallest_index] <- swap;
+
+        @i <- i + 1;
+    };
 };

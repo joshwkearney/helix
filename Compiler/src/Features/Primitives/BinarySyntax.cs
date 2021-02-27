@@ -8,7 +8,7 @@ using Trophy.Parsing;
 
 namespace Trophy.Features.Primitives {
     public enum BinaryOperation {
-        Add, Subtract, Multiply,
+        Add, Subtract, Multiply, Modulo,
         And, Or, Xor,
         EqualTo, NotEqualTo,
         GreaterThan, LessThan,
@@ -53,6 +53,7 @@ namespace Trophy.Features.Primitives {
             { BinaryOperation.Add, TrophyType.Integer },
             { BinaryOperation.Subtract, TrophyType.Integer },
             { BinaryOperation.Multiply, TrophyType.Integer },
+            { BinaryOperation.Modulo, TrophyType.Integer },
             { BinaryOperation.And, TrophyType.Integer },
             { BinaryOperation.Or, TrophyType.Integer },
             { BinaryOperation.Xor, TrophyType.Integer },

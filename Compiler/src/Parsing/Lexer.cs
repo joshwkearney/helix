@@ -307,6 +307,9 @@ namespace Trophy.Parsing {
             else if (current == '|') {
                 return new Token(TokenKind.Pipe, location);
             }
+            else if (current == '%') {
+                return new Token(TokenKind.ModuloSign, location);
+            }
             else if (char.IsDigit(current)) {
                 return this.GetNumber();
             }

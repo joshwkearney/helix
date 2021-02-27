@@ -373,12 +373,12 @@ namespace Trophy.Parsing {
             var first = this.SuffixExpression();
 
             while (true) {
-                if (!this.Peek(TokenKind.MultiplySign)) {
+                if (!this.Peek(TokenKind.MultiplySign) && !this.Peek(TokenKind.ModuloSign)) {
                     break;
                 }
 
                 var tok = this.Advance().Kind;
-                var op = tok == TokenKind.MultiplySign ? BinaryOperation.Multiply : BinaryOperation.Multiply;
+                var op = tok == TokenKind.MultiplySign ? BinaryOperation.Multiply : BinaryOperation.Modulo;
                 var second = this.SuffixExpression();
                 var loc = first.Location.Span(second.Location);
 
