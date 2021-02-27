@@ -103,7 +103,7 @@ namespace Trophy.Features.Functions {
     }
 
     public class SingularFunctionInvokeSyntaxC : ISyntaxC {
-        private readonly IdentifierPath target;
+        private readonly IdentifierPath targetPath;
         private readonly IReadOnlyList<ISyntaxC> args;
         private readonly string region;
 
@@ -114,7 +114,7 @@ namespace Trophy.Features.Functions {
         public SingularFunctionInvokeSyntaxC(IdentifierPath target, IReadOnlyList<ISyntaxC> args, 
             string region, TrophyType returnType, ImmutableHashSet<IdentifierPath> lifetimes) {
 
-            this.target = target;
+            this.targetPath = target;
             this.args = args;
             this.region = region;
             this.ReturnType = returnType;
@@ -123,7 +123,7 @@ namespace Trophy.Features.Functions {
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var args = this.args.Select(x => x.GenerateCode(declWriter, statWriter)).Prepend(CExpression.VariableLiteral(this.region)).ToArray();
-            var target = CExpression.VariableLiteral(this.target.ToString());
+            var target = CExpression.VariableLiteral("$" + this.targetPath);
 
             return CExpression.Invoke(target, args);
         }

@@ -140,7 +140,7 @@ namespace Trophy.Features.Containers.Unions {
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {
             var ctype = writer.ConvertType(this.ReturnType);
-            var cname = "$new_union_" + tempCounter++;
+            var cname = "new_union_" + tempCounter++;
             var argVal = this.arg.MemberValue.GenerateCode(writer, statWriter);
 
             // Write union variable

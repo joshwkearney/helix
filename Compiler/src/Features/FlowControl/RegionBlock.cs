@@ -89,14 +89,14 @@ namespace Trophy.Features.FlowControl {
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var regionType = CType.NamedType("$Region*");
+            var regionType = CType.NamedType("Region*");
 
             // Write the region
             statWriter.WriteStatement(CStatement.VariableDeclaration(
                 regionType,
                 this.region,
                 CExpression.Invoke(
-                    CExpression.VariableLiteral("$region_create"),
+                    CExpression.VariableLiteral("region_create"),
                     new CExpression[0])));
 
             // Write the body
@@ -105,7 +105,7 @@ namespace Trophy.Features.FlowControl {
             // Delete the region
             statWriter.WriteStatement(CStatement.FromExpression(
                 CExpression.Invoke(
-                    CExpression.VariableLiteral("$region_delete"),
+                    CExpression.VariableLiteral("region_delete"),
                     new[] { CExpression.VariableLiteral(this.region) })));
 
             return body;

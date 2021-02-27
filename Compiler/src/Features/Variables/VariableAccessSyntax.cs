@@ -113,7 +113,7 @@ namespace Trophy.Features.Variables {
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var cname = this.info.Name + this.info.UniqueId;
+            var cname = "$" + this.info.Name + this.info.UniqueId;
 
             if (this.kind == VariableAccessKind.ValueAccess) {
                 if (this.info.DefinitionKind == VariableDefinitionKind.ParameterRef || this.info.DefinitionKind == VariableDefinitionKind.ParameterVar) {

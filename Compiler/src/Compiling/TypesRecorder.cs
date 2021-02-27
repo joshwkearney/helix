@@ -79,7 +79,7 @@ namespace Trophy.Compiling {
                         return Option.Some(new VoidToStructAdapterC(target, sig, newType, this));
                     }
                     else if (this.TryGetUnion(path).TryGetValue(out var unionSig) && newType.HasDefaultValue(this)) {
-                        return Option.Some(new VoidToUnionAdapterC(target, sig, newType, this));
+                        return Option.Some(new VoidToUnionAdapterC(target, unionSig, newType, this));
                     }
                 }
             }

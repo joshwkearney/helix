@@ -18,11 +18,11 @@ namespace Trophy.Features.Containers {
 
         public void GenerateCode(ICWriter declWriter) {
             // Write forward declaration
-            declWriter.WriteForwardDeclaration(CDeclaration.StructPrototype(this.structPath.ToString()));
+            declWriter.WriteForwardDeclaration(CDeclaration.StructPrototype("$" + this.structPath));
 
             // Write full struct
             declWriter.WriteForwardDeclaration(CDeclaration.Struct(
-                this.structPath.ToString(),
+                "$" + this.structPath,
                 this.sig.Members
                     .Select(x => new CParameter(declWriter.ConvertType(x.MemberType), x.MemberName))
                     .ToArray()));

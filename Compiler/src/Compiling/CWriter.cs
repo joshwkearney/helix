@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
-using Trophy.Analysis.Types;
 
 namespace Trophy.Compiling {
     public class CWriter : ICWriter {
@@ -37,11 +36,11 @@ namespace Trophy.Compiling {
             }
 
             // Region struct forward declaration
-            this.WriteForwardDeclaration(CDeclaration.StructPrototype("$Region"));
+            this.WriteForwardDeclaration(CDeclaration.StructPrototype("Region"));
 
             // Region alloc forward declaration
-            var regionPointerType = CType.Pointer(CType.NamedType("$Region"));
-            var decl = CDeclaration.FunctionPrototype(CType.VoidPointer, "$region_alloc", new[] {
+            var regionPointerType = CType.Pointer(CType.NamedType("Region"));
+            var decl = CDeclaration.FunctionPrototype(CType.VoidPointer, "region_alloc", new[] {
                     new CParameter(regionPointerType, "region"), new CParameter(CType.Integer, "bytes")
                 });
 
@@ -53,7 +52,7 @@ namespace Trophy.Compiling {
             this.WriteForwardDeclaration(decl2);
 
             // Region delete forward declaration
-            var decl3 = CDeclaration.FunctionPrototype("$region_delete", new[] {
+            var decl3 = CDeclaration.FunctionPrototype("region_delete", new[] {
                     new CParameter(regionPointerType, "region")
                 });
 
@@ -81,7 +80,7 @@ namespace Trophy.Compiling {
                 return CType.Pointer(ConvertType(type2.InnerType));
             }
             else if (type.AsNamedType().TryGetValue(out var path)) {
-                return CType.NamedType(path.ToString());
+                return CType.NamedType("$" + path);
             }
             else if (type.AsFunctionType().TryGetValue(out var funcType)) {
                 return this.MakeFunctionType(funcType);
@@ -103,8 +102,8 @@ namespace Trophy.Compiling {
                 .Prepend(new CParameter(CType.VoidPointer, "environment"))
                 .ToArray();
 
-            var pointerName = "$FuncType_" + typeCounter++;
-            var structName = "$ClosureType_" + typeCounter++;
+            var pointerName = "FuncType_" + typeCounter++;
+            var structName = "ClosureType_" + typeCounter++;
 
             var members = new[] {
                 new CParameter(CType.VoidPointer, "environment"), 
@@ -129,7 +128,7 @@ namespace Trophy.Compiling {
                 return ctype;
             }
 
-            var name = "$ArrayType" + typeCounter++;
+            var name = "ArrayType" + typeCounter++;
             var innerType = CType.Pointer(this.ConvertType(arrayType.ElementType));
             var members = new[] {
                     new CParameter(CType.Integer, "size"), new CParameter(innerType, "data")

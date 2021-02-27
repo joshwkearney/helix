@@ -117,7 +117,7 @@ namespace Trophy.Features.FlowControl {
             var affirm = this.iftrue.GenerateCode(declWriter, affirmWriter);
             var neg = this.iffalse.GenerateCode(declWriter, negWriter);
 
-            var tempName = "$if_temp_" + ifTemp++;
+            var tempName = "if_temp_" + ifTemp++;
             var returnType = declWriter.ConvertType(this.ReturnType);
 
             affirmList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), affirm));

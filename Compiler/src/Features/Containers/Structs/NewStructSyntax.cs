@@ -177,7 +177,7 @@ namespace Trophy.Features.Containers.Structs {
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var ctype = declWriter.ConvertType(this.ReturnType);
-            var cname = "$new_struct_" + tempCounter++;
+            var cname = "new_struct_" + tempCounter++;
             var mems = this.args.Select(x => new StructArgument<CExpression>() {
                 MemberName = x.MemberName,
                 MemberValue = x.MemberValue.GenerateCode(declWriter, statWriter)

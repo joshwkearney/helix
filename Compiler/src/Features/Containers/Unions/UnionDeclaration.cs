@@ -19,8 +19,8 @@ namespace Trophy.Features.Containers {
         }
 
         public void GenerateCode(ICWriter writer) {
-            var unionName = $"$UnionType_" + counter++;
-            var structName = this.unionPath.ToString();
+            var unionName = "UnionType_" + counter++;
+            var structName = "$" + this.unionPath;
             var mems = this.sig.Members
                     .Select(x => new CParameter(writer.ConvertType(x.MemberType), x.MemberName))
                     .ToArray();

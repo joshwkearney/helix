@@ -146,7 +146,7 @@ namespace Trophy.Features.Containers.Arrays {
             statWriter.WriteStatement(ifStat);
             statWriter.WriteStatement(CStatement.NewLine());
 
-            var arrayName = "$array_slice_" + sliceCounter++;
+            var arrayName = "array_slice_" + sliceCounter++;
             var arrayType = declWriter.ConvertType(this.ReturnType);
 
             statWriter.WriteStatement(CStatement.VariableDeclaration(arrayType, arrayName));

@@ -10,7 +10,7 @@ namespace Trophy.Features.Functions {
 
         public TokenLocation Location { get; }
 
-        public TrophyType ReturnType => new NamedType(this.path);
+        public TrophyType ReturnType => new SingularFunctionType(this.path);
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 

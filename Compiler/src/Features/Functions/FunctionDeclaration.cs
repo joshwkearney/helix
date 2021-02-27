@@ -177,8 +177,8 @@ namespace Trophy.Features.Functions {
             var returnType = declWriter.ConvertType(this.sig.ReturnType);
             var pars = this.sig
                 .Parameters
-                .Select((x, i) => new CParameter(declWriter.ConvertType(x.Type), x.Name + this.parIds[i]))
-                .Prepend(new CParameter(CType.NamedType("$Region*"), "heap"))
+                .Select((x, i) => new CParameter(declWriter.ConvertType(x.Type), "$" + x.Name + this.parIds[i]))
+                .Prepend(new CParameter(CType.NamedType("Region*"), "heap"))
                 .ToArray();
 
             var statWriter = new CStatementWriter();
@@ -188,8 +188,8 @@ namespace Trophy.Features.Functions {
             var retExpr = this.body.GenerateCode(declWriter, statWriter);
             stats.Add(CStatement.Return(retExpr));
 
-            var decl = CDeclaration.Function(returnType, this.funcPath.ToString(), pars, stats);
-            var forwardDecl = CDeclaration.FunctionPrototype(returnType, this.funcPath.ToString(), pars);
+            var decl = CDeclaration.Function(returnType, "$" + this.funcPath, pars, stats);
+            var forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, pars);
 
             declWriter.WriteDeclaration(decl);
             declWriter.WriteDeclaration(CDeclaration.EmptyLine());

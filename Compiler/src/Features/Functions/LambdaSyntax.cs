@@ -220,8 +220,8 @@ namespace Trophy.Features.Functions {
             var returnType = writer.ConvertType(this.sig.ReturnType);
             var pars = this.sig
                 .Parameters
-                .Select((x, i) => new CParameter(writer.ConvertType(x.Type), x.Name + this.parIds[i]))
-                .Prepend(new CParameter(CType.VoidPointer, "$environment"))
+                .Select((x, i) => new CParameter(writer.ConvertType(x.Type), "$" + x.Name + this.parIds[i]))
+                .Prepend(new CParameter(CType.VoidPointer, "environment"))
                 .ToArray();
 
             // Set up the body statement writer
@@ -230,20 +230,20 @@ namespace Trophy.Features.Functions {
             bodyWriter.StatementWritten += (s, e) => bodyStats.Add(e);
 
             // Dereference the environment
-            var envTempName = "$environment_temp" + counter++;
+            var envTempName = "environment_temp" + counter++;
             var envDeref = CExpression.Dereference(CExpression.VariableLiteral(envTempName));
-            bodyWriter.WriteStatement(CStatement.VariableDeclaration(CType.Pointer(envType), envTempName, CExpression.VariableLiteral("$environment")));
+            bodyWriter.WriteStatement(CStatement.VariableDeclaration(CType.Pointer(envType), envTempName, CExpression.VariableLiteral("environment")));
 
             // Unpack the heap
             bodyWriter.WriteStatement(
                 CStatement.VariableDeclaration(
-                    CType.NamedType("$Region*"),
+                    CType.NamedType("Region*"),
                     "heap",
                     CExpression.MemberAccess(envDeref, "heap")));
 
             // Unpack the environment
             foreach (var info in this.freeVars) {
-                var name = info.Name + info.UniqueId;
+                var name = "$" + info.Name + info.UniqueId;
                 var type = CType.Pointer(writer.ConvertType(info.Type));
                 var assign = CExpression.MemberAccess(envDeref, name);
 
@@ -256,8 +256,8 @@ namespace Trophy.Features.Functions {
             var retExpr = this.body.GenerateCode(writer, bodyWriter);
             bodyStats.Add(CStatement.Return(retExpr));
 
-            var decl = CDeclaration.Function(returnType, this.funcPath.ToString(), pars, bodyStats);
-            var forwardDecl = CDeclaration.FunctionPrototype(returnType, this.funcPath.ToString(), pars);
+            var decl = CDeclaration.Function(returnType, "$" + this.funcPath, pars, bodyStats);
+            var forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, pars);
 
             // Generate the function
             writer.WriteDeclaration(decl);
@@ -270,10 +270,10 @@ namespace Trophy.Features.Functions {
         }
 
         private CType GenerateClosureEnvironmentStruct(ICWriter writer) {
-            var envType = "$ClosureEnvironment" + counter++;
+            var envType = "ClosureEnvironment" + counter++;
             var pars = this.freeVars
-                .Select(x => new CParameter(CType.Pointer(writer.ConvertType(x.Type)), x.Name + x.UniqueId))
-                .Append(new CParameter(CType.NamedType("$Region*"), "heap"))
+                .Select(x => new CParameter(CType.Pointer(writer.ConvertType(x.Type)), "$" + x.Name + x.UniqueId))
+                .Append(new CParameter(CType.NamedType("Region*"), "heap"))
                 .ToArray();
 
             writer.WriteForwardDeclaration(CDeclaration.StructPrototype(envType));
@@ -284,7 +284,7 @@ namespace Trophy.Features.Functions {
         }
 
         private CExpression GenerateStackEnvironment(CType envType, ICWriter writer, ICStatementWriter statWriter) {
-            var envName = "$closure_environment" + counter++;
+            var envName = "closure_environment" + counter++;
 
             // Declare the environment struct
             statWriter.WriteStatement(CStatement.VariableDeclaration(envType, envName));
@@ -296,7 +296,7 @@ namespace Trophy.Features.Functions {
             var regionName = this.regionPath.Segments.Last();
 
             // Write data assignment
-            return CExpression.Invoke(CExpression.VariableLiteral("$region_alloc"), new[] {
+            return CExpression.Invoke(CExpression.VariableLiteral("region_alloc"), new[] {
                         CExpression.VariableLiteral(regionName),
                         CExpression.Sizeof(envType)
                 });
@@ -309,8 +309,8 @@ namespace Trophy.Features.Functions {
             var envType = this.GenerateClosureEnvironmentStruct(writer);
             var funcName = this.GenerateClosureFunction(envType, writer);
 
-            var envName = "$closure_environment" + counter++;
-            var closureName = "$closure_temp" + counter++;
+            var envName = "closure_environment" + counter++;
+            var closureName = "closure_temp" + counter++;
             var closureType = writer.ConvertType(this.ReturnType);
 
             var envAccess = CExpression.Dereference(CExpression.VariableLiteral(envName));
@@ -347,7 +347,7 @@ namespace Trophy.Features.Functions {
 
             // Write the environment fields
             foreach (var info in this.freeVars) {
-                var assign = CExpression.VariableLiteral(info.Name + info.UniqueId);
+                var assign = CExpression.VariableLiteral("$" + info.Name + info.UniqueId);
 
                 if (info.DefinitionKind != VariableDefinitionKind.ParameterRef && info.DefinitionKind != VariableDefinitionKind.ParameterVar) {
                     assign = CExpression.AddressOf(assign);
@@ -355,7 +355,7 @@ namespace Trophy.Features.Functions {
 
                 parentWriter.WriteStatement(
                     CStatement.Assignment(
-                        CExpression.MemberAccess(envAccess, info.Name + info.UniqueId),
+                        CExpression.MemberAccess(envAccess, "$" + info.Name + info.UniqueId),
                         assign));
             }
 

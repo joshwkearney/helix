@@ -101,7 +101,7 @@ namespace Trophy.Features.Containers.Arrays {
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var args = this.args.Select(x => x.GenerateCode(declWriter, statWriter)).ToArray();
-            var arrayName = "$array_" + arrayTempCounter++;
+            var arrayName = "array_" + arrayTempCounter++;
             var arrayType = declWriter.ConvertType(this.ReturnType);
             var dataExpr = CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "data");
             var regionName = this.region.Segments.Last();
@@ -115,7 +115,7 @@ namespace Trophy.Features.Containers.Arrays {
             }
             else if (regionName == "stack") {
                 var elementType = declWriter.ConvertType(this.args.First().ReturnType);
-                var cArrayName = "$array_temp_" + arrayTempCounter++;
+                var cArrayName = "array_temp_" + arrayTempCounter++;
                 var cArraySize = CExpression.IntLiteral(this.args.Count);
 
                 // Write c array declaration
@@ -132,7 +132,7 @@ namespace Trophy.Features.Containers.Arrays {
                 // Write data assignment
                 statWriter.WriteStatement(CStatement.Assignment(
                     dataExpr,
-                    CExpression.Invoke(CExpression.VariableLiteral("$region_alloc"), new[] {
+                    CExpression.Invoke(CExpression.VariableLiteral("region_alloc"), new[] {
                         CExpression.VariableLiteral(regionName),
                         CExpression.BinaryExpression(
                             CExpression.IntLiteral(this.args.Count),

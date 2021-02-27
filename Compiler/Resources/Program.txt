@@ -1,35 +1,15 @@
-﻿func partitions (int n) as int => {
-    return x;
-};
-
-func sum (arr as array[ref int]) as int => {
-    var s <- 0;
-
-    for i = 0 to arr.size-1 do {
-        @s <- s + arr[i];
-    };
-    
-    s;
-};
-
-func selection_sort(arr as array[var int]) as void => { 
-    var i <- 0;
-
+﻿func selection_sort(arr as array[var int]) as void => { 
     # Find the smallest element and put it in position i
-    while i < arr.size do {
-        var j <- i + 1;
-
+    for i = 0 to arr.size do {
         var smallest <- arr[i];
         var smallest_index <- i;
 
         # Find the smallest element
-        while j < arr.size do {
+        for j = i + 1 to arr.size do {
             if arr[j] < smallest do {
                 @smallest_index <- j;
                 @smallest <- arr[j];
             };
-
-            @j <- j + 1;
         };
 
         # Swap the smallest with the ith position
@@ -37,7 +17,18 @@ func selection_sort(arr as array[var int]) as void => {
 
         arr@[i] <- smallest;
         arr@[smallest_index] <- swap;
-
-        @i <- i + 1;
     };
+};
+
+struct Point {
+    x as int;
+    y as int;
+};
+
+func test() as void => {
+    var x <- new Point { x = 4, y = 6 };
+
+    # selection_sort([1, 2, 3, 4, 5]);
+
+    void;
 };

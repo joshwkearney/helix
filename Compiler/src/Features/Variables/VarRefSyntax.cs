@@ -114,7 +114,7 @@ namespace Trophy.Features.Variables {
 
             var stat = CStatement.VariableDeclaration(
                    typeName,
-                   this.info.Name + this.info.UniqueId,
+                   "$" + this.info.Name + this.info.UniqueId,
                    assign);
 
             statWriter.WriteStatement(stat);
