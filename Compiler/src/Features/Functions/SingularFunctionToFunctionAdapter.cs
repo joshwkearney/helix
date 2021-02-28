@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;

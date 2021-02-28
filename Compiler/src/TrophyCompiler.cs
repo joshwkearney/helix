@@ -1,5 +1,4 @@
-﻿using Trophy.Analysis;
-using Trophy.Compiling;
+﻿using Trophy.Compiling;
 using Trophy.Parsing;
 using System.Linq;
 

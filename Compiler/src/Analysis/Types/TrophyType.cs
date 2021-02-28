@@ -1,6 +1,4 @@
-﻿using Trophy.Analysis.Types;
-
-namespace Trophy.Analysis.Types {
+﻿namespace Trophy.Analysis.Types {
     public enum TypeCopiability {
         Unconditional, Conditional
     }

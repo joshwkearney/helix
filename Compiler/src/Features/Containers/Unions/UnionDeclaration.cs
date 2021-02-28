@@ -1,6 +1,5 @@
 ﻿using Trophy.Analysis;
 using Trophy.CodeGeneration.CSyntax;
-using Trophy.Parsing;
 using System.Collections.Generic;
 using System.Linq;
 

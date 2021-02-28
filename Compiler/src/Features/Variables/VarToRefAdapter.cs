@@ -1,11 +1,7 @@
-﻿using Trophy;
-using Trophy.Analysis;
+﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Text;
 
 namespace Trophy.Features.Variables {
     public class VarToRefAdapter : ISyntaxC {

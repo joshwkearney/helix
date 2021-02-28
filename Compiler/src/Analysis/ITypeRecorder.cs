@@ -1,5 +1,4 @@
 ﻿using Trophy.Analysis.Types;
-using Trophy.Parsing;
 
 namespace Trophy.Analysis {
     public interface ITypeRecorder {

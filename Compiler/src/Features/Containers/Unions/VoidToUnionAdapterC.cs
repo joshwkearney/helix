@@ -5,7 +5,6 @@ using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
-using Trophy.Parsing;
 
 namespace Trophy.Features.Containers.Unions {
     public class VoidToUnionAdapterC : ISyntaxC {

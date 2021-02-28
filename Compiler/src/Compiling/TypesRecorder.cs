@@ -5,10 +5,8 @@ using Trophy.Features.Containers.Arrays;
 using Trophy.Features.Containers.Structs;
 using Trophy.Features.Containers.Unions;
 using Trophy.Features.Primitives;
-using Trophy.Parsing;
 using Trophy.Features.Variables;
 using System.Linq;
-using System.Collections.Immutable;
 using Trophy.Features.Functions;
 
 namespace Trophy.Compiling {

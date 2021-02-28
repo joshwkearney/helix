@@ -1,13 +1,8 @@
-﻿using Trophy;
-using Trophy.Analysis;
+﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Trophy.Features.FlowControl {
     public class ForSyntaxA : ISyntaxA {

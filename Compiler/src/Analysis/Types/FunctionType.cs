@@ -1,10 +1,7 @@
 ﻿using Trophy;
-using Trophy.Analysis;
-using Trophy.Analysis.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Trophy.Analysis.Types {
     public class FunctionType : TrophyType {

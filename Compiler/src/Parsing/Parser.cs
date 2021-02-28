@@ -9,8 +9,6 @@ using Trophy.Features.FlowControl;
 using Trophy.Features.Functions;
 using Trophy.Features.Primitives;
 using Trophy.Features.Variables;
-using Trophy.Analysis.Types;
-using Trophy.Features.FlowControl;
 
 namespace Trophy.Parsing {
     public class Parser {

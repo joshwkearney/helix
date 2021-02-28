@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using Trophy.Experimental;
 
 namespace Trophy {
     public class Program {
