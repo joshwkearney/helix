@@ -138,7 +138,7 @@ namespace Trophy.Parsing {
                 this.Advance(TokenKind.OpenBracket);
                 var args = new List<TrophyType>();
 
-                while (true) {
+                while (!this.TryAdvance(TokenKind.YieldSign)) {
                     args.Add(this.TypeExpression());
 
                     if (!this.TryAdvance(TokenKind.Comma)) {
@@ -146,9 +146,7 @@ namespace Trophy.Parsing {
                     }
                 }
 
-                this.Advance(TokenKind.RightArrow);
                 var returnType = this.TypeAtom();
-
                 this.Advance(TokenKind.CloseBracket);
 
                 return new FunctionType(returnType, args);
