@@ -1,9 +1,11 @@
 ﻿func test() as void => {
-    var f <- func (x as int, y as int) => x + y;
+    var identity <- func (x as int) => x;
 
-    f(4, 6);
+    apply(45, identity);
 
     void;
 };
 
 func add (x as int, y as int) as int => x + y;
+
+func apply (arg as int, f as func[int->int]) as int => f(arg);

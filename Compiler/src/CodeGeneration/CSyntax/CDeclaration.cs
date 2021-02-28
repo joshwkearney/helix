@@ -15,20 +15,20 @@ namespace Trophy.CodeGeneration.CSyntax {
     }
 
     public abstract class CDeclaration {
-        public static CDeclaration Function(CType returnType, string name, IReadOnlyList<CParameter> pars, IReadOnlyList<CStatement> stats) {
-            return new CFunctionDeclaration(returnType, name, pars, Option.Some(stats));
+        public static CDeclaration Function(CType returnType, string name, bool isStatic, IReadOnlyList<CParameter> pars, IReadOnlyList<CStatement> stats) {
+            return new CFunctionDeclaration(returnType, name, isStatic, pars, Option.Some(stats));
         }
 
-        public static CDeclaration Function(string name, IReadOnlyList<CParameter> pars, IReadOnlyList<CStatement> stats) {
-            return new CFunctionDeclaration(name, pars, Option.Some(stats));
+        public static CDeclaration Function(string name, bool isStatic, IReadOnlyList<CParameter> pars, IReadOnlyList<CStatement> stats) {
+            return new CFunctionDeclaration(name, isStatic, pars, Option.Some(stats));
         }
 
-        public static CDeclaration FunctionPrototype(CType returnType, string name, IReadOnlyList<CParameter> pars) {
-            return new CFunctionDeclaration(returnType, name, pars, Option.None<IReadOnlyList<CStatement>>());
+        public static CDeclaration FunctionPrototype(CType returnType, string name, bool isStatic, IReadOnlyList<CParameter> pars) {
+            return new CFunctionDeclaration(returnType, name, isStatic, pars, Option.None<IReadOnlyList<CStatement>>());
         }
 
-        public static CDeclaration FunctionPrototype(string name, IReadOnlyList<CParameter> pars) {
-            return new CFunctionDeclaration(name, pars, Option.None<IReadOnlyList<CStatement>>());
+        public static CDeclaration FunctionPrototype(string name, bool isStatic, IReadOnlyList<CParameter> pars) {
+            return new CFunctionDeclaration(name, isStatic, pars, Option.None<IReadOnlyList<CStatement>>());
         }
 
         public static CDeclaration Struct(string name, IReadOnlyList<CParameter> members) {
@@ -122,23 +122,30 @@ namespace Trophy.CodeGeneration.CSyntax {
             private readonly string name;
             private readonly IReadOnlyList<CParameter> pars;
             private readonly IOption<IReadOnlyList<CStatement>> stats;
+            private readonly bool isStatic;
 
-            public CFunctionDeclaration(CType returnType, string name, IReadOnlyList<CParameter> pars, IOption<IReadOnlyList<CStatement>> stats) {
+            public CFunctionDeclaration(CType returnType, string name, bool isStatic, IReadOnlyList<CParameter> pars, IOption<IReadOnlyList<CStatement>> stats) {
                 this.ReturnType = Option.Some(returnType);
                 this.name = name;
                 this.pars = pars;
                 this.stats = stats;
+                this.isStatic = isStatic;
             }
 
-            public CFunctionDeclaration(string name, IReadOnlyList<CParameter> pars, IOption<IReadOnlyList<CStatement>> stats) {
+            public CFunctionDeclaration(string name, bool isStatic, IReadOnlyList<CParameter> pars, IOption<IReadOnlyList<CStatement>> stats) {
                 this.ReturnType = Option.None<CType>();
                 this.name = name;
                 this.pars = pars;
                 this.stats = stats;
+                this.isStatic = isStatic;
             }
 
             public override void WriteToC(int indentLevel, StringBuilder sb) {
                 CHelper.Indent(indentLevel, sb);
+
+                if (this.isStatic) {
+                    sb.Append("static ");
+                }
 
                 if (this.ReturnType.TryGetValue(out var type)) {
                     sb.Append(type);

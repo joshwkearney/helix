@@ -40,19 +40,19 @@ namespace Trophy.Compiling {
 
             // Region alloc forward declaration
             var regionPointerType = CType.Pointer(CType.NamedType("Region"));
-            var decl = CDeclaration.FunctionPrototype(CType.VoidPointer, "region_alloc", new[] {
+            var decl = CDeclaration.FunctionPrototype(CType.VoidPointer, "region_alloc", false, new[] {
                     new CParameter(regionPointerType, "region"), new CParameter(CType.Integer, "bytes")
                 });
 
             this.WriteForwardDeclaration(decl);
 
             // Region create forward declaration
-            var decl2 = CDeclaration.FunctionPrototype(regionPointerType, "region_create", new CParameter[0]);
+            var decl2 = CDeclaration.FunctionPrototype(regionPointerType, "region_create", false, new CParameter[0]);
 
             this.WriteForwardDeclaration(decl2);
 
             // Region delete forward declaration
-            var decl3 = CDeclaration.FunctionPrototype("region_delete", new[] {
+            var decl3 = CDeclaration.FunctionPrototype("region_delete", false, new[] {
                     new CParameter(regionPointerType, "region")
                 });
 

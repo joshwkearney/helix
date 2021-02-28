@@ -211,8 +211,8 @@ namespace Trophy.Features.Functions {
             var retExpr = this.body.GenerateCode(writer, bodyWriter);
             bodyStats.Add(CStatement.Return(retExpr));
 
-            var decl = CDeclaration.Function(returnType, "$" + this.funcPath, pars, bodyStats);
-            var forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, pars);
+            var decl = CDeclaration.Function(returnType, "$" + this.funcPath, true, pars, bodyStats);
+            var forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, true, pars);
 
             // Generate the function
             writer.WriteDeclaration(decl);
