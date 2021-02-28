@@ -8,6 +8,8 @@ using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Features.Variables;
 using System.Linq;
+using System.Collections.Immutable;
+using Trophy.Features.Functions;
 
 namespace Trophy.Compiling {
     public class TypesRecorder : ITypeRecorder {
@@ -109,7 +111,16 @@ namespace Trophy.Compiling {
                     }
                 }
             }
+            else if (target.ReturnType.AsSingularFunctionType().TryGetValue(out var singFunc)) {
+                if (newType.AsFunctionType().TryGetValue(out var func)) {
+                    var singSig = this.TryGetFunction(singFunc.FunctionPath).GetValue();
+                    var singPars = singSig.Parameters.Select(x => x.Type).ToArray();
 
+                    if (singSig.ReturnType == func.ReturnType && singPars.SequenceEqual(func.ParameterTypes)) {
+                        return Option.Some(new SingularFunctionToFunctionAdapter(target, singFunc.FunctionPath, newType));
+                    }
+                }
+            }
 
             return Option.None<ISyntaxC>();
         }

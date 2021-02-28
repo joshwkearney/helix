@@ -29,7 +29,7 @@ namespace Trophy.Features.Variables {
             }
 
             if (target == NameTarget.Function) {
-                return new FunctionAccessSyntaxBC(this.Location, path);
+                return new FunctionAccessSyntaxA(this.Location, path).CheckNames(names);
             }
             else if (target == NameTarget.Variable) {
                 if (this.kind == VariableAccessKind.ValueAccess) {

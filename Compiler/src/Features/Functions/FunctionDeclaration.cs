@@ -129,12 +129,20 @@ namespace Trophy.Features.Functions {
             var pars = this.sig
                 .Parameters
                 .Select((x, i) => new CParameter(declWriter.ConvertType(x.Type), "$" + x.Name + this.parIds[i]))
-                .Prepend(new CParameter(CType.NamedType("Region*"), "heap"))
+                .Prepend(new CParameter(CType.VoidPointer, "env"))
                 .ToArray();
 
             var statWriter = new CStatementWriter();
             var stats = new List<CStatement>();
             statWriter.StatementWritten += (s, e) => stats.Add(e);
+
+            // Unpack the heap
+            statWriter.WriteStatement(
+                CStatement.VariableDeclaration(
+                    CType.NamedType("Region*"), 
+                    "heap", 
+                    CExpression.VariableLiteral("env")));
+            statWriter.WriteStatement(CStatement.NewLine());
 
             var retExpr = this.body.GenerateCode(declWriter, statWriter);
             stats.Add(CStatement.Return(retExpr));
