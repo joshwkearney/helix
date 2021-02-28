@@ -221,7 +221,7 @@ namespace Trophy.Features.Functions {
             writer.WriteForwardDeclaration(forwardDecl);
             writer.WriteForwardDeclaration(CDeclaration.EmptyLine());
 
-            return this.funcPath.ToString();
+            return "$" + this.funcPath;
         }
 
         private CType GenerateClosureEnvironmentStruct(ICWriter writer) {
@@ -256,7 +256,6 @@ namespace Trophy.Features.Functions {
                         CExpression.Sizeof(envType)
                 });
         }
-
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter parentWriter) {
             writer.RequireRegions();

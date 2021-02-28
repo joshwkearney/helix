@@ -54,53 +54,120 @@ namespace Trophy.Features.Functions {
             this.region = region;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
-            var target = this.target.CheckTypes(types);
-            var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
-
-            // Make sure the target is a function
-            if (!target.ReturnType.AsSingularFunctionType().TryGetValue(out var funcType)) {
-                throw TypeCheckingErrors.ExpectedFunctionType(this.target.Location, target.ReturnType);
-            }
-
-            if (!types.TryGetFunction(funcType.FunctionPath).TryGetValue(out var func)) {
-                throw new Exception("Internal compiler inconsistency");
-            }
+        private IReadOnlyList<ISyntaxC> CheckArgs(
+            IReadOnlyList<ISyntaxC> args, 
+            IReadOnlyList<TrophyType> pars, 
+            ITypeRecorder types) {
 
             // Make sure the arg count lines up
-            if (args.Length != func.Parameters.Count) {
-                throw TypeCheckingErrors.ParameterCountMismatch(this.Location, func.Parameters.Count, args.Length);
+            if (args.Count != pars.Count) {
+                throw TypeCheckingErrors.ParameterCountMismatch(this.Location, pars.Count, args.Count);
             }
 
+            var result = new ISyntaxC[args.Count];
+
             // Make sure the arg types line up
-            for (int i = 0; i < args.Length; i++) {
-                var expected = func.Parameters[i].Type;
+            for (int i = 0; i < args.Count; i++) {
+                var expected = pars[i];
                 var actual = args[i].ReturnType;
 
                 if (!types.TryUnifyTo(args[i], expected).TryGetValue(out var newArg)) {
                     throw TypeCheckingErrors.UnexpectedType(this.Location, expected, actual);
                 }
 
-                args[i] = newArg;
+                result[i] = newArg;
             }
 
+            return result;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            var target = this.target.CheckTypes(types);
+            var args = (IReadOnlyList<ISyntaxC>)this.args.Select(x => x.CheckTypes(types)).ToArray();
             var lifetimes = args
                 .Select(x => x.Lifetimes)
                 .Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y))
-                .Union(target.Lifetimes)
+                // .Union(target.Lifetimes)
                 .Add(this.region)
                 .Remove(IdentifierPath.StackPath);
 
-            if (func.ReturnType.GetCopiability(types) == TypeCopiability.Unconditional) {
-                lifetimes = lifetimes.Clear();
-            }
+            // Make sure the target is a function
+            if (target.ReturnType.AsSingularFunctionType().TryGetValue(out var singFuncType)) {
+                if (!types.TryGetFunction(singFuncType.FunctionPath).TryGetValue(out var sig)) {
+                    throw new Exception("Internal compiler inconsistency");
+                }
 
-            return new SingularFunctionInvokeSyntaxC(
-                target: funcType.FunctionPath,
-                args: args,
-                region: this.region.Segments.Last(),
-                returnType: func.ReturnType,
-                lifetimes: lifetimes);
+                // Process the args
+                var pars = sig.Parameters.Select(x => x.Type).ToArray();
+                args = this.CheckArgs(args, pars, types);
+
+                // If this type is copiable then we don't capture anything
+                if (sig.ReturnType.GetCopiability(types) == TypeCopiability.Unconditional) {
+                    lifetimes = lifetimes.Clear();
+                }
+
+                return new SingularFunctionInvokeSyntaxC(
+                    target: singFuncType.FunctionPath,
+                    args: args,
+                    region: this.region.Segments.Last(),
+                    returnType: sig.ReturnType,
+                    lifetimes: lifetimes);
+            }
+            else if (target.ReturnType.AsFunctionType().TryGetValue(out var funcType)) {
+                args = this.CheckArgs(args, funcType.ParameterTypes, types);
+
+                // Make sure we take into account the target, because it is captured
+                lifetimes = lifetimes.Union(target.Lifetimes);
+
+                // If this type is copiable then we don't capture anything
+                if (funcType.ReturnType.GetCopiability(types) == TypeCopiability.Unconditional) {
+                    lifetimes = lifetimes.Clear();
+                }
+
+                return new FunctionInvokeSyntaxC(
+                    target: target,
+                    args: args,
+                    returnType: funcType.ReturnType,
+                    lifetimes: lifetimes);
+            }
+            else {
+                throw TypeCheckingErrors.ExpectedFunctionType(this.target.Location, target.ReturnType);
+            }            
+        }
+    }
+
+    public class FunctionInvokeSyntaxC : ISyntaxC {
+        private readonly ISyntaxC target;
+        private readonly IReadOnlyList<ISyntaxC> args;
+
+        public TrophyType ReturnType { get; }
+
+        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
+
+        public FunctionInvokeSyntaxC(
+            ISyntaxC target, 
+            IReadOnlyList<ISyntaxC> args, 
+            TrophyType returnType, 
+            ImmutableHashSet<IdentifierPath> lifetimes) {
+
+            this.target = target;
+            this.args = args;
+            this.ReturnType = returnType;
+            this.Lifetimes = lifetimes;
+        }
+
+        public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {
+            var target = this.target.GenerateCode(writer, statWriter);
+            var args = this.args
+                .Select(x => x.GenerateCode(writer, statWriter))
+                .Prepend(CExpression.MemberAccess(target, "environment"))
+                .ToArray();
+
+            var invoke = CExpression.Invoke(
+                CExpression.MemberAccess(target, "function"),
+                args);
+
+            return invoke;
         }
     }
 
@@ -113,8 +180,12 @@ namespace Trophy.Features.Functions {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
-        public SingularFunctionInvokeSyntaxC(IdentifierPath target, IReadOnlyList<ISyntaxC> args, 
-            string region, TrophyType returnType, ImmutableHashSet<IdentifierPath> lifetimes) {
+        public SingularFunctionInvokeSyntaxC(
+            IdentifierPath target, 
+            IReadOnlyList<ISyntaxC> args, 
+            string region, 
+            TrophyType returnType, 
+            ImmutableHashSet<IdentifierPath> lifetimes) {
 
             this.targetPath = target;
             this.args = args;
@@ -124,7 +195,11 @@ namespace Trophy.Features.Functions {
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
-            var args = this.args.Select(x => x.GenerateCode(declWriter, statWriter)).Prepend(CExpression.VariableLiteral(this.region)).ToArray();
+            var args = this.args
+                .Select(x => x.GenerateCode(declWriter, statWriter))
+                .Prepend(CExpression.VariableLiteral(this.region))
+                .ToArray();
+
             var target = CExpression.VariableLiteral("$" + this.targetPath);
 
             return CExpression.Invoke(target, args);

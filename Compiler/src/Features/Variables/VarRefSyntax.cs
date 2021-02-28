@@ -74,6 +74,12 @@ namespace Trophy.Features.Variables {
                 if (assign.ReturnType.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
                     assign = types.TryUnifyTo(assign, new ArrayType(fixedArrayType.ElementType, fixedArrayType.IsReadOnly)).GetValue();
                 }
+                else if (assign.ReturnType.AsSingularFunctionType().TryGetValue(out var singFuncType)) {
+                    var sig = types.TryGetFunction(singFuncType.FunctionPath).GetValue();
+                    var pars = sig.Parameters.Select(x => x.Type).ToArray();
+
+                    assign = types.TryUnifyTo(assign, new FunctionType(sig.ReturnType, pars)).GetValue();
+                }
             }
 
             var info = new VariableInfo(

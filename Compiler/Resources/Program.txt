@@ -1,5 +1,7 @@
 ﻿func test() as void => {
-    var f <- add as func[int,int->int];
+    var f <- func (x as int, y as int) => x + y;
+
+    f(4, 6);
 
     void;
 };
