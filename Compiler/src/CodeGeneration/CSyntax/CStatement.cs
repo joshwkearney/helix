@@ -53,6 +53,10 @@ namespace Trophy.CodeGeneration.CSyntax {
             return new CBreakStatement();
         }
 
+        public static CStatement Comment(string value) {
+            return new CCommentStatement(value);
+        }
+
         public static CStatement NewLine() {
             return new CNewLine();
         }
@@ -60,6 +64,19 @@ namespace Trophy.CodeGeneration.CSyntax {
         private CStatement() { }
 
         public abstract void WriteToC(int indentLevel, StringBuilder sb);
+
+        private class CCommentStatement : CStatement {
+            private readonly string value;
+
+            public CCommentStatement(string value) {
+                this.value = value;
+            }
+
+            public override void WriteToC(int indentLevel, StringBuilder sb) {
+                CHelper.Indent(indentLevel, sb);
+                sb.Append("// ").AppendLine(this.value);
+            }
+        }
 
         private class CBreakStatement : CStatement {
             public override void WriteToC(int indentLevel, StringBuilder sb) {

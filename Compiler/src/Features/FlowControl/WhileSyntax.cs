@@ -82,6 +82,7 @@ namespace Trophy.Features.FlowControl {
 
             var body = this.body.GenerateCode(declWriter, writer);
 
+            statWriter.WriteStatement(CStatement.Comment("While loop"));
             statWriter.WriteStatement(CStatement.While(CExpression.IntLiteral(1), loopBody));
             statWriter.WriteStatement(CStatement.NewLine());
 

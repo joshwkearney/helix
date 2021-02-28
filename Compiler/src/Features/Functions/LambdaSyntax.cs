@@ -186,8 +186,10 @@ namespace Trophy.Features.Functions {
             var envTempName = "environment_temp" + counter++;
             var envDeref = CExpression.Dereference(CExpression.VariableLiteral(envTempName));
             bodyWriter.WriteStatement(CStatement.VariableDeclaration(CType.Pointer(envType), envTempName, CExpression.VariableLiteral("environment")));
+            bodyWriter.WriteStatement(CStatement.NewLine());
 
             // Unpack the heap
+            bodyWriter.WriteStatement(CStatement.Comment("Unpack the closure environment"));
             bodyWriter.WriteStatement(
                 CStatement.VariableDeclaration(
                     CType.NamedType("Region*"),
@@ -268,6 +270,8 @@ namespace Trophy.Features.Functions {
             var envAccess = CExpression.Dereference(CExpression.VariableLiteral(envName));
             var closureAccess = CExpression.VariableLiteral(closureName);
 
+            parentWriter.WriteStatement(CStatement.Comment("Pack the lambda environment"));
+
             if (this.regionPath == IdentifierPath.StackPath) {
                 // Create the environment
                 parentWriter.WriteStatement(
@@ -314,6 +318,7 @@ namespace Trophy.Features.Functions {
             parentWriter.WriteStatement(CStatement.NewLine());
 
             // Write the closure struct
+            parentWriter.WriteStatement(CStatement.Comment("Lambda expression literal"));
             parentWriter.WriteStatement(CStatement.VariableDeclaration(closureType, closureName));
 
             // Write the closure environment

@@ -92,6 +92,7 @@ namespace Trophy.Features.FlowControl {
             var regionType = CType.NamedType("Region*");
 
             // Write the region
+            statWriter.WriteStatement(CStatement.Comment("Create new region"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(
                 regionType,
                 this.region,

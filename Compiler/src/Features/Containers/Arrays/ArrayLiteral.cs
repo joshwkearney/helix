@@ -105,6 +105,7 @@ namespace Trophy.Features.Containers.Arrays {
             var regionName = this.region.Segments.Last();
 
             // Write array declaration
+            statWriter.WriteStatement(CStatement.Comment($"Array literal on region '{regionName}'"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(arrayType, arrayName));
 
             if (!this.args.Any()) {

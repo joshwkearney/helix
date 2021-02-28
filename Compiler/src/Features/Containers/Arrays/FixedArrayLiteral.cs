@@ -62,6 +62,7 @@ namespace Trophy.Features.Containers.Arrays {
                 var elementType = writer.ConvertType(this.arrayType.ElementType);
 
                 // Write array declaration
+                statWriter.WriteStatement(CStatement.Comment("Fixed array literal"));
                 statWriter.WriteStatement(CStatement.VariableDeclaration(arrayType, arrayName));
 
                 if (this.region == IdentifierPath.StackPath) {

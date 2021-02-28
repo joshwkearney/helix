@@ -62,7 +62,7 @@ namespace Trophy.Analysis.Types {
         }
 
         public override string ToString() {
-            return this.SignaturePath.ToString();
+            return this.SignaturePath.Segments.Last();
         }
     }
 }

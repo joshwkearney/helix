@@ -123,6 +123,7 @@ namespace Trophy.Features.Variables {
                    "$" + this.info.Name + this.info.UniqueId,
                    assign);
 
+            statWriter.WriteStatement(CStatement.Comment($"Definition of variable '{this.info.Name}'"));
             statWriter.WriteStatement(stat);
             statWriter.WriteStatement(CStatement.NewLine());
 

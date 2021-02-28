@@ -184,6 +184,7 @@ namespace Trophy.Features.Containers.Structs {
             })
             .ToArray();
 
+            statWriter.WriteStatement(CStatement.Comment($"New struct literal for '{this.ReturnType}'"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(ctype, cname));
 
             // Write members

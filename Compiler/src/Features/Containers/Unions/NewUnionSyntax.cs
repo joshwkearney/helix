@@ -144,6 +144,7 @@ namespace Trophy.Features.Containers.Unions {
             var argVal = this.arg.MemberValue.GenerateCode(writer, statWriter);
 
             // Write union variable
+            statWriter.WriteStatement(CStatement.Comment($"New union literal for '{this.ReturnType}'"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(ctype, cname));
 
             // Write tag assignment

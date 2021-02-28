@@ -35,6 +35,7 @@ namespace Trophy.Features.Functions {
             }
 
             // Write the closure variable
+            statWriter.WriteStatement(CStatement.Comment("Singular function to function conversion"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(ctype, cname));
 
             // Write the environment

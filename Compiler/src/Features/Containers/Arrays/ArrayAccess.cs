@@ -116,6 +116,7 @@ namespace Trophy.Features.Containers.Arrays {
                     CExpression.IntLiteral(-1) }))
             });
 
+            statWriter.WriteStatement(CStatement.Comment("Array access bounds check"));
             statWriter.WriteStatement(ifStat);
             statWriter.WriteStatement(CStatement.NewLine());
 

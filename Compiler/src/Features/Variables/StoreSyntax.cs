@@ -96,6 +96,7 @@ namespace Trophy.Features.Variables {
             var target = CExpression.Dereference(this.target.GenerateCode(declWriter, statWriter));
             var assign = this.assign.GenerateCode(declWriter, statWriter);
 
+            statWriter.WriteStatement(CStatement.Comment("Variable store"));
             statWriter.WriteStatement(CStatement.Assignment(target, assign));
 
             return CExpression.IntLiteral(0);

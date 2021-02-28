@@ -123,6 +123,7 @@ namespace Trophy.Features.FlowControl {
             affirmList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), affirm));
             negList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), neg));
 
+            statWriter.WriteStatement(CStatement.Comment("If statement"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(returnType, tempName));
             statWriter.WriteStatement(CStatement.If(cond, affirmList, negList));
             statWriter.WriteStatement(CStatement.NewLine());

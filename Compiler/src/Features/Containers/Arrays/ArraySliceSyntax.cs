@@ -143,12 +143,14 @@ namespace Trophy.Features.Containers.Arrays {
                     CExpression.IntLiteral(-1) }))
             });
 
+            statWriter.WriteStatement(CStatement.Comment("Array slice bounds check"));
             statWriter.WriteStatement(ifStat);
             statWriter.WriteStatement(CStatement.NewLine());
 
             var arrayName = "array_slice_" + sliceCounter++;
             var arrayType = declWriter.ConvertType(this.ReturnType);
 
+            statWriter.WriteStatement(CStatement.Comment("Array slice"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(arrayType, arrayName));
             statWriter.WriteStatement(CStatement.Assignment(
                 CExpression.MemberAccess(CExpression.VariableLiteral(arrayName), "data"),
