@@ -47,7 +47,7 @@ namespace Trophy.Compiling {
             this.WriteForwardDeclaration(decl);
 
             // Region create forward declaration
-            var decl2 = CDeclaration.FunctionPrototype(regionPointerType, "$region_create", new CParameter[0]);
+            var decl2 = CDeclaration.FunctionPrototype(regionPointerType, "region_create", new CParameter[0]);
 
             this.WriteForwardDeclaration(decl2);
 
