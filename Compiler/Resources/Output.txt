@@ -49,3 +49,60 @@ int main($Region* heap) {
     return 0;
 }
 
+
+func selection_sort(arr as array[var int]) as void => { 
+    # Find the smallest element and put it in position i
+    for i = 0 to arr.size-1 do {
+        var smallest <- arr[i];
+        var smallest_index <- i;
+
+        # Find the smallest element
+        for j = i + 1 to arr.size-1 do {
+            if arr[j] < smallest do {
+                @smallest_index <- j;
+                @smallest <- arr[j];
+            };
+        };
+
+        # Swap the smallest with the ith position
+        var swap <- arr[i];
+
+        arr@[i] <- smallest;
+        arr@[smallest_index] <- swap;
+    };
+};
+
+struct Point {
+    x as int;
+    y as int;
+};
+
+function selection_sort(int[] array) => void: { 
+    var i <- 0;
+
+    # Find the smallest element and put it in position i
+    while i < array.size do {
+        var j <- i + 1;
+
+        var smallest <- array[i];
+        var smallest_index <- i;
+
+        # Find the smallest element
+        while j < array.size do {
+            if array[j] < smallest do {
+                @smallest_index <- j;
+                @smallest <- array[j];
+            };
+
+            @j <- j + 1;
+        };
+
+        # Swap the smallest with the ith position
+        var swap <- array[i];
+
+        array@[i] <- smallest;
+        array@[smallest_index] <- swap;
+
+        @i <- i + 1;
+    };
+};

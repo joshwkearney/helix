@@ -11,6 +11,8 @@ namespace Trophy.Compiling {
         private readonly Stack<IdentifierPath> regions = new Stack<IdentifierPath>();
         private int nameCounter = 0;
 
+        public event EventHandler<MetaType> MetaTypeFound;
+
         private readonly Dictionary<IdentifierPath, NameTarget> globalNames
                     = new Dictionary<IdentifierPath, NameTarget>();
 
@@ -116,6 +118,9 @@ namespace Trophy.Compiling {
                 return new FunctionType(
                     this.ResolveTypeNames(funcType.ReturnType, loc),
                     funcType.ParameterTypes.Select(x => this.ResolveTypeNames(x, loc)).ToArray());
+            }
+            else if (type.AsMetaType().TryGetValue(out var metaType)) {
+                return metaType;
             }
             else {
                 throw new Exception();

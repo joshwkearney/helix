@@ -8,6 +8,7 @@ using Trophy.Features.Primitives;
 using Trophy.Features.Variables;
 using System.Linq;
 using Trophy.Features.Functions;
+using System;
 
 namespace Trophy.Compiling {
     public class TypesRecorder : ITypeRecorder {
@@ -15,12 +16,16 @@ namespace Trophy.Compiling {
         private readonly Stack<Dictionary<IdentifierPath, FunctionSignature>> functions = new Stack<Dictionary<IdentifierPath, FunctionSignature>>();
         private readonly Stack<Dictionary<IdentifierPath, AggregateSignature>> structs = new Stack<Dictionary<IdentifierPath, AggregateSignature>>();
         private readonly Stack<Dictionary<TrophyType, Dictionary<string, IdentifierPath>>> methods = new Stack<Dictionary<TrophyType, Dictionary<string, IdentifierPath>>>();
+        private readonly Stack<Dictionary<TrophyType, MetaTypeGenerator>> metaTypes = new Stack<Dictionary<TrophyType, MetaTypeGenerator>>();
+
+        public event EventHandler<IDeclarationC> DeclarationGenerated;
 
         public TypesRecorder() {
             this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
             this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
             this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
             this.methods.Push(new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>());
+            this.metaTypes.Push(new Dictionary<TrophyType, MetaTypeGenerator>());
         }
 
         public void DeclareVariable(IdentifierPath path, VariableInfo info) {
@@ -156,6 +161,7 @@ namespace Trophy.Compiling {
             this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
             this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
             this.methods.Push(new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>()); this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
+            this.metaTypes.Push(new Dictionary<TrophyType, MetaTypeGenerator>());
         }
 
         public void PopFlow() {
@@ -163,6 +169,19 @@ namespace Trophy.Compiling {
             this.functions.Pop();
             this.structs.Pop();
             this.methods.Pop();
+            this.metaTypes.Pop();
         }
-    };
+
+        public void DeclareMetaType(MetaType meta, MetaTypeGenerator generator) {
+            this.metaTypes.Peek()[meta] = generator;
+        }
+
+        public TrophyType InstantiateMetaType(MetaType type, TrophyType[] args) {
+            var (newType, decl) = this.metaTypes.Peek()[type](args);
+
+            this.DeclarationGenerated?.Invoke(this, decl);
+
+            return newType;
+        }
+    }
 }

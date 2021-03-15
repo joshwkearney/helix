@@ -29,6 +29,6 @@ namespace Trophy.Analysis {
     }
 
     public enum NameTarget {
-        Variable, Function, Region, Struct, Union, Reserved
+        Variable, Function, Region, Struct, Union, Reserved, Metatype, TypeAlias
     }
 }

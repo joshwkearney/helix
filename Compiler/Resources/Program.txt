@@ -1,11 +1,12 @@
 ﻿func test() as void => {
-    var identity <- func (x as int) => x;
-
-    apply(45, identity);
-
     void;
 };
 
-func add (x as int, y as int) as int => x + y;
+func add(x as int, y as int) as int => x + y;
 
-func apply (arg as int, f as func[int->int]) as int => f(arg);
+struct Unit { temp as void; };
+
+struct Point[T] {
+    x as T;
+    y as T;
+};

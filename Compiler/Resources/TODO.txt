@@ -10,7 +10,7 @@ cross-compile to wasm
 
 Phase 2 - Complex Features =================
 
-closures
+DONE closures
 generics
 interfaces
 type extensions

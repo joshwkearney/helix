@@ -36,6 +36,8 @@
 
         public virtual IOption<FunctionType> AsFunctionType() { return Option.None<FunctionType>(); }
 
+        public virtual IOption<MetaType> AsMetaType() { return Option.None<MetaType>(); }
+
         public static bool operator ==(TrophyType type1, TrophyType type2) {
             return type1.Equals(type2);
         }

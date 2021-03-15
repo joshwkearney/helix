@@ -5,6 +5,7 @@ using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Features.Containers;
 using Trophy.Features.Containers.Arrays;
+using Trophy.Features.Containers.Structs;
 using Trophy.Features.FlowControl;
 using Trophy.Features.Functions;
 using Trophy.Features.Primitives;
@@ -71,7 +72,7 @@ namespace Trophy.Parsing {
         private T Advance<T>() {
             var tok = this.Advance();
 
-            if (!(tok is Token<T> ttok)) {
+            if (tok is not Token<T> ttok) {
                 throw ParsingErrors.UnexpectedToken(tok);
             }
 
@@ -223,6 +224,19 @@ namespace Trophy.Parsing {
             var name = this.Advance<string>();
             var mems = new List<StructMember>();
             var decls = new List<IDeclarationA>();
+            var generics = new List<string>();
+
+            if (this.TryAdvance(TokenKind.OpenBracket)) {
+                while (true) {
+                    generics.Add(this.Advance<string>());
+
+                    if (!this.TryAdvance(TokenKind.Comma)) {
+                        break;
+                    }
+                }
+
+                this.Advance(TokenKind.CloseBracket);
+            }
 
             this.Advance(TokenKind.OpenBrace);
 
@@ -245,7 +259,14 @@ namespace Trophy.Parsing {
             var sig = new AggregateSignature(name, mems);
             var kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union;
 
-            return new AggregateDeclarationA(loc, sig, kind, decls);
+            var result = new AggregateDeclarationA(loc, sig, kind, decls);
+
+            if (generics.Any()) {
+                return new MetaStructDeclarationA(result, generics);
+            }
+            else {
+                return result;
+            }
         }
 
         private IDeclarationA Declaration() {

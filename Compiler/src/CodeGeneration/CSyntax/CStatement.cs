@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -35,6 +36,8 @@ namespace Trophy.CodeGeneration.CSyntax {
         }
 
         public static CStatement ArrayDeclaration(CType elementType, string name, CExpression size) {
+            Func<int, int> x = (y => y + 1);
+
             return new CArrayDeclaration() {
                 ArraySize = size,
                 ArrayType = elementType,
