@@ -25,7 +25,7 @@ namespace Trophy.Analysis {
 
         public void PopRegion();
 
-        public TrophyType ResolveTypeNames(TrophyType type, TokenLocation loc);
+        public ITrophyType ResolveTypeNames(ITrophyType type, TokenLocation loc);
     }
 
     public enum NameTarget {

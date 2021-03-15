@@ -15,8 +15,8 @@ namespace Trophy.Compiling {
         private readonly Stack<Dictionary<IdentifierPath, VariableInfo>> variables = new Stack<Dictionary<IdentifierPath, VariableInfo>>();
         private readonly Stack<Dictionary<IdentifierPath, FunctionSignature>> functions = new Stack<Dictionary<IdentifierPath, FunctionSignature>>();
         private readonly Stack<Dictionary<IdentifierPath, AggregateSignature>> structs = new Stack<Dictionary<IdentifierPath, AggregateSignature>>();
-        private readonly Stack<Dictionary<TrophyType, Dictionary<string, IdentifierPath>>> methods = new Stack<Dictionary<TrophyType, Dictionary<string, IdentifierPath>>>();
-        private readonly Stack<Dictionary<TrophyType, MetaTypeGenerator>> metaTypes = new Stack<Dictionary<TrophyType, MetaTypeGenerator>>();
+        private readonly Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>> methods = new Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>>();
+        private readonly Stack<Dictionary<ITrophyType, MetaTypeGenerator>> metaTypes = new Stack<Dictionary<ITrophyType, MetaTypeGenerator>>();
 
         public event EventHandler<IDeclarationC> DeclarationGenerated;
 
@@ -24,8 +24,8 @@ namespace Trophy.Compiling {
             this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
             this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
             this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
-            this.methods.Push(new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>());
-            this.metaTypes.Push(new Dictionary<TrophyType, MetaTypeGenerator>());
+            this.methods.Push(new Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>());
+            this.metaTypes.Push(new Dictionary<ITrophyType, MetaTypeGenerator>());
         }
 
         public void DeclareVariable(IdentifierPath path, VariableInfo info) {
@@ -61,17 +61,17 @@ namespace Trophy.Compiling {
                 .FirstOrNone();
         }
 
-        public IOption<ISyntaxC> TryUnifyTo(ISyntaxC target, TrophyType newType) {
-            if (target.ReturnType == newType) {
+        public IOption<ISyntaxC> TryUnifyTo(ISyntaxC target, ITrophyType newType) {
+            if (target.ReturnType.Equals(newType)) {
                 return Option.Some(target);
             }
 
             if (target.ReturnType.IsVoidType) {
                 if (newType.IsIntType) {
-                    return Option.Some(new VoidToPrimitiveAdapterC(target, TrophyType.Integer));
+                    return Option.Some(new VoidToPrimitiveAdapterC(target, ITrophyType.Integer));
                 }
                 else if (newType.IsBoolType) {
-                    return Option.Some(new VoidToPrimitiveAdapterC(target, TrophyType.Boolean));
+                    return Option.Some(new VoidToPrimitiveAdapterC(target, ITrophyType.Boolean));
                 }
                 else if (newType.AsSingularFunctionType().Any()) {
                     return Option.Some(new VoidToPrimitiveAdapterC(target, newType));
@@ -94,14 +94,14 @@ namespace Trophy.Compiling {
                 }
             }
             else if (target.ReturnType.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                if (newType.AsArrayType().TryGetValue(out var fixedArrayType2) && fixedArrayType.ElementType == fixedArrayType2.ElementType) {
+                if (newType.AsArrayType().TryGetValue(out var fixedArrayType2) && fixedArrayType.ElementType.Equals(fixedArrayType2.ElementType)) {
                     if (!(fixedArrayType.IsReadOnly && !fixedArrayType2.IsReadOnly)) {
                         return Option.Some(new ArrayToArrayAdapter(target, newType));
                     }
                 }
             }
             else if (target.ReturnType.AsArrayType().TryGetValue(out var arrayType)) {
-                if (newType.AsArrayType().TryGetValue(out var arrayType2) && arrayType.ElementType == arrayType2.ElementType) {
+                if (newType.AsArrayType().TryGetValue(out var arrayType2) && arrayType.ElementType.Equals(arrayType2.ElementType)) {
                     if (!(arrayType.IsReadOnly && !arrayType2.IsReadOnly)) {
                         return Option.Some(new ArrayToArrayAdapter(target, newType));
                     }
@@ -109,7 +109,7 @@ namespace Trophy.Compiling {
             }
             else if (target.ReturnType.AsVariableType().TryGetValue(out var varRef1)) {
                 if (newType.AsVariableType().TryGetValue(out var varRef2)) {
-                    if (varRef1.InnerType == varRef2.InnerType && varRef2.IsReadOnly) {
+                    if (varRef1.InnerType.Equals(varRef2.InnerType) && varRef2.IsReadOnly) {
                         return Option.Some(new VarToRefAdapter(target, varRef2));
                     }
                 }
@@ -119,7 +119,7 @@ namespace Trophy.Compiling {
                     var singSig = this.TryGetFunction(singFunc.FunctionPath).GetValue();
                     var singPars = singSig.Parameters.Select(x => x.Type).ToArray();
 
-                    if (singSig.ReturnType == func.ReturnType && singPars.SequenceEqual(func.ParameterTypes)) {
+                    if (singSig.ReturnType.Equals(func.ReturnType) && singPars.SequenceEqual(func.ParameterTypes)) {
                         return Option.Some(new SingularFunctionToFunctionAdapter(target, singFunc.FunctionPath, newType));
                     }
                 }
@@ -128,7 +128,7 @@ namespace Trophy.Compiling {
             return Option.None<ISyntaxC>();
         }
 
-        public void DeclareMethodPath(TrophyType type, string name, IdentifierPath path) {
+        public void DeclareMethodPath(ITrophyType type, string name, IdentifierPath path) {
             var methods = this.methods.Peek();
 
             if (!methods.ContainsKey(type)) {
@@ -138,7 +138,7 @@ namespace Trophy.Compiling {
             methods[type][name] = path;
         }
 
-        public IOption<IdentifierPath> TryGetMethodPath(TrophyType type, string name) {
+        public IOption<IdentifierPath> TryGetMethodPath(ITrophyType type, string name) {
             return this.methods
                 .SelectMany(x => x.GetValueOption(type).AsEnumerable())
                 .SelectMany(x => x.GetValueOption(name).AsEnumerable())
@@ -160,8 +160,8 @@ namespace Trophy.Compiling {
             this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
             this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
             this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
-            this.methods.Push(new Dictionary<TrophyType, Dictionary<string, IdentifierPath>>()); this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
-            this.metaTypes.Push(new Dictionary<TrophyType, MetaTypeGenerator>());
+            this.methods.Push(new Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>()); this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
+            this.metaTypes.Push(new Dictionary<ITrophyType, MetaTypeGenerator>());
         }
 
         public void PopFlow() {
@@ -172,11 +172,11 @@ namespace Trophy.Compiling {
             this.metaTypes.Pop();
         }
 
-        public void DeclareMetaType(MetaType meta, MetaTypeGenerator generator) {
+        public void DeclareMetaType(GenericType meta, MetaTypeGenerator generator) {
             this.metaTypes.Peek()[meta] = generator;
         }
 
-        public TrophyType InstantiateMetaType(MetaType type, TrophyType[] args) {
+        public ITrophyType InstantiateMetaType(GenericType type, ITrophyType[] args) {
             var (newType, decl) = this.metaTypes.Peek()[type](args);
 
             this.DeclarationGenerated?.Invoke(this, decl);

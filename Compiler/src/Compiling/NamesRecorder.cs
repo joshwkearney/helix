@@ -11,7 +11,7 @@ namespace Trophy.Compiling {
         private readonly Stack<IdentifierPath> regions = new Stack<IdentifierPath>();
         private int nameCounter = 0;
 
-        public event EventHandler<MetaType> MetaTypeFound;
+        public event EventHandler<GenericType> MetaTypeFound;
 
         private readonly Dictionary<IdentifierPath, NameTarget> globalNames
                     = new Dictionary<IdentifierPath, NameTarget>();
@@ -83,7 +83,7 @@ namespace Trophy.Compiling {
             this.regions.Pop();
         }
 
-        public TrophyType ResolveTypeNames(TrophyType type, TokenLocation loc) {
+        public ITrophyType ResolveTypeNames(ITrophyType type, TokenLocation loc) {
             if (type.IsBoolType || type.IsIntType || type.IsVoidType) {
                 return type;
             }
@@ -119,7 +119,7 @@ namespace Trophy.Compiling {
                     this.ResolveTypeNames(funcType.ReturnType, loc),
                     funcType.ParameterTypes.Select(x => this.ResolveTypeNames(x, loc)).ToArray());
             }
-            else if (type.AsMetaType().TryGetValue(out var metaType)) {
+            else if (type.AsGenericType().TryGetValue(out var metaType)) {
                 return metaType;
             }
             else {

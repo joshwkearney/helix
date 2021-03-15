@@ -78,7 +78,7 @@ namespace Trophy.Features.Containers.Arrays {
             var target = this.target.CheckTypes(types);
             var startIndex = this.startIndex.CheckTypes(types);
             var endIndex = this.endIndex.CheckTypes(types);
-            var returnType = TrophyType.Void;
+            var returnType = ITrophyType.Void;
 
             // Make sure the target is an array
             if (target.ReturnType.AsArrayType().TryGetValue(out var arrayType)) {
@@ -92,13 +92,13 @@ namespace Trophy.Features.Containers.Arrays {
             }
 
             // Make sure the start index in an int
-            if (!types.TryUnifyTo(startIndex, TrophyType.Integer).TryGetValue(out startIndex)) {
-                throw TypeCheckingErrors.UnexpectedType(this.startIndex.Location, TrophyType.Integer, startIndex.ReturnType);
+            if (!types.TryUnifyTo(startIndex, ITrophyType.Integer).TryGetValue(out startIndex)) {
+                throw TypeCheckingErrors.UnexpectedType(this.startIndex.Location, ITrophyType.Integer, startIndex.ReturnType);
             }
 
             // Make sure the end index in an int
-            if (!types.TryUnifyTo(endIndex, TrophyType.Integer).TryGetValue(out endIndex)) {
-                throw TypeCheckingErrors.UnexpectedType(this.endIndex.Location, TrophyType.Integer, endIndex.ReturnType);
+            if (!types.TryUnifyTo(endIndex, ITrophyType.Integer).TryGetValue(out endIndex)) {
+                throw TypeCheckingErrors.UnexpectedType(this.endIndex.Location, ITrophyType.Integer, endIndex.ReturnType);
             }
 
             return new ArraySliceSyntaxC(returnType, target, startIndex, endIndex);
@@ -109,11 +109,11 @@ namespace Trophy.Features.Containers.Arrays {
 
         private readonly ISyntaxC target, start, end;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public ArraySliceSyntaxC(TrophyType returnType, ISyntaxC target, ISyntaxC start, ISyntaxC end) {
+        public ArraySliceSyntaxC(ITrophyType returnType, ISyntaxC target, ISyntaxC start, ISyntaxC end) {
             this.ReturnType = returnType;
             this.target = target;
             this.start = start;

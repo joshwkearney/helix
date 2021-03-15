@@ -10,11 +10,11 @@ using System.Linq;
 namespace Trophy.Features.Containers.Unions {
     public class NewUnionSyntaxA : ISyntaxA {
         private readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
-        private readonly TrophyType targetType;
+        private readonly ITrophyType targetType;
 
         public TokenLocation Location { get; }
 
-        public NewUnionSyntaxA(TokenLocation location, TrophyType target, IReadOnlyList<StructArgument<ISyntaxA>> args) {
+        public NewUnionSyntaxA(TokenLocation location, ITrophyType target, IReadOnlyList<StructArgument<ISyntaxA>> args) {
             this.Location = location;
             this.targetType = target;
             this.args = args;
@@ -55,7 +55,7 @@ namespace Trophy.Features.Containers.Unions {
 
     public class NewUnionSyntaxB : ISyntaxB {
         private readonly IOption<StructArgument<ISyntaxB>> args;
-        private readonly TrophyType target;
+        private readonly ITrophyType target;
         private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
@@ -66,7 +66,7 @@ namespace Trophy.Features.Containers.Unions {
 
         public NewUnionSyntaxB(
             TokenLocation location, 
-            TrophyType target, 
+            ITrophyType target, 
             IOption<StructArgument<ISyntaxB>> args, 
             IdentifierPath path) {
 
@@ -128,11 +128,11 @@ namespace Trophy.Features.Containers.Unions {
         private readonly StructArgument<ISyntaxC> arg;
         public readonly int tag;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => arg.MemberValue.Lifetimes;
 
-        public NewUnionSyntaxC(StructArgument<ISyntaxC> arg, int tag, TrophyType returnType) {
+        public NewUnionSyntaxC(StructArgument<ISyntaxC> arg, int tag, ITrophyType returnType) {
             this.arg = arg;
             this.tag = tag;
             this.ReturnType = returnType;

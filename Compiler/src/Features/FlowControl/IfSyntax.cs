@@ -70,7 +70,7 @@ namespace Trophy.Features.FlowControl {
 
             // Make sure that the condition is a boolean
             if (!cond.ReturnType.IsBoolType) {
-                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, TrophyType.Boolean, cond.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, ITrophyType.Boolean, cond.ReturnType);
             }
 
             // Make sure that the branches are the same type
@@ -93,7 +93,7 @@ namespace Trophy.Features.FlowControl {
 
         private readonly ISyntaxC cond, iftrue, iffalse;
 
-        public TrophyType ReturnType => this.iftrue.ReturnType;
+        public ITrophyType ReturnType => this.iftrue.ReturnType;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.iftrue.Lifetimes.Union(this.iffalse.Lifetimes);
 

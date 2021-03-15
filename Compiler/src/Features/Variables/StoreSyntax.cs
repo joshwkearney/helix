@@ -83,7 +83,7 @@ namespace Trophy.Features.Variables {
     public class StoreSyntaxC : ISyntaxC {
         private readonly ISyntaxC target, assign;
 
-        public TrophyType ReturnType => TrophyType.Void;
+        public ITrophyType ReturnType => ITrophyType.Void;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 

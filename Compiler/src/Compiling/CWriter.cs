@@ -10,7 +10,7 @@ namespace Trophy.Compiling {
         private bool regionHeadersGenerated = false;
 
         private int typeCounter = 0;
-        private readonly Dictionary<TrophyType, CType> typeNames = new Dictionary<TrophyType, CType>();
+        private readonly Dictionary<ITrophyType, CType> typeNames = new Dictionary<ITrophyType, CType>();
 
         private readonly StringBuilder forwardDeclSb = new StringBuilder();
         private readonly StringBuilder declSb = new StringBuilder();
@@ -66,7 +66,7 @@ namespace Trophy.Compiling {
             decl.WriteToC(0, this.forwardDeclSb);
         }
 
-        public CType ConvertType(TrophyType type) {
+        public CType ConvertType(ITrophyType type) {
             if (type.IsBoolType || type.IsIntType || type.IsVoidType || type.AsSingularFunctionType().Any()) {
                 return CType.Integer;
             }

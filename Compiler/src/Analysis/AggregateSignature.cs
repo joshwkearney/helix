@@ -34,9 +34,9 @@ namespace Trophy.Analysis {
     public class StructMember : IEquatable<StructMember> {
         public string MemberName { get; }
 
-        public TrophyType MemberType { get; }
+        public ITrophyType MemberType { get; }
 
-        public StructMember(string name, TrophyType type) {
+        public StructMember(string name, ITrophyType type) {
             this.MemberName = name;
             this.MemberType = type;
         }
@@ -47,7 +47,7 @@ namespace Trophy.Analysis {
             }
 
             return this.MemberName == other.MemberName
-                && this.MemberType == other.MemberType;
+                && this.MemberType.Equals(other.MemberType);
         }
 
         public override bool Equals(object obj) {

@@ -7,7 +7,7 @@ namespace Trophy.Features.Primitives {
     public class BoolToIntAdapter : ISyntaxC {
         private readonly ISyntaxC target;
 
-        public TrophyType ReturnType => TrophyType.Integer;
+        public ITrophyType ReturnType => ITrophyType.Integer;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 

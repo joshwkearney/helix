@@ -56,7 +56,7 @@ namespace Trophy.Features.Functions {
 
         private IReadOnlyList<ISyntaxC> CheckArgs(
             IReadOnlyList<ISyntaxC> args, 
-            IReadOnlyList<TrophyType> pars, 
+            IReadOnlyList<ITrophyType> pars, 
             ITypeRecorder types) {
 
             // Make sure the arg count lines up
@@ -140,14 +140,14 @@ namespace Trophy.Features.Functions {
         private readonly ISyntaxC target;
         private readonly IReadOnlyList<ISyntaxC> args;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
         public FunctionInvokeSyntaxC(
             ISyntaxC target, 
             IReadOnlyList<ISyntaxC> args, 
-            TrophyType returnType, 
+            ITrophyType returnType, 
             ImmutableHashSet<IdentifierPath> lifetimes) {
 
             this.target = target;
@@ -176,7 +176,7 @@ namespace Trophy.Features.Functions {
         private readonly IReadOnlyList<ISyntaxC> args;
         private readonly string region;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
@@ -184,7 +184,7 @@ namespace Trophy.Features.Functions {
             IdentifierPath target, 
             IReadOnlyList<ISyntaxC> args, 
             string region, 
-            TrophyType returnType, 
+            ITrophyType returnType, 
             ImmutableHashSet<IdentifierPath> lifetimes) {
 
             this.targetPath = target;

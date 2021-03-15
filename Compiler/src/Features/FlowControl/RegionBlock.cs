@@ -79,7 +79,7 @@ namespace Trophy.Features.FlowControl {
         private readonly ISyntaxC body;
         private readonly string region;
 
-        public TrophyType ReturnType => this.body.ReturnType;
+        public ITrophyType ReturnType => this.body.ReturnType;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.body.Lifetimes;
 

@@ -1,27 +1,18 @@
-﻿namespace Trophy.Analysis.Types {
-    public class VarRefType : TrophyType {
-        public TrophyType InnerType { get; }
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Trophy.Analysis.Types {
+    public class VarRefType : ITrophyType {
+        public ITrophyType InnerType { get; }
 
         public bool IsReadOnly { get; }
 
-        public VarRefType(TrophyType innerType, bool isReadonly) {
+        public VarRefType(ITrophyType innerType, bool isReadonly) {
             this.InnerType = innerType;
             this.IsReadOnly = isReadonly;
         }
 
-        public override bool Equals(object other) {
-            if (other is null) {
-                return false;
-            }
 
-            if (other is VarRefType varType) {
-                return this.InnerType == varType.InnerType && this.IsReadOnly == varType.IsReadOnly;
-            }
-
-            return false;
-        }
-
-        public override bool HasDefaultValue(ITypeRecorder types) => false;
+        public bool HasDefaultValue(ITypeRecorder types) => false;
 
         public override int GetHashCode() => this.IsReadOnly.GetHashCode() + 7 * this.InnerType.GetHashCode();
 
@@ -34,12 +25,28 @@
             }
         }
 
-        public override TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypeRecorder types) {
             return TypeCopiability.Conditional;
         }
 
-        public override IOption<VarRefType> AsVariableType() {
+        public IOption<VarRefType> AsVariableType() {
             return Option.Some(this);
+        }
+
+        public override bool Equals(object obj) {
+            return this.Equals(obj as ITrophyType);
+        }
+
+        public bool Equals(ITrophyType other) {
+            if (other is null) {
+                return false;
+            }
+
+            if (other is VarRefType varType) {
+                return this.InnerType.Equals(varType.InnerType) && this.IsReadOnly == varType.IsReadOnly;
+            }
+
+            return false;
         }
     }
 }

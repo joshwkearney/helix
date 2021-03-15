@@ -24,7 +24,7 @@ namespace Trophy {
     }
 
     public interface ISyntaxC {
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 

@@ -39,13 +39,13 @@ namespace Trophy.Features.Variables {
     public class DereferenceSyntaxC : ISyntaxC {
         private readonly ISyntaxC target;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
         public DereferenceSyntaxC(
             ISyntaxC target, 
-            TrophyType returnType, 
+            ITrophyType returnType, 
             ImmutableHashSet<IdentifierPath> lifetimes) {
 
             this.target = target;

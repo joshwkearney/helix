@@ -6,14 +6,14 @@ using System.Linq;
 
 namespace Trophy.Analysis {
     public static class TypeCheckingErrors {
-        public static Exception UnexpectedType(TokenLocation location, TrophyType expected, TrophyType actual) {
+        public static Exception UnexpectedType(TokenLocation location, ITrophyType expected, ITrophyType actual) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Unexpected type",
                 $"Expected type '{expected}', recieved type '{actual}'");
         }
 
-        public static Exception UnexpectedType(TokenLocation location, TrophyType actual) {
+        public static Exception UnexpectedType(TokenLocation location, ITrophyType actual) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Unexpected type",
@@ -55,35 +55,35 @@ namespace Trophy.Analysis {
                 $"The identifier '{name}' is already defined in the current scope");
         }
 
-        public static Exception ExpectedVariableType(TokenLocation location, TrophyType actual) {
+        public static Exception ExpectedVariableType(TokenLocation location, ITrophyType actual) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Expected Variable Type",
                 $"Expected a variable type, but recieved '{actual}'");
         }
 
-        public static Exception ExpectedFunctionType(TokenLocation location, TrophyType actual) {
+        public static Exception ExpectedFunctionType(TokenLocation location, ITrophyType actual) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Expected Function Type",
                 $"Expected a function type, but recieved '{actual}'");
         }
 
-        public static Exception ExpectedArrayType(TokenLocation location, TrophyType actual) {
+        public static Exception ExpectedArrayType(TokenLocation location, ITrophyType actual) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Expected Array Type",
                 $"Expected an array type, but recieved '{actual}'");
         }
 
-        public static Exception ExpectedStructType(TokenLocation location, TrophyType actual) {
+        public static Exception ExpectedStructType(TokenLocation location, ITrophyType actual) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Expected Struct Type",
                 $"Expected a struct type, but recieved '{actual}'");
         }
 
-        public static Exception ExpectedUnionType(TokenLocation location, TrophyType actual) {
+        public static Exception ExpectedUnionType(TokenLocation location, ITrophyType actual) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Expected Union Type",
@@ -104,14 +104,14 @@ namespace Trophy.Analysis {
                 $"Expected {expectedCount} parameters, but recieved {actualCount}");
         }
 
-        public static Exception TypeNotCopiable(TokenLocation loc, TrophyType type) {
+        public static Exception TypeNotCopiable(TokenLocation loc, ITrophyType type) {
             return new TypeCheckingException(
                 loc,
                 "Analysis Exception: Type is Not Copiable",
                 $"A copy cannot be made of type '{type}' because the type is not copiable. Try implementing a .copy() method.");
         }
 
-        public static Exception TypeWithoutDefaultValue(TokenLocation loc, TrophyType type) {
+        public static Exception TypeWithoutDefaultValue(TokenLocation loc, ITrophyType type) {
             return new TypeCheckingException(
                 loc,
                 "Analysis Exception: Type Does Not Have Default Value",
@@ -132,7 +132,7 @@ namespace Trophy.Analysis {
                 $"Array literals cannot be of zero length. Try using 'new T[0]' instead.");
         }
 
-        public static Exception MemberUndefined(TokenLocation loc, TrophyType containingType, string memberName) {
+        public static Exception MemberUndefined(TokenLocation loc, ITrophyType containingType, string memberName) {
             return new TypeCheckingException(
                 loc,
                 "Analysis Exception: Member Name Undefined",
@@ -146,7 +146,7 @@ namespace Trophy.Analysis {
                 $"The function parameter '{par}' cannot be accessed as if it were a variable type.");
         }
 
-        public static Exception NewObjectMissingFields(TokenLocation loc, TrophyType typeName, IEnumerable<string> missingFields) {
+        public static Exception NewObjectMissingFields(TokenLocation loc, ITrophyType typeName, IEnumerable<string> missingFields) {
             string missing = string.Join(", ", missingFields.Select(x => "'" + x + "'"));
 
             return new TypeCheckingException(
@@ -155,7 +155,7 @@ namespace Trophy.Analysis {
                 $"The following fields are missing in the instantiation of an object of type '{typeName}': {missing}");
         }
 
-        public static Exception NewObjectHasExtraneousFields(TokenLocation loc, TrophyType typeName, IEnumerable<string> extraFields) {
+        public static Exception NewObjectHasExtraneousFields(TokenLocation loc, ITrophyType typeName, IEnumerable<string> extraFields) {
             string extra = string.Join(", ", extraFields.Select(x => "'" + x + "'"));
 
             return new TypeCheckingException(
@@ -164,7 +164,7 @@ namespace Trophy.Analysis {
                 $"The following extraneous fields are present in the instantiation of an object of type '{typeName}': {extra}");
         }
 
-        public static Exception CircularValueObject(TokenLocation loc, TrophyType typeName) {
+        public static Exception CircularValueObject(TokenLocation loc, ITrophyType typeName) {
             return new TypeCheckingException(
                 loc,
                 "Analysis Exception: Invalid Circular Object",

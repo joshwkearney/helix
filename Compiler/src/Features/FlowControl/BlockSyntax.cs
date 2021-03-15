@@ -57,13 +57,13 @@ namespace Trophy.Features.FlowControl {
     public class BlockSyntaxC : ISyntaxC {
         private readonly IReadOnlyList<ISyntaxC> statements;
 
-        public TrophyType ReturnType {
+        public ITrophyType ReturnType {
             get {
                 if (this.statements.Any()) {
                     return this.statements.Last().ReturnType;
                 }
                 else {
-                    return TrophyType.Void;
+                    return ITrophyType.Void;
                 }
             }
         }

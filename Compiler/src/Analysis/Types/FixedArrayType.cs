@@ -1,25 +1,20 @@
-﻿namespace Trophy.Analysis.Types {
-    public class FixedArrayType : TrophyType {
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Trophy.Analysis.Types {
+    public class FixedArrayType : ITrophyType {
         public int Size { get; }
 
-        public TrophyType ElementType { get; }
+        public ITrophyType ElementType { get; }
 
         public bool IsReadOnly { get; }
 
-        public FixedArrayType(TrophyType elemType, int size, bool isReadOnly) {
+        public FixedArrayType(ITrophyType elemType, int size, bool isReadOnly) {
             this.ElementType = elemType;
             this.Size = size;
             this.IsReadOnly = isReadOnly;
         }
 
-        public override bool Equals(object obj) {
-            return obj is FixedArrayType other 
-                && this.ElementType.Equals(other.ElementType) 
-                && this.Size == other.Size
-                && this.IsReadOnly == other.IsReadOnly; 
-        }
-
-        public override TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypeRecorder types) {
             return TypeCopiability.Conditional;
         }
 
@@ -29,7 +24,7 @@
                 + 7 * this.ElementType.GetHashCode();
         }
 
-        public override bool HasDefaultValue(ITypeRecorder types) {
+        public bool HasDefaultValue(ITypeRecorder types) {
             return false;
         }
 
@@ -37,12 +32,23 @@
             return "array[" + (this.IsReadOnly ? "ref " : "var ") + this.ElementType + ", " + this.Size + "]";
         }
 
-        public override IOption<FixedArrayType> AsFixedArrayType() {
+        public IOption<FixedArrayType> AsFixedArrayType() {
             return Option.Some(this);
         }
 
-        public override IOption<ArrayType> AsArrayType() {
+        public IOption<ArrayType> AsArrayType() {
             return Option.Some(new ArrayType(this.ElementType, this.IsReadOnly));
+        }
+
+        public override bool Equals([AllowNull] object obj) {
+            return this.Equals(obj as ITrophyType);
+        }
+
+        public bool Equals([AllowNull] ITrophyType obj) {
+            return obj is FixedArrayType other
+                && this.ElementType.Equals(other.ElementType)
+                && this.Size == other.Size
+                && this.IsReadOnly == other.IsReadOnly;
         }
     }
 }

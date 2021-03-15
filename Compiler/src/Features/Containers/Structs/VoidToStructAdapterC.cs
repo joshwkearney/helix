@@ -10,11 +10,11 @@ namespace Trophy.Features.Containers.Structs {
     public class VoidToStructAdapterC : ISyntaxC {
         private readonly ISyntaxC target;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public VoidToStructAdapterC(ISyntaxC target, AggregateSignature sig, TrophyType returnType, ITypeRecorder types) {
+        public VoidToStructAdapterC(ISyntaxC target, AggregateSignature sig, ITrophyType returnType, ITypeRecorder types) {
             var voidLiteral = new VoidLiteralC();
 
             var args = sig.Members

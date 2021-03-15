@@ -50,7 +50,7 @@ namespace Trophy.Features.Containers {
                     return new MemberAccessTypeCheckedSyntax(
                         target, 
                         this.memberName, 
-                        TrophyType.Integer, 
+                        ITrophyType.Integer, 
                         ImmutableHashSet.Create<IdentifierPath>());
                 }
             }
@@ -61,7 +61,7 @@ namespace Trophy.Features.Containers {
                     return new MemberAccessTypeCheckedSyntax(
                         target,
                         this.memberName,
-                        TrophyType.Integer,
+                        ITrophyType.Integer,
                         ImmutableHashSet.Create<IdentifierPath>());
                 }
             }
@@ -99,14 +99,14 @@ namespace Trophy.Features.Containers {
         private readonly ISyntaxC target;
         private readonly string memberName;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
         public MemberAccessTypeCheckedSyntax(
             ISyntaxC target, 
             string memberName, 
-            TrophyType returnType, 
+            ITrophyType returnType, 
             ImmutableHashSet<IdentifierPath> lifetimes) {
 
             this.target = target;

@@ -1,26 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
 namespace Trophy.Analysis.Types {
-    public class MetaType : TrophyType {
+    public class GenericType : ITrophyType {
         public IdentifierPath Path { get; }
 
         public IReadOnlyList<string> Arguments { get; }
 
-        public MetaType(IdentifierPath path, IReadOnlyList<string> args) {
+        public GenericType(IdentifierPath path, IReadOnlyList<string> args) {
             this.Path = path;
             this.Arguments = args;
         }
 
-        public override bool Equals(object other) {
-            return other is MetaType meta
-                && this.Path == meta.Path
-                && this.Arguments.SequenceEqual(meta.Arguments);
-        }
-
-        public override TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypeRecorder types) {
             return TypeCopiability.Unconditional;
         }
 
@@ -29,7 +24,7 @@ namespace Trophy.Analysis.Types {
                 + 29 * this.Arguments.Aggregate(11, (x, y) => x + 7 * y.GetHashCode());
         }
 
-        public override bool HasDefaultValue(ITypeRecorder types) {
+        public bool HasDefaultValue(ITypeRecorder types) {
             return true;
         }
 
@@ -38,6 +33,16 @@ namespace Trophy.Analysis.Types {
                 + "["
                 + string.Join(",", this.Arguments)
                 + "]";
+        }
+
+        public override bool Equals(object other) {
+            return this.Equals(other as ITrophyType);
+        }
+
+        public bool Equals(ITrophyType other) {
+            return other is GenericType meta
+                && this.Path == meta.Path
+                && this.Arguments.SequenceEqual(meta.Arguments);
         }
     }
 }

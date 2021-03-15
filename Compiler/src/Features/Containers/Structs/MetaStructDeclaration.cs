@@ -14,7 +14,7 @@ namespace Trophy.Features.Containers.Structs {
             this.genericNames = genericNames;
         }
 
-        public IDeclarationC Generate(INameRecorder names, ITypeRecorder types, IReadOnlyList<TrophyType> genericTypes) {
+        public IDeclarationC Generate(INameRecorder names, ITypeRecorder types, IReadOnlyList<ITrophyType> genericTypes) {
             int id = names.GetNewVariableId();
             var path = names.CurrentScope.Append("$meta" + id);
 
@@ -110,7 +110,7 @@ namespace Trophy.Features.Containers.Structs {
             var generator = new MetaSyntaxGenerator(this.decl, this.typeNames);
 
             // Declare this meta type
-            var metaType = new MetaType(this.path, this.typeNames);
+            var metaType = new GenericType(this.path, this.typeNames);
             types.DeclareMetaType(metaType, args => {
                 var decl = generator.Generate(this.names, types, args);
 

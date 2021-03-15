@@ -11,11 +11,11 @@ namespace Trophy.Features.Functions {
         private readonly ISyntaxC target;
         private readonly IdentifierPath funcPath;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public SingularFunctionToFunctionAdapter(ISyntaxC target, IdentifierPath funcPath, TrophyType returnType) {
+        public SingularFunctionToFunctionAdapter(ISyntaxC target, IdentifierPath funcPath, ITrophyType returnType) {
             this.target = target;
             this.funcPath = funcPath;
             this.ReturnType = returnType;

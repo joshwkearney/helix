@@ -1,24 +1,14 @@
-﻿namespace Trophy.Analysis.Types {
-    public class ArrayType : TrophyType {
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Trophy.Analysis.Types {
+    public class ArrayType : ITrophyType {
         public bool IsReadOnly { get; }
 
-        public TrophyType ElementType { get; }
+        public ITrophyType ElementType { get; }
 
-        public ArrayType(TrophyType elemType, bool isReadOnly) {
+        public ArrayType(ITrophyType elemType, bool isReadOnly) {
             this.ElementType = elemType;
             this.IsReadOnly = isReadOnly;
-        }
-
-        public override bool Equals(object other) {
-            if (other is null) {
-                return false;
-            }
-
-            if (other is ArrayType arrType) {
-                return this.ElementType == arrType.ElementType && this.IsReadOnly == arrType.IsReadOnly;
-            }
-
-            return false;
         }
 
         public override int GetHashCode() {
@@ -29,14 +19,26 @@
             return "array[" + (this.IsReadOnly ? "ref " : "var ") + this.ElementType.ToString() + "]";
         }
 
-        public override bool HasDefaultValue(ITypeRecorder types) => true;
+        public bool HasDefaultValue(ITypeRecorder types) => true;
 
-        public override TypeCopiability GetCopiability(ITypeRecorder types) {
-            return TypeCopiability.Conditional;
+        public TypeCopiability GetCopiability(ITypeRecorder types) => TypeCopiability.Conditional;
+
+        public IOption<ArrayType> AsArrayType() => Option.Some(this);
+
+        public override bool Equals([AllowNull] object other) {
+            return this.Equals(other as ITrophyType);
         }
 
-        public override IOption<ArrayType> AsArrayType() {
-            return Option.Some(this);
+        public bool Equals([AllowNull] ITrophyType other) {
+            if (other is null) {
+                return false;
+            }
+
+            if (other is ArrayType arrType) {
+                return this.ElementType.Equals(arrType.ElementType) && this.IsReadOnly == arrType.IsReadOnly;
+            }
+
+            return false;
         }
     }
 }

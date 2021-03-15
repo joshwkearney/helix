@@ -7,7 +7,7 @@ namespace Trophy.Analysis {
 
         public VariableDefinitionKind DefinitionKind { get; }
 
-        public TrophyType Type { get; }
+        public ITrophyType Type { get; }
 
         public ImmutableHashSet<IdentifierPath> ValueLifetimes { get; }
 
@@ -17,7 +17,7 @@ namespace Trophy.Analysis {
 
         public VariableInfo(
             string name,
-            TrophyType innerType,
+            ITrophyType innerType,
             VariableDefinitionKind kind,
             int id,
             ImmutableHashSet<IdentifierPath> valueLifetimes,

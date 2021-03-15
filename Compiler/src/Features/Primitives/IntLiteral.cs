@@ -10,7 +10,7 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
-        public TrophyType ReturnType => TrophyType.Integer;
+        public ITrophyType ReturnType => ITrophyType.Integer;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 

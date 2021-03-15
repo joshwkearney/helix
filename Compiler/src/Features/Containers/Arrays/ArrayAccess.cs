@@ -56,7 +56,7 @@ namespace Trophy.Features.Containers.Arrays {
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var target = this.target.CheckTypes(types);
             var index = this.index.CheckTypes(types);
-            var elementType = TrophyType.Void;
+            var elementType = ITrophyType.Void;
             var isreadonly = false;
 
             // Make sure the target is an array
@@ -73,11 +73,11 @@ namespace Trophy.Features.Containers.Arrays {
             }
 
             // Make sure the index in an int
-            if (types.TryUnifyTo(index, TrophyType.Integer).TryGetValue(out var newIndex)) {
+            if (types.TryUnifyTo(index, ITrophyType.Integer).TryGetValue(out var newIndex)) {
                 index = newIndex;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(this.index.Location, TrophyType.Integer, index.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.index.Location, ITrophyType.Integer, index.ReturnType);
             }
 
             return new ArrayLiteralAccessSyntaxC(target, index, new VarRefType(elementType, isreadonly));
@@ -87,11 +87,11 @@ namespace Trophy.Features.Containers.Arrays {
     public class ArrayLiteralAccessSyntaxC : ISyntaxC {
         private readonly ISyntaxC target, index;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public ArrayLiteralAccessSyntaxC(ISyntaxC target, ISyntaxC index, TrophyType returnType) {
+        public ArrayLiteralAccessSyntaxC(ISyntaxC target, ISyntaxC index, ITrophyType returnType) {
             this.target = target;
             this.index = index;
             this.ReturnType = returnType;

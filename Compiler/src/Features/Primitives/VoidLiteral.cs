@@ -26,7 +26,7 @@ namespace Trophy.Features.Primitives {
     }
 
     public class VoidLiteralC : ISyntaxC {
-        public TrophyType ReturnType => TrophyType.Void;
+        public ITrophyType ReturnType => ITrophyType.Void;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 

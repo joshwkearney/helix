@@ -7,11 +7,11 @@ namespace Trophy.Features.Variables {
     public class VarToRefAdapter : ISyntaxC {
         private readonly ISyntaxC target;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public VarToRefAdapter(ISyntaxC target, TrophyType returnType) {
+        public VarToRefAdapter(ISyntaxC target, ITrophyType returnType) {
             this.target = target;
             this.ReturnType = returnType;
         }

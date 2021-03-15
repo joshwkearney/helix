@@ -7,9 +7,9 @@ namespace Trophy.Features.Containers.Arrays {
     public class ArrayToArrayAdapter : ISyntaxC {
         private readonly ISyntaxC target;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
-        public ArrayToArrayAdapter(ISyntaxC target, TrophyType returnType) {
+        public ArrayToArrayAdapter(ISyntaxC target, ITrophyType returnType) {
             this.target = target;
             this.ReturnType = returnType;
         }

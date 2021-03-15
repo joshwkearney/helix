@@ -47,32 +47,32 @@ namespace Trophy.Features.Primitives {
             get => this.left.VariableUsage.AddRange(this.right.VariableUsage);
         }
 
-        private static readonly Dictionary<BinaryOperation, TrophyType> intOperations
-            = new Dictionary<BinaryOperation, TrophyType>() {
+        private static readonly Dictionary<BinaryOperation, ITrophyType> intOperations
+            = new Dictionary<BinaryOperation, ITrophyType>() {
 
-            { BinaryOperation.Add, TrophyType.Integer },
-            { BinaryOperation.Subtract, TrophyType.Integer },
-            { BinaryOperation.Multiply, TrophyType.Integer },
-            { BinaryOperation.Modulo, TrophyType.Integer },
-            { BinaryOperation.And, TrophyType.Integer },
-            { BinaryOperation.Or, TrophyType.Integer },
-            { BinaryOperation.Xor, TrophyType.Integer },
-            { BinaryOperation.EqualTo, TrophyType.Boolean },
-            { BinaryOperation.NotEqualTo, TrophyType.Boolean },
-            { BinaryOperation.GreaterThan, TrophyType.Boolean },
-            { BinaryOperation.LessThan, TrophyType.Boolean },
-            { BinaryOperation.GreaterThanOrEqualTo, TrophyType.Boolean },
-            { BinaryOperation.LessThanOrEqualTo, TrophyType.Boolean },
+            { BinaryOperation.Add, ITrophyType.Integer },
+            { BinaryOperation.Subtract, ITrophyType.Integer },
+            { BinaryOperation.Multiply, ITrophyType.Integer },
+            { BinaryOperation.Modulo, ITrophyType.Integer },
+            { BinaryOperation.And, ITrophyType.Integer },
+            { BinaryOperation.Or, ITrophyType.Integer },
+            { BinaryOperation.Xor, ITrophyType.Integer },
+            { BinaryOperation.EqualTo, ITrophyType.Boolean },
+            { BinaryOperation.NotEqualTo, ITrophyType.Boolean },
+            { BinaryOperation.GreaterThan, ITrophyType.Boolean },
+            { BinaryOperation.LessThan, ITrophyType.Boolean },
+            { BinaryOperation.GreaterThanOrEqualTo, ITrophyType.Boolean },
+            { BinaryOperation.LessThanOrEqualTo, ITrophyType.Boolean },
         };
 
-        private static readonly Dictionary<BinaryOperation, TrophyType> boolOperations
-            = new Dictionary<BinaryOperation, TrophyType>() {
+        private static readonly Dictionary<BinaryOperation, ITrophyType> boolOperations
+            = new Dictionary<BinaryOperation, ITrophyType>() {
 
-            { BinaryOperation.And, TrophyType.Boolean },
-            { BinaryOperation.Or, TrophyType.Boolean },
-            { BinaryOperation.Xor, TrophyType.Boolean },
-            { BinaryOperation.EqualTo, TrophyType.Boolean },
-            { BinaryOperation.NotEqualTo, TrophyType.Boolean },
+            { BinaryOperation.And, ITrophyType.Boolean },
+            { BinaryOperation.Or, ITrophyType.Boolean },
+            { BinaryOperation.Xor, ITrophyType.Boolean },
+            { BinaryOperation.EqualTo, ITrophyType.Boolean },
+            { BinaryOperation.NotEqualTo, ITrophyType.Boolean },
         };
 
         public BinarySyntaxB(TokenLocation loc, ISyntaxB left, ISyntaxB right, BinaryOperation op) {
@@ -86,7 +86,7 @@ namespace Trophy.Features.Primitives {
             // Delegate type resolution
             var left = this.left.CheckTypes(types);
             var right = this.right.CheckTypes(types);
-            var returnType = TrophyType.Void;
+            var returnType = ITrophyType.Void;
 
             // Check if left is a valid type
             if (!left.ReturnType.IsIntType && !left.ReturnType.IsBoolType) {
@@ -99,7 +99,7 @@ namespace Trophy.Features.Primitives {
             }
 
             // Make sure types match
-            if (left.ReturnType != right.ReturnType) {
+            if (!left.ReturnType.Equals(right.ReturnType)) {
                 throw TypeCheckingErrors.UnexpectedType(this.right.Location, left.ReturnType, right.ReturnType);
             }
 
@@ -130,11 +130,11 @@ namespace Trophy.Features.Primitives {
         private readonly ISyntaxC left, right;
         private readonly BinaryOperation op;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.left.Lifetimes.Union(this.right.Lifetimes);
 
-        public BinarySyntaxC(ISyntaxC left, ISyntaxC right, BinaryOperation op, TrophyType returnType) {
+        public BinarySyntaxC(ISyntaxC left, ISyntaxC right, BinaryOperation op, ITrophyType returnType) {
             this.left = left;
             this.right = right;
             this.op = op;

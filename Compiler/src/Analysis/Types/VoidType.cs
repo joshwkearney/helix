@@ -1,6 +1,8 @@
-﻿namespace Trophy.Analysis.Types {
-    public class VoidType : TrophyType {
-        public override bool IsVoidType => true;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Trophy.Analysis.Types {
+    public class VoidType : ITrophyType {
+        public bool IsVoidType => true;
 
         public VoidType() { }
 
@@ -10,10 +12,12 @@
 
         public override string ToString() => "void";
 
-        public override bool HasDefaultValue(ITypeRecorder types) => true;
+        public bool HasDefaultValue(ITypeRecorder types) => true;
 
-        public override TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypeRecorder types) {
             return TypeCopiability.Unconditional;
         }
+
+        public bool Equals(ITrophyType other) => other is VoidType;
     }
 }

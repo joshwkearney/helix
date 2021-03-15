@@ -10,11 +10,11 @@ using System.Linq;
 namespace Trophy.Features.Containers.Structs {
     public class NewStructSyntaxA : ISyntaxA {
         private readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
-        private readonly TrophyType targetType;
+        private readonly ITrophyType targetType;
 
         public TokenLocation Location { get; }
 
-        public NewStructSyntaxA(TokenLocation location, TrophyType targetType, IReadOnlyList<StructArgument<ISyntaxA>> args) {
+        public NewStructSyntaxA(TokenLocation location, ITrophyType targetType, IReadOnlyList<StructArgument<ISyntaxA>> args) {
             this.Location = location;
             this.targetType = targetType;
             this.args = args;
@@ -155,7 +155,7 @@ namespace Trophy.Features.Containers.Structs {
 
         private readonly IReadOnlyList<StructArgument<ISyntaxC>> args;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes {
             get {
@@ -169,7 +169,7 @@ namespace Trophy.Features.Containers.Structs {
 
         public NewStructSyntaxC(
             IReadOnlyList<StructArgument<ISyntaxC>> args, 
-            TrophyType returnType) {
+            ITrophyType returnType) {
 
             this.args = args;
             this.ReturnType = returnType;

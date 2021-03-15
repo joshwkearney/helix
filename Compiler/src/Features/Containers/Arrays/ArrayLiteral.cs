@@ -51,7 +51,7 @@ namespace Trophy.Features.Containers.Arrays {
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
-            var returnType = new FixedArrayType(TrophyType.Void, args.Length, this.isreadonly);
+            var returnType = new FixedArrayType(ITrophyType.Void, args.Length, this.isreadonly);
 
             // Make sure all the types line up
             if (args.Any()) {
@@ -79,7 +79,7 @@ namespace Trophy.Features.Containers.Arrays {
         private readonly IReadOnlyList<ISyntaxC> args;
         private readonly IdentifierPath region;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes {
             get {
@@ -91,7 +91,7 @@ namespace Trophy.Features.Containers.Arrays {
             }
         }
 
-        public ArrayLiteralSyntaxC(IdentifierPath regionName, IReadOnlyList<ISyntaxC> args, TrophyType returnType) {
+        public ArrayLiteralSyntaxC(IdentifierPath regionName, IReadOnlyList<ISyntaxC> args, ITrophyType returnType) {
             this.args = args;
             this.region = regionName;
             this.ReturnType = returnType;

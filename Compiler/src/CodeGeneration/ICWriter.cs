@@ -9,6 +9,6 @@ namespace Trophy {
 
         public void RequireRegions();
 
-        public CType ConvertType(TrophyType type);
+        public CType ConvertType(ITrophyType type);
     }
 }

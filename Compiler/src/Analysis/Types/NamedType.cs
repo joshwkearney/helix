@@ -1,23 +1,20 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Trophy.Analysis.Types {
-    public class NamedType : TrophyType {
+    public class NamedType : ITrophyType {
         public IdentifierPath SignaturePath { get; }
 
         public NamedType(IdentifierPath path) {
             this.SignaturePath = path;
         }
 
-        public override IOption<IdentifierPath> AsNamedType() {
+        public IOption<IdentifierPath> AsNamedType() {
             return Option.Some(this.SignaturePath);
         }
 
-        public override bool Equals(object other) {
-            return other is NamedType type && this.SignaturePath == type.SignaturePath;
-        }
-
-        public override bool HasDefaultValue(ITypeRecorder types) {
+        public bool HasDefaultValue(ITypeRecorder types) {
             if (types.TryGetFunction(this.SignaturePath).Any()) {
                 return true;
             }
@@ -32,7 +29,7 @@ namespace Trophy.Analysis.Types {
             }
         }
 
-        public override TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypeRecorder types) {
             if (types.TryGetFunction(this.SignaturePath).Any()) {
                 return TypeCopiability.Unconditional;
             }
@@ -63,6 +60,14 @@ namespace Trophy.Analysis.Types {
 
         public override string ToString() {
             return this.SignaturePath.Segments.Last();
+        }
+
+        public override bool Equals(object other) {
+            return this.Equals(other as ITrophyType);
+        }
+
+        public bool Equals([AllowNull] ITrophyType other) {
+            return other is NamedType type && this.SignaturePath == type.SignaturePath;
         }
     }
 }

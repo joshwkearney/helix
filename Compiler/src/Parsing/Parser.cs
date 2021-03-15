@@ -80,7 +80,7 @@ namespace Trophy.Parsing {
         }
 
         /** Type Parsing **/
-        private TrophyType VarTypeExpression() {
+        private ITrophyType VarTypeExpression() {
             if (this.TryAdvance(TokenKind.VarKeyword)) {
                 var inner = this.TypeExpression();
 
@@ -94,7 +94,7 @@ namespace Trophy.Parsing {
             }
         }
 
-        private TrophyType TypeExpression() {
+        private ITrophyType TypeExpression() {
             if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.RefKeyword)) {
                 return this.VarTypeExpression();
             }
@@ -102,15 +102,15 @@ namespace Trophy.Parsing {
             return this.TypeAtom();
         }
 
-        private TrophyType TypeAtom() {
+        private ITrophyType TypeAtom() {
             if (this.TryAdvance(TokenKind.IntKeyword)) {
-                return TrophyType.Integer;
+                return ITrophyType.Integer;
             }
             else if (this.TryAdvance(TokenKind.VoidKeyword)) {
-                return TrophyType.Void;
+                return ITrophyType.Void;
             }
             else if (this.TryAdvance(TokenKind.BoolKeyword)) {
-                return TrophyType.Boolean;
+                return ITrophyType.Boolean;
             }
             else if (this.TryAdvance(TokenKind.ArrayKeyword)) {
                 this.Advance(TokenKind.OpenBracket);
@@ -137,7 +137,7 @@ namespace Trophy.Parsing {
             }
             else if (this.TryAdvance(TokenKind.FunctionKeyword)) {
                 this.Advance(TokenKind.OpenBracket);
-                var args = new List<TrophyType>();
+                var args = new List<ITrophyType>();
 
                 while (!this.TryAdvance(TokenKind.YieldSign)) {
                     args.Add(this.TypeExpression());

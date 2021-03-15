@@ -7,11 +7,11 @@ namespace Trophy.Features.Primitives {
     public class VoidToPrimitiveAdapterC : ISyntaxC {
         private readonly ISyntaxC target;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public VoidToPrimitiveAdapterC(ISyntaxC target, TrophyType returnType) {
+        public VoidToPrimitiveAdapterC(ISyntaxC target, ITrophyType returnType) {
             this.target = target;
             this.ReturnType = returnType;
         }

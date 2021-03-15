@@ -140,7 +140,7 @@ namespace Trophy.Features.Functions {
         private readonly IdentifierPath regionPath;
         private readonly IReadOnlyList<int> parIds;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes {
             get {
@@ -153,7 +153,7 @@ namespace Trophy.Features.Functions {
 
         public LambdaSyntaxC(
             FunctionSignature sig, 
-            TrophyType returnType, 
+            ITrophyType returnType, 
             IdentifierPath funcPath, 
             IdentifierPath region,
             ISyntaxC body, 

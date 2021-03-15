@@ -99,13 +99,13 @@ namespace Trophy.Features.Variables {
         private readonly VariableInfo info;
         private readonly VariableAccessKind kind;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
         public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage { get; }
 
-        public VariableAccessdSyntaxC(VariableInfo info, VariableAccessKind kind, TrophyType type, ImmutableHashSet<IdentifierPath> lifetimes) {
+        public VariableAccessdSyntaxC(VariableInfo info, VariableAccessKind kind, ITrophyType type, ImmutableHashSet<IdentifierPath> lifetimes) {
             this.info = info;
             this.kind = kind;
             this.ReturnType = type;

@@ -46,11 +46,11 @@ namespace Trophy.Features.FlowControl {
             var body = this.body.CheckTypes(types);
 
             // Make sure the condition is a boolean
-            if (types.TryUnifyTo(cond, TrophyType.Boolean).TryGetValue(out var newCond)) {
+            if (types.TryUnifyTo(cond, ITrophyType.Boolean).TryGetValue(out var newCond)) {
                 cond = newCond;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, TrophyType.Boolean, cond.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, ITrophyType.Boolean, cond.ReturnType);
             }
 
             return new WhileSyntaxC(cond, body);
@@ -60,7 +60,7 @@ namespace Trophy.Features.FlowControl {
     public class WhileSyntaxC : ISyntaxC {
         private readonly ISyntaxC cond, body;
 
-        public TrophyType ReturnType => TrophyType.Void;
+        public ITrophyType ReturnType => ITrophyType.Void;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => ImmutableHashSet.Create<IdentifierPath>();
 

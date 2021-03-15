@@ -10,11 +10,11 @@ namespace Trophy.Features.Containers.Unions {
     public class VoidToUnionAdapterC : ISyntaxC {
         private readonly ISyntaxC target;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public VoidToUnionAdapterC(ISyntaxC target, AggregateSignature sig, TrophyType returnType, ITypeRecorder types) {
+        public VoidToUnionAdapterC(ISyntaxC target, AggregateSignature sig, ITrophyType returnType, ITypeRecorder types) {
             var voidLiteral = new VoidLiteralC();
             var mem = sig.Members.First();
 

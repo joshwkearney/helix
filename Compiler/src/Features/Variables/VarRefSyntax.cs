@@ -96,7 +96,7 @@ namespace Trophy.Features.Variables {
             return new VarRefSyntaxC(
                 info: info,
                 assign: assign,
-                returnType: TrophyType.Void);
+                returnType: ITrophyType.Void);
         }
     }
 
@@ -104,11 +104,11 @@ namespace Trophy.Features.Variables {
         private readonly VariableInfo info;
         private readonly ISyntaxC assign;
 
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => new IdentifierPath[0].ToImmutableHashSet();
 
-        public VarRefSyntaxC(VariableInfo info, ISyntaxC assign, TrophyType returnType) {
+        public VarRefSyntaxC(VariableInfo info, ISyntaxC assign, ITrophyType returnType) {
             this.info = info;
             this.assign = assign;
             this.ReturnType = returnType;

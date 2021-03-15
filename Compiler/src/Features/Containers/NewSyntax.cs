@@ -17,11 +17,11 @@ namespace Trophy.Features.Containers {
 
     public class NewSyntaxA : ISyntaxA {
         public readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
-        public readonly TrophyType targetType;
+        public readonly ITrophyType targetType;
 
         public TokenLocation Location { get; }
 
-        public NewSyntaxA(TokenLocation location, TrophyType targetType, IReadOnlyList<StructArgument<ISyntaxA>> args) {
+        public NewSyntaxA(TokenLocation location, ITrophyType targetType, IReadOnlyList<StructArgument<ISyntaxA>> args) {
             this.Location = location;
             this.targetType = targetType;
             this.args = args;

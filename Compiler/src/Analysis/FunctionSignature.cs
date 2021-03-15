@@ -5,13 +5,13 @@ using System.Linq;
 
 namespace Trophy.Analysis {
     public class FunctionSignature : IEquatable<FunctionSignature> {
-        public TrophyType ReturnType { get; }
+        public ITrophyType ReturnType { get; }
 
         public ImmutableList<FunctionParameter> Parameters { get; }
 
         public string Name { get; }
 
-        public FunctionSignature(string name, TrophyType returnType, ImmutableList<FunctionParameter> pars) {
+        public FunctionSignature(string name, ITrophyType returnType, ImmutableList<FunctionParameter> pars) {
             this.Name = name;
             this.ReturnType = returnType;
             this.Parameters = pars;
@@ -40,7 +40,7 @@ namespace Trophy.Analysis {
                 return false;
             }
 
-            if (other.ReturnType != this.ReturnType) {
+            if (!other.ReturnType.Equals(this.ReturnType)) {
                 return false;
             }
 
@@ -67,9 +67,9 @@ namespace Trophy.Analysis {
     public class FunctionParameter : IEquatable<FunctionParameter> {
         public string Name { get; }
 
-        public TrophyType Type { get; }
+        public ITrophyType Type { get; }
 
-        public FunctionParameter(string name, TrophyType type) {
+        public FunctionParameter(string name, ITrophyType type) {
             this.Name = name;
             this.Type = type;
         }
@@ -95,7 +95,7 @@ namespace Trophy.Analysis {
                 return false;
             }
 
-            if (this.Type != other.Type) {
+            if (!this.Type.Equals(other.Type)) {
                 return false;
             }
 

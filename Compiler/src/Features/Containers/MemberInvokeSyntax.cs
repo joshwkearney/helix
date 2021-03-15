@@ -85,7 +85,7 @@ namespace Trophy.Features.Containers {
                 var expected = func.Parameters[i].Type;
                 var actual = args[i].ReturnType;
 
-                if (expected != actual) {
+                if (!expected.Equals(actual)) {
                     throw TypeCheckingErrors.UnexpectedType(this.Location, expected, actual);
                 }
             }

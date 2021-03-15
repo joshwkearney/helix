@@ -6,11 +6,11 @@ using Trophy.Parsing;
 namespace Trophy.Features.Primitives {
     public class AsSyntaxA : ISyntaxA {
         private readonly ISyntaxA arg;
-        private readonly TrophyType target;
+        private readonly ITrophyType target;
 
         public TokenLocation Location { get; }
 
-        public AsSyntaxA(TokenLocation loc, ISyntaxA arg, TrophyType target) {
+        public AsSyntaxA(TokenLocation loc, ISyntaxA arg, ITrophyType target) {
             this.Location = loc;
             this.arg = arg;
             this.target = target;
@@ -26,7 +26,7 @@ namespace Trophy.Features.Primitives {
 
     public class AsSyntaxB : ISyntaxB {
         private readonly ISyntaxB arg;
-        private readonly TrophyType target;
+        private readonly ITrophyType target;
 
         public TokenLocation Location { get; }
 
@@ -34,7 +34,7 @@ namespace Trophy.Features.Primitives {
             get => this.arg.VariableUsage;
         }
 
-        public AsSyntaxB(TokenLocation loc, ISyntaxB arg, TrophyType target) {
+        public AsSyntaxB(TokenLocation loc, ISyntaxB arg, ITrophyType target) {
             this.Location = loc;
             this.target = target;
             this.arg = arg;

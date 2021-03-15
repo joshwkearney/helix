@@ -22,8 +22,8 @@ namespace Trophy.Features.FlowControl {
         public ISyntaxB CheckNames(INameRecorder names) {
             // Rewrite for syntax to use while loops
             var counterName = "$for_counter_" + names.GetNewVariableId();
-            var start = new AsSyntaxA(this.startIndex.Location, this.startIndex, TrophyType.Integer);
-            var end = new AsSyntaxA(this.startIndex.Location, this.endIndex, TrophyType.Integer);
+            var start = new AsSyntaxA(this.startIndex.Location, this.startIndex, ITrophyType.Integer);
+            var end = new AsSyntaxA(this.startIndex.Location, this.endIndex, ITrophyType.Integer);
 
             var counterDecl = new VarRefSyntaxA(this.Location, counterName, start, false);
 

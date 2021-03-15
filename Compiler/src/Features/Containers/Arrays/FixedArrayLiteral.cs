@@ -31,7 +31,7 @@ namespace Trophy.Features.Containers.Arrays {
 
             public TokenLocation Location { get; }
 
-            public TrophyType ReturnType => this.arrayType;
+            public ITrophyType ReturnType => this.arrayType;
 
             public ImmutableHashSet<IdentifierPath> Lifetimes => new[] { this.region }.ToImmutableHashSet();
 
