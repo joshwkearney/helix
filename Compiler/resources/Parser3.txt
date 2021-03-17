@@ -53,26 +53,6 @@ func char_to_token (c as int) as Token => {
 };
 
 func add_expr (toks as array[Token], pos as var[int]) as Result => {
-    do start => {
-        if !mult_expr(toks, @pos).try_get(var first <- 0) do goto fail;
-
-        while (toks[pos] is plus) or (toks[pos] is minus) do {
-            ref op <- toks[pos];
-            @pos <- pos + 1;
-
-            if !mult_expr(toks, @pos).try_get(var next <- 0) do goto fail;
-
-            @first <- if op is plus
-                then first + next
-                else first - next;
-        };
-
-        new Result { success = first };
-    }
-    do fail => void as Result
-    from start;
-    
-
     var result <- mult_expr(toks, @pos);
 
     while result.try_get(var first <- 0) and ((toks[pos] is plus) or (toks[pos] is minus)) do {
@@ -112,51 +92,6 @@ func mult_expr (toks as array[Token], pos as var[int]) as Result => {
 };
 
 func atom (toks as array[Token], pos as var[int]) as Result => {
-    var result <- 0;
-
-    do success => new Result { success = result }
-    do fail => void as Result
-    do paren_group => {
-        @pos <- pos + 1;
-
-        if !add_expr(toks, @pos).try_get(@result) do goto fail;
-        if !(toks[pos] is close_paren) do goto fail;
-
-        @pos <- pos + 1;
-        goto success;
-    }
-    do number => {
-        match toks[pos]
-        if int_literal then {
-            @result <- result * 10 + int_literal;
-            @pos <- pos + 1;
-
-            goto number;
-        }
-        else {
-            goto success;
-        }
-    }
-    do start => {
-        if toks[pos] is open_paren then {
-            goto paren_group;
-        }
-        else if toks[pos] is int_literal then {
-            goto number;
-        }
-        else goto fail;
-    }
-    from start;
-
-
-
-
-
-
-
-
-
-
     if toks[pos] is open_paren then {
         @pos <- pos + 1;
 

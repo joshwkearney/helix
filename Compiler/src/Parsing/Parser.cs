@@ -452,7 +452,7 @@ namespace Trophy.Parsing {
         }
 
         private ISyntaxA SuffixExpression() {
-            var first = this.Atom();
+            var first = this.PrefixExpression();
 
             while (this.Peek(TokenKind.OpenParenthesis) || this.Peek(TokenKind.OpenBracket) || this.Peek(TokenKind.LiteralSign) || this.Peek(TokenKind.Dot)) {
                 if (this.Peek(TokenKind.OpenParenthesis)) {
@@ -565,6 +565,26 @@ namespace Trophy.Parsing {
             }
         }
 
+        private ISyntaxA PrefixExpression() {
+            if (this.Peek(TokenKind.SubtractSign) || this.Peek(TokenKind.AddSign) || this.Peek(TokenKind.NotSign)) {
+                var tokOp = this.Advance();
+                var first = this.Atom();
+                var loc = tokOp.Location.Span(first.Location);
+                var op = UnaryOperator.Not;
+
+                if (tokOp.Kind == TokenKind.AddSign) {
+                    op = UnaryOperator.Plus;
+                }
+                else if (tokOp.Kind == TokenKind.SubtractSign) {
+                    op = UnaryOperator.Minus;
+                }
+
+                return new UnarySyntaxA(loc, op, first);
+            }
+
+            return this.Atom();
+        }
+
         private ISyntaxA Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
@@ -642,7 +662,6 @@ namespace Trophy.Parsing {
 
             return new VarRefSyntaxA(loc, name, assign, isReadOnly);
         }
-
 
         private ISyntaxA LiteralVariableAccess() {
             var start = this.Advance(TokenKind.LiteralSign);
