@@ -52,13 +52,14 @@ namespace Trophy.Features.Containers {
                     MemberValue = x.MemberValue.CheckNames(names)})
                 .ToArray();
 
-            return new NewSyntaxB(this.Location, targetType, args);
+            return new NewSyntaxB(this.Location, targetType, names.CurrentRegion, args);
         }
     }
 
     public class NewSyntaxB : ISyntaxB {
         private readonly IReadOnlyList<StructArgument<ISyntaxB>> args;
         private readonly ISyntaxB targetType;
+        private readonly IdentifierPath region;
 
         public TokenLocation Location { get; }
 
@@ -69,10 +70,11 @@ namespace Trophy.Features.Containers {
             }
         }
 
-        public NewSyntaxB(TokenLocation location, ISyntaxB targetType, IReadOnlyList<StructArgument<ISyntaxB>> args) {
+        public NewSyntaxB(TokenLocation location, ISyntaxB targetType, IdentifierPath region, IReadOnlyList<StructArgument<ISyntaxB>> args) {
             this.Location = location;
             this.targetType = targetType;
             this.args = args;
+            this.region = region;
         }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
@@ -100,8 +102,17 @@ namespace Trophy.Features.Containers {
                 }
             }
 
+            // Check for fixed array types
+            if (returnType.AsFixedArrayType().TryGetValue(out var fixedArray)) {
+                if (this.args.Any()) {
+                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, returnType, this.args.Select(x => x.MemberName));
+                }
+
+                return new NewFixedArraySyntaxBC(this.Location, fixedArray, this.region);
+            }
+
             // Check for array types
-            if (returnType.AsArrayType().Any() || returnType.AsFixedArrayType().Any()) {
+            if (returnType.AsArrayType().Any()) {
                 if (this.args.Any()) {
                     throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, returnType, this.args.Select(x => x.MemberName));
                 }
@@ -110,7 +121,6 @@ namespace Trophy.Features.Containers {
             }
 
             // Structs and unions have already been checked
-
             throw TypeCheckingErrors.UnexpectedType(this.Location, returnType);
         }
     }
