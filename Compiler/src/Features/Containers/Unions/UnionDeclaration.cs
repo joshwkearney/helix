@@ -25,17 +25,21 @@ namespace Trophy.Features.Containers {
                     .ToArray();
 
             // Write the union declarations
-            writer.WriteForwardDeclaration(CDeclaration.UnionPrototype(unionName));
-            writer.WriteForwardDeclaration(CDeclaration.Union(unionName, mems));
-            writer.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            writer.WriteDeclaration1(CDeclaration.UnionPrototype(unionName));
+            writer.WriteDeclaration1(CDeclaration.EmptyLine());
+
+            writer.WriteDeclaration2(CDeclaration.Union(unionName, mems));
+            writer.WriteDeclaration2(CDeclaration.EmptyLine());
 
             // Write the struct declarations
-            writer.WriteForwardDeclaration(CDeclaration.StructPrototype(structName));
-            writer.WriteForwardDeclaration(CDeclaration.Struct(structName, new[] { 
+            writer.WriteDeclaration1(CDeclaration.StructPrototype(structName));
+            writer.WriteDeclaration1(CDeclaration.EmptyLine());
+
+            writer.WriteDeclaration2(CDeclaration.Struct(structName, new[] { 
                 new CParameter(CType.Integer, "tag"),
                 new CParameter(CType.NamedType(unionName), "data")
             }));
-            writer.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            writer.WriteDeclaration2(CDeclaration.EmptyLine());
         }
     }
 }

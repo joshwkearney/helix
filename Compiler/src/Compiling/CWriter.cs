@@ -12,22 +12,23 @@ namespace Trophy.Compiling {
         private int typeCounter = 0;
         private readonly Dictionary<ITrophyType, CType> typeNames = new Dictionary<ITrophyType, CType>();
 
-        private readonly StringBuilder forwardDeclSb = new StringBuilder();
-        private readonly StringBuilder declSb = new StringBuilder();
+        private readonly StringBuilder decl1Sb = new StringBuilder();
+        private readonly StringBuilder decl2Sb = new StringBuilder();
+        private readonly StringBuilder decl3Sb = new StringBuilder();
 
         public CWriter() {
-            this.forwardDeclSb.AppendLine("#include <stdlib.h>");
-            this.forwardDeclSb.AppendLine("#include <stdio.h>");
-            this.forwardDeclSb.AppendLine("#include <string.h>");
-            this.forwardDeclSb.AppendLine();
-        }
-
-        public void WriteDeclaration(CDeclaration decl) {
-            decl.WriteToC(0, this.declSb);
+            this.decl1Sb.AppendLine("#include <stdlib.h>");
+            this.decl1Sb.AppendLine("#include <stdio.h>");
+            this.decl1Sb.AppendLine("#include <string.h>");
+            this.decl1Sb.AppendLine();
         }
 
         public override string ToString() {
-            return new StringBuilder().Append(this.forwardDeclSb).Append(this.declSb).ToString();
+            return new StringBuilder()
+                .Append(this.decl1Sb)
+                .Append(this.decl2Sb)
+                .Append(this.decl3Sb)
+                .ToString();
         }
 
         public void RequireRegions() {
@@ -36,7 +37,8 @@ namespace Trophy.Compiling {
             }
 
             // Region struct forward declaration
-            this.WriteForwardDeclaration(CDeclaration.StructPrototype("Region"));
+            this.WriteDeclaration1(CDeclaration.StructPrototype("Region"));
+            this.WriteDeclaration1(CDeclaration.EmptyLine());
 
             // Region alloc forward declaration
             var regionPointerType = CType.Pointer(CType.NamedType("Region"));
@@ -44,26 +46,34 @@ namespace Trophy.Compiling {
                     new CParameter(regionPointerType, "region"), new CParameter(CType.Integer, "bytes")
                 });
 
-            this.WriteForwardDeclaration(decl);
+            this.WriteDeclaration2(decl);
 
             // Region create forward declaration
             var decl2 = CDeclaration.FunctionPrototype(regionPointerType, "region_create", false, new CParameter[0]);
 
-            this.WriteForwardDeclaration(decl2);
+            this.WriteDeclaration2(decl2);
 
             // Region delete forward declaration
             var decl3 = CDeclaration.FunctionPrototype("region_delete", false, new[] {
                     new CParameter(regionPointerType, "region")
                 });
 
-            this.WriteForwardDeclaration(decl3);
-            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            this.WriteDeclaration2(decl3);
+            this.WriteDeclaration2(CDeclaration.EmptyLine());
 
             this.regionHeadersGenerated = true;
         }
 
-        public void WriteForwardDeclaration(CDeclaration decl) {
-            decl.WriteToC(0, this.forwardDeclSb);
+        public void WriteDeclaration1(CDeclaration decl) {
+            decl.WriteToC(0, this.decl1Sb);
+        }
+
+        public void WriteDeclaration2(CDeclaration decl) {
+            decl.WriteToC(0, this.decl2Sb);
+        }
+
+        public void WriteDeclaration3(CDeclaration decl) {
+            decl.WriteToC(0, this.decl3Sb);
         }
 
         public CType ConvertType(ITrophyType type) {
@@ -110,18 +120,17 @@ namespace Trophy.Compiling {
                 new CParameter(CType.NamedType(pointerName), "function")
             };
 
-            this.WriteForwardDeclaration(CDeclaration.FunctionPointer(pointerName, returnType, parTypes));
-            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            this.WriteDeclaration2(CDeclaration.FunctionPointer(pointerName, returnType, parTypes));
+            this.WriteDeclaration2(CDeclaration.EmptyLine());
 
-            this.WriteForwardDeclaration(CDeclaration.StructPrototype(structName));
-            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            this.WriteDeclaration1(CDeclaration.StructPrototype(structName));
+            this.WriteDeclaration1(CDeclaration.EmptyLine());
 
-            this.WriteForwardDeclaration(CDeclaration.Struct(structName, members));
-            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            this.WriteDeclaration2(CDeclaration.Struct(structName, members));
+            this.WriteDeclaration2(CDeclaration.EmptyLine());
 
             return this.typeNames[funcType] = CType.NamedType(structName);
         }
-
 
         private CType MakeArrayType(ArrayType arrayType) {
             if (this.typeNames.TryGetValue(arrayType, out var ctype)) {
@@ -134,11 +143,11 @@ namespace Trophy.Compiling {
                     new CParameter(CType.Integer, "size"), new CParameter(innerType, "data")
                 };
 
-            this.WriteForwardDeclaration(CDeclaration.StructPrototype(name));
-            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            this.WriteDeclaration1(CDeclaration.StructPrototype(name));
+            this.WriteDeclaration1(CDeclaration.EmptyLine());
 
-            this.WriteForwardDeclaration(CDeclaration.Struct(name, members));
-            this.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            this.WriteDeclaration2(CDeclaration.Struct(name, members));
+            this.WriteDeclaration2(CDeclaration.EmptyLine());
 
             return this.typeNames[arrayType] = CType.NamedType(name);
         }

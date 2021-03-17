@@ -17,16 +17,17 @@ namespace Trophy.Features.Containers {
 
         public void GenerateCode(ICWriter declWriter) {
             // Write forward declaration
-            declWriter.WriteForwardDeclaration(CDeclaration.StructPrototype("$" + this.structPath));
+            declWriter.WriteDeclaration1(CDeclaration.StructPrototype("$" + this.structPath));
+            declWriter.WriteDeclaration1(CDeclaration.EmptyLine());
 
             // Write full struct
-            declWriter.WriteForwardDeclaration(CDeclaration.Struct(
+            declWriter.WriteDeclaration2(CDeclaration.Struct(
                 "$" + this.structPath,
                 this.sig.Members
                     .Select(x => new CParameter(declWriter.ConvertType(x.MemberType), x.MemberName))
                     .ToArray()));
 
-            declWriter.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            declWriter.WriteDeclaration2(CDeclaration.EmptyLine());
 
             // Write nested declarations
             foreach (var decl in this.decls) {

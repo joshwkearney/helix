@@ -159,11 +159,11 @@ namespace Trophy.Features.Functions {
             var decl = CDeclaration.Function(returnType, "$" + this.funcPath, false, pars, stats);
             var forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, false, pars);
 
-            declWriter.WriteDeclaration(decl);
-            declWriter.WriteDeclaration(CDeclaration.EmptyLine());
+            declWriter.WriteDeclaration3(decl);
+            declWriter.WriteDeclaration3(CDeclaration.EmptyLine());
 
-            declWriter.WriteForwardDeclaration(forwardDecl);
-            declWriter.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            declWriter.WriteDeclaration2(forwardDecl);
+            declWriter.WriteDeclaration2(CDeclaration.EmptyLine());
         }
     }
 }

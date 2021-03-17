@@ -14,6 +14,8 @@
     void;
 };
 
+func test3 (tok as Token) as bool => (tok is plus) or (tok is minus);
+
 union Token {
     eof         as void;
     plus        as void;

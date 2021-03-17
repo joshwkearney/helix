@@ -226,11 +226,11 @@ namespace Trophy.Features.Functions {
             var forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, true, pars);
 
             // Generate the function
-            writer.WriteDeclaration(decl);
-            writer.WriteDeclaration(CDeclaration.EmptyLine());
+            writer.WriteDeclaration3(decl);
+            writer.WriteDeclaration3(CDeclaration.EmptyLine());
 
-            writer.WriteForwardDeclaration(forwardDecl);
-            writer.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            writer.WriteDeclaration2(forwardDecl);
+            writer.WriteDeclaration2(CDeclaration.EmptyLine());
 
             return "$" + this.funcPath;
         }
@@ -242,9 +242,11 @@ namespace Trophy.Features.Functions {
                 .Append(new CParameter(CType.NamedType("Region*"), "heap"))
                 .ToArray();
 
-            writer.WriteForwardDeclaration(CDeclaration.StructPrototype(envType));
-            writer.WriteForwardDeclaration(CDeclaration.Struct(envType, pars));
-            writer.WriteForwardDeclaration(CDeclaration.EmptyLine());
+            writer.WriteDeclaration1(CDeclaration.StructPrototype(envType));
+            writer.WriteDeclaration1(CDeclaration.EmptyLine());
+
+            writer.WriteDeclaration2(CDeclaration.Struct(envType, pars));
+            writer.WriteDeclaration2(CDeclaration.EmptyLine());
 
             return CType.NamedType(envType);
         }
