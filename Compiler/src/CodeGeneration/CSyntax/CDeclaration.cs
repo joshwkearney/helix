@@ -40,11 +40,11 @@ namespace Trophy.CodeGeneration.CSyntax {
         }
 
         public static CDeclaration Union(string name, IReadOnlyList<CParameter> members) {
-            return new CAggregateDeclaration(false, name, Option.Some(members));
+            return new CAggregateDeclaration(true, name, Option.Some(members));
         }
 
         public static CDeclaration UnionPrototype(string name) {
-            return new CAggregateDeclaration(false, name, Option.None<IReadOnlyList<CParameter>>());
+            return new CAggregateDeclaration(true, name, Option.None<IReadOnlyList<CParameter>>());
         }
 
         public static CDeclaration FunctionPointer(string name, CType returnType, IReadOnlyList<CParameter> pars) {
