@@ -1,9 +1,10 @@
-﻿func test(tok as Token) as int => {
+﻿func test(k as int) as int => {
     0;
 };
 
 func binary_search (arr as array[int, ref], to_find as int) as int => {
-    to_find / 2;
+    var split <- arr;
+    void;
 };
 
 func selection_sort (arr as array[int, var]) as void => { 

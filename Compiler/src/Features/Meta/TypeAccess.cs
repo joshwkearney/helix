@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
@@ -23,6 +24,29 @@ namespace Trophy.Features.Meta {
         }
 
         public IOption<ITrophyType> ResolveToType(INameRecorder names) {
+            // If our type is a named type, make sure it points to something
+            if (this.type.AsNamedType().TryGetValue(out var path)) {
+                var target = NameTarget.Reserved;
+                var totalPath = path;
+
+                if (path.Segments.Count == 1) {
+                    if (!names.TryFindName(path.Segments.First(), out target, out totalPath)) {
+                        return Option.None<ITrophyType>();
+                    }
+                }
+                else {
+                    if (!names.TryGetName(path, out target)) {
+                        return Option.None<ITrophyType>();
+                    }
+                }
+
+                if (target != NameTarget.Struct && target != NameTarget.Union && target != NameTarget.Function) {
+                    return Option.None<ITrophyType>();
+                }
+
+                return Option.Some(new NamedType(totalPath));
+            }
+
             return Option.Some(this.type);
         }
     }
