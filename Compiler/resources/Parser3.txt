@@ -12,16 +12,13 @@ union Result {
     error   as void;
     success as int;
 
-    func map (f as func[int=>int]) as Result => {
+    func try_get (result as var[int]) as bool => {
         match this
-            if error   then void as Result
-            if success then new Result { success = f(success) };
-    };
-
-    func flat_map (f as func[int=>Result]) as Result => {
-        match this
-            if error   then void as Result
-            if success then f(success);
+            if error then false
+            if success then {
+                @result <- success;
+                true;
+            };
     };
 };
 
@@ -56,38 +53,42 @@ func char_to_token (c as int) as Token => {
 };
 
 func add_expr (toks as array[Token], pos as var[int]) as Result => {
-    var firstOp <- mult_expr(toks, @pos);
+    var result <- mult_expr(toks, @pos);
 
-    while (toks[pos] is plus) or (toks[pos] is minus) do {
+    while result.try_get(var first <- 0) and ((toks[pos] is plus) or (toks[pos] is minus)) do {
         ref op <- toks[pos];
         @pos <- pos + 1;
 
-        ref nextOp <- mult_expr(toks, @pos);
-
-        @firstOp <- firstOp.flat_map(func (first as int) => {
-            nextOp.map(func (next as int) => {
-                if op is plus then first + next
+        if mult_expr(toks, @pos).try_get(var next <- 0) then {
+            ref val <- if op is plus
+                then first + next
                 else first - next;
-            });
-        });
+
+            @result <- new Result { success = val };
+        }
+        else {
+            @result <- void as Result;
+        };
     };
 
-    firstOp;
+    result;
 };
 
 func mult_expr (toks as array[Token], pos as var[int]) as Result => {
-    var firstOp <- atom(toks, @pos);
+    var result <- atom(toks, @pos);
 
-    while toks[pos] is multiply do {
+    while result.try_get(var first <- 0) and (toks[pos] is multiply) do {
         @pos <- pos + 1;
-        ref nextOp <- atom(toks, @pos);
 
-        @firstOp <- firstOp.flat_map(func (first as int) => {
-            nextOp.map(func (next as int) => first * next);
-        });
+        if atom(toks, @pos).try_get(var next <- 0) then {
+            @result <- new Result { success = first * next };
+        }
+        else {
+            @result <- void as Result;
+        };
     };
-
-    firstOp;
+    
+    result;
 };
 
 func atom (toks as array[Token], pos as var[int]) as Result => {
@@ -100,7 +101,9 @@ func atom (toks as array[Token], pos as var[int]) as Result => {
             @pos <- pos + 1;
             result;
         }
-        else void as Result;
+        else {
+            void as Result;
+        };
     }
     else if toks[pos] is int_literal then {
         var value <- 0;
@@ -112,5 +115,7 @@ func atom (toks as array[Token], pos as var[int]) as Result => {
 
         new Result { success = value };
     }
-    else void as Result;
+    else {
+        void as Result;
+    };
 };
