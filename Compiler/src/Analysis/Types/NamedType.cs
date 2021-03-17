@@ -50,7 +50,7 @@ namespace Trophy.Analysis.Types {
                 }
             }
             else {
-                throw new NotImplementedException();
+                return TypeCopiability.Conditional;
             }
         }
 

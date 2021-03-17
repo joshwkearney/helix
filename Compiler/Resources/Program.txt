@@ -1,29 +1,9 @@
 ﻿func test(tok as Token) as int => {
-    var y <- match tok
-         if int_literal then int_literal + 4
-         else 2;
-
-    y;
+    0;
 };
-
-func test3 (tok as Token) as bool => (tok is plus) or (tok is minus);
-
-union Token {
-    eof         as void;
-    plus        as void;
-    minus       as void;
-    multiply    as void;
-    open_paren  as void;
-    close_paren as void;
-    int_literal as int;
-};
-
-func test1 (x as int) as int => test2(x) + 4;
-
-func test2 (y as int) as int => y*2 + 1;
 
 func binary_search (arr as array[int, ref], to_find as int) as int => {
-    0;
+    to_find / 2;
 };
 
 func selection_sort (arr as array[int, var]) as void => { 

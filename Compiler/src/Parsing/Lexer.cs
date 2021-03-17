@@ -316,6 +316,9 @@ namespace Trophy.Parsing {
             else if (current == '%') {
                 return new Token(TokenKind.ModuloSign, location);
             }
+            else if (current == '/') {
+                return new Token(TokenKind.SlashSign, location);
+            }
             else if (char.IsDigit(current)) {
                 return this.GetNumber();
             }

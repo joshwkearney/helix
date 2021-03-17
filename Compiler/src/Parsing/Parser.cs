@@ -436,12 +436,20 @@ namespace Trophy.Parsing {
             var first = this.SuffixExpression();
 
             while (true) {
-                if (!this.Peek(TokenKind.MultiplySign) && !this.Peek(TokenKind.ModuloSign)) {
+                if (!this.Peek(TokenKind.MultiplySign) && !this.Peek(TokenKind.ModuloSign) && !this.Peek(TokenKind.SlashSign)) {
                     break;
                 }
 
                 var tok = this.Advance().Kind;
-                var op = tok == TokenKind.MultiplySign ? BinaryOperation.Multiply : BinaryOperation.Modulo;
+                var op = BinaryOperation.Modulo;
+
+                if (tok == TokenKind.MultiplySign) {
+                    op = BinaryOperation.Multiply;
+                }
+                else if (tok == TokenKind.SlashSign) {
+                    op = BinaryOperation.FloorDivide;
+                }
+
                 var second = this.SuffixExpression();
                 var loc = first.Location.Span(second.Location);
 

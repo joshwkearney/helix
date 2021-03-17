@@ -160,6 +160,7 @@ namespace Trophy.CodeGeneration.CSyntax {
                     BinaryOperation.Subtract => "-",
                     BinaryOperation.Xor => "^",
                     BinaryOperation.Modulo => "%",
+                    BinaryOperation.FloorDivide => "/",
                     _ => throw new Exception()
                 };
 
