@@ -77,13 +77,21 @@ namespace Trophy.Compiling {
         }
 
         public CType ConvertType(ITrophyType type) {
+            if (this.typeNames.TryGetValue(type, out var ctype)) {
+                return ctype;
+            }
+
             if (type.IsBoolType || type.IsIntType || type.IsVoidType || type.AsSingularFunctionType().Any()) {
                 return CType.Integer;
             }
             else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                return this.MakeArrayType(new ArrayType(fixedArrayType.ElementType, fixedArrayType.IsReadOnly));
+                return this.ConvertType(new ArrayType(fixedArrayType.ElementType, fixedArrayType.IsReadOnly));
             }
             else if (type.AsArrayType().TryGetValue(out var arrayType)) {
+                if (arrayType.IsReadOnly) {
+                    return this.ConvertType(new ArrayType(arrayType.ElementType, false));
+                }
+
                 return this.MakeArrayType(arrayType);
             }
             else if (type.AsVariableType().TryGetValue(out var type2)) {
@@ -101,10 +109,6 @@ namespace Trophy.Compiling {
         }
 
         private CType MakeFunctionType(FunctionType funcType) {
-            if (this.typeNames.TryGetValue(funcType, out var ctype)) {
-                return ctype;
-            }
-
             var returnType = this.ConvertType(funcType.ReturnType);
             var parTypes = funcType
                 .ParameterTypes
@@ -133,10 +137,6 @@ namespace Trophy.Compiling {
         }
 
         private CType MakeArrayType(ArrayType arrayType) {
-            if (this.typeNames.TryGetValue(arrayType, out var ctype)) {
-                return ctype;
-            }
-
             var name = "ArrayType" + typeCounter++;
             var innerType = CType.Pointer(this.ConvertType(arrayType.ElementType));
             var members = new[] {

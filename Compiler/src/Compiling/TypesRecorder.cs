@@ -15,6 +15,7 @@ namespace Trophy.Compiling {
         private readonly Stack<Dictionary<IdentifierPath, VariableInfo>> variables = new Stack<Dictionary<IdentifierPath, VariableInfo>>();
         private readonly Stack<Dictionary<IdentifierPath, FunctionSignature>> functions = new Stack<Dictionary<IdentifierPath, FunctionSignature>>();
         private readonly Stack<Dictionary<IdentifierPath, AggregateSignature>> structs = new Stack<Dictionary<IdentifierPath, AggregateSignature>>();
+        private readonly Stack<Dictionary<IdentifierPath, AggregateSignature>> unions = new Stack<Dictionary<IdentifierPath, AggregateSignature>>();
         private readonly Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>> methods = new Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>>();
         private readonly Stack<Dictionary<ITrophyType, MetaTypeGenerator>> metaTypes = new Stack<Dictionary<ITrophyType, MetaTypeGenerator>>();
 
@@ -24,6 +25,7 @@ namespace Trophy.Compiling {
             this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
             this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
             this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
+            this.unions.Push(new Dictionary<IdentifierPath, AggregateSignature>());
             this.methods.Push(new Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>());
             this.metaTypes.Push(new Dictionary<ITrophyType, MetaTypeGenerator>());
         }
@@ -146,11 +148,11 @@ namespace Trophy.Compiling {
         }
 
         public void DeclareUnion(IdentifierPath path, AggregateSignature sig) {
-            this.structs.Peek()[path] = sig;
+            this.unions.Peek()[path] = sig;
         }
 
         public IOption<AggregateSignature> TryGetUnion(IdentifierPath path) {
-            return this.structs
+            return this.unions
                 .Select(x => x.GetValueOption(path))
                 .SelectMany(x => x.AsEnumerable())
                 .FirstOrNone();

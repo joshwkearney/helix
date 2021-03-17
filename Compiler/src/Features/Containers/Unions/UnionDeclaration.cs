@@ -40,6 +40,11 @@ namespace Trophy.Features.Containers {
                 new CParameter(CType.NamedType(unionName), "data")
             }));
             writer.WriteDeclaration2(CDeclaration.EmptyLine());
+
+            // Write nested declarations
+            foreach (var decl in this.decls) {
+                decl.GenerateCode(writer);
+            }
         }
     }
 }

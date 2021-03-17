@@ -12,7 +12,7 @@ namespace Trophy.Analysis.Types {
         }
 
         public override int GetHashCode() {
-            return this.IsReadOnly.GetHashCode() + ElementType.GetHashCode();
+            return this.IsReadOnly.GetHashCode() + 3 * ElementType.GetHashCode();
         }
 
         public override string ToString() {

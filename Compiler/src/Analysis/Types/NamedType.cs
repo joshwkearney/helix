@@ -42,7 +42,7 @@ namespace Trophy.Analysis.Types {
                 }
             }
             else if (types.TryGetUnion(this.SignaturePath).TryGetValue(out var unionSig)) {
-                if (structSig.Members.All(x => x.MemberType.GetCopiability(types) == TypeCopiability.Unconditional)) {
+                if (unionSig.Members.All(x => x.MemberType.GetCopiability(types) == TypeCopiability.Unconditional)) {
                     return TypeCopiability.Unconditional;
                 }
                 else {

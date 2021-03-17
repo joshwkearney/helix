@@ -10,6 +10,7 @@ namespace Trophy.Features.Meta {
     public class ArrayTypeSyntaxA : ISyntaxA {
         private readonly ISyntaxA elemTypeSyntax;
         private readonly bool isReadonly;
+        private readonly IOption<int> size;
 
         public TokenLocation Location { get; }
 
@@ -17,12 +18,20 @@ namespace Trophy.Features.Meta {
             this.Location = loc;
             this.elemTypeSyntax = elemType;
             this.isReadonly = isReadonly;
+            this.size = Option.None<int>();
+        }
+
+        public ArrayTypeSyntaxA(TokenLocation loc, ISyntaxA elemType, bool isReadonly, int size) {
+            this.Location = loc;
+            this.elemTypeSyntax = elemType;
+            this.isReadonly = isReadonly;
+            this.size = Option.Some(size);
         }
 
         public ISyntaxB CheckNames(INameRecorder names) {
             var elemType = this.elemTypeSyntax.CheckNames(names);
 
-            return new ArrayTypeSyntaxB(this.Location, elemType, this.isReadonly);
+            return new ArrayTypeSyntaxB(this.Location, elemType, this.isReadonly, this.size);
         }
 
         public IOption<ITrophyType> ResolveToType(INameRecorder names) {
@@ -33,13 +42,15 @@ namespace Trophy.Features.Meta {
     public class ArrayTypeSyntaxB : ISyntaxB {
         private readonly ISyntaxB elemTypeSyntax;
         private readonly bool isReadonly;
+        private readonly IOption<int> size;
 
         public TokenLocation Location { get; }
 
-        public ArrayTypeSyntaxB(TokenLocation loc, ISyntaxB elemType, bool isReadonly) {
+        public ArrayTypeSyntaxB(TokenLocation loc, ISyntaxB elemType, bool isReadonly, IOption<int> size) {
             this.Location = loc;
             this.elemTypeSyntax = elemType;
             this.isReadonly = isReadonly;
+            this.size = size;
         }
 
         public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage => this.elemTypeSyntax.VariableUsage;
@@ -49,7 +60,14 @@ namespace Trophy.Features.Meta {
             var returnOp = check.ReturnType
                 .AsMetaType()
                 .Select(x => x.PayloadType)
-                .Select(x => new ArrayType(x, this.isReadonly))
+                .Select(x => { 
+                    if (this.size.TryGetValue(out var size)) {
+                        return (ITrophyType)new FixedArrayType(x, size, this.isReadonly);
+                    }
+                    else {
+                        return new ArrayType(x, this.isReadonly);
+                    }
+                })
                 .Select(x => new MetaType(x));
 
             if (!returnOp.TryGetValue(out var returnType)) {

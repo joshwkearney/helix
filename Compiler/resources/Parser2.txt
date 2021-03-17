@@ -1,0 +1,103 @@
+﻿union Token {
+    eof         as void;
+    plus        as void;
+    minus       as void;
+    multiply    as void;
+    open_paren  as void;
+    close_paren as void;
+    int_literal as int;
+};
+
+union Result {
+    error   as void;
+    success as int;
+
+    func map (f as func[int=>int]) as Result => {
+        match this
+            if error   then void as Result
+            if success then new Result { success = f(success) };
+    };
+
+    func flat_map (f as func[int=>Result]) as Result => {
+        match this
+            if error   then void as Result
+            if success then f(success);
+    };
+};
+
+func parse() as Result => {
+    # "3 + 4 * 2"
+    var input <- [ 51, 32, 43, 32, 52, 32, 42, 32, 50 ];
+    var pos <- 0;
+
+    add_expr(chars_to_tokens(input), @pos);
+};
+
+func chars_to_tokens (toks as array[int]) as array[Token] => {
+    ref result <- from heap do new array[Token, var, 100];
+
+    for i = 0 to toks.size do {
+        result@[i] <- char_to_token(toks[i]);
+    };
+
+    result;
+};
+
+func char_to_token (c as int) as Token => {
+    if c == 40                      then new Token { open_paren = void }
+    else if c == 41                 then new Token { close_paren = void }
+    else if c == 43                 then new Token { plus = void }
+    else if c == 45                 then new Token { minus = void }
+    else if c == 42                 then new Token { multiply = void }
+    else if (c >= 48) and (c <= 57) then new Token { int_literal = c - 48 }
+    else void;
+};
+
+func add_expr (toks as array[Token], pos as var[int]) as Result => {
+    var firstOp <- mult_expr(toks, @pos);
+
+    while (toks[pos] is plus) or (toks[pos] is minus) do {
+        ref op <- toks[pos];
+        @pos <- pos + 1;
+
+        ref nextOp <- mult_expr(toks, @pos);
+
+        @firstOp <- firstOp.flat_map(func (first as int) => {
+            nextOp.map(func (next as int) => {
+                if op is plus then first + next
+                else first - next;
+            });
+        });
+    };
+
+    firstOp;
+};
+
+func mult_expr (toks as array[Token], pos as var[int]) as Result => {
+    var firstOp <- atom(toks, @pos);
+
+    while toks[pos] is multiply do {
+        @pos <- pos + 1;
+        ref nextOp <- atom(toks, @pos);
+
+        @firstOp <- firstOp.flat_map(func (first as int) => {
+            nextOp.map(func (next as int) => first * next);
+        });
+    };
+
+    firstOp;
+};
+
+func atom (toks as array[Token], pos as var[int]) as Result => {
+    if true xor (toks[pos] is int_literal) then void as Result
+    else {
+        var value <- 0;
+
+        while toks[pos] is int_literal do {
+            @value <- 10 * value + match toks[pos] if int_literal then int_literal else 0;
+            @pos <- pos + 1;
+        };
+
+        new Result { success = value };
+    };
+};

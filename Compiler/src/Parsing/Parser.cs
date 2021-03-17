@@ -159,10 +159,19 @@ namespace Trophy.Parsing {
                 }
             }
 
-            var end = this.Advance(TokenKind.CloseBracket);
-            var loc = start.Location.Span(end.Location);
+            if (this.TryAdvance(TokenKind.Comma)) {
+                var size = this.Advance<int>();
+                var end = this.Advance(TokenKind.CloseBracket);
+                var loc = start.Location.Span(end.Location);
 
-            return new ArrayTypeSyntaxA(loc, inner, isReadOnly);
+                return new ArrayTypeSyntaxA(loc, inner, isReadOnly, size);
+            }
+            else {
+                var end = this.Advance(TokenKind.CloseBracket);
+                var loc = start.Location.Span(end.Location);
+
+                return new ArrayTypeSyntaxA(loc, inner, isReadOnly);
+            }
         }
 
         private ISyntaxA FunctionTypeAtom() {
@@ -175,7 +184,7 @@ namespace Trophy.Parsing {
                 args.Add(this.TypeExpression());
 
                 if (!this.TryAdvance(TokenKind.Comma)) {
-                    break;
+                    continue;
                 }
             }
 

@@ -16,6 +16,9 @@
     <None Remove="LineCount.ps1" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="resources\Parser2.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="resources\Program.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

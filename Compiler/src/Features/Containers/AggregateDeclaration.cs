@@ -64,7 +64,7 @@ namespace Trophy.Features.Containers {
             var decls = this.decls
                 .Select(x => {
                     if (x is FunctionDeclarationA func) {
-                        var structType = new NamedType(names.CurrentScope.Append(this.sig.Name));
+                        var structType = new NamedType(names.CurrentScope);
                         var newPar = new ParseFunctionParameter("this", new TypeAccessSyntaxA(func.Location, structType));
                         var newPars = func.Signature.Parameters.Prepend(newPar).ToImmutableList();
                         var newSig = new ParseFunctionSignature(func.Signature.Name, func.Signature.ReturnType, newPars);

@@ -19,8 +19,6 @@ namespace Trophy.Analysis.Types {
         public override bool Equals(object other) => other is IntType;
 
 
-        public bool Equals(ITrophyType other) {
-            return other is IntType;
-        }
+        public bool Equals(ITrophyType other) => other is IntType;
     }
 }
