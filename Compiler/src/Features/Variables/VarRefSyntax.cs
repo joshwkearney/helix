@@ -96,7 +96,7 @@ namespace Trophy.Features.Variables {
             return new VarRefSyntaxC(
                 info: info,
                 assign: assign,
-                returnType: ITrophyType.Void);
+                returnType: new VarRefType(assign.ReturnType, this.isreadonly));
         }
     }
 
@@ -106,7 +106,7 @@ namespace Trophy.Features.Variables {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => new IdentifierPath[0].ToImmutableHashSet();
+        public ImmutableHashSet<IdentifierPath> Lifetimes => info.VariableLifetimes;
 
         public VarRefSyntaxC(VariableInfo info, ISyntaxC assign, ITrophyType returnType) {
             this.info = info;
@@ -127,7 +127,7 @@ namespace Trophy.Features.Variables {
             statWriter.WriteStatement(stat);
             statWriter.WriteStatement(CStatement.NewLine());
 
-            return CExpression.IntLiteral(0);
+            return CExpression.AddressOf(CExpression.VariableLiteral("$" + this.info.Name + this.info.UniqueId));
         }
     }
 }
