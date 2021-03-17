@@ -200,6 +200,9 @@ namespace Trophy.Parsing {
             else if (id == "as") {
                 return new Token(TokenKind.AsKeyword, location);
             }
+            else if (id == "is") {
+                return new Token(TokenKind.IsKeyword, location);
+            }
             else if (id == "bool") {
                 return new Token(TokenKind.BoolKeyword, location);
             }

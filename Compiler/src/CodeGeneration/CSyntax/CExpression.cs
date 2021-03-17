@@ -148,7 +148,7 @@ namespace Trophy.CodeGeneration.CSyntax {
             public override string ToString() {
                 var op = this.op switch {
                     BinaryOperation.Add => "+",
-                    BinaryOperation.And => "&&",
+                    BinaryOperation.And => "&",
                     BinaryOperation.EqualTo => "==",
                     BinaryOperation.GreaterThan => ">",
                     BinaryOperation.GreaterThanOrEqualTo => ">=",
@@ -156,7 +156,7 @@ namespace Trophy.CodeGeneration.CSyntax {
                     BinaryOperation.LessThanOrEqualTo => "<=",
                     BinaryOperation.Multiply => "*",
                     BinaryOperation.NotEqualTo => "!=",
-                    BinaryOperation.Or => "||",
+                    BinaryOperation.Or => "|",
                     BinaryOperation.Subtract => "-",
                     BinaryOperation.Xor => "^",
                     BinaryOperation.Modulo => "%",

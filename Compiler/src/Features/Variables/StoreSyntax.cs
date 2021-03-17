@@ -98,6 +98,7 @@ namespace Trophy.Features.Variables {
 
             statWriter.WriteStatement(CStatement.Comment("Variable store"));
             statWriter.WriteStatement(CStatement.Assignment(target, assign));
+            statWriter.WriteStatement(CStatement.NewLine());
 
             return CExpression.IntLiteral(0);
         }

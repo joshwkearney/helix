@@ -310,18 +310,26 @@ namespace Trophy.Parsing {
         }
 
         /** Expression Parsing **/
-        private ISyntaxA TopExpression() => this.AsExpression();
+        private ISyntaxA TopExpression() => this.AsIsExpression();
 
-        private ISyntaxA AsExpression() {
+        private ISyntaxA AsIsExpression() {
             var first = this.OrExpression();
 
-            while (this.TryAdvance(TokenKind.AsKeyword)) {
-                var target = this.TypeExpression();
+            while (this.Peek(TokenKind.AsKeyword) || this.Peek(TokenKind.IsKeyword)) {
+                if (this.TryAdvance(TokenKind.AsKeyword)) {
+                    var target = this.TypeExpression();
+                    var loc = first.Location.Span(this.tokens[this.pos - 1].Location);
 
-                first = new AsSyntaxA(
-                    first.Location.Span(this.tokens[this.pos - 1].Location),
-                    first,
-                    target);
+                    first = new AsSyntaxA(loc, first, target);
+                }
+                else {
+                    this.Advance(TokenKind.IsKeyword);
+
+                    var pattern = this.Advance<string>();
+                    var loc = first.Location.Span(this.tokens[this.pos - 1].Location);
+
+                    first = new IsSyntaxA(loc, first, pattern);
+                }
             }
 
             return first;
