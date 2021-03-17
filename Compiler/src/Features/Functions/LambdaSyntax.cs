@@ -11,11 +11,11 @@ namespace Trophy.Features.Functions {
     public class LambdaSyntaxA : ISyntaxA {
         public TokenLocation Location { get; }
 
-        public IReadOnlyList<FunctionParameter> Parameters { get; }
+        public IReadOnlyList<ParseFunctionParameter> Parameters { get; }
 
         public ISyntaxA Body { get; }
 
-        public LambdaSyntaxA(TokenLocation loc, ISyntaxA body, IReadOnlyList<FunctionParameter> pars) {
+        public LambdaSyntaxA(TokenLocation loc, ISyntaxA body, IReadOnlyList<ParseFunctionParameter> pars) {
             this.Location = loc;
             this.Body = body;
             this.Parameters = pars;
@@ -23,13 +23,24 @@ namespace Trophy.Features.Functions {
 
         public ISyntaxB CheckNames(INameRecorder names) {
             var path = names.CurrentScope.Append("$lambda" + names.GetNewVariableId());
-            var pars = this.Parameters
-                .Select(x => new FunctionParameter(x.Name, names.ResolveTypeNames(x.Type, this.Location)))
+
+            // Resolve the type names
+            var parsOpt = this.Parameters
+                .Select(x => x.Type.ResolveToType(names).Select(y => new FunctionParameter(x.Name, y)))
                 .ToArray();
+
+            if (!parsOpt.All(x => x.Any())) {
+                throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
+            }
+
+            var pars = parsOpt
+                .Select(x => x.GetValue())
+                .ToImmutableList();
+
             var region = names.CurrentRegion;
 
             // Check for duplicate parameter names
-            FunctionsHelper.CheckForDuplicateParameters(this.Location, pars);
+            FunctionsHelper.CheckForDuplicateParameters(this.Location, pars.Select(x => x.Name));
 
             // Resolve body names
             var body = FunctionsHelper.ResolveBodyNames(names, path, this.Body, pars);

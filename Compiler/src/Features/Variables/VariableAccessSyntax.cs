@@ -2,47 +2,11 @@
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
-using Trophy.Features.Functions;
 using Trophy.Parsing;
 
 namespace Trophy.Features.Variables {
     public enum VariableAccessKind {
         ValueAccess, LiteralAccess
-    }
-
-    public class IdentifierAccessSyntaxA : ISyntaxA {
-        private readonly string name;
-        private readonly VariableAccessKind kind;
-
-        public TokenLocation Location { get; }
-
-        public IdentifierAccessSyntaxA(TokenLocation location, string name, VariableAccessKind kind) {
-            this.Location = location;
-            this.name = name;
-            this.kind = kind;
-        }
-
-        public ISyntaxB CheckNames(INameRecorder names) {
-            // Make sure this name exists
-            if (!names.TryFindName(this.name, out var target, out var path)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
-            }
-
-            if (target == NameTarget.Function) {
-                return new FunctionAccessSyntaxA(this.Location, path).CheckNames(names);
-            }
-            else if (target == NameTarget.Variable) {
-                if (this.kind == VariableAccessKind.ValueAccess) {
-                    return new VariableAccessSyntaxB(this.Location, path, this.kind);
-                }
-                else {
-                    return new VariableAccessSyntaxB(this.Location, path, this.kind);
-                }
-            }
-            else {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
-            }
-        }
     }
 
     public class VariableAccessSyntaxB : ISyntaxB {

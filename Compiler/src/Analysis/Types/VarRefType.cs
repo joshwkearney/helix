@@ -18,10 +18,10 @@ namespace Trophy.Analysis.Types {
 
         public override string ToString() {
             if (this.IsReadOnly) {
-                return "ref " + this.InnerType.ToString();
+                return "ref[" + this.InnerType + "]";
             }
             else {
-                return "var " + this.InnerType.ToString();
+                return "var[" + this.InnerType + "]";
             }
         }
 

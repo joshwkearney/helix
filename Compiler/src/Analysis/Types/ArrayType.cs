@@ -16,7 +16,7 @@ namespace Trophy.Analysis.Types {
         }
 
         public override string ToString() {
-            return "array[" + (this.IsReadOnly ? "ref " : "var ") + this.ElementType.ToString() + "]";
+            return "array[" + this.ElementType + ", " + (this.IsReadOnly ? "ref " : "var ") + "]";
         }
 
         public bool HasDefaultValue(ITypeRecorder types) => true;

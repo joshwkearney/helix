@@ -13,6 +13,11 @@ namespace Trophy.Analysis {
 
         public void DeclareLocalName(IdentifierPath path, NameTarget target);
 
+        public void DeclareGlobalAlias(IdentifierPath path, IdentifierPath target);
+
+        public void DeclareLocalAlias(IdentifierPath path, IdentifierPath target);
+
+
         public bool TryGetName(IdentifierPath path, out NameTarget nameTarget);
 
         public bool TryFindName(string name, out NameTarget nameTarget, out IdentifierPath path);
@@ -24,11 +29,9 @@ namespace Trophy.Analysis {
         public void PushRegion(IdentifierPath newRegion);
 
         public void PopRegion();
-
-        public ITrophyType ResolveTypeNames(ITrophyType type, TokenLocation loc);
     }
 
     public enum NameTarget {
-        Variable, Function, Region, Struct, Union, Reserved, Metatype, TypeAlias
+        Variable, Function, Region, Struct, Union, Reserved, GenericType, Alias
     }
 }

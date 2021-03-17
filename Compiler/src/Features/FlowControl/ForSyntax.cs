@@ -1,5 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
+using Trophy.Features.Meta;
 using Trophy.Features.Primitives;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
@@ -22,8 +23,8 @@ namespace Trophy.Features.FlowControl {
         public ISyntaxB CheckNames(INameRecorder names) {
             // Rewrite for syntax to use while loops
             var counterName = "$for_counter_" + names.GetNewVariableId();
-            var start = new AsSyntaxA(this.startIndex.Location, this.startIndex, ITrophyType.Integer);
-            var end = new AsSyntaxA(this.startIndex.Location, this.endIndex, ITrophyType.Integer);
+            var start = new AsSyntaxA(this.startIndex.Location, this.startIndex, new TypeAccessSyntaxA(this.startIndex.Location, ITrophyType.Integer));
+            var end = new AsSyntaxA(this.startIndex.Location, this.endIndex, new TypeAccessSyntaxA(this.startIndex.Location, ITrophyType.Integer));
 
             var counterDecl = new VarRefSyntaxA(this.Location, counterName, start, false);
 

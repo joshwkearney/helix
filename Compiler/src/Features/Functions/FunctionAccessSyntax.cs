@@ -20,6 +20,10 @@ namespace Trophy.Features.Functions {
 
             return new FunctionAccessSyntaxBC(this.Location, this.funcPath, region);
         }
+
+        public IOption<ITrophyType> ResolveToType(INameRecorder names) {
+            return Option.Some(new SingularFunctionType(this.funcPath));
+        }
     }
 
     public class FunctionAccessSyntaxBC : ISyntaxB, ISyntaxC {

@@ -10,11 +10,11 @@ namespace Trophy.Features.Functions {
     public class FunctionDeclarationA : IDeclarationA {
         public ISyntaxA Body { get; }
 
-        public FunctionSignature Signature { get; }
+        public ParseFunctionSignature Signature { get; }
 
         public TokenLocation Location { get; }
 
-        public FunctionDeclarationA(TokenLocation location, FunctionSignature sig, ISyntaxA body) {
+        public FunctionDeclarationA(TokenLocation location, ParseFunctionSignature sig, ISyntaxA body) {
             this.Location = location;
             this.Signature = sig;
             this.Body = body;
@@ -30,17 +30,27 @@ namespace Trophy.Features.Functions {
             names.DeclareGlobalName(names.CurrentScope.Append(this.Signature.Name), NameTarget.Function);
 
             // Check for duplicate parameter names
-            FunctionsHelper.CheckForDuplicateParameters(this.Location, this.Signature.Parameters);
+            FunctionsHelper.CheckForDuplicateParameters(this.Location, this.Signature.Parameters.Select(x => x.Name));
 
             return this;
         }
 
         public IDeclarationB ResolveNames(INameRecorder names) {
+            if (!this.Signature.ReturnType.ResolveToType(names).TryGetValue(out var returnType)) {
+                throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
+            }
+
             // Resolve the type names
-            var returnType = names.ResolveTypeNames(this.Signature.ReturnType, this.Location);
-            var pars = this.Signature
-                .Parameters
-                .Select(x => new FunctionParameter(x.Name, names.ResolveTypeNames(x.Type, this.Location)))
+            var parsOpt = this.Signature.Parameters
+                .Select(x => x.Type.ResolveToType(names).Select(y => new FunctionParameter(x.Name, y)))
+                .ToArray();
+
+            if (!parsOpt.All(x => x.Any())) {
+                throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
+            }
+
+            var pars = parsOpt
+                .Select(x => x.GetValue())
                 .ToImmutableList();
 
             var sig = new FunctionSignature(this.Signature.Name, returnType, pars);

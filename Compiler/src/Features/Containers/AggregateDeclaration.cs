@@ -5,20 +5,21 @@ using Trophy.Parsing;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Trophy.Features.Meta;
 
 namespace Trophy.Features.Containers {
     public enum AggregateKind {
         Struct, Union
-    }
+    }    
 
     public class AggregateDeclarationA : IDeclarationA {
-        private readonly AggregateSignature sig;
+        private readonly ParseAggregateSignature sig;
         private readonly IReadOnlyList<IDeclarationA> decls;
         private readonly AggregateKind kind;
 
         public TokenLocation Location { get; }
 
-        public AggregateDeclarationA(TokenLocation location, AggregateSignature sig, AggregateKind kind, IReadOnlyList<IDeclarationA> decls) {
+        public AggregateDeclarationA(TokenLocation location, ParseAggregateSignature sig, AggregateKind kind, IReadOnlyList<IDeclarationA> decls) {
             this.Location = location;
             this.sig = sig;
             this.kind = kind;
@@ -64,8 +65,9 @@ namespace Trophy.Features.Containers {
                 .Select(x => {
                     if (x is FunctionDeclarationA func) {
                         var structType = new NamedType(names.CurrentScope.Append(this.sig.Name));
-                        var newPars = func.Signature.Parameters.Prepend(new FunctionParameter("this", structType)).ToImmutableList();
-                        var newSig = new FunctionSignature(func.Signature.Name, func.Signature.ReturnType, newPars);
+                        var newPar = new ParseFunctionParameter("this", new TypeAccessSyntaxA(func.Location, structType));
+                        var newPars = func.Signature.Parameters.Prepend(newPar).ToImmutableList();
+                        var newSig = new ParseFunctionSignature(func.Signature.Name, func.Signature.ReturnType, newPars);
 
                         return new FunctionDeclarationA(func.Location, newSig, func.Body);
                     }
@@ -83,11 +85,16 @@ namespace Trophy.Features.Containers {
 
         public IDeclarationB ResolveNames(INameRecorder names) {
             // Resolve members
-            var mems = this.sig
+            var memsOpt = this.sig
                 .Members
-                .Select(x => new StructMember(x.MemberName, names.ResolveTypeNames(x.MemberType, this.Location)))
+                .Select(x => x.MemberType.ResolveToType(names).Select(y => new AggregateMember(x.MemberName, y)))
                 .ToArray();
 
+            if (!memsOpt.All(x => x.Any())) {
+                throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
+            }
+
+            var mems = memsOpt.Select(x => x.GetValue()).ToArray();
             var aggPath = names.CurrentScope.Append(this.sig.Name);
             var sig = new AggregateSignature(this.sig.Name, mems);
 
@@ -96,7 +103,7 @@ namespace Trophy.Features.Containers {
             var decls = this.decls.Select(x => x.ResolveNames(names)).ToArray();
             names.PopScope();
 
-            return new AggregateDeclarationB(this.Location, this.kind, aggPath, this.sig, decls);
+            return new AggregateDeclarationB(this.Location, this.kind, aggPath, sig, decls);
         }
     }
 

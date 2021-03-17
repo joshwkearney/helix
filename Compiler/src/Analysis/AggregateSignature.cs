@@ -7,9 +7,9 @@ namespace Trophy.Analysis {
     public class AggregateSignature : IEquatable<AggregateSignature> {
         public string Name { get; }
 
-        public IReadOnlyList<StructMember> Members { get; }
+        public IReadOnlyList<AggregateMember> Members { get; }
 
-        public AggregateSignature(string name, IReadOnlyList<StructMember> mems) {
+        public AggregateSignature(string name, IReadOnlyList<AggregateMember> mems) {
             this.Name = name;
             this.Members = mems;
         }
@@ -31,17 +31,17 @@ namespace Trophy.Analysis {
         }
     }
 
-    public class StructMember : IEquatable<StructMember> {
+    public class AggregateMember : IEquatable<AggregateMember> {
         public string MemberName { get; }
 
         public ITrophyType MemberType { get; }
 
-        public StructMember(string name, ITrophyType type) {
+        public AggregateMember(string name, ITrophyType type) {
             this.MemberName = name;
             this.MemberType = type;
         }
 
-        public bool Equals(StructMember other) {
+        public bool Equals(AggregateMember other) {
             if (other is null) {
                 return false;
             }
@@ -51,7 +51,7 @@ namespace Trophy.Analysis {
         }
 
         public override bool Equals(object obj) {
-            if (obj is StructMember mem) {
+            if (obj is AggregateMember mem) {
                 return this.Equals(mem);
             }
 

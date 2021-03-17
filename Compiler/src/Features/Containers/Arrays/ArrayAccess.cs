@@ -13,6 +13,7 @@ namespace Trophy.Features.Containers.Arrays {
     public class ArrayAccessSyntaxA : ISyntaxA {
         private readonly ISyntaxA target, index;
         private readonly ArrayAccessKind accessKind;
+
         public TokenLocation Location { get; }
 
         public ArrayAccessSyntaxA(TokenLocation location, ISyntaxA target, ISyntaxA index, ArrayAccessKind accessKind) {

@@ -1,12 +1,30 @@
 ﻿func test() as void => {
+    var x <- 45;
+
     void;
 };
 
-func add(x as int, y as int) as int => x + y;
+func test1 (x as int) as int => test2(x) + 4;
+func test2 (y as int) as int => y*2 + 1;
 
-struct Unit { temp as void; };
+func selection_sort(arr as array[int, var]) as void => { 
+    # Find the smallest element and put it in position i
+    for i = 0 to arr.size-1 do {
+        var smallest <- arr[i];
+        var smallest_index <- i;
 
-struct Point[T] {
-    x as T;
-    y as T;
+        # Find the smallest element
+        for j = i + 1 to arr.size-1 do {
+            if arr[j] < smallest do {
+                @smallest_index <- j;
+                @smallest <- arr[j];
+            };
+        };
+
+        # Swap the smallest with the ith position
+        var swap <- arr[i];
+
+        arr@[i] <- smallest;
+        arr@[smallest_index] <- swap;
+    };
 };

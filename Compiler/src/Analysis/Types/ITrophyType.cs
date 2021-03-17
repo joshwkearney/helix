@@ -12,12 +12,6 @@ namespace Trophy.Analysis.Types {
 
         public static ITrophyType Void { get; } = new VoidType();
 
-        public bool Equals(object other);
-
-        public int GetHashCode();
-
-        public string ToString();
-
         public TypeCopiability GetCopiability(ITypeRecorder types);
 
         public bool HasDefaultValue(ITypeRecorder types);
@@ -41,5 +35,7 @@ namespace Trophy.Analysis.Types {
         public IOption<FunctionType> AsFunctionType() => Option.None<FunctionType>();
 
         public IOption<GenericType> AsGenericType() => Option.None<GenericType>();
+
+        public IOption<MetaType> AsMetaType() => Option.None<MetaType>();
     }
 }

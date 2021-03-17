@@ -9,10 +9,9 @@ namespace Trophy.Features.Functions {
     public static class FunctionsHelper {
         public static void CheckForDuplicateParameters(
             TokenLocation loc, 
-            IEnumerable<FunctionParameter> pars) {
+            IEnumerable<string> pars) {
 
             var dups = pars
-                .Select(x => x.Name)
                 .GroupBy(x => x)
                 .Where(x => x.Count() > 1)
                 .Select(x => x.Key)

@@ -6,11 +6,11 @@ using Trophy.Parsing;
 namespace Trophy.Features.Primitives {
     public class AsSyntaxA : ISyntaxA {
         private readonly ISyntaxA arg;
-        private readonly ITrophyType target;
+        private readonly ISyntaxA target;
 
         public TokenLocation Location { get; }
 
-        public AsSyntaxA(TokenLocation loc, ISyntaxA arg, ITrophyType target) {
+        public AsSyntaxA(TokenLocation loc, ISyntaxA arg, ISyntaxA target) {
             this.Location = loc;
             this.arg = arg;
             this.target = target;
@@ -18,7 +18,7 @@ namespace Trophy.Features.Primitives {
 
         public ISyntaxB CheckNames(INameRecorder names) {
             var arg = this.arg.CheckNames(names);
-            var target = names.ResolveTypeNames(this.target, this.Location);
+            var target = this.target.CheckNames(names);
 
             return new AsSyntaxB(this.Location, arg, target);
         }
@@ -26,7 +26,7 @@ namespace Trophy.Features.Primitives {
 
     public class AsSyntaxB : ISyntaxB {
         private readonly ISyntaxB arg;
-        private readonly ITrophyType target;
+        private readonly ISyntaxB target;
 
         public TokenLocation Location { get; }
 
@@ -34,7 +34,7 @@ namespace Trophy.Features.Primitives {
             get => this.arg.VariableUsage;
         }
 
-        public AsSyntaxB(TokenLocation loc, ISyntaxB arg, ITrophyType target) {
+        public AsSyntaxB(TokenLocation loc, ISyntaxB arg, ISyntaxB target) {
             this.Location = loc;
             this.target = target;
             this.arg = arg;
@@ -42,12 +42,17 @@ namespace Trophy.Features.Primitives {
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
             var arg = this.arg.CheckTypes(types);
+            var target = this.target.CheckTypes(types);
 
-            if (types.TryUnifyTo(arg, this.target).TryGetValue(out var newArg)) {
+            if (!target.ReturnType.AsMetaType().Select(x => x.PayloadType).TryGetValue(out var targetType)) {
+                throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
+            }
+
+            if (types.TryUnifyTo(arg, targetType).TryGetValue(out var newArg)) {
                 return newArg;
             }
             else {
-                throw TypeCheckingErrors.UnexpectedType(this.Location, this.target, arg.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.Location, targetType, arg.ReturnType);
             }
         }
     }

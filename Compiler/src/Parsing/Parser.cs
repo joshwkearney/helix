@@ -8,6 +8,7 @@ using Trophy.Features.Containers.Arrays;
 using Trophy.Features.Containers.Structs;
 using Trophy.Features.FlowControl;
 using Trophy.Features.Functions;
+using Trophy.Features.Meta;
 using Trophy.Features.Primitives;
 using Trophy.Features.Variables;
 
@@ -80,21 +81,30 @@ namespace Trophy.Parsing {
         }
 
         /** Type Parsing **/
-        private ITrophyType VarTypeExpression() {
-            if (this.TryAdvance(TokenKind.VarKeyword)) {
-                var inner = this.TypeExpression();
+        private ISyntaxA VarTypeExpression() {
+            if (this.Peek(TokenKind.VarKeyword)) {
+                var start = this.Advance(TokenKind.VarKeyword);
 
-                return new VarRefType(inner, false);
+                this.Advance(TokenKind.OpenBracket);
+                var inner = this.TypeExpression();
+                var end = this.Advance(TokenKind.CloseBracket);
+                var loc = start.Location.Span(end.Location);
+
+                return new VarRefTypeSyntaxA(loc, inner, false);
             }
             else {
-                this.Advance(TokenKind.RefKeyword);
-                var inner = this.TypeExpression();
+                var start = this.Advance(TokenKind.RefKeyword);
 
-                return new VarRefType(inner, true);
+                this.Advance(TokenKind.OpenBracket);
+                var inner = this.TypeExpression();
+                var end = this.Advance(TokenKind.CloseBracket);
+                var loc = start.Location.Span(end.Location);
+
+                return new VarRefTypeSyntaxA(loc, inner, true);
             }
         }
 
-        private ITrophyType TypeExpression() {
+        private ISyntaxA TypeExpression() {
             if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.RefKeyword)) {
                 return this.VarTypeExpression();
             }
@@ -102,59 +112,78 @@ namespace Trophy.Parsing {
             return this.TypeAtom();
         }
 
-        private ITrophyType TypeAtom() {
-            if (this.TryAdvance(TokenKind.IntKeyword)) {
-                return ITrophyType.Integer;
+        private ISyntaxA TypeAtom() {
+            if (this.Peek(TokenKind.IntKeyword)) {
+                var tok = this.Advance(TokenKind.IntKeyword);
+
+                return new TypeAccessSyntaxA(tok.Location, ITrophyType.Integer);
             }
-            else if (this.TryAdvance(TokenKind.VoidKeyword)) {
-                return ITrophyType.Void;
+            else if (this.Peek(TokenKind.VoidKeyword)) {
+                var tok = this.Advance(TokenKind.VoidKeyword);
+
+                return new TypeAccessSyntaxA(tok.Location, ITrophyType.Void);
             }
-            else if (this.TryAdvance(TokenKind.BoolKeyword)) {
-                return ITrophyType.Boolean;
+            else if (this.Peek(TokenKind.BoolKeyword)) {
+                var tok = this.Advance(TokenKind.BoolKeyword);
+
+                return new TypeAccessSyntaxA(tok.Location, ITrophyType.Boolean);
             }
-            else if (this.TryAdvance(TokenKind.ArrayKeyword)) {
-                this.Advance(TokenKind.OpenBracket);
-                bool isreadonly = false;
-
-                if (!this.TryAdvance(TokenKind.VarKeyword)) {
-                    this.Advance(TokenKind.RefKeyword);
-                    isreadonly = true;
-                }
-
-                var inner = this.TypeExpression();
-
-                if (this.TryAdvance(TokenKind.Comma)) {
-                    var count = this.Advance<int>();
-                    this.Advance(TokenKind.CloseBracket);
-
-                    return new FixedArrayType(inner, count, isreadonly);
-                }
-                else {
-                    this.Advance(TokenKind.CloseBracket);
-
-                    return new ArrayType(inner, isreadonly);
-                }
+            else if (this.Peek(TokenKind.ArrayKeyword)) {
+                return this.ArrayTypeAtom();
             }
-            else if (this.TryAdvance(TokenKind.FunctionKeyword)) {
-                this.Advance(TokenKind.OpenBracket);
-                var args = new List<ITrophyType>();
-
-                while (!this.TryAdvance(TokenKind.YieldSign)) {
-                    args.Add(this.TypeExpression());
-
-                    if (!this.TryAdvance(TokenKind.Comma)) {
-                        break;
-                    }
-                }
-
-                var returnType = this.TypeAtom();
-                this.Advance(TokenKind.CloseBracket);
-
-                return new FunctionType(returnType, args);
+            else if (this.Peek(TokenKind.FunctionKeyword)) {
+                return this.FunctionTypeAtom();
             }
             else {
-                return new NamedType(new IdentifierPath(this.Advance<string>()));
+                Token<string> tok = (Token<string>)this.Advance(TokenKind.Identifier);
+
+
+                return new TypeAccessSyntaxA(tok.Location, new NamedType(new IdentifierPath(tok.Value)));
             }
+        }
+
+        private ISyntaxA ArrayTypeAtom() {
+            var start = this.Advance(TokenKind.ArrayKeyword);
+
+            this.Advance(TokenKind.OpenBracket);
+
+            var inner = this.TypeExpression();
+            var isReadOnly = true;
+
+            if (this.TryAdvance(TokenKind.Comma)) {
+                if (this.TryAdvance(TokenKind.VarKeyword)) {
+                    isReadOnly = false;
+                }
+                else {
+                    this.Advance(TokenKind.RefKeyword);
+                }
+            }
+
+            var end = this.Advance(TokenKind.CloseBracket);
+            var loc = start.Location.Span(end.Location);
+
+            return new ArrayTypeSyntaxA(loc, inner, isReadOnly);
+        }
+
+        private ISyntaxA FunctionTypeAtom() {
+            var start = this.Advance(TokenKind.FunctionKeyword);
+            this.Advance(TokenKind.OpenBracket);
+
+            var args = new List<ISyntaxA>();
+
+            while (!this.TryAdvance(TokenKind.YieldSign)) {
+                args.Add(this.TypeExpression());
+
+                if (!this.TryAdvance(TokenKind.Comma)) {
+                    break;
+                }
+            }
+
+            var returnType = this.TypeAtom();
+            var end = this.Advance(TokenKind.CloseBracket);
+            var loc = start.Location.Span(end.Location);
+
+            return new FunctionTypeSyntaxA(loc, returnType, args);
         }
 
         /** Lifetime Parsing **/
@@ -171,13 +200,13 @@ namespace Trophy.Parsing {
         }
 
         /** Declaration Parsing **/
-        private FunctionSignature FunctionSignature() {
+        private ParseFunctionSignature FunctionSignature() {
             this.Advance(TokenKind.FunctionKeyword);
             var funcName = this.Advance<string>();
 
             this.Advance(TokenKind.OpenParenthesis);
 
-            var pars = ImmutableList<FunctionParameter>.Empty;
+            var pars = ImmutableList<ParseFunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
                 var parName = this.Advance<string>();
                 this.Advance(TokenKind.AsKeyword);
@@ -187,14 +216,14 @@ namespace Trophy.Parsing {
                     this.Advance(TokenKind.Comma);
                 }
 
-                pars = pars.Add(new FunctionParameter(parName, parType));
+                pars = pars.Add(new ParseFunctionParameter(parName, parType));
             }
 
             this.Advance(TokenKind.CloseParenthesis);
             this.Advance(TokenKind.AsKeyword);            
             
             var returnType = this.TypeExpression();
-            var sig = new FunctionSignature(funcName, returnType, pars);
+            var sig = new ParseFunctionSignature(funcName, returnType, pars);
 
             return sig;
         }
@@ -222,7 +251,7 @@ namespace Trophy.Parsing {
             }
 
             var name = this.Advance<string>();
-            var mems = new List<StructMember>();
+            var mems = new List<ParseAggregateMember>();
             var decls = new List<IDeclarationA>();
             var generics = new List<string>();
 
@@ -246,7 +275,7 @@ namespace Trophy.Parsing {
                 var memType = this.TypeExpression();
 
                 this.Advance(TokenKind.Semicolon);
-                mems.Add(new StructMember(memName, memType));
+                mems.Add(new ParseAggregateMember(memName, memType));
             }
 
             while (!this.Peek(TokenKind.CloseBrace)) {
@@ -256,7 +285,7 @@ namespace Trophy.Parsing {
             this.Advance(TokenKind.CloseBrace);
             var last = this.Advance(TokenKind.Semicolon);
             var loc = start.Location.Span(last.Location);
-            var sig = new AggregateSignature(name, mems);
+            var sig = new ParseAggregateSignature(name, mems);
             var kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union;
 
             var result = new AggregateDeclarationA(loc, sig, kind, decls);
@@ -830,7 +859,7 @@ namespace Trophy.Parsing {
 
             this.Advance(TokenKind.OpenParenthesis);
 
-            var pars = ImmutableList<FunctionParameter>.Empty;
+            var pars = ImmutableList<ParseFunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
                 var parName = this.Advance<string>();
                 this.Advance(TokenKind.AsKeyword);
@@ -840,7 +869,7 @@ namespace Trophy.Parsing {
                     this.Advance(TokenKind.Comma);
                 }
 
-                pars = pars.Add(new FunctionParameter(parName, parType));
+                pars = pars.Add(new ParseFunctionParameter(parName, parType));
             }
 
             this.Advance(TokenKind.CloseParenthesis);

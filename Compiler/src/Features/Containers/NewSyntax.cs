@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
@@ -16,70 +17,101 @@ namespace Trophy.Features.Containers {
     }
 
     public class NewSyntaxA : ISyntaxA {
-        public readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
-        public readonly ITrophyType targetType;
+        private readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
+        private readonly ISyntaxA targetType;
 
         public TokenLocation Location { get; }
 
-        public NewSyntaxA(TokenLocation location, ITrophyType targetType, IReadOnlyList<StructArgument<ISyntaxA>> args) {
+        public NewSyntaxA(TokenLocation location, ISyntaxA targetType, IReadOnlyList<StructArgument<ISyntaxA>> args) {
             this.Location = location;
             this.targetType = targetType;
             this.args = args;
         }
 
         public ISyntaxB CheckNames(INameRecorder names) {
+            // Make sure the target type is valid by checking the names
+            var targetType = this.targetType.CheckNames(names);
+
+            // Structs and unions can only be properly created if we catch them prematurely
+            if (this.targetType.ResolveToType(names).TryGetValue(out var type)) {
+                if (type.AsNamedType().TryGetValue(out var path)) {
+                    if (names.TryGetName(path, out var target)) {
+                        if (target == NameTarget.Struct) {
+                            return new NewStructSyntaxA(this.Location, type, this.args).CheckNames(names);
+                        }
+                        else if (target == NameTarget.Union) {
+                            return new NewUnionSyntaxA(this.Location, type, this.args).CheckNames(names);
+                        }
+                    }
+                }
+            }
+
+            var args = this.args
+                .Select(x => new StructArgument<ISyntaxB>() {
+                    MemberName = x.MemberName,
+                    MemberValue = x.MemberValue.CheckNames(names)})
+                .ToArray();
+
+            return new NewSyntaxB(this.Location, targetType, args);
+        }
+    }
+
+    public class NewSyntaxB : ISyntaxB {
+        private readonly IReadOnlyList<StructArgument<ISyntaxB>> args;
+        private readonly ISyntaxB targetType;
+
+        public TokenLocation Location { get; }
+
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get {
+                return args.Select(x => x.MemberValue.VariableUsage)
+                    .Aggregate(this.targetType.VariableUsage, (x, y) => x.AddRange(y));
+            }
+        }
+
+        public NewSyntaxB(TokenLocation location, ISyntaxB targetType, IReadOnlyList<StructArgument<ISyntaxB>> args) {
+            this.Location = location;
+            this.targetType = targetType;
+            this.args = args;
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
             // Resolve the target type
-            var target = names.ResolveTypeNames(this.targetType, this.Location);
+            var target = this.targetType.CheckTypes(types);
+
+            if (!target.ReturnType.AsMetaType().Select(x => x.PayloadType).TryGetValue(out var returnType)) {
+                throw TypeCheckingErrors.ExpectedTypeExpression(this.targetType.Location);
+            }
 
             // Check for primitive types
-            if (this.targetType.IsBoolType || this.targetType.IsIntType || this.targetType.IsVoidType) {
+            if (returnType.IsBoolType || returnType.IsIntType || returnType.IsVoidType) {
                 if (this.args.Any()) {
-                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.targetType, this.args.Select(x => x.MemberName));
+                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, returnType, this.args.Select(x => x.MemberName));
                 }
 
-                if (this.targetType.IsBoolType) {
-                    return new BoolLiteralSyntax(this.Location, false).CheckNames(names);
+                if (returnType.IsBoolType) {
+                    return new BoolLiteralSyntax(this.Location, false).CheckTypes(types);
                 }
-                else if (this.targetType.IsIntType) {
-                    return new IntLiteralSyntax(this.Location, 0).CheckNames(names);
+                else if (returnType.IsIntType) {
+                    return new IntLiteralSyntax(this.Location, 0).CheckTypes(types);
                 }
                 else {
-                    return new VoidLiteralAB(this.Location).CheckNames(names);
+                    return new VoidLiteralAB(this.Location).CheckTypes(types);
                 }
             }
 
             // Check for array types
-            if (this.targetType.AsArrayType().TryGetValue(out var arrayType)) {
+            if (returnType.AsArrayType().Any() || returnType.AsFixedArrayType().Any()) {
                 if (this.args.Any()) {
-                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.targetType, this.args.Select(x => x.MemberName));
+                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, returnType, this.args.Select(x => x.MemberName));
                 }
 
-                var arrayLiteral = new NewFixedArraySyntaxA(this.Location, new FixedArrayType(arrayType.ElementType, 0, arrayType.IsReadOnly));
-                var asSyntax = new AsSyntaxA(this.Location, arrayLiteral, arrayType);
-
-                return asSyntax.CheckNames(names);
+                return new VoidToArrayAdapterC(new VoidLiteralC(), returnType);
             }
 
-            // Check for fixed array types
-            if (this.targetType.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                if (this.args.Any()) {
-                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, this.targetType, this.args.Select(x => x.MemberName));
-                }
+            // Structs and unions have already been checked
 
-                return new NewFixedArraySyntaxA(this.Location, fixedArrayType).CheckNames(names);
-            }
-
-            // Check for struct and union types
-            if (this.targetType.AsNamedType().TryGetValue(out var path) && names.TryGetName(path, out var nameTarget)) {
-                if (nameTarget == NameTarget.Struct) {
-                    return new NewStructSyntaxA(this.Location, this.targetType, args).CheckNames(names);
-                }
-                else if (nameTarget == NameTarget.Union) {
-                    return new NewUnionSyntaxA(this.Location, this.targetType, this.args).CheckNames(names);
-                }
-            }
-
-            throw TypeCheckingErrors.UnexpectedType(this.Location, this.targetType);
+            throw TypeCheckingErrors.UnexpectedType(this.Location, returnType);
         }
     }
 }

@@ -13,6 +13,8 @@ namespace Trophy {
         public TokenLocation Location { get; }
 
         public ISyntaxB CheckNames(INameRecorder names);
+
+        public IOption<ITrophyType> ResolveToType(INameRecorder names) => Option.None<ITrophyType>();
     }
 
     public interface ISyntaxB {

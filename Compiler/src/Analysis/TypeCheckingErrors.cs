@@ -6,6 +6,13 @@ using System.Linq;
 
 namespace Trophy.Analysis {
     public static class TypeCheckingErrors {
+        public static Exception ExpectedTypeExpression(TokenLocation location) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: Expected a type expression",
+                $"Expected a type expression but recieved a value expression");
+        }
+
         public static Exception UnexpectedType(TokenLocation location, ITrophyType expected, ITrophyType actual) {
             return new TypeCheckingException(
                 location,

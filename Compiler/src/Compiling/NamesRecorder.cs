@@ -19,6 +19,9 @@ namespace Trophy.Compiling {
         private readonly Stack<Dictionary<IdentifierPath, NameTarget>> localNames
             = new Stack<Dictionary<IdentifierPath, NameTarget>>();
 
+        private readonly Dictionary<IdentifierPath, IdentifierPath> aliases 
+            = new Dictionary<IdentifierPath, IdentifierPath>();
+
         public IdentifierPath CurrentScope => this.scopes.Peek();
 
         public IdentifierPath CurrentRegion => this.regions.Peek();
@@ -66,13 +69,30 @@ namespace Trophy.Compiling {
         }
 
         public bool TryGetName(IdentifierPath name, out NameTarget target) {
+            target = default;
+
+            bool worked = false;
+
             foreach (var frame in this.localNames) {
                 if (frame.TryGetValue(name, out target)) {
-                    return true;
+                    worked = true;
+                    break;
                 }
             }
 
-            return this.globalNames.TryGetValue(name, out target);
+            if (!worked) {
+                if (this.globalNames.TryGetValue(name, out target)) {
+                    worked = true;
+                }
+            }
+
+            if (!worked) {
+                if (this.aliases.TryGetValue(name, out var nextPath)) {
+                    worked = this.TryGetName(nextPath, out target);
+                }
+            }
+
+            return worked;
         }
 
         public void PushRegion(IdentifierPath newRegion) {
@@ -83,52 +103,18 @@ namespace Trophy.Compiling {
             this.regions.Pop();
         }
 
-        public ITrophyType ResolveTypeNames(ITrophyType type, TokenLocation loc) {
-            if (type.IsBoolType || type.IsIntType || type.IsVoidType) {
-                return type;
-            }
-            else if (type.AsSingularFunctionType().Any()) {
-                return type;
-            }
-            else if (type.AsArrayType().TryGetValue(out var arrayType)) {
-                return new ArrayType(this.ResolveTypeNames(arrayType.ElementType, loc), arrayType.IsReadOnly);
-            }
-            else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
-                return new FixedArrayType(this.ResolveTypeNames(fixedArrayType.ElementType, loc), fixedArrayType.Size, fixedArrayType.IsReadOnly);
-            }
-            else if (type.AsVariableType().TryGetValue(out var varType)) {
-                return new VarRefType(this.ResolveTypeNames(varType.InnerType, loc), varType.IsReadOnly);
-            }
-            else if (type.AsNamedType().TryGetValue(out var name)) {
-                if (!this.TryFindName(name.ToString(), out var target, out var path)) {
-                    throw TypeCheckingErrors.TypeUndefined(loc, name.ToString());
-                }
-
-                if (target == NameTarget.Function) {
-                    return new SingularFunctionType(path);
-                }
-                else if (target == NameTarget.Struct || target == NameTarget.Union) {
-                    return new NamedType(path);
-                }
-                else {
-                    throw TypeCheckingErrors.TypeUndefined(loc, name.ToString());
-                }
-            }
-            else if (type.AsFunctionType().TryGetValue(out var funcType)) {
-                return new FunctionType(
-                    this.ResolveTypeNames(funcType.ReturnType, loc),
-                    funcType.ParameterTypes.Select(x => this.ResolveTypeNames(x, loc)).ToArray());
-            }
-            else if (type.AsGenericType().TryGetValue(out var metaType)) {
-                return metaType;
-            }
-            else {
-                throw new Exception();
-            }
-        }
-
         public int GetNewVariableId() {
             return this.nameCounter++;
+        }
+
+        public void DeclareGlobalAlias(IdentifierPath path, IdentifierPath target) {
+            this.aliases[path] = target;
+            this.DeclareGlobalName(path, NameTarget.Alias);
+        }
+
+        public void DeclareLocalAlias(IdentifierPath path, IdentifierPath target) {
+            this.aliases[path] = target;
+            this.DeclareLocalName(path, NameTarget.Alias);
         }
     }
 }

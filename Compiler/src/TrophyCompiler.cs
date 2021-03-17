@@ -1,6 +1,8 @@
 ﻿using Trophy.Compiling;
 using Trophy.Parsing;
 using System.Linq;
+using Trophy.Analysis;
+using Trophy.Analysis.Types;
 
 namespace Trophy {
     public partial class TrophyCompiler {
