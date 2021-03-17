@@ -122,8 +122,14 @@ namespace Trophy.Features.Functions {
             // Declare the explicit parameters
             FunctionsHelper.DeclareParameters(types, this.FunctionPath, this.Parameters, this.ParameterIds);
 
+            // Make sure we update the context
+            types.PushContainingFunction(ContainingFunction.Lambda);
+
             // Type check the body
             var body = this.Body.CheckTypes(types);
+
+            // Remove context
+            types.PopContainingFunction();
 
             // Remove the flow typing
             types.PopFlow();

@@ -17,7 +17,6 @@ namespace Trophy.Analysis {
 
         public void DeclareLocalAlias(IdentifierPath path, IdentifierPath target);
 
-
         public bool TryGetName(IdentifierPath path, out NameTarget nameTarget);
 
         public bool TryFindName(string name, out NameTarget nameTarget, out IdentifierPath path);

@@ -5,7 +5,7 @@ using System.IO;
 namespace Trophy {
     public class Program {
         public static void Main(string[] args) {
-            var file = File.ReadAllText("resources/Program.txt");
+            var file = File.ReadAllText("resources/Parser4.txt");
 
             try {
                 /*var expr1 = BoolSyntax.Not(

@@ -1,5 +1,7 @@
 ﻿func test(k as int) as int => {
-    0;
+    region {
+        return 4;
+    };
 };
 
 func binary_search (arr as array[int, ref], to_find as int) as int => {

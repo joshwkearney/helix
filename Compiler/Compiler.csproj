@@ -16,6 +16,9 @@
     <None Remove="LineCount.ps1" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="resources\Parser4.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="resources\Parser3.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

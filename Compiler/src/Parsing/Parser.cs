@@ -433,7 +433,7 @@ namespace Trophy.Parsing {
         }
 
         private ISyntaxA MultiplyExpression() {
-            var first = this.SuffixExpression();
+            var first = this.PrefixExpression();
 
             while (true) {
                 if (!this.Peek(TokenKind.MultiplySign) && !this.Peek(TokenKind.ModuloSign) && !this.Peek(TokenKind.SlashSign)) {
@@ -450,7 +450,7 @@ namespace Trophy.Parsing {
                     op = BinaryOperation.FloorDivide;
                 }
 
-                var second = this.SuffixExpression();
+                var second = this.PrefixExpression();
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntaxA(loc, first, second, op);
@@ -459,8 +459,29 @@ namespace Trophy.Parsing {
             return first;
         }
 
+        private ISyntaxA PrefixExpression() {
+            if (this.Peek(TokenKind.SubtractSign) || this.Peek(TokenKind.AddSign) || this.Peek(TokenKind.NotSign)) {
+                var tokOp = this.Advance();
+                var first = this.SuffixExpression();
+                var loc = tokOp.Location.Span(first.Location);
+                var op = UnaryOperator.Not;
+
+                if (tokOp.Kind == TokenKind.AddSign) {
+                    op = UnaryOperator.Plus;
+                }
+                else if (tokOp.Kind == TokenKind.SubtractSign) {
+                    op = UnaryOperator.Minus;
+                }
+
+                return new UnarySyntaxA(loc, op, first);
+            }
+
+            return this.SuffixExpression();
+        }
+
+
         private ISyntaxA SuffixExpression() {
-            var first = this.PrefixExpression();
+            var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) || this.Peek(TokenKind.OpenBracket) || this.Peek(TokenKind.LiteralSign) || this.Peek(TokenKind.Dot)) {
                 if (this.Peek(TokenKind.OpenParenthesis)) {
@@ -571,26 +592,6 @@ namespace Trophy.Parsing {
                     return new ArrayAccessSyntaxA(loc, first, index, ArrayAccessKind.LiteralAccess);
                 }
             }
-        }
-
-        private ISyntaxA PrefixExpression() {
-            if (this.Peek(TokenKind.SubtractSign) || this.Peek(TokenKind.AddSign) || this.Peek(TokenKind.NotSign)) {
-                var tokOp = this.Advance();
-                var first = this.Atom();
-                var loc = tokOp.Location.Span(first.Location);
-                var op = UnaryOperator.Not;
-
-                if (tokOp.Kind == TokenKind.AddSign) {
-                    op = UnaryOperator.Plus;
-                }
-                else if (tokOp.Kind == TokenKind.SubtractSign) {
-                    op = UnaryOperator.Minus;
-                }
-
-                return new UnarySyntaxA(loc, op, first);
-            }
-
-            return this.Atom();
         }
 
         private ISyntaxA Atom() {
@@ -770,6 +771,9 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.ForKeyword)) {
                 result = this.ForStatement();
             }
+            else if (this.Peek(TokenKind.ReturnKeyword)) {
+                result = this.ReturnStatement();
+            }
             else {
                 result = this.StoreStatement();
             }
@@ -818,6 +822,14 @@ namespace Trophy.Parsing {
             }
 
             return start;
+        }
+
+        private ISyntaxA ReturnStatement() {
+            var start = this.Advance(TokenKind.ReturnKeyword);
+            var arg = this.TopExpression();
+            var loc = start.Location.Span(arg.Location);
+
+            return new ReturnSyntaxA(loc, arg);
         }
 
         private ISyntaxA IfExpression() {

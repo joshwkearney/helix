@@ -6,11 +6,18 @@ using System.Linq;
 
 namespace Trophy.Analysis {
     public static class TypeCheckingErrors {
+        public static Exception EarlyReturnInLambda(TokenLocation location) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: Invalid early return statement",
+                $"Early return statements are not permitted inside of lambda expressions");
+        }
+
         public static Exception IncompleteMatch(TokenLocation location) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Incomplete match expression",
-                $"This match expression does not cover all possible values of the target expression.");
+                $"This match expression does not cover all possible values of the target expression");
         }
 
         public static Exception ExpectedTypeExpression(TokenLocation location) {

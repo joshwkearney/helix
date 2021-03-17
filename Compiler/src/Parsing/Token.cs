@@ -15,7 +15,7 @@
         AsKeyword, IsKeyword, AllocKeyword, FromKeyword, MatchKeyword,
         TrueKeyword, FalseKeyword,
         AndKeyword, OrKeyword, XorKeyword,
-        StackKeyword, HeapKeyword, RegionKeyword,
+        StackKeyword, HeapKeyword, RegionKeyword, ReturnKeyword,
 
         Identifier, Whitespace,
         IntLiteral, BoolLiteral,

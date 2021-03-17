@@ -18,6 +18,7 @@ namespace Trophy.Compiling {
         private readonly Stack<Dictionary<IdentifierPath, AggregateSignature>> unions = new Stack<Dictionary<IdentifierPath, AggregateSignature>>();
         private readonly Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>> methods = new Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>>();
         private readonly Stack<Dictionary<ITrophyType, MetaTypeGenerator>> metaTypes = new Stack<Dictionary<ITrophyType, MetaTypeGenerator>>();
+        private readonly Stack<ContainingFunction> containingFuncs = new Stack<ContainingFunction>();
 
         public event EventHandler<IDeclarationC> DeclarationGenerated;
 
@@ -184,6 +185,14 @@ namespace Trophy.Compiling {
             this.DeclarationGenerated?.Invoke(this, decl);
 
             return newType;
+        }
+
+        public IOption<ContainingFunction> PopContainingFunction() {
+            return this.containingFuncs.FirstOrNone();
+        }
+
+        public void PushContainingFunction(ContainingFunction func) {
+            this.containingFuncs.Push(func);
         }
     }
 }

@@ -97,8 +97,12 @@ namespace Trophy.Features.Functions {
             // Declare the parameters
             FunctionsHelper.DeclareParameters(types, this.funcPath, this.Signature.Parameters, this.parIds);
 
+            types.PushContainingFunction(ContainingFunction.Declaration(this.Signature));
+
             // Type check the body
             var body = this.body.CheckTypes(types);
+
+            types.PopContainingFunction();
 
             // Make sure the return types line up
             if (types.TryUnifyTo(body, this.Signature.ReturnType).TryGetValue(out var newbody)) {

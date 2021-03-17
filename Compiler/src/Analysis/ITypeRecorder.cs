@@ -35,5 +35,38 @@ namespace Trophy.Analysis {
         public void PushFlow();
 
         public void PopFlow();
+
+        public IOption<ContainingFunction> PopContainingFunction();
+
+        public void PushContainingFunction(ContainingFunction func);
+    }
+
+    public class ContainingFunction {
+        private readonly object value;
+
+        public static ContainingFunction Lambda {
+            get => new ContainingFunction(false);
+        }
+
+        public static ContainingFunction Declaration(FunctionSignature sig) {
+            return new ContainingFunction(sig);
+        }
+
+        public IOption<FunctionSignature> AsFunctionDeclaration() {
+            if (value is FunctionSignature sig) {
+                return Option.Some(sig);
+            }
+            else {
+                return Option.None<FunctionSignature>();
+            }
+        }
+
+        public bool AsLambda() {
+            return value is not FunctionSignature;
+        }
+
+        private ContainingFunction(object value) {
+            this.value = value;
+        }
     }
 }
