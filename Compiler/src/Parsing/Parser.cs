@@ -599,6 +599,9 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.ClosureExpression();
             }
+            else if (this.Peek(TokenKind.MatchKeyword)) {
+                return this.MatchExpression();
+            }
             else {
                 var next = this.Advance();
 
@@ -887,6 +890,32 @@ namespace Trophy.Parsing {
             var loc = start.Location.Span(body.Location);
 
             return new LambdaSyntaxA(loc, body, pars);
+        }
+
+        private ISyntaxA MatchExpression() {
+            var start = this.Advance(TokenKind.MatchKeyword);
+            var arg = this.TopExpression();
+            var patterns = new List<string>();
+            var patternExprs = new List<ISyntaxA>();
+
+            while (this.TryAdvance(TokenKind.IfKeyword)) {
+                patterns.Add(this.Advance<string>());
+                this.Advance(TokenKind.ThenKeyword);
+
+                patternExprs.Add(this.TopExpression());
+            }
+
+            if (this.TryAdvance(TokenKind.ElseKeyword)) {
+                var last = this.TopExpression();
+                var loc = start.Location.Span(last.Location);
+
+                return new MatchSyntaxA(loc, arg, patterns, patternExprs, Option.Some(last));
+            }
+            else {
+                var loc = start.Location.Span(patternExprs.Last().Location);
+
+                return new MatchSyntaxA(loc, arg, patterns, patternExprs, Option.None<ISyntaxA>());
+            }
         }
     }
 }

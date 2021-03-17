@@ -12,7 +12,7 @@
         VarKeyword, RefKeyword, IntKeyword, VoidKeyword, BoolKeyword, ArrayKeyword,
         IfKeyword, ThenKeyword, ElseKeyword, WhileKeyword, ForKeyword, DoKeyword, ToKeyword,
         FunctionKeyword, NewKeyword, StructKeyword, ClassKeyword, UnionKeyword,
-        AsKeyword, IsKeyword, AllocKeyword, FromKeyword,
+        AsKeyword, IsKeyword, AllocKeyword, FromKeyword, MatchKeyword,
         TrueKeyword, FalseKeyword,
         AndKeyword, OrKeyword, XorKeyword,
         StackKeyword, HeapKeyword, RegionKeyword,

@@ -230,6 +230,9 @@ namespace Trophy.Parsing {
             else if (id == "array") {
                 return new Token(TokenKind.ArrayKeyword, location);
             }
+            else if (id == "match") {
+                return new Token(TokenKind.MatchKeyword, location);
+            }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);
             }

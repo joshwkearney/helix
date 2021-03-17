@@ -56,6 +56,18 @@ namespace Trophy.CodeGeneration.CSyntax {
             return new CBreakStatement();
         }
 
+        public static CStatement CaseLabel(CExpression value, IReadOnlyList<CStatement> stats) {
+            return new CCaseStatement(value, stats);
+        }
+
+        public static CStatement DefaultLabel(IReadOnlyList<CStatement> stats) {
+            return new CDefaultLabel(stats);
+        }
+
+        public static CStatement SwitchStatement(CExpression value, IReadOnlyList<CStatement> cases) {
+            return new CSwitchStatement(value, cases);
+        }
+
         public static CStatement Comment(string value) {
             return new CCommentStatement(value);
         }
@@ -67,6 +79,70 @@ namespace Trophy.CodeGeneration.CSyntax {
         private CStatement() { }
 
         public abstract void WriteToC(int indentLevel, StringBuilder sb);
+
+        private class CSwitchStatement : CStatement {
+            private readonly CExpression value;
+            private readonly IReadOnlyList<CStatement> cases;
+
+            public CSwitchStatement(CExpression value, IReadOnlyList<CStatement> cases) {
+                this.value = value;
+                this.cases = cases;
+            }
+
+            public override void WriteToC(int indentLevel, StringBuilder sb) {
+                CHelper.Indent(indentLevel, sb);
+                sb.Append("switch (").Append(this.value).AppendLine(") {");
+
+                foreach (var stat in this.cases) {
+                    stat.WriteToC(indentLevel + 1, sb);
+                }
+
+                CHelper.Indent(indentLevel, sb);
+                sb.AppendLine("}");
+            }
+        }
+
+        private class CDefaultLabel : CStatement {
+            private readonly IReadOnlyList<CStatement> body;
+
+            public CDefaultLabel(IReadOnlyList<CStatement> body) {
+                this.body = body;
+            }
+
+            public override void WriteToC(int indentLevel, StringBuilder sb) {
+                CHelper.Indent(indentLevel, sb);
+                sb.AppendLine("default: {");
+
+                foreach (var stat in this.body) {
+                    stat.WriteToC(indentLevel + 1, sb);
+                }
+
+                CHelper.Indent(indentLevel, sb);
+                sb.AppendLine("}");
+            }
+        }
+
+        private class CCaseStatement : CStatement {
+            private readonly CExpression value;
+            private readonly IReadOnlyList<CStatement> body;
+
+            public CCaseStatement(CExpression value, IReadOnlyList<CStatement> body) {
+                this.value = value;
+                this.body = body;
+            }
+
+            public override void WriteToC(int indentLevel, StringBuilder sb) {
+                CHelper.Indent(indentLevel, sb);
+                sb.Append("case ").Append(this.value).AppendLine(": {");
+
+                foreach (var stat in this.body) {
+                    stat.WriteToC(indentLevel + 1, sb);
+                }
+
+                CHelper.Indent(indentLevel, sb);
+                sb.AppendLine("}");
+            }
+        }
 
         private class CCommentStatement : CStatement {
             private readonly string value;
