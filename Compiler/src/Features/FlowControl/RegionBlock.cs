@@ -106,9 +106,9 @@ namespace Trophy.Features.FlowControl {
                 this.regionName,
                 CExpression.IntLiteral(0)));
 
-            statWriter.WriteStatement(CStatement.VariableDeclaration(CType.NamedType("jmp_buf"), bufferName));
+            statWriter.WriteStatement(CStatement.VariableDeclaration(CType.NamedType("jmp_buf"), bufferName, CExpression.IntLiteral(0)));
 
-            var cond = CExpression.Dereference(CExpression.VariableLiteral(bufferName));
+            var cond = CExpression.AddressOf(CExpression.VariableLiteral(bufferName));
             cond = CExpression.Invoke(CExpression.VariableLiteral("setjmp"), new[] { cond });
             cond = CExpression.BinaryExpression(CExpression.IntLiteral(0), cond, Primitives.BinaryOperation.NotEqualTo);
             cond = CExpression.Invoke(CExpression.VariableLiteral("HEDLEY_UNLIKELY"), new[] { cond });
