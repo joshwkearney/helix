@@ -201,8 +201,16 @@ namespace Trophy.Features.Functions {
                 .ToArray();
 
             var target = CExpression.VariableLiteral("$" + this.targetPath);
+            var invoke = CExpression.Invoke(target, args);
 
-            return CExpression.Invoke(target, args);
+            if (this.ReturnType.IsVoidType) {
+                statWriter.WriteStatement(CStatement.FromExpression(invoke));
+
+                return CExpression.IntLiteral(0);
+            }
+            else {
+                return invoke;
+            }
         }
     }
 }

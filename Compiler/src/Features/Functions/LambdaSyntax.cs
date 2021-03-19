@@ -226,10 +226,25 @@ namespace Trophy.Features.Functions {
 
             // Generate the body
             var retExpr = this.body.GenerateCode(writer, bodyWriter);
-            bodyStats.Add(CStatement.Return(retExpr));
 
-            var decl = CDeclaration.Function(returnType, "$" + this.funcPath, true, pars, bodyStats);
-            var forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, true, pars);
+            if (this.sig.ReturnType.IsVoidType) {
+                bodyStats.Add(CStatement.FromExpression(retExpr));
+            }
+            else {
+                bodyStats.Add(CStatement.Return(retExpr));
+            }
+
+            CDeclaration decl;
+            CDeclaration forwardDecl;
+
+            if (this.sig.ReturnType.IsVoidType) {
+                decl = CDeclaration.Function("$" + this.funcPath, true, pars, bodyStats);
+                forwardDecl = CDeclaration.FunctionPrototype("$" + this.funcPath, true, pars);
+            }
+            else {
+                decl = CDeclaration.Function(returnType, "$" + this.funcPath, true, pars, bodyStats);
+                forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, true, pars);
+            }
 
             // Generate the function
             writer.WriteDeclaration3(decl);

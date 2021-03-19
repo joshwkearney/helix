@@ -51,6 +51,10 @@ namespace Trophy.CodeGeneration.CSyntax {
             return new CFunctionPointerDeclaration(name, returnType, pars);
         }
 
+        public static CDeclaration FunctionPointer(string name, IReadOnlyList<CParameter> pars) {
+            return new CFunctionPointerDeclaration(name, CType.NamedType("void"), pars);
+        }
+
         public static CDeclaration EmptyLine() {
             return new CEmptyLine();
         }

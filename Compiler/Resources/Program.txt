@@ -7,7 +7,7 @@
         void;
     };
 
-    selection_sort(arr);
+    selection_sort(arr);	
     binary_search(arr, 5);
 };
 

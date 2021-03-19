@@ -156,10 +156,25 @@ namespace Trophy.Features.Functions {
             statWriter.WriteStatement(CStatement.NewLine());
 
             var retExpr = this.body.GenerateCode(declWriter, statWriter);
-            stats.Add(CStatement.Return(retExpr));
 
-            var decl = CDeclaration.Function(returnType, "$" + this.funcPath, false, pars, stats);
-            var forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, false, pars);
+            if (this.sig.ReturnType.IsVoidType) {
+                statWriter.WriteStatement(CStatement.FromExpression(retExpr));
+            }
+            else { 
+                stats.Add(CStatement.Return(retExpr));
+            }
+
+            CDeclaration decl;
+            CDeclaration forwardDecl;
+
+            if (this.sig.ReturnType.IsVoidType) {
+                decl = CDeclaration.Function("$" + this.funcPath, false, pars, stats);
+                forwardDecl = CDeclaration.FunctionPrototype("$" + this.funcPath, false, pars);
+            }
+            else {
+                decl = CDeclaration.Function(returnType, "$" + this.funcPath, false, pars, stats);
+                forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, false, pars);
+            }            
 
             declWriter.WriteDeclaration3(decl);
             declWriter.WriteDeclaration3(CDeclaration.EmptyLine());

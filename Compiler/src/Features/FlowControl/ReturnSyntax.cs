@@ -60,21 +60,23 @@ namespace Trophy.Features.FlowControl {
             // Make sure the result has the correct lifetime
             FunctionsHelper.CheckForInvalidReturnScope(this.result.Location, result);
 
-            return new ReturnSyntaxC(this.region, result);
+            return new ReturnSyntaxC(this.region, result, sig.ReturnType.IsVoidType);
         }
     }
 
     public class ReturnSyntaxC : ISyntaxC {
         private readonly ISyntaxC result;
         private readonly IdentifierPath region;
+        private readonly bool returnVoid;
 
         public ITrophyType ReturnType => ITrophyType.Void;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.result.Lifetimes;
 
-        public ReturnSyntaxC(IdentifierPath region, ISyntaxC result) {
+        public ReturnSyntaxC(IdentifierPath region, ISyntaxC result, bool returnVoid) {
             this.region = region;
             this.result = result;
+            this.returnVoid = returnVoid;
         }
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {
@@ -94,7 +96,12 @@ namespace Trophy.Features.FlowControl {
                 reg = reg.Pop();
             }
 
-            statWriter.WriteStatement(CStatement.Return(result));
+            if (this.returnVoid) {
+                statWriter.WriteStatement(CStatement.Return());
+            }
+            else {
+                statWriter.WriteStatement(CStatement.Return(result));
+            }
 
             return CExpression.IntLiteral(0);
         }
