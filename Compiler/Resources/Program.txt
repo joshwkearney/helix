@@ -1,5 +1,14 @@
-﻿func test(k as array[int]) as int => {
-    k@[2:10][1];
+﻿func test() as int => {
+    ref arr <- from heap do [5,6,3,2,1,7,5,2,9];
+
+    region some {
+        var x <- arr[100];
+
+        void;
+    };
+
+    selection_sort(arr);
+    binary_search(arr, 5);
 };
 
 func binary_search (arr as array[int, ref], to_find as int) as int => {
@@ -21,6 +30,8 @@ func binary_search (arr as array[int, ref], to_find as int) as int => {
 
             @mid <- mid + (arr.size - mid) / 2;
         };
+
+        @mid_value <- arr[mid];
     };
 
     mid;

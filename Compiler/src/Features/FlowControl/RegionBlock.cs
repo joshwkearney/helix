@@ -27,6 +27,7 @@ namespace Trophy.Features.FlowControl {
         public ISyntaxB CheckNames(INameRecorder names) {
             var name = this.regionName.GetValueOr(() => "$anon_region_" + names.GetNewVariableId());
             var region = names.CurrentRegion.Append(name);
+            var parent = names.CurrentRegion == IdentifierPath.StackPath ? IdentifierPath.HeapPath : names.CurrentRegion;
 
             // Make sure this name doesn't exist
             if (names.TryFindName(name, out _, out _)) {
@@ -41,13 +42,14 @@ namespace Trophy.Features.FlowControl {
             var body = this.body.CheckNames(names);
             names.PopRegion();
 
-            return new RegionBlockSyntaxB(this.Location, body, region);
+            return new RegionBlockSyntaxB(this.Location, body, region, parent);
         }
     }
 
     public class RegionBlockSyntaxB : ISyntaxB {
         private readonly ISyntaxB body;
         private readonly IdentifierPath region;
+        private readonly IdentifierPath parentRegion;
 
         public TokenLocation Location { get; }
 
@@ -55,10 +57,11 @@ namespace Trophy.Features.FlowControl {
             get => this.body.VariableUsage;
         }
 
-        public RegionBlockSyntaxB(TokenLocation location, ISyntaxB body, IdentifierPath region) {
+        public RegionBlockSyntaxB(TokenLocation location, ISyntaxB body, IdentifierPath region, IdentifierPath parent) {
             this.Location = location;
             this.body = body;
             this.region = region;
+            this.parentRegion = parent;
         }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
@@ -71,43 +74,63 @@ namespace Trophy.Features.FlowControl {
                 }
             }
 
-            return new RegionBlockSyntaxC(body, this.region.Segments.Last());
+            return new RegionBlockSyntaxC(body, this.region.Segments.Last(), this.parentRegion.Segments.Last());
         }
     }
 
     public class RegionBlockSyntaxC : ISyntaxC {
+        private static int counter = 0;
+
         private readonly ISyntaxC body;
-        private readonly string region;
+        private readonly string regionName;
+        private readonly string parentRegionName;
 
         public ITrophyType ReturnType => this.body.ReturnType;
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.body.Lifetimes;
 
-        public RegionBlockSyntaxC(ISyntaxC body, string region) {
+        public RegionBlockSyntaxC(ISyntaxC body, string region, string parent) {
             this.body = body;
-            this.region = region;
+            this.regionName = region;
+            this.parentRegionName = parent;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var regionType = CType.NamedType("Region*");
+            var bufferName = "jump_buffer_" + counter++;
 
             // Write the region
             statWriter.WriteStatement(CStatement.Comment("Create new region"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(
                 regionType,
-                this.region,
+                this.regionName,
+                CExpression.IntLiteral(0)));
+
+            statWriter.WriteStatement(CStatement.VariableDeclaration(CType.NamedType("jmp_buf"), bufferName));
+
+            var cond = CExpression.Dereference(CExpression.VariableLiteral(bufferName));
+            cond = CExpression.Invoke(CExpression.VariableLiteral("setjmp"), new[] { cond });
+            cond = CExpression.BinaryExpression(CExpression.IntLiteral(0), cond, Primitives.BinaryOperation.NotEqualTo);
+            cond = CExpression.Invoke(CExpression.VariableLiteral("HEDLEY_UNLIKELY"), new[] { cond });
+
+            var cleanup = CStatement.FromExpression(
                 CExpression.Invoke(
-                    CExpression.VariableLiteral("region_create"),
-                    new CExpression[0])));
+                    CExpression.VariableLiteral("region_delete"),
+                    new[] { CExpression.VariableLiteral(this.regionName) }));
+
+            var parentPanic = CStatement.FromExpression(
+                CExpression.Invoke(CExpression.VariableLiteral("region_panic"), new[] { CExpression.VariableLiteral(this.parentRegionName) }));
+
+            var ifStatement = CStatement.If(cond, new[] { cleanup, parentPanic });
+
+            statWriter.WriteStatement(ifStatement);
+            statWriter.WriteStatement(CStatement.NewLine());
 
             // Write the body
             var body = this.body.GenerateCode(declWriter, statWriter);
 
             // Delete the region
-            statWriter.WriteStatement(CStatement.FromExpression(
-                CExpression.Invoke(
-                    CExpression.VariableLiteral("region_delete"),
-                    new[] { CExpression.VariableLiteral(this.region) })));
+            statWriter.WriteStatement(cleanup);
 
             return body;
         }
