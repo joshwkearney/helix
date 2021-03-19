@@ -664,7 +664,7 @@ namespace Trophy.Parsing {
             }
 
             var name = this.Advance<string>();
-            this.Advance(TokenKind.LeftArrow);
+            this.Advance(TokenKind.AssignmentSign);
 
             var assign = this.TopExpression();
             var loc = tok.Location.Span(assign.Location);
@@ -814,7 +814,7 @@ namespace Trophy.Parsing {
         private ISyntaxA StoreStatement() {
             var start = this.TopExpression();
 
-            if (this.TryAdvance(TokenKind.LeftArrow)) {
+            if (this.TryAdvance(TokenKind.AssignmentSign)) {
                 var assign = this.TopExpression();
                 var loc = start.Location.Span(assign.Location);
 

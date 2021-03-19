@@ -1,8 +1,8 @@
-﻿func test() as int => {
-    ref arr <- from heap do [5,6,3,2,1,7,5,2,9];
+﻿func test () as int => {
+    ref arr = from heap do [5,6,3,2,1,7,5,2,9];
 
     region some {
-        var x <- arr[100];
+        var x = arr[100];
 
         void;
     };
@@ -12,8 +12,8 @@
 };
 
 func binary_search (arr as array[int, ref], to_find as int) as int => {
-    var mid <- arr.size / 2;
-    var mid_value <- arr[mid];
+    var mid = arr.size / 2;
+    var mid_value = arr[mid];
 
     while mid_value != to_find do {
         if to_find < mid_value then {
@@ -21,17 +21,17 @@ func binary_search (arr as array[int, ref], to_find as int) as int => {
                 return -1;
             };
 
-            @mid <- mid / 2;
+            @mid = mid / 2;
         }
         else {
             if mid == arr.size - 1 do {
                 return -1;
             };
 
-            @mid <- mid + (arr.size - mid) / 2;
+            @mid = mid + (arr.size - mid) / 2;
         };
 
-        @mid_value <- arr[mid];
+        @mid_value = arr[mid];
     };
 
     mid;
@@ -40,21 +40,21 @@ func binary_search (arr as array[int, ref], to_find as int) as int => {
 func selection_sort (arr as array[int, var]) as void => { 
     # Find the smallest element and put it in position i
     for i = 0 to arr.size-1 do {
-        var smallest <- arr[i];
-        var smallest_index <- i;
+        var smallest = arr[i];
+        var smallest_index = i;
 
         # Find the smallest element
         for j = i + 1 to arr.size-1 do {
             if arr[j] < smallest do {
-                @smallest_index <- j;
-                @smallest <- arr[j];
+                @smallest_index = j;
+                @smallest = arr[j];
             };
         };
 
         # Swap the smallest with the ith position
-        ref swap <- arr[i];
+        ref swap = arr[i];
 
-        arr@[i] <- smallest;
-        arr@[smallest_index] <- swap;
+        arr@[i] = smallest;
+        arr@[smallest_index] = swap;
     };
 };
