@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Linq;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
@@ -26,7 +27,8 @@ namespace Trophy.Features.Containers.Arrays {
         public ISyntaxB CheckNames(INameRecorder names) {
             var target = this.target.CheckNames(names);
             var index = this.index.CheckNames(names);
-            var result = new ArrayLiteralAccessSyntaxB(this.Location, target, index);
+            var region = (names.CurrentRegion == IdentifierPath.StackPath) ? IdentifierPath.HeapPath : names.CurrentRegion;
+            var result = new ArrayLiteralAccessSyntaxB(this.Location, target, index, region);
 
             if (this.accessKind == ArrayAccessKind.ValueAccess) {
                 return new DereferenceSyntaxB(result);
@@ -39,6 +41,7 @@ namespace Trophy.Features.Containers.Arrays {
 
     public class ArrayLiteralAccessSyntaxB : ISyntaxB {
         private readonly ISyntaxB target, index;
+        private readonly IdentifierPath region;
 
         public TokenLocation Location { get; }
 
@@ -48,10 +51,11 @@ namespace Trophy.Features.Containers.Arrays {
             }
         }
 
-        public ArrayLiteralAccessSyntaxB(TokenLocation location, ISyntaxB target, ISyntaxB index) {
+        public ArrayLiteralAccessSyntaxB(TokenLocation location, ISyntaxB target, ISyntaxB index, IdentifierPath region) {
             this.Location = location;
             this.target = target;
             this.index = index;
+            this.region = region;
         }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
@@ -81,21 +85,23 @@ namespace Trophy.Features.Containers.Arrays {
                 throw TypeCheckingErrors.UnexpectedType(this.index.Location, ITrophyType.Integer, index.ReturnType);
             }
 
-            return new ArrayLiteralAccessSyntaxC(target, index, new VarRefType(elementType, isreadonly));
+            return new ArrayLiteralAccessSyntaxC(target, index, new VarRefType(elementType, isreadonly), this.region);
         }
     }
 
     public class ArrayLiteralAccessSyntaxC : ISyntaxC {
         private readonly ISyntaxC target, index;
+        private readonly IdentifierPath region;
 
         public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public ArrayLiteralAccessSyntaxC(ISyntaxC target, ISyntaxC index, ITrophyType returnType) {
+        public ArrayLiteralAccessSyntaxC(ISyntaxC target, ISyntaxC index, ITrophyType returnType, IdentifierPath region) {
             this.target = target;
             this.index = index;
             this.ReturnType = returnType;
+            this.region = region;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
@@ -109,13 +115,17 @@ namespace Trophy.Features.Containers.Arrays {
                 CExpression.BinaryExpression(index, targetSize, Primitives.BinaryOperation.GreaterThanOrEqualTo),
                 Primitives.BinaryOperation.Or);
 
-            var ifStat = CStatement.If(cond, new[] {
-                CStatement.FromExpression(CExpression.Invoke(CExpression.VariableLiteral("fprintf"), new[] {
-                    CExpression.VariableLiteral("stderr"),
-                    CExpression.StringLiteral("array_out_of_bounds") })),
-                CStatement.FromExpression(CExpression.Invoke(CExpression.VariableLiteral("exit"), new[]{
-                    CExpression.IntLiteral(-1) }))
-            });
+            cond = CExpression.Invoke(CExpression.VariableLiteral("HEDLEY_UNLIKELY"), new[] { cond });
+
+            var jump = CExpression.Invoke(
+                CExpression.VariableLiteral("region_get_panic_buffer"),
+                new[] { CExpression.VariableLiteral(this.region.Segments.Last()) });
+
+            jump = CExpression.Invoke(
+                CExpression.VariableLiteral("longjmp"),
+                new[] { jump, CExpression.IntLiteral(1) });
+
+            var ifStat = CStatement.If(cond, new[] { CStatement.FromExpression(jump) });
 
             statWriter.WriteStatement(CStatement.Comment("Array access bounds check"));
             statWriter.WriteStatement(ifStat);

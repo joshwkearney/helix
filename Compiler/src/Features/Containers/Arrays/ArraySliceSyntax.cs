@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Linq;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
@@ -29,6 +30,7 @@ namespace Trophy.Features.Containers.Arrays {
         public ISyntaxB CheckNames(INameRecorder names) {
             var target = this.target;
             var start = this.startIndex.GetValueOr(() => new IntLiteralSyntax(this.Location, 0));
+            var region = names.CurrentRegion == IdentifierPath.StackPath ? IdentifierPath.HeapPath : names.CurrentRegion;
             
             // If end is defined then move on, otherwise rewrite it to access target.size
             if (this.endIndex.TryGetValue(out var end)) {
@@ -36,7 +38,8 @@ namespace Trophy.Features.Containers.Arrays {
                     this.Location, 
                     target.CheckNames(names), 
                     start.CheckNames(names), 
-                    end.CheckNames(names));
+                    end.CheckNames(names),
+                    region);
             }
             else {
                 var tempName = "$slice_temp" + names.GetNewVariableId();
@@ -58,6 +61,7 @@ namespace Trophy.Features.Containers.Arrays {
 
     public class ArraySliceSyntaxB : ISyntaxB {
         private readonly ISyntaxB target, startIndex, endIndex;
+        private readonly IdentifierPath region;
 
         public TokenLocation Location { get; }
 
@@ -67,11 +71,12 @@ namespace Trophy.Features.Containers.Arrays {
                 .AddRange(this.endIndex.VariableUsage);
         }
 
-        public ArraySliceSyntaxB(TokenLocation location, ISyntaxB target, ISyntaxB startIndex, ISyntaxB endIndex) {
+        public ArraySliceSyntaxB(TokenLocation location, ISyntaxB target, ISyntaxB startIndex, ISyntaxB endIndex, IdentifierPath region) {
             this.Location = location;
             this.target = target;
             this.startIndex = startIndex;
             this.endIndex = endIndex;
+            this.region = region;
         }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
@@ -101,11 +106,12 @@ namespace Trophy.Features.Containers.Arrays {
                 throw TypeCheckingErrors.UnexpectedType(this.endIndex.Location, ITrophyType.Integer, endIndex.ReturnType);
             }
 
-            return new ArraySliceSyntaxC(returnType, target, startIndex, endIndex);
+            return new ArraySliceSyntaxC(returnType, target, startIndex, endIndex, this.region);
         }
     }
     public class ArraySliceSyntaxC : ISyntaxC {
         private static int sliceCounter = 0;
+        private IdentifierPath region;
 
         private readonly ISyntaxC target, start, end;
 
@@ -113,11 +119,12 @@ namespace Trophy.Features.Containers.Arrays {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public ArraySliceSyntaxC(ITrophyType returnType, ISyntaxC target, ISyntaxC start, ISyntaxC end) {
+        public ArraySliceSyntaxC(ITrophyType returnType, ISyntaxC target, ISyntaxC start, ISyntaxC end, IdentifierPath region) {
             this.ReturnType = returnType;
             this.target = target;
             this.start = start;
             this.end = end;
+            this.region = region;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
@@ -135,13 +142,17 @@ namespace Trophy.Features.Containers.Arrays {
                     BinaryOperation.Or),
                 BinaryOperation.Or);
 
-            var ifStat = CStatement.If(cond, new[] {
-                CStatement.FromExpression(CExpression.Invoke(CExpression.VariableLiteral("fprintf"), new[] {
-                    CExpression.VariableLiteral("stderr"),
-                    CExpression.StringLiteral("array_slice_out_of_bounds") })),
-                CStatement.FromExpression(CExpression.Invoke(CExpression.VariableLiteral("exit"), new[]{
-                    CExpression.IntLiteral(-1) }))
-            });
+            cond = CExpression.Invoke(CExpression.VariableLiteral("HEDLEY_UNLIKELY"), new[] { cond });
+
+            var jump = CExpression.Invoke(
+                CExpression.VariableLiteral("region_get_panic_buffer"),
+                new[] { CExpression.VariableLiteral(this.region.Segments.Last()) });
+
+            jump = CExpression.Invoke(
+                CExpression.VariableLiteral("longjmp"),
+                new[] { jump, CExpression.IntLiteral(1) });
+
+            var ifStat = CStatement.If(cond, new[] { CStatement.FromExpression(jump) });
 
             statWriter.WriteStatement(CStatement.Comment("Array slice bounds check"));
             statWriter.WriteStatement(ifStat);

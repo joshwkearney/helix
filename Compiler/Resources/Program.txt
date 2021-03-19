@@ -1,12 +1,29 @@
-﻿func test(k as int) as int => {
-    region {
-        return 4;
-    };
+﻿func test(k as array[int]) as array[int] => {
+    k@[2:10];
 };
 
 func binary_search (arr as array[int, ref], to_find as int) as int => {
-    var split <- arr;
-    void;
+    var mid <- arr.size / 2;
+    var mid_value <- arr[mid];
+
+    while mid_value != to_find do {
+        if to_find < mid_value then {
+            if mid == 0 do {
+                return -1;
+            };
+
+            @mid <- mid / 2;
+        }
+        else {
+            if mid == arr.size - 1 do {
+                return -1;
+            };
+
+            @mid <- mid + (arr.size - mid) / 2;
+        };
+    };
+
+    mid;
 };
 
 func selection_sort (arr as array[int, var]) as void => { 
