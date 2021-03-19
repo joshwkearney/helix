@@ -106,9 +106,9 @@ namespace Trophy.Features.FlowControl {
                 this.regionName,
                 CExpression.IntLiteral(0)));
 
-            statWriter.WriteStatement(CStatement.VariableDeclaration(CType.NamedType("jmp_buf"), bufferName, CExpression.IntLiteral(0)));
+            statWriter.WriteStatement(CStatement.VariableDeclaration(CType.NamedType("jmp_buf"), bufferName));
 
-            var cond = CExpression.AddressOf(CExpression.VariableLiteral(bufferName));
+            var cond = CExpression.VariableLiteral(bufferName);
             cond = CExpression.Invoke(CExpression.VariableLiteral("setjmp"), new[] { cond });
             cond = CExpression.BinaryExpression(CExpression.IntLiteral(0), cond, Primitives.BinaryOperation.NotEqualTo);
             cond = CExpression.Invoke(CExpression.VariableLiteral("HEDLEY_UNLIKELY"), new[] { cond });
@@ -124,6 +124,15 @@ namespace Trophy.Features.FlowControl {
             var ifStatement = CStatement.If(cond, new[] { cleanup, parentPanic });
 
             statWriter.WriteStatement(ifStatement);
+            statWriter.WriteStatement(CStatement.NewLine());
+
+            var newRegion = CExpression.Invoke(CExpression.VariableLiteral("region_create_child"), new[] { 
+                CExpression.VariableLiteral(this.parentRegionName), 
+                CExpression.AddressOf(CExpression.VariableLiteral(bufferName))
+            });
+
+            var assign = CStatement.Assignment(CExpression.VariableLiteral(this.regionName), newRegion);
+            statWriter.WriteStatement(assign);
             statWriter.WriteStatement(CStatement.NewLine());
 
             // Write the body
