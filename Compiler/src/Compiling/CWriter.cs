@@ -29,51 +29,6 @@ namespace Trophy.Compiling {
                 .ToString();
         }
 
-        public void RequireRegions() {
-            if (this.regionHeadersGenerated) {
-                return;
-            }
-
-            // Region struct forward declaration
-            this.WriteDeclaration1(CDeclaration.StructPrototype("Region"));
-            this.WriteDeclaration1(CDeclaration.EmptyLine());
-
-            // Region alloc forward declaration
-            var regionPointerType = CType.Pointer(CType.NamedType("Region"));
-            var decl = CDeclaration.FunctionPrototype(CType.VoidPointer, "region_alloc", false, new[] {
-                new CParameter(regionPointerType, "region"), new CParameter(CType.Integer, "bytes")
-            });
-
-            this.WriteDeclaration2(decl);
-
-            // Region create forward declaration
-            var decl2 = CDeclaration.FunctionPrototype(regionPointerType, "region_create_parent", false, new CParameter[0]);
-            var decl4 = CDeclaration.FunctionPrototype(regionPointerType, "region_create_child", false, new[] { 
-                new CParameter(regionPointerType, "region")
-            });
-
-            this.WriteDeclaration2(decl2);
-            this.WriteDeclaration2(decl4);
-
-            // Region delete forward declaration
-            var decl3 = CDeclaration.FunctionPrototype("region_delete", false, new[] {
-                    new CParameter(regionPointerType, "region")
-                });
-
-            this.WriteDeclaration2(decl3);
-
-            // Region get panic buffer forward declaration
-            var decl5 = CDeclaration.FunctionPrototype(CType.VoidPointer, "region_get_panic_buffer", false, new[] {
-                    new CParameter(regionPointerType, "region")
-                });
-
-            this.WriteDeclaration2(decl5);
-
-            this.WriteDeclaration2(CDeclaration.EmptyLine());
-
-            this.regionHeadersGenerated = true;
-        }
-
         public void WriteDeclaration1(CDeclaration decl) {
             decl.WriteToC(0, this.decl1Sb);
         }

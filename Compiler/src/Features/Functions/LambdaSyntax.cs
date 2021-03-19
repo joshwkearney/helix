@@ -277,8 +277,6 @@ namespace Trophy.Features.Functions {
         }
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter parentWriter) {
-            writer.RequireRegions();
-
             var envType = this.GenerateClosureEnvironmentStruct(writer);
             var funcName = this.GenerateClosureFunction(envType, writer);
 

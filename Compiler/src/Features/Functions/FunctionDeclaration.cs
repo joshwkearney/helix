@@ -136,8 +136,6 @@ namespace Trophy.Features.Functions {
         }
 
         public void GenerateCode(ICWriter declWriter) {
-            declWriter.RequireRegions();
-
             var returnType = declWriter.ConvertType(this.sig.ReturnType);
             var pars = this.sig
                 .Parameters
