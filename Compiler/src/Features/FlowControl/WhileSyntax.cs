@@ -76,8 +76,10 @@ namespace Trophy.Features.FlowControl {
             writer.StatementWritten += (s, e) => loopBody.Add(e);
 
             var cond = this.cond.GenerateCode(declWriter, writer);
+            cond = CExpression.Not(cond);
+            cond = CExpression.Invoke(CExpression.VariableLiteral("HEDLEY_UNLIKELY"), new[] { cond });
 
-            loopBody.Add(CStatement.If(CExpression.Not(cond), new[] { CStatement.Break() }));
+            loopBody.Add(CStatement.If(cond, new[] { CStatement.Break() }));
             loopBody.Add(CStatement.NewLine());
 
             var body = this.body.GenerateCode(declWriter, writer);
