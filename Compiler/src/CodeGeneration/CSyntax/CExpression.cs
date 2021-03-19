@@ -5,7 +5,7 @@ using Trophy.Features.Primitives;
 namespace Trophy.CodeGeneration.CSyntax {
     public abstract class CExpression {
         public static CExpression IntLiteral(int value) {
-            return new CIntExpression(value, CIntKind.Standard);
+            return new CIntExpression(value);
         }
 
         public static CExpression BinaryExpression(CExpression left, CExpression right, BinaryOperation op) {
@@ -75,10 +75,6 @@ namespace Trophy.CodeGeneration.CSyntax {
 
         private CExpression() { }
 
-        private enum CIntKind {
-            Standard, Long, LongLong
-        }
-
         private class CStringLiteral : CExpression {
             public string Value { get; set; }
 
@@ -119,19 +115,13 @@ namespace Trophy.CodeGeneration.CSyntax {
 
         private class CIntExpression : CExpression {
             private readonly int value;
-            private readonly CIntKind kind;
 
-            public CIntExpression(int value, CIntKind kind) {
+            public CIntExpression(int value) {
                 this.value = value;
-                this.kind = kind;
             }
 
             public override string ToString() {
-                return this.kind switch {
-                    CIntKind.Long => this.value.ToString() + "L",
-                    CIntKind.LongLong => this.value.ToString() + "LL",
-                    _ => this.value.ToString(),
-                };
+                return value + "U";
             }
         }
 

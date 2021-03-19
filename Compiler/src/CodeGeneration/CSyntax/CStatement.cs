@@ -14,7 +14,11 @@ namespace Trophy.CodeGeneration.CSyntax {
         }
 
         public static CStatement Return(CExpression expr) {
-            return new CReturnStatement(expr);
+            return new CReturnStatement(Option.Some(expr));
+        }
+
+        public static CStatement Return() {
+            return new CReturnStatement(Option.None<CExpression>());
         }
 
         public static CStatement If(CExpression cond, IReadOnlyList<CStatement> affirm, IReadOnlyList<CStatement> neg) {
@@ -192,7 +196,7 @@ namespace Trophy.CodeGeneration.CSyntax {
             public override void WriteToC(int indentLevel, StringBuilder sb) {
                 var expr = this.Expression.ToString();
 
-                if (expr != "0") {
+                if (expr != "0U") {
                     CHelper.Indent(indentLevel, sb);
                     sb.Append(this.Expression).AppendLine(";");
                 }
@@ -251,15 +255,21 @@ namespace Trophy.CodeGeneration.CSyntax {
         }
 
         private class CReturnStatement : CStatement {
-            private readonly CExpression value;
+            private readonly IOption<CExpression> value;
 
-            public CReturnStatement(CExpression value) {
+            public CReturnStatement(IOption<CExpression> value) {
                 this.value = value;
             }
 
             public override void WriteToC(int indentLevel, StringBuilder sb) {
                 CHelper.Indent(indentLevel, sb);
-                sb.Append("return ").Append(this.value.ToString()).AppendLine(";");
+
+                if (this.value.TryGetValue(out var value)) {
+                    sb.Append("return ").Append(value).AppendLine(";");
+                }
+                else {
+                    sb.AppendLine("return;");
+                }
             }
         }
 

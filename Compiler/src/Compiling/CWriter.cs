@@ -7,8 +7,6 @@ using Trophy.CodeGeneration.CSyntax;
 
 namespace Trophy.Compiling {
     public class CWriter : ICWriter {
-        private bool regionHeadersGenerated = false;
-
         private int typeCounter = 0;
         private readonly Dictionary<ITrophyType, CType> typeNames = new Dictionary<ITrophyType, CType>();
 
@@ -46,8 +44,14 @@ namespace Trophy.Compiling {
                 return ctype;
             }
 
-            if (type.IsBoolType || type.IsIntType || type.IsVoidType || type.AsSingularFunctionType().Any()) {
-                return CType.Integer;
+            if (type.IsBoolType) {
+                return CType.NamedType("trophy_bool");
+            }
+            else if (type.IsIntType) {
+                return CType.NamedType("trophy_int");
+            }
+            else if (type.IsVoidType) {
+                return CType.NamedType("trophy_void");
             }
             else if (type.AsFixedArrayType().TryGetValue(out var fixedArrayType)) {
                 return this.ConvertType(new ArrayType(fixedArrayType.ElementType, fixedArrayType.IsReadOnly));
@@ -89,8 +93,14 @@ namespace Trophy.Compiling {
                 new CParameter(CType.NamedType(pointerName), "function")
             };
 
-            this.WriteDeclaration2(CDeclaration.FunctionPointer(pointerName, returnType, parTypes));
-            this.WriteDeclaration2(CDeclaration.EmptyLine());
+            if (funcType.ReturnType.IsVoidType) {
+                this.WriteDeclaration2(CDeclaration.FunctionPointer(pointerName, parTypes));
+                this.WriteDeclaration2(CDeclaration.EmptyLine());
+            }
+            else {
+                this.WriteDeclaration2(CDeclaration.FunctionPointer(pointerName, returnType, parTypes));
+                this.WriteDeclaration2(CDeclaration.EmptyLine());
+            }            
 
             this.WriteDeclaration1(CDeclaration.StructPrototype(structName));
             this.WriteDeclaration1(CDeclaration.EmptyLine());
@@ -105,7 +115,7 @@ namespace Trophy.Compiling {
             var name = "ArrayType" + typeCounter++;
             var innerType = CType.Pointer(this.ConvertType(arrayType.ElementType));
             var members = new[] {
-                    new CParameter(CType.Integer, "size"), new CParameter(innerType, "data")
+                    new CParameter(CType.NamedType("trophy_int"), "size"), new CParameter(innerType, "data")
                 };
 
             this.WriteDeclaration1(CDeclaration.StructPrototype(name));
