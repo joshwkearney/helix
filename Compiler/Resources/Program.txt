@@ -1,5 +1,5 @@
-﻿func test(k as array[int]) as array[int] => {
-    k@[2:10];
+﻿func test(k as array[int]) as int => {
+    k@[2:10][1];
 };
 
 func binary_search (arr as array[int, ref], to_find as int) as int => {

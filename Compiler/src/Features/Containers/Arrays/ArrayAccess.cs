@@ -118,12 +118,8 @@ namespace Trophy.Features.Containers.Arrays {
             cond = CExpression.Invoke(CExpression.VariableLiteral("HEDLEY_UNLIKELY"), new[] { cond });
 
             var jump = CExpression.Invoke(
-                CExpression.VariableLiteral("region_get_panic_buffer"),
+                CExpression.VariableLiteral("region_panic"),
                 new[] { CExpression.VariableLiteral(this.region.Segments.Last()) });
-
-            jump = CExpression.Invoke(
-                CExpression.VariableLiteral("longjmp"),
-                new[] { jump, CExpression.IntLiteral(1) });
 
             var ifStat = CStatement.If(cond, new[] { CStatement.FromExpression(jump) });
 
