@@ -24,18 +24,14 @@ namespace Trophy.Features.Containers {
         public ISyntaxB CheckNames(INameRecorder names) {
             var target = this.target.CheckNames(names);
             var args = this.args.Select(x => x.CheckNames(names)).ToArray();
-            var region = IdentifierPath.HeapPath;
-
-            if (names.CurrentRegion != IdentifierPath.StackPath) {
-                region = names.CurrentRegion;
-            }
+            var region = RegionsHelper.GetClosestHeap(names.CurrentRegion);
 
             return new MemberInvokeSyntaxB(this.Location, target, this.memberName, args, region);
         }
     }
 
     public class MemberInvokeSyntaxB : ISyntaxB {
-        private readonly IdentifierPath region;
+        private readonly IdentifierPath enclosingHeap;
         private readonly string memberName;
         private readonly ISyntaxB target;
         private readonly IReadOnlyList<ISyntaxB> args;
@@ -46,7 +42,8 @@ namespace Trophy.Features.Containers {
             get => this.args
                 .Select(x => x.VariableUsage)
                 .Append(this.target.VariableUsage)
-                .Aggregate((x, y) => x.AddRange(y));
+                .Aggregate((x, y) => x.AddRange(y))
+                .Add(this.enclosingHeap, VariableUsageKind.Region);
         }
 
         public MemberInvokeSyntaxB(
@@ -59,7 +56,7 @@ namespace Trophy.Features.Containers {
             this.target = target;
             this.memberName = memberName;
             this.args = args;
-            this.region = region;
+            this.enclosingHeap = region;
             this.Location = location;
         }
 
@@ -97,11 +94,10 @@ namespace Trophy.Features.Containers {
                     .Select(x => x.Lifetimes)
                     .Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y))
                     .Union(target.Lifetimes)
-                    .Add(this.region)
-                    .Remove(IdentifierPath.StackPath);
+                    .Add(this.enclosingHeap);
             }
 
-            return new SingularFunctionInvokeSyntaxC(path, args, this.region.Segments.Last(), func.ReturnType, lifetimes);
+            return new SingularFunctionInvokeSyntaxC(path, args, this.enclosingHeap.Segments.Last(), func.ReturnType, lifetimes);
         }
     }
 }

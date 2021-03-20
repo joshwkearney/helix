@@ -27,7 +27,7 @@ namespace Trophy.Features.FlowControl {
         public ISyntaxB CheckNames(INameRecorder names) {
             var name = this.regionName.GetValueOr(() => "$anon_region_" + names.GetNewVariableId());
             var region = names.CurrentRegion.Append(name);
-            var parent = names.CurrentRegion == IdentifierPath.StackPath ? IdentifierPath.HeapPath : names.CurrentRegion;
+            var parent = RegionsHelper.GetClosestHeap(names.CurrentRegion);
 
             // Make sure this name doesn't exist
             if (names.TryFindName(name, out _, out _)) {
@@ -49,19 +49,19 @@ namespace Trophy.Features.FlowControl {
     public class RegionBlockSyntaxB : ISyntaxB {
         private readonly ISyntaxB body;
         private readonly IdentifierPath region;
-        private readonly IdentifierPath parentRegion;
+        private readonly IdentifierPath parentHeap;
 
         public TokenLocation Location { get; }
 
         public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => this.body.VariableUsage;
+            get => this.body.VariableUsage.Add(this.parentHeap, VariableUsageKind.Region);
         }
 
         public RegionBlockSyntaxB(TokenLocation location, ISyntaxB body, IdentifierPath region, IdentifierPath parent) {
             this.Location = location;
             this.body = body;
             this.region = region;
-            this.parentRegion = parent;
+            this.parentHeap = parent;
         }
 
         public ISyntaxC CheckTypes(ITypeRecorder types) {
@@ -74,7 +74,7 @@ namespace Trophy.Features.FlowControl {
                 }
             }
 
-            return new RegionBlockSyntaxC(body, this.region.Segments.Last(), this.parentRegion.Segments.Last());
+            return new RegionBlockSyntaxC(body, this.region.Segments.Last(), this.parentHeap.Segments.Last());
         }
     }
 

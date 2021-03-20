@@ -25,12 +25,15 @@ namespace Trophy.Features.Functions {
         public static ISyntaxB ResolveBodyNames(
             INameRecorder names, 
             IdentifierPath funcPath, 
+            IdentifierPath heapRegion,
             ISyntaxA body, 
             IEnumerable<FunctionParameter> pars) {
 
+            var region = heapRegion.Append("stack");
+
             // Push this function name as the new scope
             names.PushScope(funcPath);
-            names.PushRegion(IdentifierPath.StackPath);
+            names.PushRegion(region);
 
             // Declare the parameters
             foreach (var par in pars) {
@@ -76,14 +79,14 @@ namespace Trophy.Features.Functions {
             }
         }
 
-        public static void CheckForInvalidReturnScope(TokenLocation loc, ISyntaxC body) {
+        public static void CheckForInvalidReturnScope(TokenLocation loc, IdentifierPath heapRegion, ISyntaxC body) {
             foreach (var capLifetime in body.Lifetimes) {
                 if (capLifetime.Segments.Any() && capLifetime.Segments.First().StartsWith("$args_")) {
                     continue;
                 }
 
-                if (!capLifetime.Outlives(IdentifierPath.StackPath)) {
-                    throw TypeCheckingErrors.LifetimeExceeded(loc, IdentifierPath.HeapPath, capLifetime);
+                if (!capLifetime.Outlives(heapRegion.Append("stack"))) {
+                    throw TypeCheckingErrors.LifetimeExceeded(loc, heapRegion, capLifetime);
                 }
             }
         }

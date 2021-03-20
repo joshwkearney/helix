@@ -27,12 +27,8 @@ namespace Trophy.Features.Functions {
             var cClosure = CExpression.VariableLiteral(cname);
 
             // Calculate the most restrictive region to allocate on
-            var region = this.Lifetimes.Aggregate(IdentifierPath.HeapPath, (x, y) => x.Outlives(y) ? y : x);
-
-            // The stack is not a region
-            if (region == IdentifierPath.StackPath) {
-                region = IdentifierPath.HeapPath;
-            }
+            var region = this.Lifetimes.Aggregate(new IdentifierPath("heap"), (x, y) => x.Outlives(y) ? y : x);
+            region = RegionsHelper.GetClosestHeap(region);
 
             // Write the closure variable
             statWriter.WriteStatement(CStatement.Comment("Singular function to function conversion"));

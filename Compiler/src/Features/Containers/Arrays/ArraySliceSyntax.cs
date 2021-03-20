@@ -30,7 +30,7 @@ namespace Trophy.Features.Containers.Arrays {
         public ISyntaxB CheckNames(INameRecorder names) {
             var target = this.target;
             var start = this.startIndex.GetValueOr(() => new IntLiteralSyntax(this.Location, 0));
-            var region = names.CurrentRegion == IdentifierPath.StackPath ? IdentifierPath.HeapPath : names.CurrentRegion;
+            var region = RegionsHelper.GetClosestHeap(names.CurrentRegion);
             
             // If end is defined then move on, otherwise rewrite it to access target.size
             if (this.endIndex.TryGetValue(out var end)) {

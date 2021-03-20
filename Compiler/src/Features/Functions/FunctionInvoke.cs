@@ -23,20 +23,16 @@ namespace Trophy.Features.Functions {
         public ISyntaxB CheckNames(INameRecorder names) {
             var target = this.target.CheckNames(names);
             var args = this.args.Select(x => x.CheckNames(names)).ToArray();
-            var region = IdentifierPath.HeapPath;
+            var enclosingHeap = RegionsHelper.GetClosestHeap(names.CurrentRegion);
 
-            if (names.CurrentRegion != IdentifierPath.StackPath) {
-                region = names.CurrentRegion;
-            }
-
-            return new FunctionInvokeSyntaxB(this.Location, target, args, region);
+            return new FunctionInvokeSyntaxB(this.Location, target, args, enclosingHeap);
         }
     }
 
     public class FunctionInvokeSyntaxB : ISyntaxB {
         private readonly ISyntaxB target;
         private readonly IReadOnlyList<ISyntaxB> args;
-        private readonly IdentifierPath region;
+        private readonly IdentifierPath enclosingHeap;
 
         public TokenLocation Location { get; }
 
@@ -44,14 +40,15 @@ namespace Trophy.Features.Functions {
             get => this.args
                 .Select(x => x.VariableUsage)
                 .Append(this.target.VariableUsage)
-                .Aggregate((x, y) => x.AddRange(y));
+                .Aggregate((x, y) => x.AddRange(y))
+                .Add(enclosingHeap, VariableUsageKind.Region);
         }
 
         public FunctionInvokeSyntaxB(TokenLocation location, ISyntaxB target, IReadOnlyList<ISyntaxB> args, IdentifierPath region) {
             this.Location = location;
             this.target = target;
             this.args = args;
-            this.region = region;
+            this.enclosingHeap = region;
         }
 
         private IReadOnlyList<ISyntaxC> CheckArgs(
@@ -87,9 +84,8 @@ namespace Trophy.Features.Functions {
             var lifetimes = args
                 .Select(x => x.Lifetimes)
                 .Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y))
-                // .Union(target.Lifetimes)
-                .Add(this.region)
-                .Remove(IdentifierPath.StackPath);
+                // .Union(target.Lifetimes) // TODO - Think about this more
+                .Add(this.enclosingHeap);
 
             // Make sure the target is a function
             if (target.ReturnType.AsSingularFunctionType().TryGetValue(out var singFuncType)) {
@@ -109,7 +105,7 @@ namespace Trophy.Features.Functions {
                 return new SingularFunctionInvokeSyntaxC(
                     target: singFuncType.FunctionPath,
                     args: args,
-                    region: this.region.Segments.Last(),
+                    region: this.enclosingHeap.Segments.Last(),
                     returnType: sig.ReturnType,
                     lifetimes: lifetimes);
             }

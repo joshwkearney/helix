@@ -58,7 +58,7 @@ namespace Trophy.Features.FlowControl {
             }
 
             // Make sure the result has the correct lifetime
-            FunctionsHelper.CheckForInvalidReturnScope(this.result.Location, result);
+            FunctionsHelper.CheckForInvalidReturnScope(this.result.Location, RegionsHelper.GetClosestHeap(this.region), result);
 
             return new ReturnSyntaxC(this.region, result, sig.ReturnType.IsVoidType);
         }
@@ -85,7 +85,7 @@ namespace Trophy.Features.FlowControl {
             // Clean up every region between us and the stack
             var reg = this.region;
 
-            while (reg != IdentifierPath.StackPath) {
+            while (!RegionsHelper.IsStack(reg)) {
                 var stat = CStatement.FromExpression(
                     CExpression.Invoke(
                         CExpression.VariableLiteral("region_delete"),

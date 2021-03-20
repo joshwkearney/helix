@@ -55,12 +55,12 @@ namespace Trophy.Features.Functions {
 
             var sig = new FunctionSignature(this.Signature.Name, returnType, pars);
             var funcPath = names.CurrentScope.Append(sig.Name);
-            var body = FunctionsHelper.ResolveBodyNames(names, funcPath, this.Body, pars);
+            var body = FunctionsHelper.ResolveBodyNames(names, funcPath, new IdentifierPath("heap"), this.Body, pars);
 
             // Reserve ids for the parameters
             var ids = pars.Select(_ => names.GetNewVariableId()).ToArray();
 
-            return new FunctionDeclarationB(this.Location, funcPath, sig, body, ids);
+            return new FunctionDeclarationB(this.Location, funcPath, sig, body, ids, names.CurrentRegion);
         }
     }
 
@@ -68,6 +68,7 @@ namespace Trophy.Features.Functions {
         private readonly ISyntaxB body;
         private readonly IdentifierPath funcPath;
         private readonly IReadOnlyList<int> parIds;
+        private readonly IdentifierPath region;
 
         public FunctionSignature Signature { get; }
 
@@ -78,13 +79,15 @@ namespace Trophy.Features.Functions {
             IdentifierPath funcPath, 
             FunctionSignature sig, 
             ISyntaxB body, 
-            IReadOnlyList<int> parIds) {
+            IReadOnlyList<int> parIds,
+            IdentifierPath region) {
 
             this.Location = location;
             this.funcPath = funcPath;
             this.Signature = sig;
             this.body = body;
             this.parIds = parIds;
+            this.region = region;
         }
 
         public IDeclarationB DeclareTypes(ITypeRecorder types) {
@@ -116,7 +119,8 @@ namespace Trophy.Features.Functions {
             }
 
             // The return value must be allocated on the heap or be one of the arguments
-            FunctionsHelper.CheckForInvalidReturnScope(this.body.Location, body);
+            var bodyRegion = this.region.Append("heap");
+            FunctionsHelper.CheckForInvalidReturnScope(this.body.Location, bodyRegion, body);
 
             return new FunctionDeclarationC(this.Signature, this.funcPath, body, this.parIds);
         }

@@ -18,9 +18,10 @@ namespace Trophy.Features.Containers.Arrays {
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
+            // Note: specifying a particular stack here is ok because void arrays are value types.
             var syntax = new BlockSyntaxC(new[] {
                 this.target,
-                new ArrayLiteralSyntaxC(IdentifierPath.StackPath, new ISyntaxC[0], this.ReturnType)
+                new ArrayLiteralSyntaxC(new IdentifierPath("heap", "stack"), new ISyntaxC[0], this.ReturnType)
             });
 
             return syntax.GenerateCode(declWriter, statWriter);

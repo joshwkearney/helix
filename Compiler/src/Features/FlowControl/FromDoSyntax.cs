@@ -1,6 +1,7 @@
 ﻿using Trophy.Analysis;
 using Trophy.Parsing;
 using System.Linq;
+using System.Collections.Immutable;
 
 namespace Trophy.Features.FlowControl {
     public class FromSyntaxA : ISyntaxA {
@@ -16,16 +17,21 @@ namespace Trophy.Features.FlowControl {
         }
 
         public ISyntaxB CheckNames(INameRecorder names) {
-            var region = IdentifierPath.StackPath;
+            IdentifierPath region;
 
             // Make sure that our region exists
-            if (this.region != "stack") {
-                var segments = names.CurrentRegion.Segments;
+            if (this.region == "stack") {
+                region = RegionsHelper.GetClosestStack(names.CurrentRegion);
+            }
+            else {
+                var segments = names.CurrentRegion.Segments.ToList();
                 if (!segments.Contains(this.region)) {
                     throw TypeCheckingErrors.RegionUndefined(this.Location, this.region);
                 }
 
-                region = new IdentifierPath(segments.TakeWhile(x => x != this.region)).Append(this.region);
+                var index = segments.LastIndexOf(this.region);
+
+                region = new IdentifierPath(segments.Take(index)).Append(this.region);
             }
 
             // Push our region
@@ -33,7 +39,29 @@ namespace Trophy.Features.FlowControl {
             var target = this.arg.CheckNames(names);
             names.PopRegion();
 
-            return target;
+            return new FromSyntaxB(this.Location, target, region);
+        }
+
+    }
+
+    public class FromSyntaxB : ISyntaxB {
+        private readonly ISyntaxB arg;
+        private readonly IdentifierPath region;
+
+        public TokenLocation Location { get; }
+
+        public FromSyntaxB(TokenLocation location, ISyntaxB arg, IdentifierPath region) {
+            this.Location = location;
+            this.arg = arg;
+            this.region = region;
+        }
+
+        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+            get => this.arg.VariableUsage.Add(this.region, VariableUsageKind.Region);
+        }
+
+        public ISyntaxC CheckTypes(ITypeRecorder types) {
+            return this.arg.CheckTypes(types);
         }
     }
 }

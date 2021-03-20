@@ -66,7 +66,7 @@ namespace Trophy.Features.Containers.Arrays {
             statWriter.WriteStatement(CStatement.Comment("Fixed array literal"));
             statWriter.WriteStatement(CStatement.VariableDeclaration(arrayType, arrayName));
 
-            if (this.region == IdentifierPath.StackPath) {
+            if (RegionsHelper.IsStack(this.region)) {
                 var cArrayName = "array_temp_" + counter++;
                 var cArraySize = CExpression.IntLiteral(this.arrayType.Size);
 

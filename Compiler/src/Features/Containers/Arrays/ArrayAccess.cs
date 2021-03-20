@@ -27,7 +27,7 @@ namespace Trophy.Features.Containers.Arrays {
         public ISyntaxB CheckNames(INameRecorder names) {
             var target = this.target.CheckNames(names);
             var index = this.index.CheckNames(names);
-            var region = (names.CurrentRegion == IdentifierPath.StackPath) ? IdentifierPath.HeapPath : names.CurrentRegion;
+            var region = RegionsHelper.GetClosestHeap(names.CurrentRegion);
             var result = new ArrayLiteralAccessSyntaxB(this.Location, target, index, region);
 
             if (this.accessKind == ArrayAccessKind.ValueAccess) {

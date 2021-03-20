@@ -70,7 +70,7 @@ namespace Trophy.Features.Variables {
             // escaping variables in target
             foreach (var targetCap in target.Lifetimes) {
                 foreach (var valueCap in assign.Lifetimes) {
-                    if (!valueCap.Outlives(targetCap)) {
+                    if (!valueCap.Outlives(targetCap) && valueCap != targetCap) {
                         throw TypeCheckingErrors.LifetimeExceeded(this.Location, targetCap, valueCap);
                     }
                 }

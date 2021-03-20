@@ -5,9 +5,6 @@ using System.Linq;
 
 namespace Trophy.Analysis {
     public struct IdentifierPath : IEquatable<IdentifierPath> {
-        public static IdentifierPath HeapPath { get; } = new IdentifierPath("heap");
-        public static IdentifierPath StackPath { get; } = new IdentifierPath("heap", "stack");
-
         private readonly Lazy<int> hashCode;
         private readonly ImmutableList<string> segments;
 

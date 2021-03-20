@@ -37,18 +37,18 @@ namespace Trophy.Features.Functions {
                 .Select(x => x.GetValue())
                 .ToImmutableList();
 
-            var region = names.CurrentRegion;
+            var closestHeap = RegionsHelper.GetClosestHeap(names.CurrentRegion);
 
             // Check for duplicate parameter names
             FunctionsHelper.CheckForDuplicateParameters(this.Location, pars.Select(x => x.Name));
 
             // Resolve body names
-            var body = FunctionsHelper.ResolveBodyNames(names, path, this.Body, pars);
+            var body = FunctionsHelper.ResolveBodyNames(names, path, closestHeap, this.Body, pars);
 
             // Reserve ids for the parameters
             var ids = pars.Select(_ => names.GetNewVariableId()).ToArray();
 
-            return new LambdaSyntaxB(this.Location, path, body, region, pars, ids);
+            return new LambdaSyntaxB(this.Location, path, body, closestHeap, pars, ids);
         }
     }
 
@@ -57,7 +57,7 @@ namespace Trophy.Features.Functions {
 
         public ISyntaxB Body { get; }
 
-        public IdentifierPath Region { get; }
+        public IdentifierPath EnclosingHeap { get; }
 
         public IdentifierPath FunctionPath { get; }
 
@@ -85,7 +85,7 @@ namespace Trophy.Features.Functions {
             this.Body = body;
             this.Parameters = parameters;
             this.FunctionPath = path;
-            this.Region = region;
+            this.EnclosingHeap = region;
             this.ParameterIds = parIds;
         }
 
@@ -93,6 +93,7 @@ namespace Trophy.Features.Functions {
             // Find all of the free variables
             var freeVars = this.Body.VariableUsage
                 .RemoveRange(this.Parameters.Select(x => this.FunctionPath.Append(x.Name)))
+                .Where(x => x.Value != VariableUsageKind.Region)
                 .Select(x => x.Key)
                 .Select(x => (path: x, info: types.TryGetVariable(x).GetValue()))
                 .ToArray();
@@ -100,7 +101,7 @@ namespace Trophy.Features.Functions {
             // Allow variables to be flow-typed
             types.PushFlow();
 
-            // Flow-type all of the free variables to be parameters
+            // Flow-type all of the free variables to be parameters, excluding captured regions
             foreach (var (path, info) in freeVars) {
                 var defKind = VariableDefinitionKind.ParameterRef;
 
@@ -135,15 +136,24 @@ namespace Trophy.Features.Functions {
             types.PopFlow();
 
             // The return value must be allocated on our region or be one of the arguments
-            FunctionsHelper.CheckForInvalidReturnScope(this.Body.Location, body);
+            FunctionsHelper.CheckForInvalidReturnScope(this.Body.Location, this.EnclosingHeap, body);
 
             var name = this.FunctionPath.Segments.Last();
             var sig = new FunctionSignature(name, body.ReturnType, this.Parameters.ToImmutableList());
             var parTypes = this.Parameters.Select(x => x.Type).ToArray();
             var returnType = new FunctionType(body.ReturnType, parTypes);
             var freeVarTypes = freeVars.Select(x => x.info).ToArray();
+            var freeRegions = this.Body.VariableUsage.Where(x => x.Value == VariableUsageKind.Region).Select(x => x.Key).ToArray();
 
-            return new LambdaSyntaxC(sig, returnType, this.FunctionPath, this.Region, body, freeVarTypes, this.ParameterIds);
+            return new LambdaSyntaxC(
+                sig, 
+                returnType, 
+                this.FunctionPath, 
+                this.EnclosingHeap, 
+                body, 
+                freeVarTypes, 
+                this.ParameterIds, 
+                freeRegions);
         }
     }
 
@@ -156,6 +166,7 @@ namespace Trophy.Features.Functions {
         private readonly IReadOnlyList<VariableInfo> freeVars;
         private readonly IdentifierPath regionPath;
         private readonly IReadOnlyList<int> parIds;
+        private readonly IReadOnlyList<IdentifierPath> freeRegions;
 
         public ITrophyType ReturnType { get; }
 
@@ -175,7 +186,8 @@ namespace Trophy.Features.Functions {
             IdentifierPath region,
             ISyntaxC body, 
             IReadOnlyList<VariableInfo> freeVars,
-            IReadOnlyList<int> parIds) {
+            IReadOnlyList<int> parIds,
+            IReadOnlyList<IdentifierPath> freeRegions) {
 
             this.sig = sig;
             this.funcPath = funcPath;
@@ -184,6 +196,7 @@ namespace Trophy.Features.Functions {
             this.freeVars = freeVars;
             this.regionPath = region;
             this.parIds = parIds;
+            this.freeRegions = freeRegions;
         }
 
         private string GenerateClosureFunction(CType envType, ICWriter writer) {
@@ -207,17 +220,21 @@ namespace Trophy.Features.Functions {
             bodyWriter.WriteStatement(CStatement.VariableDeclaration(CType.Pointer(envType), envTempName, env));
             bodyWriter.WriteStatement(CStatement.NewLine());
 
-            // Unpack the heap
-            var unpack = CExpression.MemberAccess(envDeref, "heap");
-            unpack = CExpression.Cast(CType.NamedType("Region*"), unpack);
-
             bodyWriter.WriteStatement(CStatement.Comment("Unpack the closure environment"));
-            bodyWriter.WriteStatement(CStatement.VariableDeclaration(CType.NamedType("Region*"),"heap", unpack));
 
-            // Unpack the environment
+            // Unpack the environment variables
             foreach (var info in this.freeVars) {
                 var name = "$" + info.Name + info.UniqueId;
                 var type = CType.Pointer(writer.ConvertType(info.Type));
+                var assign = CExpression.MemberAccess(envDeref, name);
+
+                bodyWriter.WriteStatement(CStatement.VariableDeclaration(type, name, assign));
+            }
+
+            // Unpack the environment regions
+            foreach (var region in this.freeRegions) {
+                var name = region.Segments.Last();
+                var type = CType.Pointer(CType.NamedType("Region"));
                 var assign = CExpression.MemberAccess(envDeref, name);
 
                 bodyWriter.WriteStatement(CStatement.VariableDeclaration(type, name, assign));
@@ -261,7 +278,7 @@ namespace Trophy.Features.Functions {
             var envType = "ClosureEnvironment" + counter++;
             var pars = this.freeVars
                 .Select(x => new CParameter(CType.Pointer(writer.ConvertType(x.Type)), "$" + x.Name + x.UniqueId))
-                .Append(new CParameter(CType.NamedType("Region*"), "heap"))
+                .Concat(this.freeRegions.Select(x => new CParameter(CType.NamedType("Region*"), x.Segments.Last())))
                 .ToArray();
 
             writer.WriteDeclaration1(CDeclaration.StructPrototype(envType));
@@ -305,19 +322,13 @@ namespace Trophy.Features.Functions {
 
             parentWriter.WriteStatement(CStatement.Comment("Pack the lambda environment"));
 
-            if (this.regionPath == IdentifierPath.StackPath) {
+            if (RegionsHelper.IsStack(this.regionPath)) {
                 // Create the environment
                 parentWriter.WriteStatement(
                     CStatement.VariableDeclaration(
                         CType.Pointer(envType), 
                         envName, 
                         this.GenerateStackEnvironment(envType, writer, parentWriter)));
-
-                // Assign the heap
-                parentWriter.WriteStatement(
-                CStatement.Assignment(
-                    CExpression.MemberAccess(envAccess, "heap"),
-                    CExpression.VariableLiteral(IdentifierPath.HeapPath.Segments.Last())));
             }
             else {
                 var env = this.GenerateRegionEnvironment(envType, writer, parentWriter);
@@ -325,12 +336,6 @@ namespace Trophy.Features.Functions {
 
                 // Create the environment
                 parentWriter.WriteStatement(CStatement.VariableDeclaration(CType.Pointer(envType), envName, env));
-
-                // Assign the heap
-                parentWriter.WriteStatement(
-                CStatement.Assignment(
-                    CExpression.MemberAccess(envAccess, "heap"),
-                    CExpression.VariableLiteral(this.regionPath.Segments.Last())));
             }            
 
             // Write the environment fields
@@ -344,6 +349,16 @@ namespace Trophy.Features.Functions {
                 parentWriter.WriteStatement(
                     CStatement.Assignment(
                         CExpression.MemberAccess(envAccess, "$" + info.Name + info.UniqueId),
+                        assign));
+            }
+
+            // Write the captured regions
+            foreach (var info in this.freeRegions) {
+                var assign = CExpression.VariableLiteral(info.Segments.Last());
+
+                parentWriter.WriteStatement(
+                    CStatement.Assignment(
+                        CExpression.MemberAccess(envAccess, info.Segments.Last()),
                         assign));
             }
 

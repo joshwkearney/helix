@@ -87,7 +87,8 @@ namespace Trophy.Features.Containers.Arrays {
 
                 return this.args
                     .Select(x => x.Lifetimes)
-                    .Aggregate(seed, (x, y) => x.Union(y));
+                    .Aggregate(seed, (x, y) => x.Union(y))
+                    .Add(this.region);
             }
         }
 
@@ -112,7 +113,7 @@ namespace Trophy.Features.Containers.Arrays {
                 // Write data assignment
                 statWriter.WriteStatement(CStatement.Assignment(dataExpr, CExpression.IntLiteral(0)));
             }
-            else if (regionName == "stack") {
+            else if (RegionsHelper.IsStack(this.region)) {
                 var elementType = declWriter.ConvertType(this.args.First().ReturnType);
                 var cArrayName = "array_temp_" + arrayTempCounter++;
                 var cArraySize = CExpression.IntLiteral(this.args.Count);

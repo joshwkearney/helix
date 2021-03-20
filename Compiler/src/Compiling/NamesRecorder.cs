@@ -28,6 +28,7 @@ namespace Trophy.Compiling {
 
         public NamesRecorder() {
             this.scopes.Push(new IdentifierPath());
+            this.regions.Push(new IdentifierPath());
             this.localNames.Push(new Dictionary<IdentifierPath, NameTarget>());
         }
 

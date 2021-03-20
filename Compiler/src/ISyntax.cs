@@ -6,7 +6,7 @@ using Trophy.Parsing;
 
 namespace Trophy {
     public enum VariableUsageKind {
-        Captured, CapturedAndMutated 
+        Captured, CapturedAndMutated, Region
     }
 
     public interface ISyntaxA {
