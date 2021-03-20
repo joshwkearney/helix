@@ -167,6 +167,15 @@ namespace Trophy.Features.Functions {
                 CExpression.MemberAccess(target, "function"),
                 args);
 
+            if (this.ReturnType.IsVoidType) {
+                statWriter.WriteStatement(CStatement.FromExpression(invoke));
+
+                return CExpression.IntLiteral(0);
+            }
+            else {
+                return invoke;
+            }
+
             return invoke;
         }
     }

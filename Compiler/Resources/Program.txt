@@ -1,14 +1,15 @@
 ﻿func test () as int => {
     ref arr = from heap do [5,6,3,2,1,7,5,2,9];
-
-    region some {
-        var x = arr[100];
-
-        void;
-    };
 	
-	var z = func () => arr[0];
-	var w = new array[int, ref, 5];
+	var x = [1, 2, 3];
+	
+    var w = region some {	
+        (func () => {		
+			@x = from some do [4, 5, 6];
+		
+			void;
+		})();
+    };
 
     selection_sort(arr);	
     binary_search(arr, 5);
