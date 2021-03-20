@@ -79,16 +79,15 @@ namespace Trophy.Features.Containers.Arrays {
                     CExpression.VariableLiteral(cArrayName)));
             }
             else {
+                var arr = CExpression.IntLiteral(this.arrayType.Size);
+                arr = CExpression.BinaryExpression(arr, CExpression.Sizeof(elementType), BinaryOperation.Multiply);
+                arr = CExpression.Invoke(CExpression.VariableLiteral("region_alloc"), new[] {
+                    CExpression.VariableLiteral(this.region.Segments.Last()),
+                    arr });
+                arr = CExpression.Cast(CType.Pointer(elementType), arr);
+
                 // Write data assignment
-                statWriter.WriteStatement(CStatement.Assignment(
-                    dataExpr,
-                    CExpression.Invoke(CExpression.VariableLiteral("region_alloc"), new[] {
-                        CExpression.VariableLiteral(this.region.Segments.Last()),
-                        CExpression.BinaryExpression(
-                            CExpression.IntLiteral(this.arrayType.Size),
-                            CExpression.Sizeof(elementType),
-                            Primitives.BinaryOperation.Multiply)
-                    })));
+                statWriter.WriteStatement(CStatement.Assignment(dataExpr, arr));
             }
 
             // Write size assignment

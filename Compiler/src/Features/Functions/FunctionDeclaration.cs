@@ -148,11 +148,10 @@ namespace Trophy.Features.Functions {
             statWriter.StatementWritten += (s, e) => stats.Add(e);
 
             // Unpack the heap
-            statWriter.WriteStatement(
-                CStatement.VariableDeclaration(
-                    CType.NamedType("Region*"), 
-                    "heap", 
-                    CExpression.VariableLiteral("env")));
+            var unpack = CExpression.VariableLiteral("env");
+            unpack = CExpression.Cast(CType.NamedType("Region*"), unpack);
+
+            statWriter.WriteStatement(CStatement.VariableDeclaration(CType.NamedType("Region*"), "heap", unpack));
             statWriter.WriteStatement(CStatement.NewLine());
 
             var retExpr = this.body.GenerateCode(declWriter, statWriter);

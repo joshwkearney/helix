@@ -73,7 +73,25 @@ namespace Trophy.CodeGeneration.CSyntax {
             };
         }
 
+        public static CExpression Cast(CType type, CExpression arg) {
+            return new CCastExpression(type, arg);
+        }
+
         private CExpression() { }
+
+        private class CCastExpression : CExpression {
+            private readonly CExpression argument;
+            private readonly CType type;
+
+            public CCastExpression(CType type, CExpression argument) {
+                this.type = type;
+                this.argument = argument;
+            }
+
+            public override string ToString() {
+                return "(" + this.type + ")" + argument;
+            }
+        }
 
         private class CStringLiteral : CExpression {
             public string Value { get; set; }

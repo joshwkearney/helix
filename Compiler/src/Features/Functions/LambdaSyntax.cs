@@ -202,16 +202,17 @@ namespace Trophy.Features.Functions {
             // Dereference the environment
             var envTempName = "environment_temp" + counter++;
             var envDeref = CExpression.Dereference(CExpression.VariableLiteral(envTempName));
-            bodyWriter.WriteStatement(CStatement.VariableDeclaration(CType.Pointer(envType), envTempName, CExpression.VariableLiteral("environment")));
+            var env = CExpression.Cast(CType.Pointer(envType), CExpression.VariableLiteral("environment"));
+
+            bodyWriter.WriteStatement(CStatement.VariableDeclaration(CType.Pointer(envType), envTempName, env));
             bodyWriter.WriteStatement(CStatement.NewLine());
 
             // Unpack the heap
+            var unpack = CExpression.MemberAccess(envDeref, "heap");
+            unpack = CExpression.Cast(CType.NamedType("Region*"), unpack);
+
             bodyWriter.WriteStatement(CStatement.Comment("Unpack the closure environment"));
-            bodyWriter.WriteStatement(
-                CStatement.VariableDeclaration(
-                    CType.NamedType("Region*"),
-                    "heap",
-                    CExpression.MemberAccess(envDeref, "heap")));
+            bodyWriter.WriteStatement(CStatement.VariableDeclaration(CType.NamedType("Region*"),"heap", unpack));
 
             // Unpack the environment
             foreach (var info in this.freeVars) {
@@ -319,12 +320,11 @@ namespace Trophy.Features.Functions {
                     CExpression.VariableLiteral(IdentifierPath.HeapPath.Segments.Last())));
             }
             else {
+                var env = this.GenerateRegionEnvironment(envType, writer, parentWriter);
+                env = CExpression.Cast(CType.Pointer(envType), env);
+
                 // Create the environment
-                parentWriter.WriteStatement(
-                    CStatement.VariableDeclaration(
-                        CType.Pointer(envType),
-                        envName,
-                        this.GenerateRegionEnvironment(envType, writer, parentWriter)));
+                parentWriter.WriteStatement(CStatement.VariableDeclaration(CType.Pointer(envType), envName, env));
 
                 // Assign the heap
                 parentWriter.WriteStatement(

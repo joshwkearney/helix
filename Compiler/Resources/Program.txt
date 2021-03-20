@@ -6,6 +6,9 @@
 
         void;
     };
+	
+	var z = func () => arr[0];
+	var w = new array[int, ref, 5];
 
     selection_sort(arr);	
     binary_search(arr, 5);
