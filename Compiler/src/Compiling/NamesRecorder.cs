@@ -6,52 +6,34 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Trophy.Compiling {
-    public class NamesRecorder : INameRecorder {
-        private readonly Stack<IdentifierPath> scopes = new Stack<IdentifierPath>();
-        private readonly Stack<IdentifierPath> regions = new Stack<IdentifierPath>();
+    public class NamesRecorder : INamesRecorder {
         private int nameCounter = 0;
+
+        private readonly Stack<NamesContext> contexts = new();
+        private readonly Stack<Dictionary<IdentifierPath, NameTarget>> names = new();
+        private readonly Stack<Dictionary<IdentifierPath, IdentifierPath>> aliases = new();
 
         public event EventHandler<GenericType> MetaTypeFound;
 
-        private readonly Dictionary<IdentifierPath, NameTarget> globalNames
-                    = new Dictionary<IdentifierPath, NameTarget>();
-
-        private readonly Stack<Dictionary<IdentifierPath, NameTarget>> localNames
-            = new Stack<Dictionary<IdentifierPath, NameTarget>>();
-
-        private readonly Dictionary<IdentifierPath, IdentifierPath> aliases 
-            = new Dictionary<IdentifierPath, IdentifierPath>();
-
-        public IdentifierPath CurrentScope => this.scopes.Peek();
-
-        public IdentifierPath CurrentRegion => this.regions.Peek();
+        public NamesContext Context => this.contexts.Peek();
 
         public NamesRecorder() {
-            this.scopes.Push(new IdentifierPath());
-            this.regions.Push(new IdentifierPath());
-            this.localNames.Push(new Dictionary<IdentifierPath, NameTarget>());
+            this.contexts.Push(new NamesContext(new IdentifierPath(), new IdentifierPath()));
+            this.names.Push(new Dictionary<IdentifierPath, NameTarget>());
+            this.aliases.Push(new Dictionary<IdentifierPath, IdentifierPath>());
         }
 
-        public void DeclareGlobalName(IdentifierPath path, NameTarget target) {
-            this.globalNames[path] = target;
-        }
-
-        public void DeclareLocalName(IdentifierPath path, NameTarget target) {
-            this.localNames.Peek()[path] = target;
-        }
-
-        public void PopScope() {
-            this.scopes.Pop();
-            this.localNames.Pop();
-        }
-
-        public void PushScope(IdentifierPath newScope) {
-            this.scopes.Push(newScope);
-            this.localNames.Push(new Dictionary<IdentifierPath, NameTarget>());
+        public void DeclareName(IdentifierPath path, NameTarget target, IdentifierScope scope) {
+            if (scope == IdentifierScope.GlobalName) {
+                this.names.Last()[path] = target;
+            }
+            else {
+                this.names.Peek()[path] = target;
+            }
         }
 
         public bool TryFindName(string name, out NameTarget target, out IdentifierPath path) {
-            var scope = this.CurrentScope;
+            var scope = this.contexts.Peek().Scope;
 
             while (true) {
                 path = scope.Append(name);
@@ -74,7 +56,7 @@ namespace Trophy.Compiling {
 
             bool worked = false;
 
-            foreach (var frame in this.localNames) {
+            foreach (var frame in this.names) {
                 if (frame.TryGetValue(name, out target)) {
                     worked = true;
                     break;
@@ -82,40 +64,46 @@ namespace Trophy.Compiling {
             }
 
             if (!worked) {
-                if (this.globalNames.TryGetValue(name, out target)) {
-                    worked = true;
-                }
-            }
-
-            if (!worked) {
-                if (this.aliases.TryGetValue(name, out var nextPath)) {
-                    worked = this.TryGetName(nextPath, out target);
-                }
+                foreach (var frame in this.aliases) {
+                    if (frame.TryGetValue(name, out var nextPath)) {
+                        if (this.TryGetName(nextPath, out target)) {
+                            worked = true;
+                            break;
+                        }
+                    }
+                }                
             }
 
             return worked;
-        }
-
-        public void PushRegion(IdentifierPath newRegion) {
-            this.regions.Push(newRegion);
-        }
-
-        public void PopRegion() {
-            this.regions.Pop();
         }
 
         public int GetNewVariableId() {
             return this.nameCounter++;
         }
 
-        public void DeclareGlobalAlias(IdentifierPath path, IdentifierPath target) {
-            this.aliases[path] = target;
-            this.DeclareGlobalName(path, NameTarget.Alias);
+        public void DeclareAlias(IdentifierPath path, IdentifierPath target, IdentifierScope scope) {
+            if (scope == IdentifierScope.GlobalName) {
+                this.aliases.Last()[path] = target;
+                this.DeclareName(path, NameTarget.Reserved, IdentifierScope.GlobalName);
+            }
+            else {
+                this.aliases.Peek()[path] = target;
+                this.DeclareName(path, NameTarget.Reserved, IdentifierScope.LocalName);
+            }
         }
 
-        public void DeclareLocalAlias(IdentifierPath path, IdentifierPath target) {
-            this.aliases[path] = target;
-            this.DeclareLocalName(path, NameTarget.Alias);
+        public T WithContext<T>(NamesContext newContext, Func<INamesRecorder, T> recorderFunc) {
+            this.names.Push(new Dictionary<IdentifierPath, NameTarget>());
+            this.aliases.Push(new Dictionary<IdentifierPath, IdentifierPath>());
+            this.contexts.Push(newContext);
+
+            var result = recorderFunc(this);
+
+            this.names.Pop();
+            this.aliases.Pop();
+            this.contexts.Pop();
+
+            return result;
         }
     }
 }

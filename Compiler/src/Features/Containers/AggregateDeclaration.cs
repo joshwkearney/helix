@@ -26,25 +26,25 @@ namespace Trophy.Features.Containers {
             this.decls = decls;
         }
 
-        public IDeclarationA DeclareNames(INameRecorder names) {
+        public IDeclarationA DeclareNames(INamesRecorder names) {
             // Make sure this name isn't taken
             if (names.TryFindName(this.sig.Name, out _, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.sig.Name);
             }
 
-            var aggPath = names.CurrentScope.Append(this.sig.Name);
+            var aggPath = names.Context.Scope.Append(this.sig.Name);
 
             // Declare this aggregate
             if (this.kind == AggregateKind.Struct) {
-                names.DeclareGlobalName(aggPath, NameTarget.Struct);
+                names.DeclareName(aggPath, NameTarget.Struct, IdentifierScope.GlobalName);
             }
             else {
-                names.DeclareGlobalName(aggPath, NameTarget.Union);
+                names.DeclareName(aggPath, NameTarget.Union, IdentifierScope.GlobalName);
             }
 
             // Declare the members
             foreach (var mem in this.sig.Members) {
-                names.DeclareGlobalName(aggPath.Append(mem.MemberName), NameTarget.Reserved);
+                names.DeclareName(aggPath.Append(mem.MemberName), NameTarget.Reserved, IdentifierScope.GlobalName);
             }
 
             var parNames = this.sig.Members.Select(x => x.MemberName).ToArray();
@@ -57,33 +57,31 @@ namespace Trophy.Features.Containers {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, dup);
             }
 
-            // Process the rest of the nested declarations
-            names.PushScope(names.CurrentScope.Append(this.sig.Name));
-
             // Rewrite function declarations to be methods
-            var decls = this.decls
-                .Select(x => {
-                    if (x is FunctionDeclarationA func) {
-                        var structType = new NamedType(names.CurrentScope);
-                        var newPar = new ParseFunctionParameter("this", new TypeAccessSyntaxA(func.Location, structType));
-                        var newPars = func.Signature.Parameters.Prepend(newPar).ToImmutableList();
-                        var newSig = new ParseFunctionSignature(func.Signature.Name, func.Signature.ReturnType, newPars);
+            var context = names.Context.WithScope(x => x.Append(this.sig.Name));
+            var decls = names.WithContext(context, names => {
+                return this.decls
+                    .Select(x => {
+                        if (x is FunctionDeclarationA func) {
+                            var structType = new NamedType(names.Context.Scope);
+                            var newPar = new ParseFunctionParameter("this", new TypeAccessSyntaxA(func.Location, structType));
+                            var newPars = func.Signature.Parameters.Prepend(newPar).ToImmutableList();
+                            var newSig = new ParseFunctionSignature(func.Signature.Name, func.Signature.ReturnType, newPars);
 
-                        return new FunctionDeclarationA(func.Location, newSig, func.Body);
-                    }
-                    else {
-                        return x;
-                    }
-                })
-                .Select(x => x.DeclareNames(names))
-                .ToArray();
-
-            names.PopScope();
+                            return new FunctionDeclarationA(func.Location, newSig, func.Body);
+                        }
+                        else {
+                            return x;
+                        }
+                    })
+                    .Select(x => x.DeclareNames(names))
+                    .ToArray();
+            });
 
             return new AggregateDeclarationA(this.Location, this.sig, this.kind, decls);
         }
 
-        public IDeclarationB ResolveNames(INameRecorder names) {
+        public IDeclarationB ResolveNames(INamesRecorder names) {
             // Resolve members
             var memsOpt = this.sig
                 .Members
@@ -95,13 +93,14 @@ namespace Trophy.Features.Containers {
             }
 
             var mems = memsOpt.Select(x => x.GetValue()).ToArray();
-            var aggPath = names.CurrentScope.Append(this.sig.Name);
+            var aggPath = names.Context.Scope.Append(this.sig.Name);
             var sig = new AggregateSignature(this.sig.Name, mems);
 
             // Process the rest of the nested declarations
-            names.PushScope(names.CurrentScope.Append(this.sig.Name));
-            var decls = this.decls.Select(x => x.ResolveNames(names)).ToArray();
-            names.PopScope();
+            var context = names.Context.WithScope(x => x.Append(this.sig.Name));
+            var decls = names.WithContext(context, names => {
+                return this.decls.Select(x => x.ResolveNames(names)).ToArray();
+            });
 
             return new AggregateDeclarationB(this.Location, this.kind, aggPath, sig, decls);
         }

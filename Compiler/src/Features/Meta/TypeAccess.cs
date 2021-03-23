@@ -19,11 +19,11 @@ namespace Trophy.Features.Meta {
             this.Location = loc;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             return new TypeAccessSyntaxB(this.Location, this.type);
         }
 
-        public IOption<ITrophyType> ResolveToType(INameRecorder names) {
+        public IOption<ITrophyType> ResolveToType(INamesRecorder names) {
             // If our type is a named type, make sure it points to something
             if (this.type.AsNamedType().TryGetValue(out var path)) {
                 var target = NameTarget.Reserved;

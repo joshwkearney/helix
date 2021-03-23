@@ -15,13 +15,13 @@ namespace Trophy.Features.Functions {
             this.funcPath = funcPath;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
-            var region = names.CurrentRegion;
+        public ISyntaxB CheckNames(INamesRecorder names) {
+            var region = names.Context.Region;
 
             return new FunctionAccessSyntaxBC(this.Location, this.funcPath, region);
         }
 
-        public IOption<ITrophyType> ResolveToType(INameRecorder names) {
+        public IOption<ITrophyType> ResolveToType(INamesRecorder names) {
             return Option.Some(new SingularFunctionType(this.funcPath));
         }
     }

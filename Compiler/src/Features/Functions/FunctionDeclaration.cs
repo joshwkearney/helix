@@ -20,14 +20,15 @@ namespace Trophy.Features.Functions {
             this.Body = body;
         }
 
-        public IDeclarationA DeclareNames(INameRecorder names) {
+        public IDeclarationA DeclareNames(INamesRecorder names) {
             // Make sure this name isn't taken
             if (names.TryFindName(this.Signature.Name, out _, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.Signature.Name);
             }
 
             // Declare this function
-            names.DeclareGlobalName(names.CurrentScope.Append(this.Signature.Name), NameTarget.Function);
+            var path = names.Context.Scope.Append(this.Signature.Name);
+            names.DeclareName(path, NameTarget.Function, IdentifierScope.GlobalName);
 
             // Check for duplicate parameter names
             FunctionsHelper.CheckForDuplicateParameters(this.Location, this.Signature.Parameters.Select(x => x.Name));
@@ -35,7 +36,7 @@ namespace Trophy.Features.Functions {
             return this;
         }
 
-        public IDeclarationB ResolveNames(INameRecorder names) {
+        public IDeclarationB ResolveNames(INamesRecorder names) {
             if (!this.Signature.ReturnType.ResolveToType(names).TryGetValue(out var returnType)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
             }
@@ -54,13 +55,13 @@ namespace Trophy.Features.Functions {
                 .ToImmutableList();
 
             var sig = new FunctionSignature(this.Signature.Name, returnType, pars);
-            var funcPath = names.CurrentScope.Append(sig.Name);
+            var funcPath = names.Context.Scope.Append(sig.Name);
             var body = FunctionsHelper.ResolveBodyNames(names, funcPath, new IdentifierPath("heap"), this.Body, pars);
 
             // Reserve ids for the parameters
             var ids = pars.Select(_ => names.GetNewVariableId()).ToArray();
 
-            return new FunctionDeclarationB(this.Location, funcPath, sig, body, ids, names.CurrentRegion);
+            return new FunctionDeclarationB(this.Location, funcPath, sig, body, ids, names.Context.Region);
         }
     }
 

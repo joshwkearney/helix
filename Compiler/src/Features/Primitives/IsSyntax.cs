@@ -23,7 +23,7 @@ namespace Trophy.Features.Primitives {
             this.Pattern = pattern;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var arg = this.Argument.CheckNames(names);
 
             return new IsSyntaxB(this.Location, arg, this.Pattern);

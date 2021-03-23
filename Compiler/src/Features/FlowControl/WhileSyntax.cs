@@ -18,7 +18,7 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var cond = this.cond.CheckNames(names);
             var body = this.body.CheckNames(names);
 

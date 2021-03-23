@@ -33,10 +33,10 @@ namespace Trophy.Features.FlowControl {
             this.elseExpr = elseExpr;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var arg = this.arg.CheckNames(names);
             var elseExpr = this.elseExpr.Select(x => x.CheckNames(names));
-            var path = names.CurrentScope.Append("$match" + names.GetNewVariableId());
+            var path = names.Context.Scope.Append("$match" + names.GetNewVariableId());
 
             if (this.patterns.Count != this.patternExprs.Count) {
                 throw new Exception("Internal compiler inconsistency");
@@ -54,13 +54,15 @@ namespace Trophy.Features.FlowControl {
                 var expr = this.patternExprs[i];
                 var id = names.GetNewVariableId();
 
-                names.PushScope(path);
-                names.DeclareLocalName(path.Append(pattern), NameTarget.Variable);
+                var context = names.Context.WithScope(_ => path);
+                names.WithContext(context, names => {
+                    names.DeclareName(path.Append(pattern), NameTarget.Variable, IdentifierScope.LocalName);
 
-                patternIds.Add(id);
-                patternExprs.Add(expr.CheckNames(names));
+                    patternIds.Add(id);
+                    patternExprs.Add(expr.CheckNames(names));
 
-                names.PopScope();
+                    return 0;
+                });
             }
 
             return new MatchSyntaxB(

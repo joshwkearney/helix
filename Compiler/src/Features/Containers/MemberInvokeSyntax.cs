@@ -21,10 +21,10 @@ namespace Trophy.Features.Containers {
             this.args = args;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var target = this.target.CheckNames(names);
             var args = this.args.Select(x => x.CheckNames(names)).ToArray();
-            var region = RegionsHelper.GetClosestHeap(names.CurrentRegion);
+            var region = RegionsHelper.GetClosestHeap(names.Context.Region);
 
             return new MemberInvokeSyntaxB(this.Location, target, this.memberName, args, region);
         }

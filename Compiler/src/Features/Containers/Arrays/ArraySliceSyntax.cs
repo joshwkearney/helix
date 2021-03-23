@@ -27,10 +27,10 @@ namespace Trophy.Features.Containers.Arrays {
 
         public TokenLocation Location { get; set; }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var target = this.target;
             var start = this.startIndex.GetValueOr(() => new IntLiteralSyntax(this.Location, 0));
-            var region = RegionsHelper.GetClosestHeap(names.CurrentRegion);
+            var region = RegionsHelper.GetClosestHeap(names.Context.Region);
             
             // If end is defined then move on, otherwise rewrite it to access target.size
             if (this.endIndex.TryGetValue(out var end)) {

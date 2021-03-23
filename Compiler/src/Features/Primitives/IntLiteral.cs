@@ -23,7 +23,7 @@ namespace Trophy.Features.Primitives {
             this.value = value;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             return this;
         }
 

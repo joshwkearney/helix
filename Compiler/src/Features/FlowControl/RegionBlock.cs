@@ -24,10 +24,10 @@ namespace Trophy.Features.FlowControl {
             this.regionName = Option.Some(region);
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var name = this.regionName.GetValueOr(() => "$anon_region_" + names.GetNewVariableId());
-            var region = names.CurrentRegion.Append(name);
-            var parent = RegionsHelper.GetClosestHeap(names.CurrentRegion);
+            var region = names.Context.Region.Append(name);
+            var parent = RegionsHelper.GetClosestHeap(names.Context.Region);
 
             // Make sure this name doesn't exist
             if (names.TryFindName(name, out _, out _)) {
@@ -35,12 +35,12 @@ namespace Trophy.Features.FlowControl {
             }
 
             // Reserve the name
-            names.DeclareLocalName(names.CurrentScope.Append(name), NameTarget.Region);
+            var path = names.Context.Scope.Append(name);
+            names.DeclareName(path, NameTarget.Region, IdentifierScope.LocalName);
 
             // Push this region
-            names.PushRegion(region);
-            var body = this.body.CheckNames(names);
-            names.PopRegion();
+            var context = names.Context.WithRegion(_ => region);
+            var body = names.WithContext(context, names => this.body.CheckNames(names));
 
             return new RegionBlockSyntaxB(this.Location, body, region, parent);
         }

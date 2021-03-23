@@ -28,7 +28,7 @@ namespace Trophy.Features.Primitives {
             this.op = op;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             return new BinarySyntaxB(
                 loc: this.Location,
                 left: this.left.CheckNames(names),

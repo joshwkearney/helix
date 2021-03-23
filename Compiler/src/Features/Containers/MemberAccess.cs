@@ -17,7 +17,7 @@ namespace Trophy.Features.Containers {
             this.memberName = memberName;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var target = this.target.CheckNames(names);
 
             return new MemberAccessSyntaxB(this.Location, target, this.memberName);

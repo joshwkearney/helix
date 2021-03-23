@@ -17,11 +17,11 @@ namespace Trophy.Features.Variables {
             this.kind = kind;
         }
 
-        public IOption<ITrophyType> ResolveToType(INameRecorder names) {
+        public IOption<ITrophyType> ResolveToType(INamesRecorder names) {
             return this.Rewrite(names).SelectMany(x => x.ResolveToType(names));
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             // See if we need to rewrite this to another syntax tree
             if (this.Rewrite(names).TryGetValue(out var rewrite)) {
                 return rewrite.CheckNames(names);
@@ -40,7 +40,7 @@ namespace Trophy.Features.Variables {
             return new VariableAccessSyntaxB(this.Location, path, this.kind);
         }
 
-        private IOption<ISyntaxA> Rewrite(INameRecorder names) {
+        private IOption<ISyntaxA> Rewrite(INamesRecorder names) {
             // Make sure this name exists
             if (!names.TryFindName(this.name, out var target, out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);

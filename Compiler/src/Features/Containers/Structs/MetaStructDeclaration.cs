@@ -14,39 +14,37 @@ namespace Trophy.Features.Containers.Structs {
             this.genericNames = genericNames;
         }
 
-        public IDeclarationC Generate(INameRecorder names, ITypeRecorder types, IReadOnlyList<ITrophyType> genericTypes) {
+        public IDeclarationC Generate(INamesRecorder names, ITypeRecorder types, IReadOnlyList<ITrophyType> genericTypes) {
             int id = names.GetNewVariableId();
-            var path = names.CurrentScope.Append("$meta" + id);
 
-            names.PushScope(path);
-
-            foreach (var name in this.genericNames) {
-                names.DeclareLocalName(path.Append(name), NameTarget.Reserved);
-            }
-            
-            if (this.genericNames.Count != genericTypes.Count) {
-                throw new Exception();
-            }
-
-            for (int i = 0; i < this.genericNames.Count; i++) {
-                var name = this.genericNames[i];
-                var type = genericTypes[i];
-
-                if (type.AsNamedType().TryGetValue(out var typePath) && types.TryGetStruct(typePath).TryGetValue(out var sig)) {
-                    types.DeclareStruct(path.Append(name), sig);
+            var context = names.Context.WithScope(x => x.Append("$meta" + id));
+            var declC = names.WithContext(context, names => {
+                foreach (var name in this.genericNames) {
+                    names.DeclareName(names.Context.Scope.Append(name), NameTarget.Reserved, IdentifierScope.LocalName);
                 }
-                else {
+
+                if (this.genericNames.Count != genericTypes.Count) {
                     throw new Exception();
                 }
-            }
 
-            var declC = this.innerDecl
-                .DeclareNames(names)
-                .ResolveNames(names)
-                .DeclareTypes(types)
-                .ResolveTypes(types);
+                for (int i = 0; i < this.genericNames.Count; i++) {
+                    var name = this.genericNames[i];
+                    var type = genericTypes[i];
 
-            names.PopScope();
+                    if (type.AsNamedType().TryGetValue(out var typePath) && types.TryGetStruct(typePath).TryGetValue(out var sig)) {
+                        types.DeclareStruct(names.Context.Scope.Append(name), sig);
+                    }
+                    else {
+                        throw new Exception();
+                    }
+                }
+
+                return this.innerDecl
+                    .DeclareNames(names)
+                    .ResolveNames(names)
+                    .DeclareTypes(types)
+                    .ResolveTypes(types);
+            });
 
             return declC;
         }
@@ -67,27 +65,27 @@ namespace Trophy.Features.Containers.Structs {
             this.id = id;
         }
 
-        public IDeclarationA DeclareNames(INameRecorder names) {
+        public IDeclarationA DeclareNames(INamesRecorder names) {
             int id = counter++;
-            var path = names.CurrentScope.Append("$meta" + id);
 
             // Declare the generic names for name resolution
-            names.PushScope(path);
+            var context = names.Context.WithScope(x => x.Append("$meta" + id));
+            var decl = names.WithContext(context, names => {
+                foreach (var name in this.typeNames) {
+                    var path = names.Context.Scope.Append(name);
 
-            foreach (var name in this.typeNames) {
-                names.DeclareLocalName(path.Append(name), NameTarget.Struct);
-            }
+                    names.DeclareName(path, NameTarget.Struct, IdentifierScope.LocalName);
+                }
 
-            var decl = this.decl.DeclareNames(names);
-
-            names.PopScope();
+                return this.decl.DeclareNames(names);
+            });
 
             return new MetaStructDeclarationA(decl, this.typeNames, id);
         }
 
-        public IDeclarationB ResolveNames(INameRecorder names) {
+        public IDeclarationB ResolveNames(INamesRecorder names) {
             var name = "$meta" + this.id;
-            var path = names.CurrentScope.Append(name);
+            var path = names.Context.Scope.Append(name);
 
             return new MetaStructDeclarationB(decl, path, names, this.typeNames);
         }
@@ -97,9 +95,9 @@ namespace Trophy.Features.Containers.Structs {
         private readonly IDeclarationA decl;
         private readonly IReadOnlyList<string> typeNames;
         private readonly IdentifierPath path;
-        private readonly INameRecorder names;
+        private readonly INamesRecorder names;
 
-        public MetaStructDeclarationB(IDeclarationA decl, IdentifierPath path, INameRecorder names, IReadOnlyList<string> typeNames) {
+        public MetaStructDeclarationB(IDeclarationA decl, IdentifierPath path, INamesRecorder names, IReadOnlyList<string> typeNames) {
             this.decl = decl;
             this.path = path;
             this.typeNames = typeNames;

@@ -19,10 +19,10 @@ namespace Trophy.Features.Containers.Arrays {
             this.isreadonly = isreadonly;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var args = this.args.Select(x => x.CheckNames(names)).ToArray();
 
-            return new ArrayLiteralSyntaxB(this.Location, this.isreadonly, names.CurrentRegion, args);
+            return new ArrayLiteralSyntaxB(this.Location, this.isreadonly, names.Context.Region, args);
         }
     }
 

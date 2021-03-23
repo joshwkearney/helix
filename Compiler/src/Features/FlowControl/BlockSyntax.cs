@@ -17,12 +17,13 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var id = names.GetNewVariableId();
 
-            names.PushScope(names.CurrentScope.Append("$block" + id));
-            var stats = this.statements.Select(x => x.CheckNames(names)).ToArray();
-            names.PopScope();
+            var context = names.Context.WithScope(x => x.Append("$block" + id));
+            var stats = names.WithContext(context, names => {
+                return this.statements.Select(x => x.CheckNames(names)).ToArray();
+            });
 
             return new BlockSyntaxB(this.Location, id, stats);
         }

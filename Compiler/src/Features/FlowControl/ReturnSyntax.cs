@@ -19,9 +19,9 @@ namespace Trophy.Features.FlowControl {
             this.arg = arg;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var result = this.arg.CheckNames(names);
-            var region = names.CurrentRegion;
+            var region = names.Context.Region;
 
             return new ReturnSyntaxB(this.Location, region, result);
         }

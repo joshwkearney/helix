@@ -16,15 +16,15 @@ namespace Trophy.Features.FlowControl {
             this.arg = arg;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             IdentifierPath region;
 
             // Make sure that our region exists
             if (this.region == "stack") {
-                region = RegionsHelper.GetClosestStack(names.CurrentRegion);
+                region = RegionsHelper.GetClosestStack(names.Context.Region);
             }
             else {
-                var segments = names.CurrentRegion.Segments.ToList();
+                var segments = names.Context.Region.Segments.ToList();
                 if (!segments.Contains(this.region)) {
                     throw TypeCheckingErrors.RegionUndefined(this.Location, this.region);
                 }
@@ -35,9 +35,8 @@ namespace Trophy.Features.FlowControl {
             }
 
             // Push our region
-            names.PushRegion(region);
-            var target = this.arg.CheckNames(names);
-            names.PopRegion();
+            var context = names.Context.WithRegion(_ => region);
+            var target = names.WithContext(context, names => this.arg.CheckNames(names));
 
             return new FromSyntaxB(this.Location, target, region);
         }

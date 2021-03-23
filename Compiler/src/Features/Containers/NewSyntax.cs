@@ -28,7 +28,7 @@ namespace Trophy.Features.Containers {
             this.args = args;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             // Make sure the target type is valid by checking the names
             var targetType = this.targetType.CheckNames(names);
 
@@ -52,7 +52,7 @@ namespace Trophy.Features.Containers {
                     MemberValue = x.MemberValue.CheckNames(names)})
                 .ToArray();
 
-            return new NewSyntaxB(this.Location, targetType, names.CurrentRegion, args);
+            return new NewSyntaxB(this.Location, targetType, names.Context.Region, args);
         }
     }
 

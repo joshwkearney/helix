@@ -17,8 +17,8 @@ namespace Trophy.Features.Containers.Arrays {
             this.arrayType = type;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
-            var region = names.CurrentRegion;
+        public ISyntaxB CheckNames(INamesRecorder names) {
+            var region = names.Context.Region;
 
             return new NewFixedArraySyntaxBC(this.Location, this.arrayType, region);
         }

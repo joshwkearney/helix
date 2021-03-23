@@ -20,9 +20,9 @@ namespace Trophy.Features.Variables {
             this.isreadonly = isreadonly;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var assign = this.assign.CheckNames(names);
-            var path = names.CurrentScope.Append(this.name);
+            var path = names.Context.Scope.Append(this.name);
 
             // Make sure we're not shadowing another variable
             if (names.TryFindName(this.name, out _, out _)) {
@@ -30,13 +30,13 @@ namespace Trophy.Features.Variables {
             }
 
             // Declare this variable
-            names.DeclareLocalName(path, NameTarget.Variable);
+            names.DeclareName(path, NameTarget.Variable, IdentifierScope.LocalName);
 
             return new VarRefSyntaxB(
                 loc: this.Location, 
                 path: path, 
                 id: names.GetNewVariableId(),
-                region: names.CurrentRegion, 
+                region: names.Context.Region, 
                 assign: assign,
                 this.isreadonly);
         }

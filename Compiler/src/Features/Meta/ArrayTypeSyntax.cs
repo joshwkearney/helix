@@ -28,13 +28,13 @@ namespace Trophy.Features.Meta {
             this.size = Option.Some(size);
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var elemType = this.elemTypeSyntax.CheckNames(names);
 
             return new ArrayTypeSyntaxB(this.Location, elemType, this.isReadonly, this.size);
         }
 
-        public IOption<ITrophyType> ResolveToType(INameRecorder names) {
+        public IOption<ITrophyType> ResolveToType(INamesRecorder names) {
             return this.elemTypeSyntax.ResolveToType(names).Select(x => new ArrayType(x, this.isReadonly));
         }
     }

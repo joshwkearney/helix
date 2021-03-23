@@ -12,9 +12,9 @@ namespace Trophy {
     public interface ISyntaxA {
         public TokenLocation Location { get; }
 
-        public ISyntaxB CheckNames(INameRecorder names);
+        public ISyntaxB CheckNames(INamesRecorder names);
 
-        public IOption<ITrophyType> ResolveToType(INameRecorder names) => Option.None<ITrophyType>();
+        public IOption<ITrophyType> ResolveToType(INamesRecorder names) => Option.None<ITrophyType>();
     }
 
     public interface ISyntaxB {
@@ -36,9 +36,9 @@ namespace Trophy {
     public interface IDeclarationA {
         public TokenLocation Location { get; }
 
-        public IDeclarationA DeclareNames(INameRecorder names);
+        public IDeclarationA DeclareNames(INamesRecorder names);
 
-        public IDeclarationB ResolveNames(INameRecorder names);
+        public IDeclarationB ResolveNames(INamesRecorder names);
     }
 
     public interface IDeclarationB {

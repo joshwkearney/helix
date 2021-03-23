@@ -21,8 +21,8 @@ namespace Trophy.Features.Functions {
             this.Parameters = pars;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
-            var path = names.CurrentScope.Append("$lambda" + names.GetNewVariableId());
+        public ISyntaxB CheckNames(INamesRecorder names) {
+            var path = names.Context.Scope.Append("$lambda" + names.GetNewVariableId());
 
             // Resolve the type names
             var parsOpt = this.Parameters
@@ -37,7 +37,7 @@ namespace Trophy.Features.Functions {
                 .Select(x => x.GetValue())
                 .ToImmutableList();
 
-            var closestHeap = RegionsHelper.GetClosestHeap(names.CurrentRegion);
+            var closestHeap = RegionsHelper.GetClosestHeap(names.Context.Region);
 
             // Check for duplicate parameter names
             FunctionsHelper.CheckForDuplicateParameters(this.Location, pars.Select(x => x.Name));

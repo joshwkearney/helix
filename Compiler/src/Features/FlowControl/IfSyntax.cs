@@ -27,7 +27,7 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var iftrue = this.iftrue;
 
             if (!this.iffalse.TryGetValue(out var iffalse)) {

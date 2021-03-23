@@ -20,7 +20,7 @@ namespace Trophy.Features.Containers.Unions {
             this.args = args;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             // Make sure the target is defined
             if (!this.targetType.AsNamedType().TryGetValue(out var path)) {
                 throw TypeCheckingErrors.ExpectedUnionType(this.Location, this.targetType);

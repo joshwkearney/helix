@@ -20,13 +20,17 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
-            var heap = RegionsHelper.GetClosestHeap(names.CurrentRegion);
-            var newRegion = names.CurrentRegion.Append("$async_region" + names.GetNewVariableId());
+        public ISyntaxB CheckNames(INamesRecorder names) {
+            var heap = RegionsHelper.GetClosestHeap(names.Context.Region);
+            var newRegion = names.Context.Region.Append("$async_region" + names.GetNewVariableId());
 
-            names.PushRegion(newRegion);
-            var lambda = (LambdaSyntaxB)new LambdaSyntaxA(this.Location, this.body, new ParseFunctionParameter[0]).CheckNames(names);
-            names.PopRegion();
+            var context = names.Context.WithRegion(_ => newRegion);
+            var lambda = names.WithContext(context, names => {
+                var syntaxA = new LambdaSyntaxA(this.Location, this.body, new ParseFunctionParameter[0]);
+                var syntaxB = (LambdaSyntaxB)syntaxA.CheckNames(names);
+
+                return syntaxB;
+            });
 
             return new AsyncSyntaxB(this.Location, heap, lambda, newRegion);
         }

@@ -23,7 +23,7 @@ namespace Trophy.Features.Functions {
         }
 
         public static ISyntaxB ResolveBodyNames(
-            INameRecorder names, 
+            INamesRecorder names, 
             IdentifierPath funcPath, 
             IdentifierPath heapRegion,
             ISyntaxA body, 
@@ -32,19 +32,16 @@ namespace Trophy.Features.Functions {
             var region = heapRegion.Append("stack");
 
             // Push this function name as the new scope
-            names.PushScope(funcPath);
-            names.PushRegion(region);
+            var context = names.Context.WithScope(_ => funcPath).WithRegion(_ => region);
+            var result = names.WithContext(context, names => {
+                // Declare the parameters
+                foreach (var par in pars) {
+                    names.DeclareName(funcPath.Append(par.Name), NameTarget.Variable, IdentifierScope.LocalName);
+                }
 
-            // Declare the parameters
-            foreach (var par in pars) {
-                names.DeclareLocalName(funcPath.Append(par.Name), NameTarget.Variable);
-            }
-
-            // Pop the new scope out
-            var result = body.CheckNames(names);
-
-            names.PopRegion();
-            names.PopScope();
+                // Pop the new scope out
+                return body.CheckNames(names);
+            });
 
             return result;
         }

@@ -16,7 +16,7 @@ namespace Trophy.Features.Primitives {
             this.target = target;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var arg = this.arg.CheckNames(names);
             var target = this.target.CheckNames(names);
 

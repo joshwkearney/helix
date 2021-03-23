@@ -24,10 +24,10 @@ namespace Trophy.Features.Containers.Arrays {
             this.accessKind = accessKind;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var target = this.target.CheckNames(names);
             var index = this.index.CheckNames(names);
-            var region = RegionsHelper.GetClosestHeap(names.CurrentRegion);
+            var region = RegionsHelper.GetClosestHeap(names.Context.Region);
             var result = new ArrayLiteralAccessSyntaxB(this.Location, target, index, region);
 
             if (this.accessKind == ArrayAccessKind.ValueAccess) {

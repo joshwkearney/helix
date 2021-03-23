@@ -23,7 +23,7 @@ namespace Trophy.Features.Primitives {
             this.arg = arg;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             if (this.op == UnaryOperator.Plus || this.op == UnaryOperator.Minus) {
                 var syntax = (ISyntaxA)new AsSyntaxA(
                     this.Location, 

@@ -19,13 +19,13 @@ namespace Trophy.Features.Meta {
             this.isReadonly = isReadonly;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var elemType = this.innerTypeSyntax.CheckNames(names);
 
             return new VarRefTypeSyntaxB(this.Location, elemType, this.isReadonly);
         }
 
-        public IOption<ITrophyType> ResolveToType(INameRecorder names) {
+        public IOption<ITrophyType> ResolveToType(INamesRecorder names) {
             return this.innerTypeSyntax.ResolveToType(names).Select(x => new VarRefType(x, this.isReadonly));
         }
     }

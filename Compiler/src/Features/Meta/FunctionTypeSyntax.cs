@@ -20,14 +20,14 @@ namespace Trophy.Features.Meta {
             this.argTypes = argTypes;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var retType = this.returnType.CheckNames(names);
             var args = this.argTypes.Select(x => x.CheckNames(names)).ToArray();
 
             return new FunctionTypeSyntaxB(this.Location, retType, args);
         }
 
-        public IOption<ITrophyType> ResolveToType(INameRecorder names) {
+        public IOption<ITrophyType> ResolveToType(INamesRecorder names) {
             var retType = this.returnType.ResolveToType(names);
             var args = this.argTypes.Select(x => x.ResolveToType(names));
 

@@ -18,7 +18,7 @@ namespace Trophy.Features.Variables {
             this.assign = assign;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             var target = this.target.CheckNames(names);
             var assign = this.assign.CheckNames(names);
 

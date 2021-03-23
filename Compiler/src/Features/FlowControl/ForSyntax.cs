@@ -20,7 +20,7 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             // Rewrite for syntax to use while loops
             var counterName = "$for_counter_" + names.GetNewVariableId();
             var start = new AsSyntaxA(this.startIndex.Location, this.startIndex, new TypeAccessSyntaxA(this.startIndex.Location, ITrophyType.Integer));

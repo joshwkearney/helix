@@ -16,7 +16,7 @@ namespace Trophy.Features.Primitives {
             this.Location = loc;
         }
 
-        public ISyntaxB CheckNames(INameRecorder names) {
+        public ISyntaxB CheckNames(INamesRecorder names) {
             return this;
         }
 
