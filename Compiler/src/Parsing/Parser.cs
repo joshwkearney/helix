@@ -479,7 +479,6 @@ namespace Trophy.Parsing {
             return this.SuffixExpression();
         }
 
-
         private ISyntaxA SuffixExpression() {
             var first = this.Atom();
 
@@ -774,6 +773,9 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.ReturnKeyword)) {
                 result = this.ReturnStatement();
             }
+            else if (this.Peek(TokenKind.AsyncKeyword)) {
+                result = this.AsyncStatement();
+            }
             else {
                 result = this.StoreStatement();
             }
@@ -830,6 +832,14 @@ namespace Trophy.Parsing {
             var loc = start.Location.Span(arg.Location);
 
             return new ReturnSyntaxA(loc, arg);
+        }
+
+        private ISyntaxA AsyncStatement() {
+            var start = this.Advance(TokenKind.AsyncKeyword);
+            var body = this.TopExpression();
+            var loc = start.Location.Span(body.Location);
+
+            return new AsyncSyntaxA(loc, body);
         }
 
         private ISyntaxA IfExpression() {

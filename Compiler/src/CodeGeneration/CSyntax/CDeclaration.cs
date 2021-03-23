@@ -112,6 +112,11 @@ namespace Trophy.CodeGeneration.CSyntax {
                         sb.Append(mem.Type.ToString()).Append(" ").Append(mem.Name).AppendLine(";");
                     }
 
+                    if (!mems.Any()) {
+                        CHelper.Indent(indentLevel + 1, sb);
+                        sb.Append("int dummy;");
+                    }
+
                     CHelper.Indent(indentLevel, sb);
                     sb.AppendLine("};");
                 }

@@ -160,21 +160,27 @@ namespace Trophy.Features.Functions {
     public class LambdaSyntaxC : ISyntaxC {
         private static int counter = 0;
 
-        private readonly FunctionSignature sig;
-        private readonly IdentifierPath funcPath;
-        private readonly ISyntaxC body;
-        private readonly IReadOnlyList<VariableInfo> freeVars;
-        private readonly IdentifierPath regionPath;
-        private readonly IReadOnlyList<int> parIds;
-        private readonly IReadOnlyList<IdentifierPath> freeRegions;
+        public FunctionSignature Signature { get; }
+
+        public IdentifierPath FunctionPath { get; }
+
+        public ISyntaxC Body { get; }
+
+        public IReadOnlyList<VariableInfo> FreeVariables { get; }
+
+        public IdentifierPath EnclosingRegion { get; }
+
+        public IReadOnlyList<int> ParameterIds { get; }
+
+        public IReadOnlyList<IdentifierPath> FreeRegions { get; }
 
         public ITrophyType ReturnType { get; }
 
         public ImmutableHashSet<IdentifierPath> Lifetimes {
             get {
-                return this.freeVars
+                return this.FreeVariables
                     .SelectMany(x => x.VariableLifetimes)
-                    .Append(this.regionPath)
+                    .Append(this.EnclosingRegion)
                     .ToImmutableHashSet();
             }
         }
@@ -189,21 +195,21 @@ namespace Trophy.Features.Functions {
             IReadOnlyList<int> parIds,
             IReadOnlyList<IdentifierPath> freeRegions) {
 
-            this.sig = sig;
-            this.funcPath = funcPath;
-            this.body = body;
+            this.Signature = sig;
+            this.FunctionPath = funcPath;
+            this.Body = body;
             this.ReturnType = returnType;
-            this.freeVars = freeVars;
-            this.regionPath = region;
-            this.parIds = parIds;
-            this.freeRegions = freeRegions;
+            this.FreeVariables = freeVars;
+            this.EnclosingRegion = region;
+            this.ParameterIds = parIds;
+            this.FreeRegions = freeRegions;
         }
 
         private string GenerateClosureFunction(CType envType, ICWriter writer) {
-            var returnType = writer.ConvertType(this.sig.ReturnType);
-            var pars = this.sig
+            var returnType = writer.ConvertType(this.Signature.ReturnType);
+            var pars = this.Signature
                 .Parameters
-                .Select((x, i) => new CParameter(writer.ConvertType(x.Type), "$" + x.Name + this.parIds[i]))
+                .Select((x, i) => new CParameter(writer.ConvertType(x.Type), "$" + x.Name + this.ParameterIds[i]))
                 .Prepend(new CParameter(CType.VoidPointer, "environment"))
                 .ToArray();
 
@@ -223,7 +229,7 @@ namespace Trophy.Features.Functions {
             bodyWriter.WriteStatement(CStatement.Comment("Unpack the closure environment"));
 
             // Unpack the environment variables
-            foreach (var info in this.freeVars) {
+            foreach (var info in this.FreeVariables) {
                 var name = "$" + info.Name + info.UniqueId;
                 var type = CType.Pointer(writer.ConvertType(info.Type));
                 var assign = CExpression.MemberAccess(envDeref, name);
@@ -232,7 +238,7 @@ namespace Trophy.Features.Functions {
             }
 
             // Unpack the environment regions
-            foreach (var region in this.freeRegions) {
+            foreach (var region in this.FreeRegions) {
                 var name = region.Segments.Last();
                 var type = CType.Pointer(CType.NamedType("Region"));
                 var assign = CExpression.MemberAccess(envDeref, name);
@@ -243,9 +249,9 @@ namespace Trophy.Features.Functions {
             bodyWriter.WriteStatement(CStatement.NewLine());
 
             // Generate the body
-            var retExpr = this.body.GenerateCode(writer, bodyWriter);
+            var retExpr = this.Body.GenerateCode(writer, bodyWriter);
 
-            if (this.sig.ReturnType.IsVoidType) {
+            if (this.Signature.ReturnType.IsVoidType) {
                 bodyStats.Add(CStatement.FromExpression(retExpr));
             }
             else {
@@ -255,13 +261,13 @@ namespace Trophy.Features.Functions {
             CDeclaration decl;
             CDeclaration forwardDecl;
 
-            if (this.sig.ReturnType.IsVoidType) {
-                decl = CDeclaration.Function("$" + this.funcPath, true, pars, bodyStats);
-                forwardDecl = CDeclaration.FunctionPrototype("$" + this.funcPath, true, pars);
+            if (this.Signature.ReturnType.IsVoidType) {
+                decl = CDeclaration.Function("$" + this.FunctionPath, true, pars, bodyStats);
+                forwardDecl = CDeclaration.FunctionPrototype("$" + this.FunctionPath, true, pars);
             }
             else {
-                decl = CDeclaration.Function(returnType, "$" + this.funcPath, true, pars, bodyStats);
-                forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.funcPath, true, pars);
+                decl = CDeclaration.Function(returnType, "$" + this.FunctionPath, true, pars, bodyStats);
+                forwardDecl = CDeclaration.FunctionPrototype(returnType, "$" + this.FunctionPath, true, pars);
             }
 
             // Generate the function
@@ -271,14 +277,14 @@ namespace Trophy.Features.Functions {
             writer.WriteDeclaration2(forwardDecl);
             writer.WriteDeclaration2(CDeclaration.EmptyLine());
 
-            return "$" + this.funcPath;
+            return "$" + this.FunctionPath;
         }
 
         private CType GenerateClosureEnvironmentStruct(ICWriter writer) {
             var envType = "ClosureEnvironment" + counter++;
-            var pars = this.freeVars
+            var pars = this.FreeVariables
                 .Select(x => new CParameter(CType.Pointer(writer.ConvertType(x.Type)), "$" + x.Name + x.UniqueId))
-                .Concat(this.freeRegions.Select(x => new CParameter(CType.NamedType("Region*"), x.Segments.Last())))
+                .Concat(this.FreeRegions.Select(x => new CParameter(CType.NamedType("Region*"), x.Segments.Last())))
                 .ToArray();
 
             writer.WriteDeclaration1(CDeclaration.StructPrototype(envType));
@@ -300,7 +306,7 @@ namespace Trophy.Features.Functions {
         }
 
         private CExpression GenerateRegionEnvironment(CType envType, ICWriter writer, ICStatementWriter statWriter) {
-            var regionName = this.regionPath.Segments.Last();
+            var regionName = this.EnclosingRegion.Segments.Last();
 
             // Write data assignment
             return CExpression.Invoke(CExpression.VariableLiteral("region_alloc"), new[] {
@@ -322,7 +328,7 @@ namespace Trophy.Features.Functions {
 
             parentWriter.WriteStatement(CStatement.Comment("Pack the lambda environment"));
 
-            if (RegionsHelper.IsStack(this.regionPath)) {
+            if (RegionsHelper.IsStack(this.EnclosingRegion)) {
                 // Create the environment
                 parentWriter.WriteStatement(
                     CStatement.VariableDeclaration(
@@ -339,7 +345,7 @@ namespace Trophy.Features.Functions {
             }            
 
             // Write the environment fields
-            foreach (var info in this.freeVars) {
+            foreach (var info in this.FreeVariables) {
                 var assign = CExpression.VariableLiteral("$" + info.Name + info.UniqueId);
 
                 if (info.DefinitionKind != VariableDefinitionKind.ParameterRef && info.DefinitionKind != VariableDefinitionKind.ParameterVar) {
@@ -353,7 +359,7 @@ namespace Trophy.Features.Functions {
             }
 
             // Write the captured regions
-            foreach (var info in this.freeRegions) {
+            foreach (var info in this.FreeRegions) {
                 var assign = CExpression.VariableLiteral(info.Segments.Last());
 
                 parentWriter.WriteStatement(

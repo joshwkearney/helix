@@ -236,6 +236,9 @@ namespace Trophy.Parsing {
             else if (id == "return") {
                 return new Token(TokenKind.ReturnKeyword, location);
             }
+            else if (id == "async") {
+                return new Token(TokenKind.AsyncKeyword, location);
+            }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);
             }

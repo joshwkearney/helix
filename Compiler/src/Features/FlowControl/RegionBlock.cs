@@ -54,7 +54,7 @@ namespace Trophy.Features.FlowControl {
         public TokenLocation Location { get; }
 
         public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => this.body.VariableUsage.Add(this.parentHeap, VariableUsageKind.Region);
+            get => this.body.VariableUsage.Add(this.parentHeap, VariableUsageKind.Region).Remove(this.region);
         }
 
         public RegionBlockSyntaxB(TokenLocation location, ISyntaxB body, IdentifierPath region, IdentifierPath parent) {
@@ -126,8 +126,7 @@ namespace Trophy.Features.FlowControl {
             statWriter.WriteStatement(ifStatement);
             statWriter.WriteStatement(CStatement.NewLine());
 
-            var newRegion = CExpression.Invoke(CExpression.VariableLiteral("region_create_child"), new[] { 
-                CExpression.VariableLiteral(this.parentRegionName), 
+            var newRegion = CExpression.Invoke(CExpression.VariableLiteral("region_create"), new[] { 
                 CExpression.AddressOf(CExpression.VariableLiteral(bufferName))
             });
 

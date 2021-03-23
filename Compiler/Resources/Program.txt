@@ -1,18 +1,20 @@
 ﻿func test () as int => {
-    ref arr = [5,6,3,2,1,7,5,2,9];	
-	
-	var x = [1, 2, 3];
-	
-    var w = region some {			
-        (func () => {		
-			@x = from some do [4, 5, 6];
-		
-			void;
-		})();
-    };
+    ref arr = [5,6,3,2,1,7,5,2,9];		
 
-    selection_sort(arr);	
-    binary_search(arr, 5);
+	parallel_mergesort(arr);
+    # selection_sort(arr);	
+    # binary_search(arr, 5);
+};
+
+func parallel_mergesort (arr as array[int, var]) as void => {
+	ref mid = arr.size / 2;
+	ref part1 = arr@[:mid];
+	ref part2 = arr@[mid:];
+
+	region {
+		async selection_sort(part1);
+		selection_sort(part2);
+	};
 };
 
 func binary_search (arr as array[int, ref], to_find as int) as int => {
