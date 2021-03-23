@@ -53,8 +53,11 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => this.body.VariableUsage.Add(this.parentHeap, VariableUsageKind.Region).Remove(this.region);
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => this.body.VariableUsage
+                .Where(x => x.VariablePath == this.region)
+                .Append(new VariableUsage(this.parentHeap, VariableUsageKind.Region))
+                .ToImmutableHashSet();
         }
 
         public RegionBlockSyntaxB(TokenLocation location, ISyntaxB body, IdentifierPath region, IdentifierPath parent) {

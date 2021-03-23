@@ -35,11 +35,10 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.statements
-                .Select(x => x.VariableUsage)
-                .Append(ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>())
-                .Aggregate((x, y) => x.AddRange(y));
+                .SelectMany(x => x.VariableUsage)
+                .ToImmutableHashSet();
         }
 
         public BlockSyntaxB(TokenLocation location, int id, IReadOnlyList<ISyntaxB> statements) {

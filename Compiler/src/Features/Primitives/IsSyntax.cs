@@ -37,7 +37,7 @@ namespace Trophy.Features.Primitives {
 
         public string Pattern { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.Argument.VariableUsage;
         }
 

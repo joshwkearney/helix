@@ -31,11 +31,13 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get  => this.target.VariableUsage
-                .Select(x => new { id = x.Key, kind = VariableUsageKind.CapturedAndMutated })
-                .ToImmutableDictionary(x => x.id, x => x.kind)
-                .AddRange(this.assign.VariableUsage);
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => this.target.VariableUsage
+                .Where(x => x.Kind != VariableUsageKind.Region)
+                .Select(x => new VariableUsage(x.VariablePath, VariableUsageKind.CapturedAndMutated))
+                .Concat(this.target.VariableUsage.Where(x => x.Kind == VariableUsageKind.Region))
+                .Concat(this.assign.VariableUsage)
+                .ToImmutableHashSet();
         }
 
         public StoreSyntaxB(TokenLocation loc, ISyntaxB target, ISyntaxB assign) {

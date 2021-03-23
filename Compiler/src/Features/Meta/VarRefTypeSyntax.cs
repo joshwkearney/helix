@@ -42,7 +42,7 @@ namespace Trophy.Features.Meta {
             this.isReadonly = isReadonly;
         }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage => this.elemTypeSyntax.VariableUsage;
+        public IImmutableSet<VariableUsage> VariableUsage => this.elemTypeSyntax.VariableUsage;
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {
             var check = this.elemTypeSyntax.CheckTypes(types);

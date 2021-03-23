@@ -54,12 +54,11 @@ namespace Trophy.Features.Meta {
             this.argTypes = argTypes;
         }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get {
-                return this.argTypes
-                    .Select(x => x.VariableUsage)
-                    .Aggregate(this.returnType.VariableUsage, (x, y) => x.AddRange(y));
-            }
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => this.argTypes
+                .SelectMany(x => x.VariableUsage)
+                .Concat(this.returnType.VariableUsage)
+                .ToImmutableHashSet();
         }
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {

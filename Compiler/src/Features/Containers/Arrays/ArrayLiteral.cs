@@ -40,13 +40,10 @@ namespace Trophy.Features.Containers.Arrays {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get {
-                return this.args
-                    .Select(x => x.VariableUsage)
-                    .Append(ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>())
-                    .Aggregate((x, y) => x.AddRange(y));
-            }
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => this.args
+                .SelectMany(x => x.VariableUsage)
+                .ToImmutableHashSet();
         }
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {

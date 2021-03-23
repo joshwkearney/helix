@@ -36,8 +36,8 @@ namespace Trophy.Features.Containers.Arrays {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => new[] { this.region }.ToImmutableHashSet();
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>();
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => ImmutableHashSet.Create<VariableUsage>();
         }
 
         public NewFixedArraySyntaxBC(TokenLocation location, FixedArrayType arrayType, IdentifierPath region) {

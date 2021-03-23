@@ -8,8 +8,8 @@ namespace Trophy.Features.Primitives {
     public class VoidLiteralAB : ISyntaxA, ISyntaxB {
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>();
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => new VariableUsage[0].ToImmutableHashSet();
         }
 
         public VoidLiteralAB(TokenLocation loc) {

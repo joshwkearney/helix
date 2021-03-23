@@ -60,8 +60,8 @@ namespace Trophy.Features.Containers.Unions {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>();
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => ImmutableHashSet.Create<VariableUsage>();
         }
 
         public NewUnionSyntaxB(

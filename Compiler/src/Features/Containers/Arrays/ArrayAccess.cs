@@ -45,10 +45,9 @@ namespace Trophy.Features.Containers.Arrays {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get {
-                return this.target.VariableUsage.AddRange(this.index.VariableUsage);
-            }
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => this.target.VariableUsage
+                .Union(this.index.VariableUsage);
         }
 
         public ArrayLiteralAccessSyntaxB(TokenLocation location, ISyntaxB target, ISyntaxB index, IdentifierPath region) {

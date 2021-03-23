@@ -36,12 +36,12 @@ namespace Trophy.Features.Functions {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.args
-                .Select(x => x.VariableUsage)
-                .Append(this.target.VariableUsage)
-                .Aggregate((x, y) => x.AddRange(y))
-                .Add(enclosingHeap, VariableUsageKind.Region);
+                .SelectMany(x => x.VariableUsage)
+                .Concat(this.target.VariableUsage)
+                .Append(new VariableUsage(enclosingHeap, VariableUsageKind.Region))
+                .ToImmutableHashSet();
         }
 
         public FunctionInvokeSyntaxB(TokenLocation location, ISyntaxB target, IReadOnlyList<ISyntaxB> args, IdentifierPath region) {

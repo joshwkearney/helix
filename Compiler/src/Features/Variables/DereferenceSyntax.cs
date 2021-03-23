@@ -10,7 +10,7 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location => this.target.Location;
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.target.VariableUsage;
         }
 

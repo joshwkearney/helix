@@ -55,8 +55,9 @@ namespace Trophy.Features.FlowControl {
             this.region = region;
         }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => this.arg.VariableUsage.Add(this.region, VariableUsageKind.Region);
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => this.arg.VariableUsage
+                .Add(new VariableUsage(this.region, VariableUsageKind.Region));
         }
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {

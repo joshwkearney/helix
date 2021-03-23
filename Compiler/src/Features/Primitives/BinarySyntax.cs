@@ -43,8 +43,8 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => this.left.VariableUsage.AddRange(this.right.VariableUsage);
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => this.left.VariableUsage.Union(this.right.VariableUsage);
         }
 
         private static readonly Dictionary<BinaryOperation, ITrophyType> intOperations

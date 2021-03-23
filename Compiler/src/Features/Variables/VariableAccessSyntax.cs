@@ -15,8 +15,8 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>().Add(this.path, VariableUsageKind.Captured);
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => new[] { new VariableUsage(this.path, VariableUsageKind.Captured) }.ToImmutableHashSet();
         }
 
         public VariableAccessSyntaxB(TokenLocation loc, IdentifierPath path, VariableAccessKind kind) {

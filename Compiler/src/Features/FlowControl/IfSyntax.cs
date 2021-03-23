@@ -57,10 +57,10 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.cond.VariableUsage
-                .AddRange(this.iftrue.VariableUsage)
-                .AddRange(this.iffalse.VariableUsage);
+                .Union(this.iftrue.VariableUsage)
+                .Union(this.iffalse.VariableUsage);
         }
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {

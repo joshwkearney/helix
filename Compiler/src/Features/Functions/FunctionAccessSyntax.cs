@@ -35,8 +35,8 @@ namespace Trophy.Features.Functions {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => new[] { this.region }.ToImmutableHashSet();
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>();
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => ImmutableHashSet.Create<VariableUsage>();
         }
 
         public FunctionAccessSyntaxBC(TokenLocation loc, IdentifierPath funcPath, IdentifierPath region) {

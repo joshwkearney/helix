@@ -65,10 +65,10 @@ namespace Trophy.Features.Containers.Arrays {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.target.VariableUsage
-                .AddRange(this.startIndex.VariableUsage)
-                .AddRange(this.endIndex.VariableUsage);
+                .Union(this.startIndex.VariableUsage)
+                .Union(this.endIndex.VariableUsage);
         }
 
         public ArraySliceSyntaxB(TokenLocation location, ISyntaxB target, ISyntaxB startIndex, ISyntaxB endIndex, IdentifierPath region) {

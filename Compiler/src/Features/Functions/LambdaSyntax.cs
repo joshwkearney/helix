@@ -65,11 +65,15 @@ namespace Trophy.Features.Functions {
 
         public IReadOnlyList<int> ParameterIds { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get {
-                var parPaths = this.Parameters.Select(x => this.FunctionPath.Append(x.Name)).ToArray();
+                var parPaths = this.Parameters
+                    .Select(x => this.FunctionPath.Append(x.Name))
+                    .ToImmutableHashSet();
 
-                return this.Body.VariableUsage.RemoveRange(parPaths);
+                return this.Body.VariableUsage
+                    .Where(x => !parPaths.Contains(x.VariablePath))
+                    .ToImmutableHashSet();
             }
         }
 
@@ -90,11 +94,15 @@ namespace Trophy.Features.Functions {
         }
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {
+            var parPaths = this.Parameters
+                .Select(x => this.FunctionPath.Append(x.Name))
+                .ToHashSet();
+
             // Find all of the free variables
             var freeVars = this.Body.VariableUsage
-                .RemoveRange(this.Parameters.Select(x => this.FunctionPath.Append(x.Name)))
-                .Where(x => x.Value != VariableUsageKind.Region)
-                .Select(x => x.Key)
+                .Where(x => x.Kind != VariableUsageKind.Region)
+                .Select(x => x.VariablePath)
+                .Except(this.Parameters.Select(x => this.FunctionPath.Append(x.Name)))
                 .Select(x => (path: x, info: types.TryGetVariable(x).GetValue()))
                 .ToArray();
 
@@ -133,7 +141,11 @@ namespace Trophy.Features.Functions {
             var parTypes = this.Parameters.Select(x => x.Type).ToArray();
             var returnType = new FunctionType(body.ReturnType, parTypes);
             var freeVarTypes = freeVars.Select(x => x.info).ToArray();
-            var freeRegions = this.Body.VariableUsage.Where(x => x.Value == VariableUsageKind.Region).Select(x => x.Key).ToArray();
+
+            var freeRegions = this.Body.VariableUsage
+                .Where(x => x.Kind == VariableUsageKind.Region)
+                .Select(x => x.VariablePath)
+                .ToArray();
 
             return new LambdaSyntaxC(
                 sig, 

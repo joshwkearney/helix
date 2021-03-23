@@ -33,7 +33,7 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage => this.result.VariableUsage;
+        public IImmutableSet<VariableUsage> VariableUsage => this.result.VariableUsage;
 
         public ReturnSyntaxB(TokenLocation location, IdentifierPath region, ISyntaxB result) {
             this.Location = location;

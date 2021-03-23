@@ -104,11 +104,12 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.patternExprs
-                .Select(x => x.VariableUsage)
-                .Aggregate(this.arg.VariableUsage, (x, y) => x.AddRange(y))
-                .AddRange(this.elseExpr.Select(x => x.VariableUsage).GetValueOr(() => this.arg.VariableUsage));
+                .SelectMany(x => x.VariableUsage)
+                .Concat(this.arg.VariableUsage)
+                .ToImmutableHashSet()
+                .Union(this.elseExpr.Select(x => x.VariableUsage).GetValueOr(() => this.arg.VariableUsage));
         }
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {

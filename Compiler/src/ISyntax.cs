@@ -5,10 +5,6 @@ using Trophy.CodeGeneration.CSyntax;
 using Trophy.Parsing;
 
 namespace Trophy {
-    public enum VariableUsageKind {
-        Captured, CapturedAndMutated, Region
-    }
-
     public interface ISyntaxA {
         public TokenLocation Location { get; }
 
@@ -20,7 +16,7 @@ namespace Trophy {
     public interface ISyntaxB {
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage { get; }
+        public IImmutableSet<VariableUsage> VariableUsage { get; }
 
         public ISyntaxC CheckTypes(ITypesRecorder types);
     }
@@ -49,5 +45,33 @@ namespace Trophy {
 
     public interface IDeclarationC {
         public void GenerateCode(ICWriter writer);
+    }
+
+    public enum VariableUsageKind {
+        Captured, CapturedAndMutated, Region
+    }
+
+    public class VariableUsage {
+        public IdentifierPath VariablePath { get; }
+
+        public VariableUsageKind Kind { get; }
+
+        public VariableUsage(IdentifierPath path, VariableUsageKind kind) {
+            this.VariablePath = path;
+            this.Kind = kind;
+        }
+
+        public override bool Equals(object obj) {
+            if (obj is not VariableUsage other) {
+                return false;
+            }
+
+            return this.Kind == other.Kind
+                && this.VariablePath == other.VariablePath;
+        }
+
+        public override int GetHashCode() {
+            return this.Kind.GetHashCode() + 7 * this.VariablePath.GetHashCode();
+        }
     }
 }

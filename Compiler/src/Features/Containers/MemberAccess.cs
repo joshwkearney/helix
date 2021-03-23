@@ -30,7 +30,7 @@ namespace Trophy.Features.Containers {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.target.VariableUsage;
         }
 

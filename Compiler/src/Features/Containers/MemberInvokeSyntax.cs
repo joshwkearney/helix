@@ -38,12 +38,12 @@ namespace Trophy.Features.Containers {
 
         public TokenLocation Location { get; set; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
+        public IImmutableSet<VariableUsage> VariableUsage {
             get => this.args
                 .Select(x => x.VariableUsage)
                 .Append(this.target.VariableUsage)
-                .Aggregate((x, y) => x.AddRange(y))
-                .Add(this.enclosingHeap, VariableUsageKind.Region);
+                .Aggregate((x, y) => x.Union(y))
+                .Add(new VariableUsage(this.enclosingHeap, VariableUsageKind.Region));
         }
 
         public MemberInvokeSyntaxB(

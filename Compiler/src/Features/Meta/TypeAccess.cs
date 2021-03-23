@@ -56,7 +56,7 @@ namespace Trophy.Features.Meta {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage => ImmutableDictionary.Create<IdentifierPath, VariableUsageKind>();
+        public IImmutableSet<VariableUsage> VariableUsage => new VariableUsage[0].ToImmutableHashSet();
 
         public TypeAccessSyntaxB(TokenLocation loc, ITrophyType type) {
             this.Location = loc;

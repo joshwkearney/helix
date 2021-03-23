@@ -63,11 +63,10 @@ namespace Trophy.Features.Containers {
 
         public TokenLocation Location { get; }
 
-        public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage {
-            get {
-                return args.Select(x => x.MemberValue.VariableUsage)
-                    .Aggregate(this.targetType.VariableUsage, (x, y) => x.AddRange(y));
-            }
+        public IImmutableSet<VariableUsage> VariableUsage {
+            get => args
+                .Select(x => x.MemberValue.VariableUsage)
+                .Aggregate(this.targetType.VariableUsage, (x, y) => x.Union(y));
         }
 
         public NewSyntaxB(TokenLocation location, ISyntaxB targetType, IdentifierPath region, IReadOnlyList<StructArgument<ISyntaxB>> args) {
