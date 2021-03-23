@@ -18,7 +18,7 @@ namespace Trophy.Features.Variables {
             this.target = target;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var lifetimes = target.Lifetimes;
 

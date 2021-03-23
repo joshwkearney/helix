@@ -64,7 +64,7 @@ namespace Trophy.Features.Variables {
             this.isreadonly = isreadonly;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var assign = this.assign.CheckTypes(types);
 
             // If this is a var declaration and the type is a dependent type (singular int type, 
@@ -91,7 +91,7 @@ namespace Trophy.Features.Variables {
                 variableLifetimes: new[] { this.region }.ToImmutableHashSet());
 
             // Declare this variable
-            types.DeclareVariable(this.path, info);
+            types.DeclareName(this.path, NamePayload.FromVariable(info));
 
             return new VarRefSyntaxC(
                 info: info,

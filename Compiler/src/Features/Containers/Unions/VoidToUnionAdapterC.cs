@@ -14,7 +14,7 @@ namespace Trophy.Features.Containers.Unions {
 
         public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
 
-        public VoidToUnionAdapterC(ISyntaxC target, AggregateSignature sig, ITrophyType returnType, ITypeRecorder types) {
+        public VoidToUnionAdapterC(ISyntaxC target, AggregateSignature sig, ITrophyType returnType, ITypesRecorder types) {
             var voidLiteral = new VoidLiteralC();
             var mem = sig.Members.First();
 

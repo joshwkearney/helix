@@ -62,7 +62,7 @@ namespace Trophy.Features.Meta {
             }
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var retSyntax = this.returnType.CheckTypes(types);
             var argsSyntax = this.argTypes.Select(x => x.CheckTypes(types)).ToArray();
 

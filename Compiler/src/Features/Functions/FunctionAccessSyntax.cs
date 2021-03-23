@@ -45,7 +45,7 @@ namespace Trophy.Features.Functions {
             this.region = region;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             return this;
         }
 

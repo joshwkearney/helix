@@ -19,9 +19,9 @@ namespace Trophy.Analysis.Types {
             return "array[" + this.ElementType + ", " + (this.IsReadOnly ? "ref" : "var") + "]";
         }
 
-        public bool HasDefaultValue(ITypeRecorder types) => true;
+        public bool HasDefaultValue(ITypesRecorder types) => true;
 
-        public TypeCopiability GetCopiability(ITypeRecorder types) => TypeCopiability.Conditional;
+        public TypeCopiability GetCopiability(ITypesRecorder types) => TypeCopiability.Conditional;
 
         public IOption<ArrayType> AsArrayType() => Option.Some(this);
 

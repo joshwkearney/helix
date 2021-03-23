@@ -47,7 +47,7 @@ namespace Trophy.Features.Primitives {
             this.Pattern = pattern;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var arg = this.Argument.CheckTypes(types);
 
             if (!arg.ReturnType.AsNamedType().TryGetValue(out var path)) {

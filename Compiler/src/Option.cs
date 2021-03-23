@@ -20,6 +20,15 @@ namespace Trophy {
 
         public static IOption<T> None<T>() => OptionNone<T>.Instance;
 
+        public static IOption<T> SomeNullable<T>(T value) {
+            if (value is null) {
+                return None<T>();
+            }
+            else {
+                return Some(value);
+            }
+        }
+
         public static IOption<E> Select<T, E>(this IOption<T> option, Func<T, E> selector) {
             return option.Match(x => Some(selector(x)), () => None<E>());
         }

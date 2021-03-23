@@ -63,7 +63,7 @@ namespace Trophy.Features.FlowControl {
                 .AddRange(this.iffalse.VariableUsage);
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var cond = this.cond.CheckTypes(types);
             var iftrue = this.iftrue.CheckTypes(types);
             var iffalse = this.iffalse.CheckTypes(types);

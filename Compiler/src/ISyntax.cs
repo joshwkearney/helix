@@ -22,7 +22,7 @@ namespace Trophy {
 
         public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage { get; }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types);
+        public ISyntaxC CheckTypes(ITypesRecorder types);
     }
 
     public interface ISyntaxC {
@@ -42,9 +42,9 @@ namespace Trophy {
     }
 
     public interface IDeclarationB {
-        public IDeclarationB DeclareTypes(ITypeRecorder types);
+        public IDeclarationB DeclareTypes(ITypesRecorder types);
 
-        public IDeclarationC ResolveTypes(ITypeRecorder types);
+        public IDeclarationC ResolveTypes(ITypesRecorder types);
     }
 
     public interface IDeclarationC {

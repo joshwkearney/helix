@@ -83,7 +83,7 @@ namespace Trophy.Features.Primitives {
             this.op = op;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             // Delegate type resolution
             var left = this.left.CheckTypes(types);
             var right = this.right.CheckTypes(types);

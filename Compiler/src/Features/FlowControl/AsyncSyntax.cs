@@ -54,7 +54,7 @@ namespace Trophy.Features.FlowControl {
             this.Location = location;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var lambda = (LambdaSyntaxC)this.lambdaSyntax.CheckTypes(types);
 
             lambda = new LambdaSyntaxC(

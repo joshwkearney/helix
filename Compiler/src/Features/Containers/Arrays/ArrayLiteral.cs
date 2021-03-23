@@ -49,7 +49,7 @@ namespace Trophy.Features.Containers.Arrays {
             }
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
             var returnType = new FixedArrayType(ITrophyType.Void, args.Length, this.isreadonly);
 

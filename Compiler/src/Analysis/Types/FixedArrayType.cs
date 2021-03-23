@@ -14,7 +14,7 @@ namespace Trophy.Analysis.Types {
             this.IsReadOnly = isReadOnly;
         }
 
-        public TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypesRecorder types) {
             return TypeCopiability.Conditional;
         }
 
@@ -24,7 +24,7 @@ namespace Trophy.Analysis.Types {
                 + 7 * this.ElementType.GetHashCode();
         }
 
-        public bool HasDefaultValue(ITypeRecorder types) {
+        public bool HasDefaultValue(ITypesRecorder types) {
             return false;
         }
 

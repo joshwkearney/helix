@@ -55,7 +55,7 @@ namespace Trophy.Features.Meta {
 
         public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage => this.elemTypeSyntax.VariableUsage;
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var check = this.elemTypeSyntax.CheckTypes(types);
             var returnOp = check.ReturnType
                 .AsMetaType()

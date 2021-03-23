@@ -91,22 +91,18 @@ namespace Trophy.Features.Functions {
             this.region = region;
         }
 
-        public IDeclarationB DeclareTypes(ITypeRecorder types) {
-            types.DeclareFunction(this.funcPath, this.Signature);
+        public IDeclarationB DeclareTypes(ITypesRecorder types) {
+            types.DeclareName(this.funcPath, NamePayload.FromFunction(this.Signature));
 
             return this;
         }
 
-        public IDeclarationC ResolveTypes(ITypeRecorder types) {
+        public IDeclarationC ResolveTypes(ITypesRecorder types) {
             // Declare the parameters
             FunctionsHelper.DeclareParameters(types, this.funcPath, this.Signature.Parameters, this.parIds);
 
-            types.PushContainingFunction(ContainingFunction.Declaration(this.Signature));
-
-            // Type check the body
-            var body = this.body.CheckTypes(types);
-
-            types.PopContainingFunction();
+            var context = types.Context.WithContainingFunction(ContainingFunction.FromDeclaration(this.Signature));
+            var body = types.WithContext(context, types => this.body.CheckTypes(types));
 
             // Make sure the return types line up
             if (types.TryUnifyTo(body, this.Signature.ReturnType).TryGetValue(out var newbody)) {

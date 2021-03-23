@@ -59,7 +59,7 @@ namespace Trophy.Features.FlowControl {
             get => this.arg.VariableUsage.Add(this.region, VariableUsageKind.Region);
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             return this.arg.CheckTypes(types);
         }
     }

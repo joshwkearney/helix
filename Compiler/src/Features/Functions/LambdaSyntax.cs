@@ -89,7 +89,7 @@ namespace Trophy.Features.Functions {
             this.ParameterIds = parIds;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             // Find all of the free variables
             var freeVars = this.Body.VariableUsage
                 .RemoveRange(this.Parameters.Select(x => this.FunctionPath.Append(x.Name)))
@@ -98,42 +98,32 @@ namespace Trophy.Features.Functions {
                 .Select(x => (path: x, info: types.TryGetVariable(x).GetValue()))
                 .ToArray();
 
-            // Allow variables to be flow-typed
-            types.PushFlow();
+            var context = types.Context.WithContainingFunction(ContainingFunction.Lambda);
+            var body = types.WithContext(types.Context, types => {
+                // Flow-type all of the free variables to be parameters, excluding captured regions
+                foreach (var (path, info) in freeVars) {
+                    var defKind = VariableDefinitionKind.ParameterRef;
 
-            // Flow-type all of the free variables to be parameters, excluding captured regions
-            foreach (var (path, info) in freeVars) {
-                var defKind = VariableDefinitionKind.ParameterRef;
+                    if (info.DefinitionKind == VariableDefinitionKind.LocalVar || info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
+                        defKind = VariableDefinitionKind.ParameterVar;
+                    }
 
-                if (info.DefinitionKind == VariableDefinitionKind.LocalVar || info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
-                    defKind = VariableDefinitionKind.ParameterVar;
+                    var newInfo = new VariableInfo(
+                        name: info.Name,
+                        innerType: info.Type,
+                        kind: defKind,
+                        id: info.UniqueId,
+                        valueLifetimes: info.ValueLifetimes,
+                        variableLifetimes: info.VariableLifetimes);
+
+                    types.DeclareName(path, NamePayload.FromVariable(newInfo));
                 }
 
-                var newInfo = new VariableInfo(
-                    name:               info.Name,
-                    innerType:          info.Type,
-                    kind:               defKind,
-                    id:                 info.UniqueId,
-                    valueLifetimes:     info.ValueLifetimes,
-                    variableLifetimes:  info.VariableLifetimes);
+                // Declare the explicit parameters
+                FunctionsHelper.DeclareParameters(types, this.FunctionPath, this.Parameters, this.ParameterIds);
 
-                types.DeclareVariable(path, newInfo);
-            }
-
-            // Declare the explicit parameters
-            FunctionsHelper.DeclareParameters(types, this.FunctionPath, this.Parameters, this.ParameterIds);
-
-            // Make sure we update the context
-            types.PushContainingFunction(ContainingFunction.Lambda);
-
-            // Type check the body
-            var body = this.Body.CheckTypes(types);
-
-            // Remove context
-            types.PopContainingFunction();
-
-            // Remove the flow typing
-            types.PopFlow();
+                return this.Body.CheckTypes(types);
+            });
 
             // The return value must be allocated on our region or be one of the arguments
             FunctionsHelper.CheckForInvalidReturnScope(this.Body.Location, this.EnclosingHeap, body);

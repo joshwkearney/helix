@@ -79,7 +79,7 @@ namespace Trophy.Features.Containers.Arrays {
             this.region = region;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var startIndex = this.startIndex.CheckTypes(types);
             var endIndex = this.endIndex.CheckTypes(types);

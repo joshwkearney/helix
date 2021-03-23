@@ -12,9 +12,9 @@ namespace Trophy.Analysis.Types {
 
         public static ITrophyType Void { get; } = new VoidType();
 
-        public TypeCopiability GetCopiability(ITypeRecorder types);
+        public TypeCopiability GetCopiability(ITypesRecorder types);
 
-        public bool HasDefaultValue(ITypeRecorder types);
+        public bool HasDefaultValue(ITypesRecorder types);
 
         public bool IsBoolType => false;
 

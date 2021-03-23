@@ -11,54 +11,29 @@ using Trophy.Features.Functions;
 using System;
 
 namespace Trophy.Compiling {
-    public class TypesRecorder : ITypeRecorder {
-        private readonly Stack<Dictionary<IdentifierPath, VariableInfo>> variables = new Stack<Dictionary<IdentifierPath, VariableInfo>>();
-        private readonly Stack<Dictionary<IdentifierPath, FunctionSignature>> functions = new Stack<Dictionary<IdentifierPath, FunctionSignature>>();
-        private readonly Stack<Dictionary<IdentifierPath, AggregateSignature>> structs = new Stack<Dictionary<IdentifierPath, AggregateSignature>>();
-        private readonly Stack<Dictionary<IdentifierPath, AggregateSignature>> unions = new Stack<Dictionary<IdentifierPath, AggregateSignature>>();
-        private readonly Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>> methods = new Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>>();
-        private readonly Stack<Dictionary<ITrophyType, MetaTypeGenerator>> metaTypes = new Stack<Dictionary<ITrophyType, MetaTypeGenerator>>();
-        private readonly Stack<ContainingFunction> containingFuncs = new Stack<ContainingFunction>();
+    public class TypesRecorder : ITypesRecorder {
+        private readonly Stack<Dictionary<IdentifierPath, NamePayload>> payloads = new();
+        private readonly Stack<Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>> methods = new();
+        private readonly Stack<Dictionary<ITrophyType, MetaTypeGenerator>> metaTypes = new();
+        private readonly Stack<TypesContext> contexts = new();
+
+        public TypesContext Context => this.contexts.Peek();
 
         public event EventHandler<IDeclarationC> DeclarationGenerated;
 
         public TypesRecorder() {
-            this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
-            this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
-            this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
-            this.unions.Push(new Dictionary<IdentifierPath, AggregateSignature>());
+            this.payloads.Push(new Dictionary<IdentifierPath, NamePayload>());
             this.methods.Push(new Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>());
             this.metaTypes.Push(new Dictionary<ITrophyType, MetaTypeGenerator>());
+            this.contexts.Push(new TypesContext(ContainingFunction.None));
         }
 
-        public void DeclareVariable(IdentifierPath path, VariableInfo info) {
-            this.variables.Peek()[path] = info;
+        public void DeclareName(IdentifierPath path, NamePayload payload) {
+            this.payloads.Peek()[path] = payload;
         }
 
-        public void DeclareFunction(IdentifierPath path, FunctionSignature sig) {
-            this.functions.Peek()[path] = sig;
-        }
-
-        public void DeclareStruct(IdentifierPath path, AggregateSignature sig) {
-            this.structs.Peek()[path] = sig;
-        }
-
-        public IOption<FunctionSignature> TryGetFunction(IdentifierPath path) {
-            return this.functions
-                .Select(x => x.GetValueOption(path))
-                .SelectMany(x => x.AsEnumerable())
-                .FirstOrNone();
-        }
-
-        public IOption<VariableInfo> TryGetVariable(IdentifierPath path) {
-            return this.variables
-                .Select(x => x.GetValueOption(path))
-                .SelectMany(x => x.AsEnumerable())
-                .FirstOrNone();
-        }
-
-        public IOption<AggregateSignature> TryGetStruct(IdentifierPath path) {
-            return this.structs
+        public IOption<NamePayload> TryGetName(IdentifierPath path) {
+            return this.payloads
                 .Select(x => x.GetValueOption(path))
                 .SelectMany(x => x.AsEnumerable())
                 .FirstOrNone();
@@ -83,10 +58,10 @@ namespace Trophy.Compiling {
                     return Option.Some(new VoidToArrayAdapterC(target, arrayType));
                 }
                 else if (newType.AsNamedType().TryGetValue(out var path)) {
-                    if (this.TryGetStruct(path).TryGetValue(out var sig) && newType.HasDefaultValue(this)) {
+                    if (this.TryGetName(path).SelectMany(x => x.AsStruct()).TryGetValue(out var sig) && newType.HasDefaultValue(this)) {
                         return Option.Some(new VoidToStructAdapterC(target, sig, newType, this));
                     }
-                    else if (this.TryGetUnion(path).TryGetValue(out var unionSig) && newType.HasDefaultValue(this)) {
+                    else if (this.TryGetName(path).SelectMany(x => x.AsUnion()).TryGetValue(out var unionSig) && newType.HasDefaultValue(this)) {
                         return Option.Some(new VoidToUnionAdapterC(target, unionSig, newType, this));
                     }
                 }
@@ -119,7 +94,7 @@ namespace Trophy.Compiling {
             }
             else if (target.ReturnType.AsSingularFunctionType().TryGetValue(out var singFunc)) {
                 if (newType.AsFunctionType().TryGetValue(out var func)) {
-                    var singSig = this.TryGetFunction(singFunc.FunctionPath).GetValue();
+                    var singSig = this.TryGetName(singFunc.FunctionPath).SelectMany(x => x.AsFunction()).GetValue();
                     var singPars = singSig.Parameters.Select(x => x.Type).ToArray();
 
                     if (singSig.ReturnType.Equals(func.ReturnType) && singPars.SequenceEqual(func.ParameterTypes)) {
@@ -148,33 +123,6 @@ namespace Trophy.Compiling {
                 .FirstOrNone();
         }
 
-        public void DeclareUnion(IdentifierPath path, AggregateSignature sig) {
-            this.unions.Peek()[path] = sig;
-        }
-
-        public IOption<AggregateSignature> TryGetUnion(IdentifierPath path) {
-            return this.unions
-                .Select(x => x.GetValueOption(path))
-                .SelectMany(x => x.AsEnumerable())
-                .FirstOrNone();
-        }
-
-        public void PushFlow() {
-            this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
-            this.functions.Push(new Dictionary<IdentifierPath, FunctionSignature>());
-            this.structs.Push(new Dictionary<IdentifierPath, AggregateSignature>());
-            this.methods.Push(new Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>()); this.variables.Push(new Dictionary<IdentifierPath, VariableInfo>());
-            this.metaTypes.Push(new Dictionary<ITrophyType, MetaTypeGenerator>());
-        }
-
-        public void PopFlow() {
-            this.variables.Pop();
-            this.functions.Pop();
-            this.structs.Pop();
-            this.methods.Pop();
-            this.metaTypes.Pop();
-        }
-
         public void DeclareMetaType(GenericType meta, MetaTypeGenerator generator) {
             this.metaTypes.Peek()[meta] = generator;
         }
@@ -187,12 +135,20 @@ namespace Trophy.Compiling {
             return newType;
         }
 
-        public IOption<ContainingFunction> PopContainingFunction() {
-            return this.containingFuncs.FirstOrNone();
-        }
+        public T WithContext<T>(TypesContext context, Func<ITypesRecorder, T> func) {
+            this.payloads.Push(new Dictionary<IdentifierPath, NamePayload>());
+            this.methods.Push(new Dictionary<ITrophyType, Dictionary<string, IdentifierPath>>());
+            this.metaTypes.Push(new Dictionary<ITrophyType, MetaTypeGenerator>());
+            this.contexts.Push(context);
 
-        public void PushContainingFunction(ContainingFunction func) {
-            this.containingFuncs.Push(func);
+            var result = func(this);
+
+            this.payloads.Pop();
+            this.methods.Pop();
+            this.metaTypes.Pop();
+            this.contexts.Pop();
+
+            return result;
         }
     }
 }

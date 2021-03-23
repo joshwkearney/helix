@@ -76,7 +76,7 @@ namespace Trophy.Features.Containers.Unions {
             this.path = path;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var unionType = new NamedType(this.path);
             var unionSig = types.TryGetUnion(this.path).GetValue();
 

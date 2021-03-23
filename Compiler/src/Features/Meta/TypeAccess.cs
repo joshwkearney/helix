@@ -63,7 +63,7 @@ namespace Trophy.Features.Meta {
             this.type = type;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             return new TypeAccessSyntaxC(new MetaType(this.type));
         }
     }

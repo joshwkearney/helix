@@ -40,7 +40,7 @@ namespace Trophy.Features.Primitives {
             this.arg = arg;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var arg = this.arg.CheckTypes(types);
             var target = this.target.CheckTypes(types);
 

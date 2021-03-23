@@ -47,7 +47,7 @@ namespace Trophy.Features.Functions {
         }
 
         public static void DeclareParameters(
-            ITypeRecorder types, 
+            ITypesRecorder types, 
             IdentifierPath funcPath, 
             IReadOnlyList<FunctionParameter> pars, 
             IReadOnlyList<int> parIds) {
@@ -72,7 +72,7 @@ namespace Trophy.Features.Functions {
                     valueLifetimes: new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet(),
                     variableLifetimes: new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet());
 
-                types.DeclareVariable(path, info);
+                types.DeclareName(path, NamePayload.FromVariable(info));
             }
         }
 

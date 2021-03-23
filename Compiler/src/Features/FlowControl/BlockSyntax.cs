@@ -48,7 +48,7 @@ namespace Trophy.Features.FlowControl {
             this.statements = statements;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var stats = this.statements.Select(x => x.CheckTypes(types)).ToArray();
 
             return new BlockSyntaxC(stats);

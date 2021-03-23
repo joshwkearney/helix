@@ -41,7 +41,7 @@ namespace Trophy.Features.Containers {
         }
 
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
 
             // If this is an array we can get the size

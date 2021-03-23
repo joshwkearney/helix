@@ -64,7 +64,7 @@ namespace Trophy.Features.FlowControl {
             this.parentHeap = parent;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var body = this.body.CheckTypes(types);
 
             // Make sure that body does not return something from this region

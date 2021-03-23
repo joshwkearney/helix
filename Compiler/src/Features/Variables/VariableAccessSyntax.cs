@@ -25,7 +25,7 @@ namespace Trophy.Features.Variables {
             this.kind = kind;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var info = types.TryGetVariable(this.path).GetValue();
             var returnType = info.Type;
             var lifetimes = ImmutableHashSet.Create<IdentifierPath>();

@@ -41,7 +41,7 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var cond = this.cond.CheckTypes(types);
             var body = this.body.CheckTypes(types);
 

@@ -128,14 +128,14 @@ namespace Trophy.Features.Containers {
 
         public TokenLocation Location { get; }
 
-        public IDeclarationB DeclareTypes(ITypeRecorder types) {
+        public IDeclarationB DeclareTypes(ITypesRecorder types) {
             var structType = new NamedType(this.aggPath);
 
             if (this.kind == AggregateKind.Struct) {
-                types.DeclareStruct(this.aggPath, this.sig);
+                types.DeclareName(this.aggPath, NamePayload.FromStruct(this.sig));
             }
             else {
-                types.DeclareUnion(this.aggPath, this.sig);
+                types.DeclareName(this.aggPath, NamePayload.FromUnion(this.sig));
             }
 
             // Process the rest of the nested declarations
@@ -153,7 +153,7 @@ namespace Trophy.Features.Containers {
             return this;
         }
 
-        public IDeclarationC ResolveTypes(ITypeRecorder types) {
+        public IDeclarationC ResolveTypes(ITypesRecorder types) {
             // Process the rest of the nested declarations
             var decls = this.decls.Select(x => x.ResolveTypes(types)).ToArray();
 

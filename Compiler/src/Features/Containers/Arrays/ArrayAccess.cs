@@ -58,7 +58,7 @@ namespace Trophy.Features.Containers.Arrays {
             this.region = region;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var index = this.index.CheckTypes(types);
             var elementType = ITrophyType.Void;

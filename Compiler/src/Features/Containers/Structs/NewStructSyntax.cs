@@ -83,7 +83,7 @@ namespace Trophy.Features.Containers.Structs {
             this.args = args;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var structType = new NamedType(this.targetPath);
             var structSig = types.TryGetStruct(this.targetPath).GetValue();
 

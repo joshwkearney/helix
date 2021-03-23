@@ -41,11 +41,11 @@ namespace Trophy.Features.FlowControl {
             this.result = result;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var result = this.result.CheckTypes(types);
 
             // Make sure we're inside of a function (and not a lambda)
-            if (!types.PopContainingFunction().SelectMany(x => x.AsFunctionDeclaration()).TryGetValue(out var sig)) {
+            if (!types.Context.ContainingFunction.AsFunctionDeclaration().TryGetValue(out var sig)) {
                 throw TypeCheckingErrors.EarlyReturnInLambda(this.Location);
             }
 

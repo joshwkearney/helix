@@ -14,7 +14,7 @@ namespace Trophy.Features.Containers.Structs {
             this.genericNames = genericNames;
         }
 
-        public IDeclarationC Generate(INamesRecorder names, ITypeRecorder types, IReadOnlyList<ITrophyType> genericTypes) {
+        public IDeclarationC Generate(INamesRecorder names, ITypesRecorder types, IReadOnlyList<ITrophyType> genericTypes) {
             int id = names.GetNewVariableId();
 
             var context = names.Context.WithScope(x => x.Append("$meta" + id));
@@ -32,7 +32,7 @@ namespace Trophy.Features.Containers.Structs {
                     var type = genericTypes[i];
 
                     if (type.AsNamedType().TryGetValue(out var typePath) && types.TryGetStruct(typePath).TryGetValue(out var sig)) {
-                        types.DeclareStruct(names.Context.Scope.Append(name), sig);
+                        types.DeclareName(names.Context.Scope.Append(name), NamePayload.FromStruct(sig));
                     }
                     else {
                         throw new Exception();
@@ -104,7 +104,7 @@ namespace Trophy.Features.Containers.Structs {
             this.names = names;
         }
 
-        public IDeclarationB DeclareTypes(ITypeRecorder types) {
+        public IDeclarationB DeclareTypes(ITypesRecorder types) {
             var generator = new MetaSyntaxGenerator(this.decl, this.typeNames);
 
             // Declare this meta type
@@ -118,7 +118,7 @@ namespace Trophy.Features.Containers.Structs {
             return this;
         }
 
-        public IDeclarationC ResolveTypes(ITypeRecorder types) {
+        public IDeclarationC ResolveTypes(ITypesRecorder types) {
             return new EmptyDeclaration();
         }
     }

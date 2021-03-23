@@ -27,9 +27,9 @@ namespace Trophy.Analysis.Types {
             return "$meta[" + this.PayloadType + "]";
         }
 
-        public TypeCopiability GetCopiability(ITypeRecorder types) => TypeCopiability.Unconditional;
+        public TypeCopiability GetCopiability(ITypesRecorder types) => TypeCopiability.Unconditional;
 
-        public bool HasDefaultValue(ITypeRecorder types) => false;
+        public bool HasDefaultValue(ITypesRecorder types) => false;
 
         public IOption<MetaType> AsMetaType() => Option.Some(this);
     }

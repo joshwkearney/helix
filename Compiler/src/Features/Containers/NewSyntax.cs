@@ -77,7 +77,7 @@ namespace Trophy.Features.Containers {
             this.region = region;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             // Resolve the target type
             var target = this.targetType.CheckTypes(types);
 

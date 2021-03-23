@@ -111,7 +111,7 @@ namespace Trophy.Features.FlowControl {
                 .AddRange(this.elseExpr.Select(x => x.VariableUsage).GetValueOr(() => this.arg.VariableUsage));
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var arg = this.arg.CheckTypes(types);
             var elseExpr = this.elseExpr.Select(x => x.CheckTypes(types));
 
@@ -155,7 +155,7 @@ namespace Trophy.Features.FlowControl {
 
                 infos.Add(info);
                 indicies.Add(unionSig.Members.ToList().IndexOf(mem));
-                types.DeclareVariable(this.path.Append(pattern), info);
+                types.DeclareName(this.path.Append(pattern), NamePayload.FromVariable(info));
             }
 
             // Make sure all cases are covered

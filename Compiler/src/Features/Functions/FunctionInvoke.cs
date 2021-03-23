@@ -54,7 +54,7 @@ namespace Trophy.Features.Functions {
         private IReadOnlyList<ISyntaxC> CheckArgs(
             IReadOnlyList<ISyntaxC> args, 
             IReadOnlyList<ITrophyType> pars, 
-            ITypeRecorder types) {
+            ITypesRecorder types) {
 
             // Make sure the arg count lines up
             if (args.Count != pars.Count) {
@@ -78,7 +78,7 @@ namespace Trophy.Features.Functions {
             return result;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var args = (IReadOnlyList<ISyntaxC>)this.args.Select(x => x.CheckTypes(types)).ToArray();
             var lifetimes = args

@@ -19,7 +19,7 @@ namespace Trophy.Analysis.Types {
             return Option.Some(this);
         }
 
-        public TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypesRecorder types) {
             return TypeCopiability.Conditional;
         }
 
@@ -28,7 +28,7 @@ namespace Trophy.Analysis.Types {
                 + 3 * this.ParameterTypes.Select(x => x.GetHashCode()).Aggregate(11, (x, y) => x + 59 * y);
         }
 
-        public bool HasDefaultValue(ITypeRecorder types) {
+        public bool HasDefaultValue(ITypesRecorder types) {
             return false;
         }
 

@@ -46,7 +46,7 @@ namespace Trophy.Features.Containers.Arrays {
             this.region = region;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             // Make sure that the element type has a default value
             if (!this.arrayType.ElementType.HasDefaultValue(types)) {
                 throw TypeCheckingErrors.TypeWithoutDefaultValue(this.Location, this.arrayType.ElementType);

@@ -27,7 +27,7 @@ namespace Trophy.Features.Primitives {
             return this;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             return this;
         }
 

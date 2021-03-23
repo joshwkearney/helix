@@ -14,7 +14,7 @@ namespace Trophy.Analysis.Types {
             return Option.Some(this.SignaturePath);
         }
 
-        public bool HasDefaultValue(ITypeRecorder types) {
+        public bool HasDefaultValue(ITypesRecorder types) {
             if (types.TryGetFunction(this.SignaturePath).Any()) {
                 return true;
             }
@@ -29,7 +29,7 @@ namespace Trophy.Analysis.Types {
             }
         }
 
-        public TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypesRecorder types) {
             if (types.TryGetFunction(this.SignaturePath).Any()) {
                 return TypeCopiability.Unconditional;
             }

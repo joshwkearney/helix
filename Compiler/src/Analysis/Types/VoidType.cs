@@ -12,9 +12,9 @@ namespace Trophy.Analysis.Types {
 
         public override string ToString() => "void";
 
-        public bool HasDefaultValue(ITypeRecorder types) => true;
+        public bool HasDefaultValue(ITypesRecorder types) => true;
 
-        public TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypesRecorder types) {
             return TypeCopiability.Unconditional;
         }
 

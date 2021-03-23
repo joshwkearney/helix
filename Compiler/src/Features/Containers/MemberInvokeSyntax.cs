@@ -60,7 +60,7 @@ namespace Trophy.Features.Containers {
             this.Location = location;
         }
 
-        public ISyntaxC CheckTypes(ITypeRecorder types) {
+        public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var args = this.args.Select(x => x.CheckTypes(types)).Prepend(target).ToArray();
 

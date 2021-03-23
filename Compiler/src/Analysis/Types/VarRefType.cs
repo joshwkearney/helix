@@ -12,7 +12,7 @@ namespace Trophy.Analysis.Types {
         }
 
 
-        public bool HasDefaultValue(ITypeRecorder types) => false;
+        public bool HasDefaultValue(ITypesRecorder types) => false;
 
         public override int GetHashCode() => this.IsReadOnly.GetHashCode() + 7 * this.InnerType.GetHashCode();
 
@@ -25,7 +25,7 @@ namespace Trophy.Analysis.Types {
             }
         }
 
-        public TypeCopiability GetCopiability(ITypeRecorder types) {
+        public TypeCopiability GetCopiability(ITypesRecorder types) {
             return TypeCopiability.Conditional;
         }
 
