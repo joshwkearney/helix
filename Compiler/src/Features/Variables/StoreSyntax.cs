@@ -6,7 +6,6 @@ using Trophy.CodeGeneration.CSyntax;
 using Trophy.Parsing;
 
 namespace Trophy.Features.Variables {
-
     public class StoreSyntaxA : ISyntaxA {
         private readonly ISyntaxA target, assign;
 
@@ -72,6 +71,13 @@ namespace Trophy.Features.Variables {
             // escaping variables in target
             foreach (var targetCap in target.Lifetimes) {
                 foreach (var valueCap in assign.Lifetimes) {
+                    // TODO - Make this more robust
+                    if (targetCap.Segments.Any() && valueCap.Segments.Any()) {
+                        if (!targetCap.Segments.First().StartsWith("$args") && valueCap.Segments.First().StartsWith("$args")) {
+                            continue;
+                        }
+                    }
+
                     if (!valueCap.Outlives(targetCap) && valueCap != targetCap) {
                         throw TypeCheckingErrors.LifetimeExceeded(this.Location, targetCap, valueCap);
                     }

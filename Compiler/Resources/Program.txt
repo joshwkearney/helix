@@ -1,4 +1,4 @@
-﻿func test () as int => {
+﻿func test() as int => {
     ref arr = [5,6,3,2,1,7,5,2,9];		
 
 	parallel_mergesort(arr);
@@ -6,7 +6,9 @@
     # binary_search(arr, 5);
 };
 
-func parallel_mergesort (arr as array[int, var]) as void => {
+
+
+func parallel_mergesort(arr as array[int, var]) as void => {
 	ref mid = arr.size / 2;
 	ref part1 = arr@[:mid];
 	ref part2 = arr@[mid:];
@@ -17,33 +19,30 @@ func parallel_mergesort (arr as array[int, var]) as void => {
 	};
 };
 
-func binary_search (arr as array[int, ref], to_find as int) as int => {
-    var mid = arr.size / 2;
-    var mid_value = arr[mid];
-
-    while mid_value != to_find do {
-        if to_find < mid_value then {
-            if mid == 0 do {
-                return -1;
-            };
-
-            @mid = mid / 2;
-        }
-        else {
-            if mid == arr.size - 1 do {
-                return -1;
-            };
-
-            @mid = mid + (arr.size - mid) / 2;
-        };
-
-        @mid_value = arr[mid];
-    };
-
-    mid;
+func binary_search(arr as array[int, ref], to_find as int) as int => {
+    var start = 0;
+	var slice = arr;
+	
+	while slice.size > 0 do {
+		ref mid = slice.size / 2;
+		ref mid_value = slice[mid];
+		
+		if to_find == mid_value then {
+			return start + mid;
+		}
+		else if to_find < mid_value then {
+			@slice = slice@[:mid];
+		}
+		else {
+			@slice = slice@[mid:];
+			@start = start + mid;
+		};
+	};
+	
+	-1;
 };
 
-func selection_sort (arr as array[int, var]) as void => { 
+func selection_sort(arr as array[int, var]) as void => { 
     # Find the smallest element and put it in position i
     for i = 0 to arr.size-1 do {
         var smallest = arr[i];

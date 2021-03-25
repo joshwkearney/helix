@@ -116,7 +116,7 @@ namespace Trophy.Features.Functions {
             }
 
             // The return value must be allocated on the heap or be one of the arguments
-            var bodyRegion = this.region.Append("heap");
+            var bodyRegion = this.region.Append("$args").Append("heap");
             FunctionsHelper.CheckForInvalidReturnScope(this.body.Location, bodyRegion, body);
 
             return new FunctionDeclarationC(this.Signature, this.funcPath, body, this.parIds);

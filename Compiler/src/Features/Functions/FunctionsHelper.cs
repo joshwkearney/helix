@@ -69,8 +69,8 @@ namespace Trophy.Features.Functions {
                     innerType: type,
                     kind: defKind,
                     id: id,
-                    valueLifetimes: new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet(),
-                    variableLifetimes: new[] { new IdentifierPath("$args_" + par.Name) }.ToImmutableHashSet());
+                    valueLifetimes: new[] { new IdentifierPath("$args" + par.Name) }.ToImmutableHashSet(),
+                    variableLifetimes: new[] { new IdentifierPath("$args" + par.Name) }.ToImmutableHashSet());
 
                 types.DeclareName(path, NamePayload.FromVariable(info));
             }
