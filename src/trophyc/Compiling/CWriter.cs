@@ -15,7 +15,7 @@ namespace Trophy.Compiling {
         private readonly StringBuilder decl3Sb = new StringBuilder();
 
         public CWriter() {
-            this.decl1Sb.AppendLine("#include \"trophy.h\"");
+            this.decl1Sb.AppendLine("#include \"include/trophy.h\"");
             this.decl1Sb.AppendLine();
         }
 
