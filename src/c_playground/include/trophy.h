@@ -32,7 +32,7 @@ extern "C" {
 	void region_async(Region* region, void* func(void* arg), void* arg);
 
 	HEDLEY_NO_RETURN
-	void region_panic(Region* region);
+	void region_panic(Region* region, char *msg);
 
 #if defined(__cplusplus)
 }

@@ -135,16 +135,18 @@ namespace Trophy.Features.Containers.Arrays {
             var cond = CExpression.BinaryExpression(
                 CExpression.BinaryExpression(start, CExpression.IntLiteral(0), BinaryOperation.LessThan),
                 CExpression.BinaryExpression(
-                    CExpression.BinaryExpression(end, start, BinaryOperation.LessThanOrEqualTo),
+                    CExpression.BinaryExpression(end, start, BinaryOperation.LessThan),
                     CExpression.BinaryExpression(end, sizeExpr, BinaryOperation.GreaterThan),
                     BinaryOperation.Or),
                 BinaryOperation.Or);
 
             cond = CExpression.Invoke(CExpression.VariableLiteral("HEDLEY_UNLIKELY"), new[] { cond });
 
+            var msg = CExpression.StringLiteral($"Panic! Array slice bounds \\\"{start}\\\" and \\\"{end}\\\" are outside the bounds of the array \\\"{target}\\\"");
+
             var jump = CExpression.Invoke(
                 CExpression.VariableLiteral("region_panic"),
-                new[] { CExpression.VariableLiteral(this.region.Segments.Last()) });
+                new[] { CExpression.VariableLiteral(this.region.Segments.Last()), msg });
 
             var ifStat = CStatement.If(cond, new[] { CStatement.FromExpression(jump) });
 

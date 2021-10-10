@@ -25,7 +25,7 @@ static RegionFrame* frame_alloc(Region* region, int64_t bytes, RegionFrame* next
 
     // If the allocation failed, panic the region
     if (HEDLEY_UNLIKELY(frame == 0)) {
-        region_panic(region);
+        region_panic(region, "Panic! This device has run out of memory");
     }
 
     frame->total_size = bytes;
@@ -34,7 +34,7 @@ static RegionFrame* frame_alloc(Region* region, int64_t bytes, RegionFrame* next
     frame->data = malloc(bytes);
 
     if (frame->data == 0) {
-        region_panic(region);
+        region_panic(region, "Panic! This device has run out of memory");
     }
 
     return frame;
@@ -43,7 +43,7 @@ static RegionFrame* frame_alloc(Region* region, int64_t bytes, RegionFrame* next
 void* region_alloc(Region* region, int bytes) {
     // If this is a new region, allocate an initial frame
     if (region->frame == 0) {
-        region->frame = frame_alloc(region, 8 * 1024, 0);
+        region->frame = frame_alloc(region, 4 * 1024, 0);
     }
 
     // If the current frame is too small, make a new frame
@@ -66,9 +66,12 @@ void* region_alloc(Region* region, int bytes) {
 }
 
 HEDLEY_NO_RETURN
-void region_panic(Region* region) {
+void region_panic(Region* region, char* msg) {
+    printf(msg);
+    printf("\n");
     longjmp(*region->panic_buffer, 1);
 }
+
 
 Region* region_create(jmp_buf* panic_buffer) {
     Region* region = malloc(sizeof(Region));
@@ -122,7 +125,7 @@ void region_delete(Region* region) {
 
     // If a thread failed to join, panic. The panic will finish cleaning up later.
     if (join_failure) {
-        region_panic(region);
+        region_panic(region, "Panic! A child thread has failed to rejoin the parent");
     }
 
     // Free memory frames
@@ -139,13 +142,14 @@ void region_delete(Region* region) {
     free(region);
 }
 
+
 void region_async(Region* region, void* func(void*), void* arg) {
     if (region->max_thread_handles < region->num_thread_handles + 1) {
         void* new_mem = realloc(region->thread_handles, sizeof(pthread_t) * (region->max_thread_handles * 2 + 1));
 
         // Make sure realloc didn't fail
         if (new_mem == 0) {
-            region_panic(region);
+            region_panic(region, "Panic! This device has run out of memory");
         }
 
         region->thread_handles = new_mem;

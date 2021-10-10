@@ -112,8 +112,10 @@ namespace Trophy.Features.FlowControl {
                     CExpression.VariableLiteral("region_delete"),
                     new[] { CExpression.VariableLiteral(this.regionName) }));
 
+            var message = CExpression.StringLiteral($"at region {this.regionName}");
+
             var parentPanic = CStatement.FromExpression(
-                CExpression.Invoke(CExpression.VariableLiteral("region_panic"), new[] { CExpression.VariableLiteral(this.parentRegionName) }));
+                CExpression.Invoke(CExpression.VariableLiteral("region_panic"), new[] { CExpression.VariableLiteral(this.parentRegionName), message }));
 
             var ifStatement = CStatement.If(cond, new[] { cleanup, parentPanic });
 
