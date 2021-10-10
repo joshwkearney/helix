@@ -609,12 +609,6 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.VoidKeyword)) {
                 return this.VoidLiteral();
             }
-            else if (this.Peek(TokenKind.OpenBracket)) {
-                return this.ArrayLiteral();
-            }
-            else if (this.Peek(TokenKind.Pipe)) {
-                return this.ReadOnlyArrayLiteral();
-            }
             else if (this.Peek(TokenKind.OpenParenthesis)) {
                 return this.ParenExpression();
             }
@@ -895,6 +889,14 @@ namespace Trophy.Parsing {
 
         private ISyntaxA NewExpression() {
             var start = this.Advance(TokenKind.NewKeyword);
+
+            if (this.Peek(TokenKind.OpenBracket)) {
+                return this.ArrayLiteral();
+            }
+            else if (this.Peek(TokenKind.Pipe)) {
+                return this.ReadOnlyArrayLiteral();
+            }
+
             var targetType = this.TypeExpression();
             var mems = new List<StructArgument<ISyntaxA>>();
 

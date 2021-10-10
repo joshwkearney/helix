@@ -21,8 +21,9 @@ namespace Trophy.Features.Containers.Arrays {
 
         public ISyntaxB CheckNames(INamesRecorder names) {
             var args = this.args.Select(x => x.CheckNames(names)).ToArray();
+            var heap = RegionsHelper.GetClosestHeap(names.Context.Region);
 
-            return new ArrayLiteralSyntaxB(this.Location, this.isreadonly, names.Context.Region, args);
+            return new ArrayLiteralSyntaxB(this.Location, this.isreadonly, heap, args);
         }
     }
 
@@ -98,19 +99,6 @@ namespace Trophy.Features.Containers.Arrays {
             if (!this.args.Any()) {
                 // Write data assignment
                 statWriter.WriteStatement(CStatement.Assignment(dataExpr, CExpression.IntLiteral(0)));
-            }
-            else if (RegionsHelper.IsStack(this.region)) {
-                var elementType = declWriter.ConvertType(this.args.First().ReturnType);
-                var cArrayName = "array_temp_" + arrayTempCounter++;
-                var cArraySize = CExpression.IntLiteral(this.args.Count);
-
-                // Write c array declaration
-                statWriter.WriteStatement(CStatement.ArrayDeclaration(elementType, cArrayName, cArraySize));
-
-                // Write data assignment
-                statWriter.WriteStatement(CStatement.Assignment(
-                    dataExpr,
-                    CExpression.VariableLiteral(cArrayName)));
             }
             else {
                 var elementType = declWriter.ConvertType(this.args.First().ReturnType);
