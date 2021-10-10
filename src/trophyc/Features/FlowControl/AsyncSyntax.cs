@@ -79,8 +79,6 @@ namespace Trophy.Features.FlowControl {
 
         public ITrophyType ReturnType => this.body.ReturnType;
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.body.Lifetimes;
-
         public AsyncPrefixSyntaxC(ISyntaxC body, string asyncRegionName) {
             this.body = body;
             this.asyncRegionName = asyncRegionName;

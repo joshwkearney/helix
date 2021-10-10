@@ -117,8 +117,6 @@ namespace Trophy.Features.Containers.Arrays {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
-
         public ArraySliceSyntaxC(ITrophyType returnType, ISyntaxC target, ISyntaxC start, ISyntaxC end, IdentifierPath region) {
             this.ReturnType = returnType;
             this.target = target;

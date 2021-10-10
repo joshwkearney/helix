@@ -7,11 +7,8 @@ namespace Trophy.Features.Meta {
     public class TypeSyntaxC : ISyntaxC {
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
-
-        public TypeSyntaxC(ITrophyType type, ImmutableHashSet<IdentifierPath> lifetimes) {
+        public TypeSyntaxC(ITrophyType type) {
             this.ReturnType = type;
-            this.Lifetimes = lifetimes;
         }
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {

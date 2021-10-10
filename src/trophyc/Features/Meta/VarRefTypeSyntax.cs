@@ -56,7 +56,7 @@ namespace Trophy.Features.Meta {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.elemTypeSyntax.Location);
             }
 
-            return new TypeSyntaxC(returnType, check.Lifetimes);
+            return new TypeSyntaxC(returnType);
         }
     }
 }

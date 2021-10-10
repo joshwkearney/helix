@@ -30,17 +30,7 @@ namespace Trophy.Features.Variables {
             var returnType = info.Type;
             var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
-            if (this.kind == VariableAccessKind.ValueAccess) {
-                lifetimes = info.ValueLifetimes;
-
-                // If the variable type is copiable, don't propagate any lifetimes
-                if (returnType.GetCopiability(types) == TypeCopiability.Unconditional) {
-                    lifetimes = ImmutableHashSet.Create<IdentifierPath>();
-                }
-            }
-            else {
-                lifetimes = info.VariableLifetimes;
-
+            if (this.kind != VariableAccessKind.ValueAccess) {
                 // Make sure we're not literally accessing a non-variable parameter
                 if (info.DefinitionKind == VariableDefinitionKind.Parameter) {
                     throw TypeCheckingErrors.ExpectedVariableType(this.Location, info.Type);
@@ -53,7 +43,7 @@ namespace Trophy.Features.Variables {
                 else {
                     returnType = new VarRefType(returnType, true);
                 }
-            }
+            }            
 
             return new VariableAccessdSyntaxC(info, this.kind, returnType, lifetimes);
         }

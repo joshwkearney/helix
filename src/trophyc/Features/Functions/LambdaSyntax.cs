@@ -120,9 +120,7 @@ namespace Trophy.Features.Functions {
                         name: info.Name,
                         innerType: info.Type,
                         kind: defKind,
-                        id: info.UniqueId,
-                        valueLifetimes: info.ValueLifetimes,
-                        variableLifetimes: info.VariableLifetimes);
+                        id: info.UniqueId);
 
                     types.DeclareName(path, NamePayload.FromVariable(newInfo));
                 }
@@ -177,15 +175,6 @@ namespace Trophy.Features.Functions {
         public IReadOnlyList<IdentifierPath> FreeRegions { get; }
 
         public ITrophyType ReturnType { get; }
-
-        public ImmutableHashSet<IdentifierPath> Lifetimes {
-            get {
-                return this.FreeVariables
-                    .SelectMany(x => x.VariableLifetimes)
-                    .Append(this.EnclosingRegion)
-                    .ToImmutableHashSet();
-            }
-        }
 
         public LambdaSyntaxC(
             FunctionSignature sig, 

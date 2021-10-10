@@ -9,8 +9,6 @@ namespace Trophy.Features.Variables {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
-
         public VarToRefAdapter(ISyntaxC target, ITrophyType returnType) {
             this.target = target;
             this.ReturnType = returnType;

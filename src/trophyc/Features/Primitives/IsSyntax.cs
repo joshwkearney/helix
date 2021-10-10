@@ -76,10 +76,6 @@ namespace Trophy.Features.Primitives {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes {
-            get => this.Argument.Lifetimes;
-        }
-
         public IsSyntaxC(ISyntaxC arg, int mem, ITrophyType retType) {
             this.Argument = arg;
             this.MemberIndex = mem;

@@ -14,8 +14,6 @@ namespace Trophy.Features.Containers.Arrays {
             this.ReturnType = returnType;
         }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
-
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             return this.target.GenerateCode(declWriter, statWriter);
         }

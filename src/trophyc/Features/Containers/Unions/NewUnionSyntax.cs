@@ -130,8 +130,6 @@ namespace Trophy.Features.Containers.Unions {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => arg.MemberValue.Lifetimes;
-
         public NewUnionSyntaxC(StructArgument<ISyntaxC> arg, int tag, ITrophyType returnType) {
             this.arg = arg;
             this.tag = tag;

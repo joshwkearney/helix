@@ -71,8 +71,6 @@ namespace Trophy.Features.FlowControl {
 
         public ITrophyType ReturnType => ITrophyType.Void;
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.result.Lifetimes;
-
         public ReturnSyntaxC(IdentifierPath region, ISyntaxC result, bool returnVoid) {
             this.region = region;
             this.result = result;

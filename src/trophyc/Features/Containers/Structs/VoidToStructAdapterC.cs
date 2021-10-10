@@ -12,8 +12,6 @@ namespace Trophy.Features.Containers.Structs {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
-
         public VoidToStructAdapterC(ISyntaxC target, AggregateSignature sig, ITrophyType returnType, ITypesRecorder types) {
             var voidLiteral = new VoidLiteralC();
 

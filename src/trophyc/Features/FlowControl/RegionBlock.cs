@@ -70,13 +70,6 @@ namespace Trophy.Features.FlowControl {
         public ISyntaxC CheckTypes(ITypesRecorder types) {
             var body = this.body.CheckTypes(types);
 
-            // Make sure that body does not return something from this region
-            foreach (var lifetime in body.Lifetimes) {
-                if (!lifetime.Outlives(this.region)) {
-                    throw TypeCheckingErrors.LifetimeExceeded(this.Location, this.region.Pop(), lifetime);
-                }
-            }
-
             return new RegionBlockSyntaxC(body, this.region.Segments.Last(), this.parentHeap.Segments.Last());
         }
     }
@@ -89,8 +82,6 @@ namespace Trophy.Features.FlowControl {
         private readonly string parentRegionName;
 
         public ITrophyType ReturnType => this.body.ReturnType;
-
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.body.Lifetimes;
 
         public RegionBlockSyntaxC(ISyntaxC body, string region, string parent) {
             this.body = body;

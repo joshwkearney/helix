@@ -89,9 +89,7 @@ namespace Trophy.Features.Variables {
                 name: this.path.Segments.Last(),
                 innerType: assign.ReturnType,
                 kind: this.isreadonly ? VariableDefinitionKind.LocalRef : VariableDefinitionKind.LocalVar,
-                id: this.id,
-                valueLifetimes: assign.Lifetimes,
-                variableLifetimes: new[] { this.region }.ToImmutableHashSet());
+                id: this.id);
 
             // Declare this variable
             types.DeclareName(this.path, NamePayload.FromVariable(info));
@@ -108,8 +106,6 @@ namespace Trophy.Features.Variables {
         private readonly ISyntaxC assign;
 
         public ITrophyType ReturnType { get; }
-
-        public ImmutableHashSet<IdentifierPath> Lifetimes => info.VariableLifetimes;
 
         public VarRefSyntaxC(VariableInfo info, ISyntaxC assign, ITrophyType returnType) {
             this.info = info;

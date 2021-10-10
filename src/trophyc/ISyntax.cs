@@ -24,8 +24,6 @@ namespace Trophy {
     public interface ISyntaxC {
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
-
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter);
     }
 

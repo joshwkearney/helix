@@ -78,10 +78,9 @@ namespace Trophy.Features.Meta {
             }
 
             var argTypes = argsSyntax.Select(x => x.ReturnType.AsMetaType().GetValue()).ToArray();
-            var lifetimes = argsSyntax.Select(x => x.Lifetimes).Aggregate(retSyntax.Lifetimes, (x, y) => x.Union(y));
             var funcType = new FunctionType(retType, argTypes);
 
-            return new TypeSyntaxC(funcType, lifetimes);
+            return new TypeSyntaxC(funcType);
         }
     }
 }

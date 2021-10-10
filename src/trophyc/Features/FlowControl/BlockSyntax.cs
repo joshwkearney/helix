@@ -68,17 +68,6 @@ namespace Trophy.Features.FlowControl {
             }
         }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes {
-            get {
-                if (this.statements.Any()) {
-                    return this.statements.Last().Lifetimes;
-                }
-                else {
-                    return ImmutableHashSet.Create<IdentifierPath>();
-                }
-            }
-        }
-
         public BlockSyntaxC(IReadOnlyList<ISyntaxC> statements) {
             this.statements = statements;
         }

@@ -95,8 +95,6 @@ namespace Trophy.Features.FlowControl {
 
         public ITrophyType ReturnType => this.iftrue.ReturnType;
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.iftrue.Lifetimes.Union(this.iffalse.Lifetimes);
-
         public IfSyntaxC(ISyntaxC cond, ISyntaxC iftrue, ISyntaxC iffalse) {
             this.cond = cond;
             this.iftrue = iftrue;

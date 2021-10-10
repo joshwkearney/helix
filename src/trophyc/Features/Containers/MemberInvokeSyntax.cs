@@ -87,17 +87,17 @@ namespace Trophy.Features.Containers {
                 }
             }
 
-            var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
+            //var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
-            if (func.ReturnType.GetCopiability(types) == TypeCopiability.Conditional) {
+            /*if (func.ReturnType.GetCopiability(types) == TypeCopiability.Conditional) {
                 lifetimes = args
                     .Select(x => x.Lifetimes)
                     .Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y))
                     .Union(target.Lifetimes)
                     .Add(this.enclosingHeap);
-            }
+            }*/
 
-            return new SingularFunctionInvokeSyntaxC(path, args, this.enclosingHeap.Segments.Last(), func.ReturnType, lifetimes);
+            return new SingularFunctionInvokeSyntaxC(path, args, this.enclosingHeap.Segments.Last(), func.ReturnType);
         }
     }
 }

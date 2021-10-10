@@ -94,8 +94,6 @@ namespace Trophy.Features.Containers.Arrays {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
-
         public ArrayLiteralAccessSyntaxC(ISyntaxC target, ISyntaxC index, ITrophyType returnType, IdentifierPath region) {
             this.target = target;
             this.index = index;

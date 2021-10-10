@@ -50,8 +50,7 @@ namespace Trophy.Features.Containers {
                     return new MemberAccessTypeCheckedSyntax(
                         target, 
                         this.memberName, 
-                        ITrophyType.Integer, 
-                        ImmutableHashSet.Create<IdentifierPath>());
+                        ITrophyType.Integer);
                 }
             }
 
@@ -61,8 +60,7 @@ namespace Trophy.Features.Containers {
                     return new MemberAccessTypeCheckedSyntax(
                         target,
                         this.memberName,
-                        ITrophyType.Integer,
-                        ImmutableHashSet.Create<IdentifierPath>());
+                        ITrophyType.Integer);
                 }
             }
 
@@ -76,17 +74,10 @@ namespace Trophy.Features.Containers {
                         .FirstOrNone();
 
                     if (fieldOpt.TryGetValue(out var field)) {
-                        var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
-
-                        if (field.MemberType.GetCopiability(types) == TypeCopiability.Conditional) {
-                            lifetimes = lifetimes.Union(target.Lifetimes);
-                        }
-
                         return new MemberAccessTypeCheckedSyntax(
                             target,
                             this.memberName,
-                            field.MemberType,
-                            lifetimes);
+                            field.MemberType);
                     }
                 }
             }
@@ -101,18 +92,14 @@ namespace Trophy.Features.Containers {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
-
         public MemberAccessTypeCheckedSyntax(
             ISyntaxC target, 
             string memberName, 
-            ITrophyType returnType, 
-            ImmutableHashSet<IdentifierPath> lifetimes) {
+            ITrophyType returnType) {
 
             this.target = target;
             this.memberName = memberName;
             this.ReturnType = returnType;
-            this.Lifetimes = lifetimes;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {

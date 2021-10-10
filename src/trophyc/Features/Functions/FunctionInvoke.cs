@@ -81,11 +81,6 @@ namespace Trophy.Features.Functions {
         public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var args = (IReadOnlyList<ISyntaxC>)this.args.Select(x => x.CheckTypes(types)).ToArray();
-            var lifetimes = args
-                .Select(x => x.Lifetimes)
-                .Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y))
-                // .Union(target.Lifetimes) // TODO - Think about this more
-                .Add(this.enclosingHeap);
 
             // Make sure the target is a function
             if (target.ReturnType.AsSingularFunctionType().TryGetValue(out var singFuncType)) {
@@ -97,34 +92,19 @@ namespace Trophy.Features.Functions {
                 var pars = sig.Parameters.Select(x => x.Type).ToArray();
                 args = this.CheckArgs(args, pars, types);
 
-                // If this type is copiable then we don't capture anything
-                if (sig.ReturnType.GetCopiability(types) == TypeCopiability.Unconditional) {
-                    lifetimes = lifetimes.Clear();
-                }
-
                 return new SingularFunctionInvokeSyntaxC(
                     target: singFuncType.FunctionPath,
                     args: args,
                     region: this.enclosingHeap.Segments.Last(),
-                    returnType: sig.ReturnType,
-                    lifetimes: lifetimes);
+                    returnType: sig.ReturnType);
             }
             else if (target.ReturnType.AsFunctionType().TryGetValue(out var funcType)) {
                 args = this.CheckArgs(args, funcType.ParameterTypes, types);
 
-                // Make sure we take into account the target, because it is captured
-                lifetimes = lifetimes.Union(target.Lifetimes);
-
-                // If this type is copiable then we don't capture anything
-                if (funcType.ReturnType.GetCopiability(types) == TypeCopiability.Unconditional) {
-                    lifetimes = lifetimes.Clear();
-                }
-
                 return new FunctionInvokeSyntaxC(
                     target: target,
                     args: args,
-                    returnType: funcType.ReturnType,
-                    lifetimes: lifetimes);
+                    returnType: funcType.ReturnType);
             }
             else {
                 throw TypeCheckingErrors.ExpectedFunctionType(this.target.Location, target.ReturnType);
@@ -138,18 +118,14 @@ namespace Trophy.Features.Functions {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
-
         public FunctionInvokeSyntaxC(
             ISyntaxC target, 
             IReadOnlyList<ISyntaxC> args, 
-            ITrophyType returnType, 
-            ImmutableHashSet<IdentifierPath> lifetimes) {
+            ITrophyType returnType) {
 
             this.target = target;
             this.args = args;
             this.ReturnType = returnType;
-            this.Lifetimes = lifetimes;
         }
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {
@@ -183,20 +159,17 @@ namespace Trophy.Features.Functions {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
 
         public SingularFunctionInvokeSyntaxC(
             IdentifierPath target, 
             IReadOnlyList<ISyntaxC> args, 
             string region, 
-            ITrophyType returnType, 
-            ImmutableHashSet<IdentifierPath> lifetimes) {
+            ITrophyType returnType) {
 
             this.targetPath = target;
             this.args = args;
             this.region = region;
             this.ReturnType = returnType;
-            this.Lifetimes = lifetimes;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {

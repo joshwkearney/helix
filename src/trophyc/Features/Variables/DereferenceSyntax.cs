@@ -20,19 +20,13 @@ namespace Trophy.Features.Variables {
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
-            var lifetimes = target.Lifetimes;
 
             // Make sure the target is a variable type
             if (!target.ReturnType.AsVariableType().TryGetValue(out var varType)) {
                 throw TypeCheckingErrors.ExpectedVariableType(this.Location, target.ReturnType);
             }
 
-            // Clear the lifetimes if the returned type is a pure value type
-            if (varType.InnerType.GetCopiability(types) == TypeCopiability.Unconditional) {
-                lifetimes = lifetimes.Clear();
-            }
-
-            return new DereferenceSyntaxC(target, varType.InnerType, lifetimes);
+            return new DereferenceSyntaxC(target, varType.InnerType);
         }
     }
 
@@ -41,16 +35,12 @@ namespace Trophy.Features.Variables {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes { get; }
-
         public DereferenceSyntaxC(
             ISyntaxC target, 
-            ITrophyType returnType, 
-            ImmutableHashSet<IdentifierPath> lifetimes) {
+            ITrophyType returnType) {
 
             this.target = target;
             this.ReturnType = returnType;
-            this.Lifetimes = lifetimes;
         }
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {

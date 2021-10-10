@@ -9,8 +9,6 @@ namespace Trophy.Features.Primitives {
 
         public ITrophyType ReturnType => ITrophyType.Integer;
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
-
         public BoolToIntAdapter(ISyntaxC target) {
             this.target = target;
         }

@@ -9,8 +9,6 @@ namespace Trophy.Features.Primitives {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
-
         public VoidToPrimitiveAdapterC(ISyntaxC target, ITrophyType returnType) {
             this.target = target;
             this.ReturnType = returnType;

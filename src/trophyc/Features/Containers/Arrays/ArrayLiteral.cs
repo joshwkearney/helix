@@ -78,17 +78,6 @@ namespace Trophy.Features.Containers.Arrays {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes {
-            get {
-                var seed = ImmutableHashSet.Create<IdentifierPath>();
-
-                return this.args
-                    .Select(x => x.Lifetimes)
-                    .Aggregate(seed, (x, y) => x.Union(y))
-                    .Add(this.region);
-            }
-        }
-
         public ArrayLiteralSyntaxC(IdentifierPath regionName, IReadOnlyList<ISyntaxC> args, ITrophyType returnType) {
             this.args = args;
             this.region = regionName;

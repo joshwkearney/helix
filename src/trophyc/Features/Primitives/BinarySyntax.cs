@@ -133,8 +133,6 @@ namespace Trophy.Features.Primitives {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.left.Lifetimes.Union(this.right.Lifetimes);
-
         public BinarySyntaxC(ISyntaxC left, ISyntaxC right, BinaryOperation op, ITrophyType returnType) {
             this.left = left;
             this.right = right;

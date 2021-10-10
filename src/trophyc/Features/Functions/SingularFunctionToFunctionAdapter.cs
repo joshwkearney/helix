@@ -13,8 +13,6 @@ namespace Trophy.Features.Functions {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes => this.target.Lifetimes;
-
         public SingularFunctionToFunctionAdapter(ISyntaxC target, IdentifierPath funcPath, ITrophyType returnType) {
             this.target = target;
             this.funcPath = funcPath;
@@ -26,9 +24,10 @@ namespace Trophy.Features.Functions {
             var cname = "func_conv_temp" + counter++;
             var cClosure = CExpression.VariableLiteral(cname);
 
+            // TODO - Fix this
             // Calculate the most restrictive region to allocate on
-            var region = this.Lifetimes.Aggregate(new IdentifierPath("heap"), (x, y) => x.Outlives(y) ? y : x);
-            region = RegionsHelper.GetClosestHeap(region);
+            //var region = this.Lifetimes.Aggregate(new IdentifierPath("heap"), (x, y) => x.Outlives(y) ? y : x);
+            var region = RegionsHelper.GetClosestHeap(new IdentifierPath("heap"));
 
             // Write the closure variable
             statWriter.WriteStatement(CStatement.Comment("Singular function to function conversion"));

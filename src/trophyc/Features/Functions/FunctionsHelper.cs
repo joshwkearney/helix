@@ -68,16 +68,14 @@ namespace Trophy.Features.Functions {
                     name: par.Name,
                     innerType: type,
                     kind: defKind,
-                    id: id,
-                    valueLifetimes: new[] { new IdentifierPath("$args" + par.Name) }.ToImmutableHashSet(),
-                    variableLifetimes: new[] { new IdentifierPath("$args" + par.Name) }.ToImmutableHashSet());
+                    id: id);
 
                 types.DeclareName(path, NamePayload.FromVariable(info));
             }
         }
 
         public static void CheckForInvalidReturnScope(TokenLocation loc, IdentifierPath heapRegion, ISyntaxC body) {
-            foreach (var capLifetime in body.Lifetimes) {
+            /*foreach (var capLifetime in body.Lifetimes) {
                 if (capLifetime.Segments.Any() && capLifetime.Segments.First().StartsWith("$args_")) {
                     continue;
                 }
@@ -85,7 +83,7 @@ namespace Trophy.Features.Functions {
                 if (!capLifetime.Outlives(heapRegion.Append("stack"))) {
                     throw TypeCheckingErrors.LifetimeExceeded(loc, heapRegion, capLifetime);
                 }
-            }
+            }*/
         }
     }
 }

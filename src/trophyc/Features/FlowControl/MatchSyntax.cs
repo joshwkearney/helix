@@ -141,18 +141,11 @@ namespace Trophy.Features.FlowControl {
                     throw TypeCheckingErrors.MemberUndefined(this.Location, arg.ReturnType, pattern);
                 }
 
-                var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
-                if (mem.MemberType.GetCopiability(types) == TypeCopiability.Conditional) {
-                    lifetimes = lifetimes.Union(arg.Lifetimes);
-                }
-
                 var info = new VariableInfo(
                     pattern,
                     mem.MemberType,
                     VariableDefinitionKind.LocalRef,
-                    id,
-                    lifetimes,
-                    arg.Lifetimes);
+                    id);
 
                 infos.Add(info);
                 indicies.Add(unionSig.Members.ToList().IndexOf(mem));
@@ -212,12 +205,6 @@ namespace Trophy.Features.FlowControl {
         }
 
         public ITrophyType ReturnType { get; }
-
-        public ImmutableHashSet<IdentifierPath> Lifetimes {
-            get => this.patternExprs
-                .Select(x => x.Lifetimes)
-                .Aggregate(this.arg.Lifetimes, (x, y) => x.Union(y));
-        }
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {
             var arg = this.arg.GenerateCode(writer, statWriter);

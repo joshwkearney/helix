@@ -156,16 +156,6 @@ namespace Trophy.Features.Containers.Structs {
 
         public ITrophyType ReturnType { get; }
 
-        public ImmutableHashSet<IdentifierPath> Lifetimes {
-            get {
-                var seed = ImmutableHashSet.Create<IdentifierPath>();
-
-                return this.args
-                    .Select(x => x.MemberValue.Lifetimes)
-                    .Aggregate(seed, (x, y) => x.Union(y));
-            }
-        }
-
         public NewStructSyntaxC(
             IReadOnlyList<StructArgument<ISyntaxC>> args, 
             ITrophyType returnType) {
