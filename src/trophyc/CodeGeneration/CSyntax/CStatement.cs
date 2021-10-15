@@ -102,7 +102,7 @@ namespace Trophy.CodeGeneration.CSyntax {
                 }
 
                 CHelper.Indent(indentLevel, sb);
-                sb.AppendLine("}");
+                sb.AppendLine("}").AppendLine();
             }
         }
 
