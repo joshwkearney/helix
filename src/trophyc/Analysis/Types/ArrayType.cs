@@ -17,10 +17,10 @@ namespace Trophy.Analysis.Types {
 
         public override string ToString() {
             if (this.IsReadOnly) {
-                return "array[" + this.ElementType + "]";
+                return "span[" + this.ElementType + "]";
             }
             else {
-                return "span[" + this.ElementType + "]";
+                return "array[" + this.ElementType + "]";
             }
         }
 
