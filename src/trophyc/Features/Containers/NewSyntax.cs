@@ -32,7 +32,7 @@ namespace Trophy.Features.Containers {
             // Make sure the target type is valid by checking the names
             var targetType = this.targetType.CheckNames(names);
 
-            // Structs and unions can only be properly created if we catch them prematurely
+            // Structs, unions, and arrays can only be properly created if we catch them prematurely
             if (this.targetType.ResolveToType(names).TryGetValue(out var type)) {
                 if (type.AsNamedType().TryGetValue(out var path)) {
                     if (names.TryGetName(path, out var target)) {
@@ -43,6 +43,9 @@ namespace Trophy.Features.Containers {
                             return new NewUnionSyntaxA(this.Location, type, this.args).CheckNames(names);
                         }
                     }
+                }
+                else if (type.AsArrayType().TryGetValue(out var arrayType)) {
+                    return new NewArraySyntaxA(this.Location, arrayType, this.args).CheckNames(names);
                 }
             }
 
@@ -99,24 +102,6 @@ namespace Trophy.Features.Containers {
                 else {
                     return new VoidLiteralAB(this.Location).CheckTypes(types);
                 }
-            }
-
-            // Check for fixed array types
-            if (returnType.AsFixedArrayType().TryGetValue(out var fixedArray)) {
-                if (this.args.Any()) {
-                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, returnType, this.args.Select(x => x.MemberName));
-                }
-
-                return new NewFixedArraySyntaxBC(this.Location, fixedArray, this.region);
-            }
-
-            // Check for array types
-            if (returnType.AsArrayType().Any()) {
-                if (this.args.Any()) {
-                    throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, returnType, this.args.Select(x => x.MemberName));
-                }
-
-                return new VoidToArrayAdapterC(new VoidLiteralC(), returnType);
             }
 
             // Structs and unions have already been checked
