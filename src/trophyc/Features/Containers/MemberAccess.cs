@@ -50,7 +50,8 @@ namespace Trophy.Features.Containers {
                     return new MemberAccessTypeCheckedSyntax(
                         target, 
                         this.memberName, 
-                        ITrophyType.Integer);
+                        ITrophyType.Integer,
+                        false);
                 }
             }
 
@@ -60,7 +61,8 @@ namespace Trophy.Features.Containers {
                     return new MemberAccessTypeCheckedSyntax(
                         target,
                         this.memberName,
-                        ITrophyType.Integer);
+                        ITrophyType.Integer,
+                        false);
                 }
             }
 
@@ -70,14 +72,24 @@ namespace Trophy.Features.Containers {
                 if (types.TryGetStruct(path).TryGetValue(out var sig)) {
                     // Make sure this field is present
                     var fieldOpt = sig
-                        .Members.Where(x => x.MemberName == this.memberName)
+                        .Members
+                        .Where(x => x.MemberName == this.memberName)
                         .FirstOrNone();
 
                     if (fieldOpt.TryGetValue(out var field)) {
+                        bool deref = false;
+                        var returnType = field.MemberType;
+
+                        if (field.Kind != VariableKind.Value) {
+                            returnType = (returnType as VarRefType).InnerType;
+                            deref = true;
+                        }
+
                         return new MemberAccessTypeCheckedSyntax(
                             target,
                             this.memberName,
-                            field.MemberType);
+                            returnType,
+                            deref);
                     }
                 }
             }
@@ -89,17 +101,20 @@ namespace Trophy.Features.Containers {
     public class MemberAccessTypeCheckedSyntax : ISyntaxC {
         private readonly ISyntaxC target;
         private readonly string memberName;
+        private readonly bool dereference;
 
         public ITrophyType ReturnType { get; }
 
         public MemberAccessTypeCheckedSyntax(
             ISyntaxC target, 
             string memberName, 
-            ITrophyType returnType) {
+            ITrophyType returnType,
+            bool dereference) {
 
             this.target = target;
             this.memberName = memberName;
             this.ReturnType = returnType;
+            this.dereference = dereference;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
@@ -109,8 +124,13 @@ namespace Trophy.Features.Containers {
             }
 
             var target = this.target.GenerateCode(declWriter, statWriter);
+            var result = CExpression.MemberAccess(target, this.memberName);
 
-            return CExpression.MemberAccess(target, this.memberName);
+            if (this.dereference) {
+                result = CExpression.Dereference(result);
+            }
+
+            return result;
         }
     }
 }

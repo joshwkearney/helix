@@ -36,9 +36,12 @@ namespace Trophy.Analysis {
 
         public ITrophyType MemberType { get; }
 
-        public AggregateMember(string name, ITrophyType type) {
+        public VariableKind Kind { get; }
+
+        public AggregateMember(string name, ITrophyType type, VariableKind kind) {
             this.MemberName = name;
             this.MemberType = type;
+            this.Kind = kind;
         }
 
         public bool Equals(AggregateMember other) {
@@ -47,7 +50,8 @@ namespace Trophy.Analysis {
             }
 
             return this.MemberName == other.MemberName
-                && this.MemberType.Equals(other.MemberType);
+                && this.MemberType.Equals(other.MemberType)
+                && this.Kind == other.Kind;
         }
 
         public override bool Equals(object obj) {
@@ -60,7 +64,8 @@ namespace Trophy.Analysis {
 
         public override int GetHashCode() {
             return this.MemberName.GetHashCode()
-                + 7 * this.MemberType.GetHashCode();
+                + 7 * this.MemberType.GetHashCode()
+                + 11 * this.Kind.GetHashCode();
         }
     }
 }

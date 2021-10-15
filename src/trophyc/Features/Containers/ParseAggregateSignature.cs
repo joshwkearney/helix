@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Trophy.Analysis;
 
 namespace Trophy.Features.Containers {
     public class ParseAggregateSignature  {
@@ -17,9 +18,12 @@ namespace Trophy.Features.Containers {
 
         public ISyntaxA MemberType { get; }
 
-        public ParseAggregateMember(string name, ISyntaxA type) {
+        public VariableKind Kind { get; }
+
+        public ParseAggregateMember(string name, ISyntaxA type, VariableKind kind) {
             this.MemberName = name;
             this.MemberType = type;
+            this.Kind = kind;
         }
     }
 }

@@ -278,12 +278,21 @@ namespace Trophy.Parsing {
             this.Advance(TokenKind.OpenBrace);
 
             while (!this.Peek(TokenKind.FunctionKeyword) && !this.Peek(TokenKind.StructKeyword) && !this.Peek(TokenKind.CloseBrace)) {
+                var varkind = VariableKind.Value;
+
+                if (this.TryAdvance(TokenKind.VarKeyword)) {
+                    varkind = VariableKind.VarVariable;
+                }
+                else if (this.TryAdvance(TokenKind.RefKeyword)) {
+                    varkind = VariableKind.RefVariable;
+                }
+
                 var memName = this.Advance<string>();
                 this.Advance(TokenKind.AsKeyword);
                 var memType = this.TypeExpression();
 
                 this.Advance(TokenKind.Semicolon);
-                mems.Add(new ParseAggregateMember(memName, memType));
+                mems.Add(new ParseAggregateMember(memName, memType, varkind));
             }
 
             while (!this.Peek(TokenKind.CloseBrace)) {

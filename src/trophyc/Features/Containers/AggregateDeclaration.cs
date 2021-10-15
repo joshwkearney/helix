@@ -85,14 +85,26 @@ namespace Trophy.Features.Containers {
             // Resolve members
             var memsOpt = this.sig
                 .Members
-                .Select(x => x.MemberType.ResolveToType(names).Select(y => new AggregateMember(x.MemberName, y)))
+                .Select(x => x.MemberType.ResolveToType(names).Select(y => new AggregateMember(x.MemberName, y, x.Kind)))
                 .ToArray();
 
             if (!memsOpt.All(x => x.Any())) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
             }
 
-            var mems = memsOpt.Select(x => x.GetValue()).ToArray();
+            var mems = memsOpt
+                .Select(x => x.GetValue())
+                .Select(x => {
+                    if (x.Kind == VariableKind.Value) {
+                        return x;
+                    }
+                    else {
+                        return new AggregateMember(x.MemberName, new VarRefType(x.MemberType, x.Kind == VariableKind.RefVariable), x.Kind);
+                    }
+                })
+                .ToArray();
+
+
             var aggPath = names.Context.Scope.Append(this.sig.Name);
             var sig = new AggregateSignature(this.sig.Name, mems);
 

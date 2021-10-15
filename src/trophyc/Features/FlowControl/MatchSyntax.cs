@@ -144,8 +144,8 @@ namespace Trophy.Features.FlowControl {
                 var info = new VariableInfo(
                     name: pattern,
                     innerType: mem.MemberType,
-                    kind: VariableKind.RefVariable,
-                    source: VariableSource.Local,
+                    kind: mem.Kind,
+                    source: mem.Kind == VariableKind.Value ? VariableSource.Local : VariableSource.Parameter,
                     id);
 
                 infos.Add(info);
