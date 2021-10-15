@@ -65,7 +65,7 @@ namespace Trophy.Features.Meta {
             var retSyntax = this.returnType.CheckTypes(types);
             var argsSyntax = this.argTypes.Select(x => x.CheckTypes(types)).ToArray();
 
-            if (!retSyntax.ReturnType.AsMetaType().TryGetValue(out var retType)) {
+            if (!retSyntax.ReturnType.AsMetaType().TryGetValue(out var retMeta)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.returnType.Location);
             }
 
@@ -77,8 +77,9 @@ namespace Trophy.Features.Meta {
                 }
             }
 
-            var argTypes = argsSyntax.Select(x => x.ReturnType.AsMetaType().GetValue()).ToArray();
-            var funcType = new FunctionType(retType, argTypes);
+            var argTypes = argsSyntax.Select(x => x.ReturnType.AsMetaType().GetValue().PayloadType).ToArray();
+            var retType = retMeta.PayloadType;
+            var funcType = new MetaType(new FunctionType(retType, argTypes));
 
             return new TypeSyntaxC(funcType);
         }
