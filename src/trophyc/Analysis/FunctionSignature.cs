@@ -86,7 +86,7 @@ namespace Trophy.Analysis {
         }
 
         public override int GetHashCode() {
-            return this.Name.GetHashCode() + 7 * this.Type.GetHashCode();
+            return this.Name.GetHashCode() + 7*this.Type.GetHashCode() + 11*this.Kind.GetHashCode();
         }
 
         public bool Equals(FunctionParameter other) {
@@ -99,6 +99,10 @@ namespace Trophy.Analysis {
             }
 
             if (!this.Type.Equals(other.Type)) {
+                return false;
+            }
+
+            if (!this.Kind.Equals(other.Kind)) {
                 return false;
             }
 
