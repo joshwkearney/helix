@@ -164,8 +164,11 @@ namespace Trophy.Features.FlowControl {
 
             // Try to unify pattern types
             for (int i = 1; i < exprs.Length; i++) {
-                if (!types.TryUnifyTo(exprs[i], returnType).TryGetValue(out exprs[i])) {
+                if (!types.TryUnifyTo(exprs[i], returnType).TryGetValue(out var unified)) {
                     throw TypeCheckingErrors.UnexpectedType(this.patternExprs[i].Location, returnType, exprs[i].ReturnType);
+                }
+                else {
+                    exprs[i] = unified;
                 }
             }
 
