@@ -24,18 +24,7 @@ namespace Trophy.Features.Functions {
         public ISyntaxB CheckNames(INamesRecorder names) {
             var path = names.Context.Scope.Append("$lambda" + names.GetNewVariableId());
 
-            // Resolve the type names
-            var parsOpt = this.Parameters
-                .Select(x => x.Type.ResolveToType(names).Select(y => new FunctionParameter(x.Name, y)))
-                .ToArray();
-
-            if (!parsOpt.All(x => x.Any())) {
-                throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
-            }
-
-            var pars = parsOpt
-                .Select(x => x.GetValue())
-                .ToImmutableList();
+            var pars = FunctionsHelper.CheckParameters(this.Parameters, names, this.Location);
 
             var closestHeap = RegionsHelper.GetClosestHeap(names.Context.Region);
 
@@ -110,16 +99,11 @@ namespace Trophy.Features.Functions {
             var body = types.WithContext(types.Context, types => {
                 // Flow-type all of the free variables to be parameters, excluding captured regions
                 foreach (var (path, info) in freeVars) {
-                    var defKind = VariableDefinitionKind.ParameterRef;
-
-                    if (info.DefinitionKind == VariableDefinitionKind.LocalVar || info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
-                        defKind = VariableDefinitionKind.ParameterVar;
-                    }
-
                     var newInfo = new VariableInfo(
                         name: info.Name,
                         innerType: info.Type,
-                        kind: defKind,
+                        kind: info.Kind,
+                        source: VariableSource.Parameter,
                         id: info.UniqueId);
 
                     types.DeclareName(path, NamePayload.FromVariable(newInfo));
@@ -222,7 +206,7 @@ namespace Trophy.Features.Functions {
             // Unpack the environment variables
             foreach (var info in this.FreeVariables) {
                 var name = "$" + info.Name + info.UniqueId;
-                var type = CType.Pointer(writer.ConvertType(info.Type));
+                var type = writer.ConvertType(info.Type);
                 var assign = CExpression.MemberAccess(envDeref, name);
 
                 bodyWriter.WriteStatement(CStatement.VariableDeclaration(type, name, assign));
@@ -274,7 +258,7 @@ namespace Trophy.Features.Functions {
         private CType GenerateClosureEnvironmentStruct(ICWriter writer) {
             var envType = "ClosureEnvironment" + counter++;
             var pars = this.FreeVariables
-                .Select(x => new CParameter(CType.Pointer(writer.ConvertType(x.Type)), "$" + x.Name + x.UniqueId))
+                .Select(x => new CParameter(writer.ConvertType(x.Type), "$" + x.Name + x.UniqueId))
                 .Concat(this.FreeRegions.Select(x => new CParameter(CType.NamedType("Region*"), x.Segments.Last())))
                 .ToArray();
 
@@ -339,7 +323,7 @@ namespace Trophy.Features.Functions {
             foreach (var info in this.FreeVariables) {
                 var assign = CExpression.VariableLiteral("$" + info.Name + info.UniqueId);
 
-                if (info.DefinitionKind != VariableDefinitionKind.ParameterRef && info.DefinitionKind != VariableDefinitionKind.ParameterVar) {
+                if (info.Source == VariableSource.Local) {
                     assign = CExpression.AddressOf(assign);
                 }
 

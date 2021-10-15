@@ -2,29 +2,37 @@
 using System.Collections.Immutable;
 
 namespace Trophy.Analysis {
+    public enum VariableSource {
+        Local, Parameter
+    }
+
+    public enum VariableKind {
+        Value, RefVariable, VarVariable
+    }
+
     public class VariableInfo {
         public string Name { get; }
-
-        public VariableDefinitionKind DefinitionKind { get; }
 
         public ITrophyType Type { get; }
 
         public int UniqueId { get; }
 
+        public VariableKind Kind { get; }
+
+        public VariableSource Source { get; }
+
         public VariableInfo(
             string name,
             ITrophyType innerType,
-            VariableDefinitionKind kind,
+            VariableKind kind,
+            VariableSource source,
             int id) {
 
             this.Type = innerType;
-            this.DefinitionKind = kind;
+            this.Kind = kind;
+            this.Source = source;
             this.UniqueId = id;
             this.Name = name;
         }
-    }
-
-    public enum VariableDefinitionKind {
-        LocalVar, LocalRef, Parameter, ParameterVar, ParameterRef
     }
 }

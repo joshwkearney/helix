@@ -207,6 +207,15 @@ namespace Trophy.Parsing {
 
             var pars = ImmutableList<ParseFunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
+                var kind = VariableKind.Value;
+
+                if (this.TryAdvance(TokenKind.VarKeyword)) {
+                    kind = VariableKind.VarVariable;
+                }
+                else if (this.TryAdvance(TokenKind.RefKeyword)) {
+                    kind = VariableKind.RefVariable;
+                }
+
                 var parName = this.Advance<string>();
                 this.Advance(TokenKind.AsKeyword);
                 var parType = this.TypeExpression();
@@ -215,7 +224,7 @@ namespace Trophy.Parsing {
                     this.Advance(TokenKind.Comma);
                 }
 
-                pars = pars.Add(new ParseFunctionParameter(parName, parType));
+                pars = pars.Add(new ParseFunctionParameter(parName, parType, kind));
             }
 
             this.Advance(TokenKind.CloseParenthesis);
@@ -923,6 +932,15 @@ namespace Trophy.Parsing {
 
             var pars = ImmutableList<ParseFunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
+                var kind = VariableKind.Value;
+
+                if (this.TryAdvance(TokenKind.VarKeyword)) {
+                    kind = VariableKind.VarVariable;
+                }
+                else if (this.TryAdvance(TokenKind.RefKeyword)) {
+                    kind = VariableKind.RefVariable;
+                }
+
                 var parName = this.Advance<string>();
                 this.Advance(TokenKind.AsKeyword);
                 var parType = this.TypeExpression();
@@ -931,7 +949,7 @@ namespace Trophy.Parsing {
                     this.Advance(TokenKind.Comma);
                 }
 
-                pars = pars.Add(new ParseFunctionParameter(parName, parType));
+                pars = pars.Add(new ParseFunctionParameter(parName, parType, kind));
             }
 
             this.Advance(TokenKind.CloseParenthesis);

@@ -22,6 +22,29 @@ namespace Trophy.Features.Functions {
             }
         }
 
+        public static ImmutableList<FunctionParameter> CheckParameters(IEnumerable<ParseFunctionParameter> pars, INamesRecorder names, TokenLocation loc) {
+            // Resolve the type names
+            var parsOpt = pars
+                .Select(x => x.Type.ResolveToType(names).Select(y => new FunctionParameter(x.Name, y, x.Kind)))
+                .ToArray();
+
+            if (!parsOpt.All(x => x.Any())) {
+                throw TypeCheckingErrors.ExpectedTypeExpression(loc);
+            }
+
+            return parsOpt
+                .Select(x => x.GetValue())
+                .Select(x => { 
+                    if (x.Kind == VariableKind.Value) {
+                        return x;
+                    }
+                    else {
+                        return new FunctionParameter(x.Name, new VarRefType(x.Type, x.Kind == VariableKind.RefVariable), x.Kind);
+                    }
+                })
+                .ToImmutableList();
+        }
+
         public static ISyntaxB ResolveBodyNames(
             INamesRecorder names, 
             IdentifierPath funcPath, 
@@ -56,18 +79,20 @@ namespace Trophy.Features.Functions {
                 var par = pars[i];
                 var id = parIds[i];
                 var type = par.Type;
-                var defKind = VariableDefinitionKind.Parameter;
 
-                if (type is VarRefType varRefType) {
-                    type = varRefType.InnerType;
-                    defKind = varRefType.IsReadOnly ? VariableDefinitionKind.ParameterRef : VariableDefinitionKind.ParameterVar;
-                }
+                //var defKind = VariableDefinitionKind.Parameter;
+
+                //if (type is VarRefType varRefType) {
+                //    type = varRefType.InnerType;
+                //    defKind = varRefType.IsReadOnly ? VariableDefinitionKind.ParameterRef : VariableDefinitionKind.ParameterVar;
+                //}
 
                 var path = funcPath.Append(par.Name);
                 var info = new VariableInfo(
                     name: par.Name,
                     innerType: type,
-                    kind: defKind,
+                    kind: par.Kind,
+                    source: VariableSource.Parameter,
                     id: id);
 
                 types.DeclareName(path, NamePayload.FromVariable(info));

@@ -30,20 +30,17 @@ namespace Trophy.Features.Variables {
             var returnType = info.Type;
             var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
-            if (this.kind != VariableAccessKind.ValueAccess) {
+            if (this.kind == VariableAccessKind.LiteralAccess) {
                 // Make sure we're not literally accessing a non-variable parameter
-                if (info.DefinitionKind == VariableDefinitionKind.Parameter) {
+                if (info.Kind == VariableKind.Value) {
                     throw TypeCheckingErrors.ExpectedVariableType(this.Location, info.Type);
                 }
-
-                // For non-parameter access, return a variable type of the accessed variable
-                if (info.DefinitionKind == VariableDefinitionKind.LocalVar || info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
-                    returnType = new VarRefType(returnType, false);
-                }
-                else {
-                    returnType = new VarRefType(returnType, true);
-                }
             }            
+            else if (this.kind == VariableAccessKind.ValueAccess) {
+                if (info.Kind != VariableKind.Value) {
+                    returnType = (info.Type as VarRefType).InnerType;
+                }
+            }
 
             return new VariableAccessdSyntaxC(info, this.kind, returnType, lifetimes);
         }
@@ -69,20 +66,25 @@ namespace Trophy.Features.Variables {
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
             var cname = "$" + this.info.Name + this.info.UniqueId;
 
-            if (this.kind == VariableAccessKind.ValueAccess) {
-                if (this.info.DefinitionKind == VariableDefinitionKind.ParameterRef || this.info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
-                    return CExpression.Dereference(CExpression.VariableLiteral(cname));
-                }
-                else {
-                    return CExpression.VariableLiteral(cname);
-                }
-            }
-            else {
-                if (this.info.DefinitionKind == VariableDefinitionKind.ParameterRef || this.info.DefinitionKind == VariableDefinitionKind.ParameterVar) {
+            if (this.info.Source == VariableSource.Local) {
+                if (this.kind == VariableAccessKind.ValueAccess) {
                     return CExpression.VariableLiteral(cname);
                 }
                 else {
                     return CExpression.AddressOf(CExpression.VariableLiteral(cname));
+                }
+            }
+            else {
+                if (this.kind == VariableAccessKind.ValueAccess) {
+                    if (this.info.Kind == VariableKind.Value) {
+                        return CExpression.VariableLiteral(cname);
+                    }
+                    else {
+                        return CExpression.Dereference(CExpression.VariableLiteral(cname));
+                    }
+                }
+                else {
+                    return CExpression.VariableLiteral(cname);
                 }
             }
         }

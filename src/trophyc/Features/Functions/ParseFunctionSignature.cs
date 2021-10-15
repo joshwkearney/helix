@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Trophy.Analysis;
 
 namespace Trophy.Features.Functions {
     public class ParseFunctionSignature {
@@ -7,6 +8,8 @@ namespace Trophy.Features.Functions {
         public string Name { get; }
 
         public IReadOnlyList<ParseFunctionParameter> Parameters { get; }
+
+        public IReadOnlyList<bool> AreParametersWrapped { get; }
 
         public ParseFunctionSignature(string name, ISyntaxA returnType, IReadOnlyList<ParseFunctionParameter> pars) {
             this.ReturnType = returnType;
@@ -20,9 +23,12 @@ namespace Trophy.Features.Functions {
 
         public ISyntaxA Type { get; }
 
-        public ParseFunctionParameter(string name, ISyntaxA type) {
+        public VariableKind Kind { get; }
+
+        public ParseFunctionParameter(string name, ISyntaxA type, VariableKind kind) {
             this.Name = name;
             this.Type = type;
+            this.Kind = kind;
         }
     }
 }

@@ -69,9 +69,12 @@ namespace Trophy.Analysis {
 
         public ITrophyType Type { get; }
 
-        public FunctionParameter(string name, ITrophyType type) {
+        public VariableKind Kind { get; }
+
+        public FunctionParameter(string name, ITrophyType type, VariableKind kind) {
             this.Name = name;
             this.Type = type;
+            this.Kind = kind;
         }
 
         public override bool Equals(object obj) {

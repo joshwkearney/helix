@@ -87,8 +87,9 @@ namespace Trophy.Features.Variables {
 
             var info = new VariableInfo(
                 name: this.path.Segments.Last(),
-                innerType: assign.ReturnType,
-                kind: this.isreadonly ? VariableDefinitionKind.LocalRef : VariableDefinitionKind.LocalVar,
+                innerType: new VarRefType(assign.ReturnType, this.isreadonly),
+                source: VariableSource.Local,
+                kind: this.isreadonly ? VariableKind.RefVariable : VariableKind.VarVariable,
                 id: this.id);
 
             // Declare this variable

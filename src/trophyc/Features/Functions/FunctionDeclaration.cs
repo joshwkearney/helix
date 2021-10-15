@@ -41,19 +41,7 @@ namespace Trophy.Features.Functions {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
             }
 
-            // Resolve the type names
-            var parsOpt = this.Signature.Parameters
-                .Select(x => x.Type.ResolveToType(names).Select(y => new FunctionParameter(x.Name, y)))
-                .ToArray();
-
-            if (!parsOpt.All(x => x.Any())) {
-                throw TypeCheckingErrors.ExpectedTypeExpression(this.Location);
-            }
-
-            var pars = parsOpt
-                .Select(x => x.GetValue())
-                .ToImmutableList();
-
+            var pars = FunctionsHelper.CheckParameters(this.Signature.Parameters, names, this.Location);
             var sig = new FunctionSignature(this.Signature.Name, returnType, pars);
             var funcPath = names.Context.Scope.Append(sig.Name);
             var body = FunctionsHelper.ResolveBodyNames(names, funcPath, new IdentifierPath("heap"), this.Body, pars);
