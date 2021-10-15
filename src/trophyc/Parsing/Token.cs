@@ -9,7 +9,7 @@
         LessThanOrEqualToSign, GreaterThanOrEqualToSign,
         Comma, Colon, Dot, Semicolon, Pipe,
 
-        VarKeyword, RefKeyword, IntKeyword, VoidKeyword, BoolKeyword, ArrayKeyword,
+        VarKeyword, RefKeyword, IntKeyword, VoidKeyword, BoolKeyword, ArrayKeyword, SpanKeyword,
         IfKeyword, ThenKeyword, ElseKeyword, WhileKeyword, ForKeyword, DoKeyword, ToKeyword,
         FunctionKeyword, NewKeyword, StructKeyword, ClassKeyword, UnionKeyword,
         AsKeyword, IsKeyword, AllocKeyword, FromKeyword, MatchKeyword,

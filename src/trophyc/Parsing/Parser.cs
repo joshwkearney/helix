@@ -128,7 +128,7 @@ namespace Trophy.Parsing {
 
                 return new TypeAccessSyntaxA(tok.Location, ITrophyType.Boolean);
             }
-            else if (this.Peek(TokenKind.ArrayKeyword)) {
+            else if (this.Peek(TokenKind.ArrayKeyword) || this.Peek(TokenKind.SpanKeyword)) {
                 return this.ArrayTypeAtom();
             }
             else if (this.Peek(TokenKind.FunctionKeyword)) {
@@ -143,35 +143,25 @@ namespace Trophy.Parsing {
         }
 
         private ISyntaxA ArrayTypeAtom() {
-            var start = this.Advance(TokenKind.ArrayKeyword);
+            TokenLocation start;
+            bool isReadOnly;
+
+            if (this.Peek(TokenKind.SpanKeyword)) {
+                start = this.Advance(TokenKind.SpanKeyword).Location;
+                isReadOnly = true;
+            }
+            else {
+                start = this.Advance(TokenKind.ArrayKeyword).Location;
+                isReadOnly = false;
+            }
 
             this.Advance(TokenKind.OpenBracket);
 
             var inner = this.TypeExpression();
-            var isReadOnly = true;
+            var end = this.Advance(TokenKind.CloseBracket);
+            var loc = start.Span(end.Location);
 
-            if (this.TryAdvance(TokenKind.Comma)) {
-                if (this.TryAdvance(TokenKind.VarKeyword)) {
-                    isReadOnly = false;
-                }
-                else {
-                    this.Advance(TokenKind.RefKeyword);
-                }
-            }
-
-            if (this.TryAdvance(TokenKind.Comma)) {
-                var size = this.Advance<int>();
-                var end = this.Advance(TokenKind.CloseBracket);
-                var loc = start.Location.Span(end.Location);
-
-                return new ArrayTypeSyntaxA(loc, inner, isReadOnly, size);
-            }
-            else {
-                var end = this.Advance(TokenKind.CloseBracket);
-                var loc = start.Location.Span(end.Location);
-
-                return new ArrayTypeSyntaxA(loc, inner, isReadOnly);
-            }
+            return new ArrayTypeSyntaxA(loc, inner, isReadOnly);
         }
 
         private ISyntaxA FunctionTypeAtom() {
