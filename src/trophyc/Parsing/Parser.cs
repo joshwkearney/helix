@@ -137,7 +137,6 @@ namespace Trophy.Parsing {
             else {
                 Token<string> tok = (Token<string>)this.Advance(TokenKind.Identifier);
 
-
                 return new TypeAccessSyntaxA(tok.Location, new NamedType(new IdentifierPath(tok.Value)));
             }
         }
@@ -178,7 +177,7 @@ namespace Trophy.Parsing {
                 }
             }
 
-            var returnType = this.TypeAtom();
+            var returnType = this.TypeExpression();
             var end = this.Advance(TokenKind.CloseBracket);
             var loc = start.Location.Span(end.Location);
 
@@ -632,8 +631,8 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.RegionKeyword)) {
                 return this.RegionExpression();
             }
-            else if (this.Peek(TokenKind.NewKeyword)) {
-                return this.NewExpression();
+            else if (this.Peek(TokenKind.NewKeyword) || this.Peek(TokenKind.PutKeyword)) {
+                return this.NewPutExpression();
             }
             else if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.ClosureExpression();
@@ -895,21 +894,31 @@ namespace Trophy.Parsing {
             }
         }
 
-        private ISyntaxA NewExpression() {
-            var start = this.Advance(TokenKind.NewKeyword);
+        private ISyntaxA NewPutExpression() {
+            TokenLocation start;
+            bool isStackAllocated;
 
-            if (this.Peek(TokenKind.OpenBracket)) {
-                return this.ArrayLiteral();
+            if (this.Peek(TokenKind.NewKeyword)) {
+                start = this.Advance(TokenKind.NewKeyword).Location;
+                isStackAllocated = false;
+
+                if (this.Peek(TokenKind.OpenBracket)) {
+                    return this.ArrayLiteral();
+                }
+                else if (this.Peek(TokenKind.Pipe)) {
+                    return this.ReadOnlyArrayLiteral();
+                }
             }
-            else if (this.Peek(TokenKind.Pipe)) {
-                return this.ReadOnlyArrayLiteral();
+            else {
+                start = this.Advance(TokenKind.PutKeyword).Location;
+                isStackAllocated = true;
             }
 
             var targetType = this.TypeExpression();
             var mems = new List<StructArgument<ISyntaxA>>();
 
             if (!this.TryAdvance(TokenKind.OpenBrace)) {
-                return new NewSyntaxA(start.Location, targetType, mems);
+                return new CreateTypeSyntaxA(start, targetType, mems, isStackAllocated);
             }
 
             while (!this.Peek(TokenKind.CloseBrace)) {
@@ -929,9 +938,9 @@ namespace Trophy.Parsing {
             }
 
             var end = this.Advance(TokenKind.CloseBrace);
-            var loc = start.Location.Span(end.Location);
+            var loc = start.Span(end.Location);
 
-            return new NewSyntaxA(loc, targetType, mems);
+            return new CreateTypeSyntaxA(loc, targetType, mems, isStackAllocated);
         }
 
         private ISyntaxA ClosureExpression() {

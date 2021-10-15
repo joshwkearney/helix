@@ -6,6 +6,20 @@ using System.Linq;
 
 namespace Trophy.Analysis {
     public static class TypeCheckingErrors {
+        public static Exception InvalidHeapAllocation(TokenLocation location, ITrophyType type) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: Invalid Heap Allocation",
+                $"The type '{type}' cannot be allocated on the heap");
+        }
+
+        public static Exception InvalidStackAllocation(TokenLocation location, ITrophyType type) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: Invalid Stack Allocation",
+                $"The type '{type}' cannot be allocated on the stack");
+        }
+
         public static Exception EarlyReturnInLambda(TokenLocation location) {
             return new TypeCheckingException(
                 location,

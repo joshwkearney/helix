@@ -170,6 +170,9 @@ namespace Trophy.Parsing {
             else if (id == "new") {
                 return new Token(TokenKind.NewKeyword, location);
             }
+            else if (id == "put") {
+                return new Token(TokenKind.PutKeyword, location);
+            }
             else if (id == "struct") {
                 return new Token(TokenKind.StructKeyword, location);
             }

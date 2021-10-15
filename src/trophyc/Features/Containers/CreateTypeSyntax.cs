@@ -16,16 +16,18 @@ namespace Trophy.Features.Containers {
         public T MemberValue { get; set; }
     }
 
-    public class NewSyntaxA : ISyntaxA {
+    public class CreateTypeSyntaxA : ISyntaxA {
         private readonly IReadOnlyList<StructArgument<ISyntaxA>> args;
         private readonly ISyntaxA targetType;
+        private readonly bool isStackAllocated;
 
         public TokenLocation Location { get; }
 
-        public NewSyntaxA(TokenLocation location, ISyntaxA targetType, IReadOnlyList<StructArgument<ISyntaxA>> args) {
+        public CreateTypeSyntaxA(TokenLocation location, ISyntaxA targetType, IReadOnlyList<StructArgument<ISyntaxA>> args, bool isStackAllocated) {
             this.Location = location;
             this.targetType = targetType;
             this.args = args;
+            this.isStackAllocated = isStackAllocated;
         }
 
         public ISyntaxB CheckNames(INamesRecorder names) {
@@ -34,18 +36,20 @@ namespace Trophy.Features.Containers {
 
             // Structs, unions, and arrays can only be properly created if we catch them prematurely
             if (this.targetType.ResolveToType(names).TryGetValue(out var type)) {
-                if (type.AsNamedType().TryGetValue(out var path)) {
-                    if (names.TryGetName(path, out var target)) {
+                if (this.isStackAllocated) {
+                    if (type.AsNamedType().TryGetValue(out var path) && names.TryGetName(path, out var target)) {
                         if (target == NameTarget.Struct) {
                             return new NewStructSyntaxA(this.Location, type, this.args).CheckNames(names);
                         }
                         else if (target == NameTarget.Union) {
                             return new NewUnionSyntaxA(this.Location, type, this.args).CheckNames(names);
-                        }
+                        }                        
                     }
                 }
-                else if (type.AsArrayType().TryGetValue(out var arrayType)) {
-                    return new NewArraySyntaxA(this.Location, arrayType, this.args).CheckNames(names);
+                else {
+                    if (type.AsArrayType().TryGetValue(out var arrayType)) {
+                        return new NewArraySyntaxA(this.Location, arrayType, this.args).CheckNames(names);
+                    }
                 }
             }
 
@@ -55,14 +59,14 @@ namespace Trophy.Features.Containers {
                     MemberValue = x.MemberValue.CheckNames(names)})
                 .ToArray();
 
-            return new NewSyntaxB(this.Location, targetType, names.Context.Region, args);
+            return new CreateTypeSyntaxB(this.Location, targetType, this.isStackAllocated, args);
         }
     }
 
-    public class NewSyntaxB : ISyntaxB {
+    public class CreateTypeSyntaxB : ISyntaxB {
         private readonly IReadOnlyList<StructArgument<ISyntaxB>> args;
         private readonly ISyntaxB targetType;
-        private readonly IdentifierPath region;
+        private readonly bool isStackAllocated;
 
         public TokenLocation Location { get; }
 
@@ -72,11 +76,11 @@ namespace Trophy.Features.Containers {
                 .Aggregate(this.targetType.VariableUsage, (x, y) => x.Union(y));
         }
 
-        public NewSyntaxB(TokenLocation location, ISyntaxB targetType, IdentifierPath region, IReadOnlyList<StructArgument<ISyntaxB>> args) {
+        public CreateTypeSyntaxB(TokenLocation location, ISyntaxB targetType, bool isStackAllocated, IReadOnlyList<StructArgument<ISyntaxB>> args) {
             this.Location = location;
             this.targetType = targetType;
             this.args = args;
-            this.region = region;
+            this.isStackAllocated = isStackAllocated;
         }
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {
@@ -85,6 +89,11 @@ namespace Trophy.Features.Containers {
 
             if (!target.ReturnType.AsMetaType().Select(x => x.PayloadType).TryGetValue(out var returnType)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.targetType.Location);
+            }
+
+            // All remaining types are stack allocated
+            if (!this.isStackAllocated) {
+                throw TypeCheckingErrors.InvalidHeapAllocation(this.Location, returnType);
             }
 
             // Check for primitive types
@@ -104,8 +113,14 @@ namespace Trophy.Features.Containers {
                 }
             }
 
-            // Structs and unions have already been checked
-            throw TypeCheckingErrors.UnexpectedType(this.Location, returnType);
+            // All types have been check at this point
+            // All remaining types are stack allocated
+            if (this.isStackAllocated) {
+                throw TypeCheckingErrors.InvalidStackAllocation(this.Location, returnType);
+            }
+            else {
+                throw TypeCheckingErrors.InvalidHeapAllocation(this.Location, returnType);
+            }
         }
     }
 }
