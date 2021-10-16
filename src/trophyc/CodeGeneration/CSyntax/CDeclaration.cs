@@ -114,7 +114,7 @@ namespace Trophy.CodeGeneration.CSyntax {
 
                     if (!mems.Any()) {
                         CHelper.Indent(indentLevel + 1, sb);
-                        sb.Append("int dummy;");
+                        sb.AppendLine("int dummy;");
                     }
 
                     CHelper.Indent(indentLevel, sb);
