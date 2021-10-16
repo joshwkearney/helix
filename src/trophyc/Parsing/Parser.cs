@@ -652,9 +652,6 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.NewKeyword) || this.Peek(TokenKind.PutKeyword)) {
                 return this.NewPutExpression();
             }
-            else if (this.Peek(TokenKind.FunctionKeyword)) {
-                return this.ClosureExpression();
-            }
             else if (this.Peek(TokenKind.MatchKeyword)) {
                 return this.MatchExpression();
             }
@@ -931,6 +928,9 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.Pipe)) {
                 return this.ReadOnlyArrayLiteral(isStackAllocated);
             }
+            else if (this.Peek(TokenKind.FunctionKeyword)) {
+                return this.ClosureExpression(isStackAllocated);
+            }
 
             var targetType = this.TypeExpression();
             var mems = new List<StructArgument<ISyntaxA>>();
@@ -966,7 +966,7 @@ namespace Trophy.Parsing {
             return new CreateTypeSyntaxA(loc, targetType, mems, isStackAllocated);
         }
 
-        private ISyntaxA ClosureExpression() {
+        private ISyntaxA ClosureExpression(bool isStackAllocated) {
             var start = this.Advance(TokenKind.FunctionKeyword);
 
             this.Advance(TokenKind.OpenParenthesis);
@@ -999,7 +999,7 @@ namespace Trophy.Parsing {
             var body = this.TopExpression();
             var loc = start.Location.Span(body.Location);
 
-            return new LambdaSyntaxA(loc, body, pars);
+            return new LambdaSyntaxA(loc, body, pars, isStackAllocated);
         }
 
         private ISyntaxA MatchExpression() {

@@ -26,7 +26,7 @@ namespace Trophy.Features.FlowControl {
 
             var context = names.Context.WithRegion(_ => newRegion);
             var lambda = names.WithContext(context, names => {
-                var syntaxA = new LambdaSyntaxA(this.Location, this.body, new ParseFunctionParameter[0]);
+                var syntaxA = new LambdaSyntaxA(this.Location, this.body, new ParseFunctionParameter[0], true);
                 var syntaxB = (LambdaSyntaxB)syntaxA.CheckNames(names);
 
                 return syntaxB;

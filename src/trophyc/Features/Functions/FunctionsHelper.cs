@@ -56,7 +56,8 @@ namespace Trophy.Features.Functions {
 
             // Push this function name as the new scope
             var context = names.Context.WithScope(_ => funcPath).WithRegion(_ => region);
-            var result = names.WithContext(context, names => {
+            
+            return names.WithContext(context, names => {
                 // Declare the parameters
                 foreach (var par in pars) {
                     names.DeclareName(funcPath.Append(par.Name), NameTarget.Variable, IdentifierScope.LocalName);
@@ -65,8 +66,6 @@ namespace Trophy.Features.Functions {
                 // Pop the new scope out
                 return body.CheckNames(names);
             });
-
-            return result;
         }
 
         public static void DeclareParameters(

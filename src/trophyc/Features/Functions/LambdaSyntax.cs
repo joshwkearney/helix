@@ -9,24 +9,28 @@ using Trophy.Parsing;
 
 namespace Trophy.Features.Functions {
     public class LambdaSyntaxA : ISyntaxA {
+        private readonly bool isStackAllocated;
+
         public TokenLocation Location { get; }
 
         public IReadOnlyList<ParseFunctionParameter> Parameters { get; }
 
         public ISyntaxA Body { get; }
 
-        public LambdaSyntaxA(TokenLocation loc, ISyntaxA body, IReadOnlyList<ParseFunctionParameter> pars) {
+        public LambdaSyntaxA(TokenLocation loc, ISyntaxA body, IReadOnlyList<ParseFunctionParameter> pars, bool isStackAllocated) {
             this.Location = loc;
             this.Body = body;
             this.Parameters = pars;
+            this.isStackAllocated = isStackAllocated;
         }
 
         public ISyntaxB CheckNames(INamesRecorder names) {
             var path = names.Context.Scope.Append("$lambda" + names.GetNewVariableId());
-
             var pars = FunctionsHelper.CheckParameters(this.Parameters, names, this.Location);
-
             var closestHeap = RegionsHelper.GetClosestHeap(names.Context.Region);
+            var region = this.isStackAllocated
+                ? RegionsHelper.GetClosestStack(names.Context.Region)
+                : closestHeap;
 
             // Check for duplicate parameter names
             FunctionsHelper.CheckForDuplicateParameters(this.Location, pars.Select(x => x.Name));
@@ -37,7 +41,7 @@ namespace Trophy.Features.Functions {
             // Reserve ids for the parameters
             var ids = pars.Select(_ => names.GetNewVariableId()).ToArray();
 
-            return new LambdaSyntaxB(this.Location, path, body, closestHeap, pars, ids);
+            return new LambdaSyntaxB(this.Location, path, body, region, pars, ids);
         }
     }
 
