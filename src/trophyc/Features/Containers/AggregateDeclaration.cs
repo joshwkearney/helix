@@ -61,19 +61,19 @@ namespace Trophy.Features.Containers {
             var context = names.Context.WithScope(x => x.Append(this.sig.Name));
             var decls = names.WithContext(context, names => {
                 return this.decls
-                    .Select(x => {
-                        if (x is FunctionDeclarationA func) {
-                            var structType = new NamedType(names.Context.Scope);
-                            var newPar = new ParseFunctionParameter("this", new TypeAccessSyntaxA(func.Location, structType), VariableKind.Value);
-                            var newPars = func.Signature.Parameters.Prepend(newPar).ToImmutableList();
-                            var newSig = new ParseFunctionSignature(func.Signature.Name, func.Signature.ReturnType, newPars);
+                    //.Select(x => {
+                        //if (x is FunctionDeclarationA func) {
+                        //    var structType = new NamedType(names.Context.Scope);
+                        //    var newPar = new ParseFunctionParameter("this", new TypeAccessSyntaxA(func.Location, structType), VariableKind.Value);
+                        //    var newPars = func.Signature.Parameters.Prepend(newPar).ToImmutableList();
+                        //    var newSig = new ParseFunctionSignature(func.Signature.Name, func.Signature.ReturnType, newPars);
 
-                            return new FunctionDeclarationA(func.Location, newSig, func.Body);
-                        }
-                        else {
-                            return x;
-                        }
-                    })
+                        //    return new FunctionDeclarationA(func.Location, newSig, func.Body);
+                        //}
+                        //else {
+                        //    return x;
+                        //}
+                    //})
                     .Select(x => x.DeclareNames(names))
                     .ToArray();
             });

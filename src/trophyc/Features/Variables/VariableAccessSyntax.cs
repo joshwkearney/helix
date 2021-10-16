@@ -28,7 +28,6 @@ namespace Trophy.Features.Variables {
         public ISyntaxC CheckTypes(ITypesRecorder types) {
             var info = types.TryGetVariable(this.path).GetValue();
             var returnType = info.Type;
-            var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
 
             if (this.kind == VariableAccessKind.LiteralAccess) {
                 // Make sure we're not literally accessing a non-variable parameter
@@ -42,7 +41,7 @@ namespace Trophy.Features.Variables {
                 }
             }
 
-            return new VariableAccessdSyntaxC(info, this.kind, returnType, lifetimes);
+            return new VariableAccessdSyntaxC(info, this.kind, returnType);
         }
     }
 
@@ -56,11 +55,10 @@ namespace Trophy.Features.Variables {
 
         public ImmutableDictionary<IdentifierPath, VariableUsageKind> VariableUsage { get; }
 
-        public VariableAccessdSyntaxC(VariableInfo info, VariableAccessKind kind, ITrophyType type, ImmutableHashSet<IdentifierPath> lifetimes) {
+        public VariableAccessdSyntaxC(VariableInfo info, VariableAccessKind kind, ITrophyType returnType) {
             this.info = info;
             this.kind = kind;
-            this.ReturnType = type;
-            this.Lifetimes = lifetimes;
+            this.ReturnType = returnType;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {

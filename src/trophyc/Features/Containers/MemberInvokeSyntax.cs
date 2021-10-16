@@ -5,6 +5,8 @@ using Trophy.Parsing;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Trophy.Features.FlowControl;
+using Trophy.Features.Variables;
 
 namespace Trophy.Features.Containers {
     public class MemberInvokeSyntaxA : ISyntaxA {
@@ -31,6 +33,8 @@ namespace Trophy.Features.Containers {
     }
 
     public class MemberInvokeSyntaxB : ISyntaxB {
+        private static int counter = 0;
+
         private readonly IdentifierPath enclosingHeap;
         private readonly string memberName;
         private readonly ISyntaxB target;
@@ -83,19 +87,28 @@ namespace Trophy.Features.Containers {
                 var actual = args[i].ReturnType;
 
                 if (!expected.Equals(actual)) {
+                    if (i == 0 && expected.Equals(new VarRefType(actual, true))) {
+                        var id = counter++;
+                        var info = new VariableInfo(
+                            "$member_invoke_temp" + id,
+                            expected, 
+                            VariableKind.RefVariable, 
+                            VariableSource.Local, 
+                            id);
+
+                        var block = new BlockSyntaxC(new ISyntaxC[] { 
+                            new VarRefSyntaxC(info, args[i]),
+                            new VariableAccessdSyntaxC(info, VariableAccessKind.LiteralAccess, info.Type)
+                        });
+
+                        args[i] = block;
+
+                        continue;
+                    }
+
                     throw TypeCheckingErrors.UnexpectedType(this.Location, expected, actual);
                 }
             }
-
-            //var lifetimes = ImmutableHashSet.Create<IdentifierPath>();
-
-            /*if (func.ReturnType.GetCopiability(types) == TypeCopiability.Conditional) {
-                lifetimes = args
-                    .Select(x => x.Lifetimes)
-                    .Aggregate(ImmutableHashSet.Create<IdentifierPath>(), (x, y) => x.Union(y))
-                    .Union(target.Lifetimes)
-                    .Add(this.enclosingHeap);
-            }*/
 
             return new SingularFunctionInvokeSyntaxC(path, args, this.enclosingHeap.Segments.Last(), func.ReturnType);
         }

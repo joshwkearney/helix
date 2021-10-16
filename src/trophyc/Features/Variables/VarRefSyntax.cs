@@ -97,8 +97,7 @@ namespace Trophy.Features.Variables {
 
             return new VarRefSyntaxC(
                 info: info,
-                assign: assign,
-                returnType: new VarRefType(assign.ReturnType, this.isreadonly));
+                assign: assign);
         }
     }
 
@@ -106,12 +105,11 @@ namespace Trophy.Features.Variables {
         private readonly VariableInfo info;
         private readonly ISyntaxC assign;
 
-        public ITrophyType ReturnType { get; }
+        public ITrophyType ReturnType => this.info.Type;
 
-        public VarRefSyntaxC(VariableInfo info, ISyntaxC assign, ITrophyType returnType) {
+        public VarRefSyntaxC(VariableInfo info, ISyntaxC assign) {
             this.info = info;
             this.assign = assign;
-            this.ReturnType = returnType;
         }
 
         public CExpression GenerateCode(ICWriter declWriter, ICStatementWriter statWriter) {
