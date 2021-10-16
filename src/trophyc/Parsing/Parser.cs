@@ -520,9 +520,15 @@ namespace Trophy.Parsing {
 
         private ISyntaxA MemberAccess(ISyntaxA first) {
             this.Advance(TokenKind.Dot);
-            var tok = (Token<string>)this.Advance(TokenKind.Identifier);
+            
+            if (this.TryAdvance(TokenKind.LiteralSign)) {
+                var tok = (Token<string>)this.Advance(TokenKind.Identifier);
 
-            if (this.TryAdvance(TokenKind.OpenParenthesis)) {
+                return new MemberAccessSyntaxA(tok.Location, first, tok.Value, true);
+            }
+            else if (this.TryAdvance(TokenKind.OpenParenthesis)) {
+                var tok = (Token<string>)this.Advance(TokenKind.Identifier);
+
                 var args = new List<ISyntaxA>();
 
                 while (!this.Peek(TokenKind.CloseParenthesis)) {
@@ -539,9 +545,10 @@ namespace Trophy.Parsing {
                 return new MemberInvokeSyntaxA(loc, first, tok.Value, args);
             }
             else {
+                var tok = (Token<string>)this.Advance(TokenKind.Identifier);
                 var loc = first.Location.Span(tok.Location);
 
-                return new MemberAccessSyntaxA(loc, first, tok.Value);
+                return new MemberAccessSyntaxA(loc, first, tok.Value, false);
             }
         }
 

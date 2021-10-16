@@ -9,24 +9,27 @@ namespace Trophy.Features.Containers {
     public class MemberAccessSyntaxA : ISyntaxA  {
         private readonly ISyntaxA target;
         private readonly string memberName;
+        private readonly bool literalAccess;
         public TokenLocation Location { get; }
 
-        public MemberAccessSyntaxA(TokenLocation location, ISyntaxA target, string memberName) {
+        public MemberAccessSyntaxA(TokenLocation location, ISyntaxA target, string memberName, bool literalAccess) {
             this.Location = location;
             this.target = target;
             this.memberName = memberName;
+            this.literalAccess = literalAccess;
         }
 
         public ISyntaxB CheckNames(INamesRecorder names) {
             var target = this.target.CheckNames(names);
 
-            return new MemberAccessSyntaxB(this.Location, target, this.memberName);
+            return new MemberAccessSyntaxB(this.Location, target, this.memberName, this.literalAccess);
         }
     }
 
     public class MemberAccessSyntaxB : ISyntaxB {
         private readonly ISyntaxB target;
         private readonly string memberName;
+        private readonly bool literalAccess;
 
         public TokenLocation Location { get; }
 
@@ -34,12 +37,12 @@ namespace Trophy.Features.Containers {
             get => this.target.VariableUsage;
         }
 
-        public MemberAccessSyntaxB(TokenLocation location, ISyntaxB target, string memberName) {
+        public MemberAccessSyntaxB(TokenLocation location, ISyntaxB target, string memberName, bool literalAccess) {
             this.Location = location;
             this.target = target;
             this.memberName = memberName;
+            this.literalAccess = literalAccess;
         }
-
 
         public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
@@ -47,6 +50,10 @@ namespace Trophy.Features.Containers {
             // If this is an array we can get the size
             if (target.ReturnType.AsArrayType().TryGetValue(out _)) {
                 if (this.memberName == "size") {
+                    if (this.literalAccess) {
+                        throw TypeCheckingErrors.ExpectedVariableType(this.Location, target.ReturnType);
+                    }
+
                     return new MemberAccessTypeCheckedSyntax(
                         target, 
                         this.memberName, 
@@ -58,6 +65,10 @@ namespace Trophy.Features.Containers {
             // If this is a fixed array we can get the size
             if (target.ReturnType.AsFixedArrayType().TryGetValue(out _)) {
                 if (this.memberName == "size") {
+                    if (this.literalAccess) {
+                        throw TypeCheckingErrors.ExpectedVariableType(this.Location, target.ReturnType);
+                    }
+
                     return new MemberAccessTypeCheckedSyntax(
                         target,
                         this.memberName,
@@ -80,7 +91,7 @@ namespace Trophy.Features.Containers {
                         bool deref = false;
                         var returnType = field.MemberType;
 
-                        if (field.Kind != VariableKind.Value) {
+                        if (!this.literalAccess && field.Kind != VariableKind.Value) {
                             returnType = (returnType as VarRefType).InnerType;
                             deref = true;
                         }

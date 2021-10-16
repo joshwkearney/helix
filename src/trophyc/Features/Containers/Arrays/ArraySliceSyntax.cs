@@ -52,7 +52,7 @@ namespace Trophy.Features.Containers.Arrays {
                         this.Location,
                         accessSyntax,
                         Option.Some(start),
-                        Option.Some(new MemberAccessSyntaxA(this.Location, accessSyntax, "size")))
+                        Option.Some(new MemberAccessSyntaxA(this.Location, accessSyntax, "size", false)))
                 })
                 .CheckNames(names);
             }
