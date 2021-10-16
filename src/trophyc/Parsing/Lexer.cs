@@ -245,6 +245,9 @@ namespace Trophy.Parsing {
             else if (id == "async") {
                 return new Token(TokenKind.AsyncKeyword, location);
             }
+            else if (id == "not") {
+                return new Token(TokenKind.NotKeyword, location);
+            }
             else {
                 return new Token<string>(id, TokenKind.Identifier, location);
             }

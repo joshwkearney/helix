@@ -340,11 +340,22 @@ namespace Trophy.Parsing {
                 }
                 else {
                     this.Advance(TokenKind.IsKeyword);
+                    var negate = this.TryAdvance(TokenKind.NotKeyword);
 
                     var pattern = this.Advance<string>();
+                    var patternName = Option.None<string>();
+
+                    if (this.Peek(TokenKind.Identifier)) {
+                        patternName = Option.Some(this.Advance<string>());
+                    }
+
                     var loc = first.Location.Span(this.tokens[this.pos - 1].Location);
 
-                    first = new IsSyntaxA(loc, first, pattern);
+                    first = new IsSyntaxA(loc, first, pattern, patternName);
+
+                    if (negate) {
+                        first = new UnarySyntaxA(loc, UnaryOperator.Not, first);
+                    }
                 }
             }
 
