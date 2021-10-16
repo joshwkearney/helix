@@ -722,7 +722,7 @@ namespace Trophy.Parsing {
             return new VoidLiteralAB(tok.Location);
         }
 
-        private ISyntaxA ArrayLiteral() {
+        private ISyntaxA ArrayLiteral(bool isStackAllocated) {
             var start = this.Advance(TokenKind.OpenBracket);
             var args = new List<ISyntaxA>();
 
@@ -737,10 +737,10 @@ namespace Trophy.Parsing {
             var end = this.Advance(TokenKind.CloseBracket);
             var loc = start.Location.Span(end.Location);
 
-            return new ArrayLiteralSyntaxA(loc, false, args);
+            return new ArrayLiteralSyntaxA(loc, false, args, isStackAllocated);
         }
 
-        private ISyntaxA ReadOnlyArrayLiteral() {
+        private ISyntaxA ReadOnlyArrayLiteral(bool isStackAllocated) {
             var start = this.Advance(TokenKind.Pipe);
             var args = new List<ISyntaxA>();
 
@@ -755,7 +755,7 @@ namespace Trophy.Parsing {
             var end = this.Advance(TokenKind.Pipe);
             var loc = start.Location.Span(end.Location);
 
-            return new ArrayLiteralSyntaxA(loc, true, args);
+            return new ArrayLiteralSyntaxA(loc, true, args, isStackAllocated);
         }
 
         private ISyntaxA ParenExpression() {
@@ -919,17 +919,17 @@ namespace Trophy.Parsing {
             if (this.Peek(TokenKind.NewKeyword)) {
                 start = this.Advance(TokenKind.NewKeyword).Location;
                 isStackAllocated = false;
-
-                if (this.Peek(TokenKind.OpenBracket)) {
-                    return this.ArrayLiteral();
-                }
-                else if (this.Peek(TokenKind.Pipe)) {
-                    return this.ReadOnlyArrayLiteral();
-                }
             }
             else {
                 start = this.Advance(TokenKind.PutKeyword).Location;
                 isStackAllocated = true;
+            }
+
+            if (this.Peek(TokenKind.OpenBracket)) {
+                return this.ArrayLiteral(isStackAllocated);
+            }
+            else if (this.Peek(TokenKind.Pipe)) {
+                return this.ReadOnlyArrayLiteral(isStackAllocated);
             }
 
             var targetType = this.TypeExpression();

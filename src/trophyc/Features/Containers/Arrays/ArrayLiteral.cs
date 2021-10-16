@@ -10,18 +10,23 @@ namespace Trophy.Features.Containers.Arrays {
     public class ArrayLiteralSyntaxA : ISyntaxA {
         private readonly IReadOnlyList<ISyntaxA> args;
         private readonly bool isreadonly;
+        private readonly bool isStackAllocated;
 
         public TokenLocation Location { get; }
 
-        public ArrayLiteralSyntaxA(TokenLocation location, bool isreadonly, IReadOnlyList<ISyntaxA> args) {
+        public ArrayLiteralSyntaxA(TokenLocation location, bool isreadonly, IReadOnlyList<ISyntaxA> args, bool stackAllocated) {
             this.Location = location;
             this.args = args;
             this.isreadonly = isreadonly;
+            this.isStackAllocated = stackAllocated;
         }
 
         public ISyntaxB CheckNames(INamesRecorder names) {
             var args = this.args.Select(x => x.CheckNames(names)).ToArray();
-            var heap = RegionsHelper.GetClosestHeap(names.Context.Region);
+
+            var heap = this.isStackAllocated 
+                ? RegionsHelper.GetClosestStack(names.Context.Region) 
+                : RegionsHelper.GetClosestHeap(names.Context.Region);
 
             return new ArrayLiteralSyntaxB(this.Location, this.isreadonly, heap, args);
         }
