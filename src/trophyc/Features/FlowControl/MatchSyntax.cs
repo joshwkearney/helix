@@ -174,7 +174,7 @@ namespace Trophy.Features.FlowControl {
                 if (pattern.Name.TryGetValue(out var name)) {
                     var info = new VariableInfo(
                         name: name,
-                        innerType: mem.MemberType,
+                        innerType: new VarRefType(mem.MemberType, false),
                         kind: mem.Kind,
                         source: mem.Kind == VariableKind.Value ? VariableSource.Local : VariableSource.Parameter,
                         pattern.Id
