@@ -522,13 +522,14 @@ namespace Trophy.Parsing {
             this.Advance(TokenKind.Dot);
             
             if (this.TryAdvance(TokenKind.LiteralSign)) {
-                var tok = (Token<string>)this.Advance(TokenKind.Identifier);
+                var tok1 = (Token<string>)this.Advance(TokenKind.Identifier);
 
-                return new MemberAccessSyntaxA(tok.Location, first, tok.Value, true);
+                return new MemberAccessSyntaxA(tok1.Location, first, tok1.Value, true);
             }
-            else if (this.TryAdvance(TokenKind.OpenParenthesis)) {
-                var tok = (Token<string>)this.Advance(TokenKind.Identifier);
 
+            var tok = (Token<string>)this.Advance(TokenKind.Identifier);
+
+            if (this.TryAdvance(TokenKind.OpenParenthesis)) {
                 var args = new List<ISyntaxA>();
 
                 while (!this.Peek(TokenKind.CloseParenthesis)) {
@@ -545,7 +546,6 @@ namespace Trophy.Parsing {
                 return new MemberInvokeSyntaxA(loc, first, tok.Value, args);
             }
             else {
-                var tok = (Token<string>)this.Advance(TokenKind.Identifier);
                 var loc = first.Location.Span(tok.Location);
 
                 return new MemberAccessSyntaxA(loc, first, tok.Value, false);
