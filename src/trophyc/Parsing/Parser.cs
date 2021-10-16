@@ -982,26 +982,34 @@ namespace Trophy.Parsing {
         private ISyntaxA MatchExpression() {
             var start = this.Advance(TokenKind.MatchKeyword);
             var arg = this.TopExpression();
-            var patterns = new List<string>();
-            var patternExprs = new List<ISyntaxA>();
+            var patterns = new List<MatchPatternA>();
 
             while (this.TryAdvance(TokenKind.IfKeyword)) {
-                patterns.Add(this.Advance<string>());
+                var member = this.Advance<string>();
+                var name = Option.None<string>();
+
+                if (!this.Peek(TokenKind.ThenKeyword)) {
+                    name = Option.Some(this.Advance<string>());
+                }
+
                 this.Advance(TokenKind.ThenKeyword);
 
-                patternExprs.Add(this.TopExpression());
+                var expr = this.TopExpression();
+                var pat = new MatchPatternA(member, name, expr);
+
+                patterns.Add(pat);
             }
 
             if (this.TryAdvance(TokenKind.ElseKeyword)) {
                 var last = this.TopExpression();
                 var loc = start.Location.Span(last.Location);
 
-                return new MatchSyntaxA(loc, arg, patterns, patternExprs, Option.Some(last));
+                return new MatchSyntaxA(loc, arg, patterns, Option.Some(last));
             }
             else {
-                var loc = start.Location.Span(patternExprs.Last().Location);
+                var loc = start.Location.Span(patterns.Last().Expression.Location);
 
-                return new MatchSyntaxA(loc, arg, patterns, patternExprs, Option.None<ISyntaxA>());
+                return new MatchSyntaxA(loc, arg, patterns, Option.None<ISyntaxA>());
             }
         }
     }

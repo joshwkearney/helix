@@ -11,10 +11,57 @@ using Trophy.Features.Functions;
 using Trophy.Parsing;
 
 namespace Trophy.Features.FlowControl {
+    public class MatchPatternA {
+        public string Member { get; }
+
+        public IOption<string> Name { get; }
+
+        public ISyntaxA Expression { get; }
+
+        public MatchPatternA(string member, IOption<string> name, ISyntaxA expression) {
+            this.Member = member;
+            this.Name = name;
+            this.Expression = expression;
+        }
+    }
+
+    public class MatchPatternB {
+        public string Member { get; }
+
+        public IOption<string> Name { get; }
+
+        public ISyntaxB Expression { get; }
+
+        public int Id { get; }
+
+        public MatchPatternB(string member, IOption<string> name, ISyntaxB expression, int id) {
+            this.Member = member;
+            this.Name = name;
+            this.Expression = expression;
+            this.Id = id;
+        }
+    }
+
+    public class MatchPatternC {
+        public string Member { get; }
+
+        public ISyntaxC Expression { get; }
+
+        public IOption<VariableInfo> Info { get; }
+
+        public int Index { get; }
+
+        public MatchPatternC(string member, ISyntaxC expression, IOption<VariableInfo> info, int index) {
+            this.Member = member;
+            this.Expression = expression;
+            this.Info = info;
+            this.Index = index;
+        }
+    }
+
     public class MatchSyntaxA : ISyntaxA {
         private readonly ISyntaxA arg;
-        private readonly IReadOnlyList<string> patterns;
-        private readonly IReadOnlyList<ISyntaxA> patternExprs;
+        private readonly IReadOnlyList<MatchPatternA> patterns;
         private readonly IOption<ISyntaxA> elseExpr;
 
         public TokenLocation Location { get; }
@@ -22,56 +69,47 @@ namespace Trophy.Features.FlowControl {
         public MatchSyntaxA(
             TokenLocation location, 
             ISyntaxA arg, 
-            IReadOnlyList<string> patterns, 
-            IReadOnlyList<ISyntaxA> patternExprs,
+            IReadOnlyList<MatchPatternA> patterns, 
             IOption<ISyntaxA> elseExpr) {
 
             this.Location = location;
             this.arg = arg;
             this.patterns = patterns;
-            this.patternExprs = patternExprs;
             this.elseExpr = elseExpr;
         }
 
         public ISyntaxB CheckNames(INamesRecorder names) {
             var arg = this.arg.CheckNames(names);
             var elseExpr = this.elseExpr.Select(x => x.CheckNames(names));
-            var path = names.Context.Scope.Append("$match" + names.GetNewVariableId());
+            var newPatterns = new List<MatchPatternB>();
 
-            if (this.patterns.Count != this.patternExprs.Count) {
-                throw new Exception("Internal compiler inconsistency");
-            }
-
-            var patternIds = new List<int>();
-            var patternExprs = new List<ISyntaxB>();
-
-            // Check for duplicate patterns
-            FunctionsHelper.CheckForDuplicateParameters(this.Location, this.patterns);
+            // Check for duplicate pattern members
+            FunctionsHelper.CheckForDuplicateParameters(this.Location, this.patterns.Select(x => x.Member));
 
             // Declare the pattern names and check pattern expressions
-            for (int i = 0; i < this.patterns.Count; i++) {
-                var pattern = this.patterns[i];
-                var expr = this.patternExprs[i];
-                var id = names.GetNewVariableId();
-
+            foreach (var pattern in this.patterns) {
+                var path = names.Context.Scope.Append("$match_" + pattern.Member);
                 var context = names.Context.WithScope(_ => path);
-                names.WithContext(context, names => {
-                    names.DeclareName(path.Append(pattern), NameTarget.Variable, IdentifierScope.LocalName);
 
-                    patternIds.Add(id);
-                    patternExprs.Add(expr.CheckNames(names));
+                var expr = names.WithContext(context, names => {
+                    if (pattern.Name.TryGetValue(out var name)) {
+                        names.DeclareName(path.Append(name), NameTarget.Variable, IdentifierScope.LocalName);
+                    }
 
-                    return 0;
+                    return pattern.Expression.CheckNames(names);
                 });
+
+                var id = names.GetNewVariableId();
+                var newPattern = new MatchPatternB(pattern.Member, pattern.Name, expr, id);
+
+                newPatterns.Add(newPattern);
             }
 
             return new MatchSyntaxB(
                 this.Location, 
-                path, 
+                names.Context.Scope, 
                 arg, 
-                this.patterns, 
-                patternIds, 
-                patternExprs, 
+                newPatterns,
                 elseExpr);
         }
     }
@@ -79,33 +117,28 @@ namespace Trophy.Features.FlowControl {
     public class MatchSyntaxB : ISyntaxB {
         private readonly ISyntaxB arg;
         private readonly IdentifierPath path;
-        private readonly IReadOnlyList<string> patterns;
-        private readonly IReadOnlyList<ISyntaxB> patternExprs;
-        private readonly IReadOnlyList<int> patternIds;
+        private readonly IReadOnlyList<MatchPatternB> patterns;
         private readonly IOption<ISyntaxB> elseExpr;
 
         public MatchSyntaxB(
             TokenLocation location,
             IdentifierPath path,
             ISyntaxB arg,
-            IReadOnlyList<string> patterns,
-            IReadOnlyList<int> patternIds,
-            IReadOnlyList<ISyntaxB> patternExprs,
+            IReadOnlyList<MatchPatternB> patterns,
             IOption<ISyntaxB> elseExpr) {
 
             this.Location = location;
             this.path = path;
             this.arg = arg;
             this.patterns = patterns;
-            this.patternIds = patternIds;
-            this.patternExprs = patternExprs;
             this.elseExpr = elseExpr;
         }
 
         public TokenLocation Location { get; }
 
         public IImmutableSet<VariableUsage> VariableUsage {
-            get => this.patternExprs
+            get => this.patterns
+                .Select(x => x.Expression)
                 .SelectMany(x => x.VariableUsage)
                 .Concat(this.arg.VariableUsage)
                 .ToImmutableHashSet()
@@ -126,31 +159,37 @@ namespace Trophy.Features.FlowControl {
                 throw TypeCheckingErrors.ExpectedUnionType(this.arg.Location, arg.ReturnType);
             }
 
-            // Declare pattern variables
-            var infos = new List<VariableInfo>();
-            var indicies = new List<int>();
+            var newPatterns = new List<MatchPatternC>();
 
-            for (int i = 0; i < this.patterns.Count; i++) {
-                var pattern = this.patterns[i];
-                var expr = this.patternExprs[i];
-                var id = this.patternIds[i];
-                var memOpt = unionSig.Members.Where(x => x.MemberName == pattern).FirstOrNone();
+            foreach (var pattern in this.patterns) {
+                var memOpt = unionSig.Members.Where(x => x.MemberName == pattern.Member).FirstOrNone();
 
                 // Make sure this is a member on the target union
                 if (!memOpt.TryGetValue(out var mem)) {
-                    throw TypeCheckingErrors.MemberUndefined(this.Location, arg.ReturnType, pattern);
+                    throw TypeCheckingErrors.MemberUndefined(this.Location, arg.ReturnType, pattern.Member);
                 }
 
-                var info = new VariableInfo(
-                    name: pattern,
-                    innerType: mem.MemberType,
-                    kind: mem.Kind,
-                    source: mem.Kind == VariableKind.Value ? VariableSource.Local : VariableSource.Parameter,
-                    id);
+                var infoOpt = Option.None<VariableInfo>();
 
-                infos.Add(info);
-                indicies.Add(unionSig.Members.ToList().IndexOf(mem));
-                types.DeclareName(this.path.Append(pattern), NamePayload.FromVariable(info));
+                if (pattern.Name.TryGetValue(out var name)) {
+                    var info = new VariableInfo(
+                        name: name,
+                        innerType: mem.MemberType,
+                        kind: mem.Kind,
+                        source: mem.Kind == VariableKind.Value ? VariableSource.Local : VariableSource.Parameter,
+                        pattern.Id
+                    );
+
+                    infoOpt = Option.Some(info);
+
+                    types.DeclareName(this.path.Append("$match_" + pattern.Member).Append(name), NamePayload.FromVariable(info));
+                }
+
+                var expr = pattern.Expression.CheckTypes(types);
+                var index = unionSig.Members.ToList().IndexOf(mem);
+                var newPattern = new MatchPatternC(pattern.Member, expr, infoOpt, index);
+
+                newPatterns.Add(newPattern);
             }
 
             // Make sure all cases are covered
@@ -159,16 +198,20 @@ namespace Trophy.Features.FlowControl {
             }
 
             // Type check pattern expressions
-            var exprs = this.patternExprs.Select(x => x.CheckTypes(types)).ToArray();
-            var returnType = exprs[0].ReturnType;
+            var returnType = newPatterns[0].Expression.ReturnType;
+
+            var newExprs = new ISyntaxC[this.patterns.Count];
+            newExprs[0] = newPatterns[0].Expression;
 
             // Try to unify pattern types
-            for (int i = 1; i < exprs.Length; i++) {
-                if (!types.TryUnifyTo(exprs[i], returnType).TryGetValue(out var unified)) {
-                    throw TypeCheckingErrors.UnexpectedType(this.patternExprs[i].Location, returnType, exprs[i].ReturnType);
+            for (int i = 1; i < this.patterns.Count; i++) {
+                var pattern = newPatterns[i];
+
+                if (!types.TryUnifyTo(pattern.Expression, returnType).TryGetValue(out var unified)) {
+                    throw TypeCheckingErrors.UnexpectedType(this.patterns[i].Expression.Location, returnType, pattern.Expression.ReturnType);
                 }
                 else {
-                    exprs[i] = unified;
+                    newExprs[i] = unified;
                 }
             }
 
@@ -179,7 +222,10 @@ namespace Trophy.Features.FlowControl {
                 }
             }
 
-            return new MatchSyntaxC(returnType, arg, infos, exprs, indicies, elseExpr);
+            // Reinclude the unified expressions
+            newPatterns = newPatterns.Select((x, i) => new MatchPatternC(x.Member, newExprs[i], x.Info, x.Index)).ToList();
+
+            return new MatchSyntaxC(returnType, arg, newPatterns, elseExpr);
         }
     }
 
@@ -187,24 +233,18 @@ namespace Trophy.Features.FlowControl {
         private static int counter = 0;
 
         private readonly ISyntaxC arg;
-        private readonly IReadOnlyList<VariableInfo> patterns;
-        private readonly IReadOnlyList<ISyntaxC> patternExprs;
-        private readonly IReadOnlyList<int> patternIndicies;
+        private readonly IReadOnlyList<MatchPatternC> patterns;
         private readonly IOption<ISyntaxC> elseExpr;
 
         public MatchSyntaxC(
             ITrophyType returnType, 
             ISyntaxC arg, 
-            IReadOnlyList<VariableInfo> patterns, 
-            IReadOnlyList<ISyntaxC> patternExprs, 
-            IReadOnlyList<int> patternIndicies,
+            IReadOnlyList<MatchPatternC> patterns, 
             IOption<ISyntaxC> elseExpr) {
 
             this.ReturnType = returnType;
             this.arg = arg;
             this.patterns = patterns;
-            this.patternExprs = patternExprs;
-            this.patternIndicies = patternIndicies;
             this.elseExpr = elseExpr;
         }
 
@@ -220,22 +260,25 @@ namespace Trophy.Features.FlowControl {
 
             statWriter.WriteStatement(CStatement.VariableDeclaration(varType, varName));
 
-            for (int i = 0; i < this.patternExprs.Count; i++) {
-                var info = this.patterns[i];
-                var index = this.patternIndicies[i];
+            foreach (var pattern in this.patterns) {
+                var member = CExpression.MemberAccess(CExpression.MemberAccess(arg, "data"), pattern.Member);
+                var body = new List<CStatement>();
 
-                var member = CExpression.MemberAccess(CExpression.MemberAccess(arg, "data"), info.Name);
-                var decl = CStatement.VariableDeclaration(writer.ConvertType(info.Type), "$" + info.Name + info.UniqueId, member);
+                if (pattern.Info.TryGetValue(out var info)) {
+                    var decl = CStatement.VariableDeclaration(writer.ConvertType(info.Type), "$" + info.Name + info.UniqueId, member);
 
-                var body = new List<CStatement>(new[] { decl, CStatement.NewLine() });
+                    body.Add(decl);
+                    body.Add(CStatement.NewLine());
+                }
+
                 var bodyWriter = new CStatementWriter();
                 bodyWriter.StatementWritten += (s, e) => body.Add(e);
 
-                var result = this.patternExprs[i].GenerateCode(writer, bodyWriter);
+                var result = pattern.Expression.GenerateCode(writer, bodyWriter);
 
                 body.Add(CStatement.Assignment(CExpression.VariableLiteral(varName), result));
                 body.Add(CStatement.Break());
-                cases.Add(CStatement.CaseLabel(CExpression.IntLiteral(index), body));
+                cases.Add(CStatement.CaseLabel(CExpression.IntLiteral(pattern.Index), body));
             }
 
             if (this.elseExpr.TryGetValue(out var elseExpr)) {
