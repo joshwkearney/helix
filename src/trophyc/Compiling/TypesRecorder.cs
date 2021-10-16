@@ -93,7 +93,7 @@ namespace Trophy.Compiling {
                     }
                 }
             }
-            else if (target.ReturnType.AsSingularFunctionType().TryGetValue(out var singFunc)) {
+            /*else if (target.ReturnType.AsSingularFunctionType().TryGetValue(out var singFunc)) {
                 if (newType.AsFunctionType().TryGetValue(out var func)) {
                     var singSig = this.TryGetName(singFunc.FunctionPath).SelectMany(x => x.AsFunction()).GetValue();
                     var singPars = singSig.Parameters.Select(x => x.Type).ToArray();
@@ -102,7 +102,7 @@ namespace Trophy.Compiling {
                         return Option.Some(new SingularFunctionToFunctionAdapter(target, singFunc.FunctionPath, newType));
                     }
                 }
-            }
+            }*/
             else if (newType.AsNamedType().TryGetValue(out var path) && this.TryGetName(path).TryGetValue(out var payload)) {
                 if (payload.AsUnion().TryGetValue(out var unionSig)) {
                     var mems = unionSig
