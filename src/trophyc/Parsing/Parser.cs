@@ -109,7 +109,20 @@ namespace Trophy.Parsing {
                 return this.VarTypeExpression();
             }
 
-            return this.TypeAtom();
+            return this.TypeAccess();
+        }
+
+        private ISyntaxA TypeAccess() {
+            var first = TypeAtom();
+
+            while (this.TryAdvance(TokenKind.Dot)) {
+                var tok = (Token<string>)this.Advance(TokenKind.Identifier);
+                var loc = first.Location.Span(tok.Location);
+
+                first = new MemberAccessSyntaxA(loc, first, tok.Value, false);
+            }
+
+            return first;
         }
 
         private ISyntaxA TypeAtom() {

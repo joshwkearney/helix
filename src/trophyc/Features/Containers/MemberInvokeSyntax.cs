@@ -67,10 +67,19 @@ namespace Trophy.Features.Containers {
         public ISyntaxC CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var args = this.args.Select(x => x.CheckTypes(types)).Prepend(target).ToArray();
+            var path = new IdentifierPath();
 
             // Make sure this method exists
-            if (!types.TryGetMethodPath(target.ReturnType, this.memberName).TryGetValue(out var path)) {
-                throw TypeCheckingErrors.MemberUndefined(this.Location, target.ReturnType, this.memberName);
+            if (!types.TryGetMethodPath(target.ReturnType, this.memberName).TryGetValue(out path)) {
+                // Try to access this function statically (universal call syntax)
+                if (target.ReturnType.AsMetaType().TryGetValue(out var meta)
+                    && types.TryGetMethodPath(meta.PayloadType, this.memberName).TryGetValue(out path)) {
+
+                    args = args.Skip(1).ToArray();
+                }
+                else { 
+                    throw TypeCheckingErrors.MemberUndefined(this.Location, target.ReturnType, this.memberName);
+                }
             }
 
             // Get the function

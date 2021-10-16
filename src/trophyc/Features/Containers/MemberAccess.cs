@@ -3,6 +3,7 @@ using System.Linq;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
+using Trophy.Features.Meta;
 using Trophy.Parsing;
 
 namespace Trophy.Features.Containers {
@@ -23,6 +24,31 @@ namespace Trophy.Features.Containers {
             var target = this.target.CheckNames(names);
 
             return new MemberAccessSyntaxB(this.Location, target, this.memberName, this.literalAccess);
+        }
+
+        public IOption<ITrophyType> ResolveToType(INamesRecorder names) {
+            if (!this.target.ResolveToType(names).TryGetValue(out var innerType)) {
+                return Option.None<ITrophyType>();
+            }
+
+            if (!innerType.AsNamedType().TryGetValue(out var path)) {
+                return Option.None<ITrophyType>();
+            }
+
+            var newPath = path.Append(this.memberName);
+
+            if (!names.TryGetName(newPath, out var target)) {
+                return Option.None<ITrophyType>();
+            }
+
+            if (target == NameTarget.Function || target == NameTarget.GenericType 
+                || target == NameTarget.Struct || target == NameTarget.Union) {
+
+                return Option.Some(new NamedType(newPath));
+            }
+            else {
+                return Option.None<ITrophyType>();
+            }
         }
     }
 
@@ -101,6 +127,17 @@ namespace Trophy.Features.Containers {
                             this.memberName,
                             returnType,
                             deref);
+                    }
+                }
+            }
+
+            // If this is a meta type, we are probably trying to access inner objects
+            if (target.ReturnType.AsMetaType().TryGetValue(out var meta)) {
+                if (meta.PayloadType.AsNamedType().TryGetValue(out path)) {
+                    if (types.TryGetName(path.Append(this.memberName)).TryGetValue(out var value)) {
+                        if (value.AsFunction().Any() || value.AsStruct().Any() || value.AsUnion().Any()) {
+                            return new TypeSyntaxC(new MetaType(new NamedType(path.Append(this.memberName))));
+                        }
                     }
                 }
             }
