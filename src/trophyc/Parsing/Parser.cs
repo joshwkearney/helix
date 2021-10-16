@@ -933,13 +933,18 @@ namespace Trophy.Parsing {
             }
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                var memName = this.Advance<string>();
-                this.Advance(TokenKind.AssignmentSign);
-
-                var memValue = this.TopExpression();
+                var tok = (Token<string>)this.Advance(TokenKind.Identifier);
+                ISyntaxA memValue;
+                
+                if (this.TryAdvance(TokenKind.AssignmentSign)) {
+                   memValue  = this.TopExpression();
+                }
+                else {
+                    memValue = new VoidLiteralAB(tok.Location);
+                }
 
                 mems.Add(new StructArgument<ISyntaxA>() {
-                    MemberName = memName,
+                    MemberName = tok.Value,
                     MemberValue = memValue
                 });
 
