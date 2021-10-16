@@ -9,6 +9,7 @@ using Trophy.Features.Variables;
 using System.Linq;
 using Trophy.Features.Functions;
 using System;
+using Trophy.Features.Containers;
 
 namespace Trophy.Compiling {
     public class TypesRecorder : ITypesRecorder {
@@ -99,6 +100,35 @@ namespace Trophy.Compiling {
 
                     if (singSig.ReturnType.Equals(func.ReturnType) && singPars.SequenceEqual(func.ParameterTypes)) {
                         return Option.Some(new SingularFunctionToFunctionAdapter(target, singFunc.FunctionPath, newType));
+                    }
+                }
+            }
+            else if (newType.AsNamedType().TryGetValue(out var path) && this.TryGetName(path).TryGetValue(out var payload)) {
+                if (payload.AsUnion().TryGetValue(out var unionSig)) {
+                    var mems = unionSig
+                        .Members
+                        .Where(x => x.MemberType.Equals(target.ReturnType))
+                        .ToArray();
+
+                    if (mems.Length == 1) {
+                        var mem = mems
+                            .First()
+                            .MemberName;
+
+                        var tag = unionSig
+                            .Members
+                            .Select(x => x.MemberName)
+                            .ToList()
+                            .IndexOf(mem);
+
+                        var arg = new StructArgument<ISyntaxC>() {
+                            MemberName = mem,
+                            MemberValue = target
+                        };
+
+                        var put = new NewUnionSyntaxC(arg, tag, newType);
+
+                        return Option.Some(put);
                     }
                 }
             }
