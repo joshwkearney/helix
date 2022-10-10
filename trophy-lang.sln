@@ -6,6 +6,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "trophyc", "src\trophyc\trop
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c_playground", "src\c_playground\c_playground.vcxproj", "{91A43EF8-BF5B-4469-AF7B-B636FC752729}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "trophyc-new", "trophyc-new\trophyc-new.csproj", "{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,18 @@ Global
 		{91A43EF8-BF5B-4469-AF7B-B636FC752729}.Release|x64.Build.0 = Release|x64
 		{91A43EF8-BF5B-4469-AF7B-B636FC752729}.Release|x86.ActiveCfg = Release|Win32
 		{91A43EF8-BF5B-4469-AF7B-B636FC752729}.Release|x86.Build.0 = Release|Win32
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Debug|x64.Build.0 = Debug|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Debug|x86.Build.0 = Debug|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|x64.ActiveCfg = Release|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|x64.Build.0 = Release|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|x86.ActiveCfg = Release|Any CPU
+		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

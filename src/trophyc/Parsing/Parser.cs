@@ -669,7 +669,7 @@ namespace Trophy.Parsing {
                 return this.MatchExpression();
             }
             else if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.RefKeyword)) {
-                return this.VarRefExpression();
+                return this.VarRefExpression(false);
             }
             else {
                 var next = this.Advance();
@@ -678,7 +678,7 @@ namespace Trophy.Parsing {
             }
         }
 
-        private ISyntaxA VarRefExpression() {
+        private ISyntaxA VarRefExpression(bool isHeapAllocated) {
             IToken tok;
             bool isReadOnly;
 
@@ -697,7 +697,7 @@ namespace Trophy.Parsing {
             var assign = this.TopExpression();
             var loc = tok.Location.Span(assign.Location);
 
-            return new VarRefSyntaxA(loc, name, assign, isReadOnly);
+            return new VarRefSyntaxA(loc, name, assign, isReadOnly, isHeapAllocated);
         }
 
         private ISyntaxA LiteralVariableAccess() {
@@ -943,6 +943,9 @@ namespace Trophy.Parsing {
             }
             else if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.ClosureExpression(isStackAllocated);
+            }
+            else if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.RefKeyword)) {
+                return this.VarRefExpression(!isStackAllocated);
             }
 
             var targetType = this.TypeExpression();

@@ -26,13 +26,14 @@ namespace Trophy.Features.FlowControl {
             var start = new AsSyntaxA(this.startIndex.Location, this.startIndex, new TypeAccessSyntaxA(this.startIndex.Location, ITrophyType.Integer));
             var end = new AsSyntaxA(this.startIndex.Location, this.endIndex, new TypeAccessSyntaxA(this.startIndex.Location, ITrophyType.Integer));
 
-            var counterDecl = new VarRefSyntaxA(this.Location, counterName, start, false);
+            var counterDecl = new VarRefSyntaxA(this.Location, counterName, start, false, false);
 
             var idDecl = new VarRefSyntaxA(
                 this.Location, 
                 this.id, 
                 new IdentifierAccessSyntaxA(this.Location, counterName, VariableAccessKind.ValueAccess), 
-                true);
+                true,
+                false);
 
             var comp = new BinarySyntaxA(
                 this.Location,

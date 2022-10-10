@@ -1,0 +1,276 @@
+union Symbol {
+	unknown 	as void;
+	keyword 	as void;
+	var_id	 	as void;
+	struct_id 	as void;
+	union_id 	as void;
+	func_id		as void;
+};
+
+struct SymbolTableCell {
+	symbol as Symbol;
+	next as ref SymbolTableCell;
+};
+
+struct SymbolTable {
+	data as array[SymbolTableCell];
+	
+	func put_str (table as SymbolTable, str as span[int], sym as Symbol) => {
+		ref hash = hash_string(str) % table.data.size;
+		
+	};
+	
+	func hash_string (str as span[int]) => {
+		var hash = 7;
+		
+		for i=0 to str.size-1 do {
+			@hash = hash + 33*str[i];
+		};
+		
+		hash;
+	};
+};
+
+if x then {
+	x[
+;
+
+@lex.pos = lex.pos + 1;
+
+struct Point {
+	x as int;
+	y as var[int];
+};
+
+loc p = loc Point;
+*p.y = &x;
+
+var x = 45;			int x = 45;
+new var x = 45;		int* x = alloc...;
+
+loc x = 45;			
+loc y = loc Point { x=4 };
+
+new y = 45; x.y = 45;
+
+
+let x = 45;
+
+var[int]
+ref[int]
+
+
+new x = 45;
+new y = x;
+
+test(&x, &y)
+
+func test (x as var[int], y as var[var[int]]) as void 
+	with region(x) >= region(y) 
+	with ... => {
+	
+	*y = x;
+
+	loc x = 45;
+	new y = 60;
+
+	loc y = new [1, 2, 3, 4];
+	loc p = loc Point;
+	
+	loc q = rem Point { x=4, y=2 };
+	
+	p.x = 
+	p.y = 
+	
+
+	x = *x;
+	x = 
+	y = y;
+};
+
+
+union Token {
+    eof         as void;
+    plus        as void;
+    minus       as void;
+    multiply    as void;
+    open_paren  as void;
+    close_paren as void;
+    int_literal as int;
+};
+
+struct Lexer {
+	var pos as int;
+	var next_tok as Token;
+	chars as span[int];
+	
+	func next (ref lex as Lexer) as Token => {
+		if lex.next_tok is eof do {
+			lex.peek();
+		};
+			
+		ref result = lex.next_tok;
+		lex.@next_tok = void;
+		
+		result;
+	};
+	
+	func peek (ref lex as Lexer) as Token => {
+		if lex.next_tok is not eof do {
+			return lex.next_tok;
+		};
+		
+		if lex.pos >= lex.chars.size do {
+			return void;
+		};
+		
+		var c = lex.chars[lex.pos];
+	
+		lex.@next_tok =
+			if c == 40                      then put Token { open_paren }
+			else if c == 41                 then put Token { close_paren }
+			else if c == 43                 then put Token { plus }
+			else if c == 45                 then put Token { minus }
+			else if c == 42                 then put Token { multiply }
+			else if (c >= 48) and (c <= 57) then {
+				var value = 0;
+				
+				while (c >= 48) and (c <= 57) do {
+					@value = value*10 + (c-48);
+					lex.@pos = lex.pos + 1;
+					@c = lex.chars[lex.pos];
+				};
+				
+				lex.@pos = lex.pos - 1;
+				put Token { int_literal=value };
+			}
+			else void;
+			
+		lex.@pos = lex.pos + 1;
+		lex.next_tok;
+	};
+};
+
+union BinaryOperator {
+	op_multiply as void;
+	op_add 		as void;
+	op_subtract as void;
+};
+
+union ParseTree {
+	int_literal 	as int;
+	ref binary_expr as BinarySyntax;
+};
+
+struct BinarySyntax {
+	left 		as ParseTree;
+	right 		as ParseTree;
+	op 			as BinaryOperator;
+};
+
+union ParseResult {
+    error   as void;
+    success	as ParseTree;
+};
+
+func run () as void => {
+	ref input = put [50, 43, 52, 0];
+
+	region {		
+		if parse(input) is success tree do {
+			ref result = eval(tree);
+			
+			# Do something cool with result
+		};
+	};
+};
+
+func eval (tree as ParseTree) as int => {
+	match tree
+		if int_literal i then i
+		if binary_expr b then {
+			ref left = eval(b.left);
+			ref right = eval(b.right);
+			
+			match b.op
+				if op_add then left + right
+				if op_subtract then left - right
+				if op_multiply then left * right;
+		};
+};
+
+func parse (input as span[int]) as ParseResult => {
+    var pos = 0;	
+	var next_tok = void as Token;
+	ref lex = put Lexer { pos=@pos, next_tok=@next_tok, chars=input };	
+
+	add_expr(@lex);
+};
+
+func add_expr (ref lex as Lexer) as ParseResult => {
+	if mult_expr(@lex) is not success first do {
+		return void;
+	};
+	
+    while (lex.peek() is plus) or (lex.peek() is minus) do {
+        ref op = match lex.next()
+			if plus then put BinaryOperator { op_add }
+			else put BinaryOperator { op_subtract };
+		
+		if mult_expr(@lex) is not success next do {
+			return void;
+		};
+
+		new ref node = put BinarySyntax { 
+			left=first, 
+			right=next, 
+			op=op };
+		
+        @first = put ParseTree { binary_expr=@node };		
+    };
+
+    first;
+};
+
+func mult_expr (ref lex as Lexer) as ParseResult => {
+	if atom(@lex) is not success first do {
+		return void;
+	};
+
+    while lex.peek() is multiply do {
+		lex.next();
+
+		if atom(@lex) is not success next do {
+			return void;
+		};
+
+		new ref node = put BinarySyntax { 
+			left=first, 
+			right=next, 
+			op= put BinaryOperator { op_multiply } };
+
+        @first = put ParseTree { binary_expr=@node };		
+    };
+    
+    first;
+};
+
+func atom (ref lex as Lexer) as ParseResult => {
+    if lex.peek() is open_paren then {
+        lex.next();
+
+        ref result = add_expr(@lex);
+
+        if lex.next() is not close_paren do {
+			return void;
+		};
+		
+		result;
+    }
+    else if lex.peek() is int_literal i then {
+		lex.next();
+	
+        put ParseTree { int_literal=i };
+    }
+    else void;
+};

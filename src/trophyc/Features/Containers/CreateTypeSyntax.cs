@@ -113,8 +113,7 @@ namespace Trophy.Features.Containers {
                 }
             }
 
-            // All types have been check at this point
-            // All remaining types are stack allocated
+            // All types have been checked at this point
             if (this.isStackAllocated) {
                 throw TypeCheckingErrors.InvalidStackAllocation(this.Location, returnType);
             }

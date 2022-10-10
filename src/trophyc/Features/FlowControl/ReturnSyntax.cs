@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
@@ -87,7 +88,7 @@ namespace Trophy.Features.FlowControl {
                 var stat = CStatement.FromExpression(
                     CExpression.Invoke(
                         CExpression.VariableLiteral("region_delete"),
-                        new[] { CExpression.VariableLiteral(reg.ToString()) }));
+                        new[] { CExpression.VariableLiteral(reg.Segments.Last()) }));
 
                 statWriter.WriteStatement(stat);
 

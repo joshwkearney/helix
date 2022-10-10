@@ -1,75 +1,120 @@
 #include "include/trophy.h"
 
+typedef union UnionType_0 UnionType_0;
+
+typedef struct $Token $Token;
+
+typedef struct $Lexer $Lexer;
+
 typedef struct ArrayType0 ArrayType0;
 
-typedef struct ClosureEnvironment0 ClosureEnvironment0;
+typedef union UnionType_1 UnionType_1;
 
-typedef struct ClosureType_2 ClosureType_2;
+typedef struct $BinaryOperator $BinaryOperator;
+
+typedef union UnionType_2 UnionType_2;
+
+typedef struct $ParseTree $ParseTree;
+
+typedef struct $BinarySyntax $BinarySyntax;
+
+typedef union UnionType_3 UnionType_3;
+
+typedef struct $ParseResult $ParseResult;
+
+union UnionType_0 {
+    trophy_void eof;
+    trophy_void plus;
+    trophy_void minus;
+    trophy_void multiply;
+    trophy_void open_paren;
+    trophy_void close_paren;
+    trophy_int int_literal;
+};
+
+struct $Token {
+    int tag;
+    UnionType_0 data;
+};
 
 struct ArrayType0 {
     trophy_int size;
     trophy_int* data;
 };
 
-void $parallel_mergesort(void* env, ArrayType0 $arr0);
-
-struct ClosureEnvironment0 {
-    trophy_int* $tasks17;
-    ArrayType0* $part15;
+struct $Lexer {
+    trophy_int* pos;
+    $Token* next_tok;
+    ArrayType0 chars;
 };
 
-static void $parallel_mergesort_helper$$block1$$block11$$block13$$lambda15(void* environment);
+$Token $Lexer$next(void* env, $Lexer* $lex5);
 
-typedef void (*FuncType_1)(void* environment);
+$Token $Lexer$peek(void* env, $Lexer* $lex16);
 
-struct ClosureType_2 {
-    void* environment;
-    FuncType_1 function;
+union UnionType_1 {
+    trophy_void op_multiply;
+    trophy_void op_add;
+    trophy_void op_subtract;
 };
 
-void $parallel_mergesort_helper(void* env, ArrayType0 $arr16, trophy_int $tasks17);
+struct $BinaryOperator {
+    int tag;
+    UnionType_1 data;
+};
 
-void $merge(void* env, ArrayType0 $arr33, trophy_int $mid34);
+union UnionType_2 {
+    trophy_int int_literal;
+    $BinarySyntax* binary_expr;
+};
 
-trophy_int $binary_search(void* env, ArrayType0 $arr47, trophy_int $to_find48);
+struct $ParseTree {
+    int tag;
+    UnionType_2 data;
+};
 
-void $selection_sort(void* env, ArrayType0 $arr67);
+struct $BinarySyntax {
+    $ParseTree left;
+    $ParseTree right;
+    $BinaryOperator op;
+};
 
-void $parallel_mergesort(void* env, ArrayType0 $arr0) {
+union UnionType_3 {
+    trophy_void error;
+    $ParseTree success;
+};
+
+struct $ParseResult {
+    int tag;
+    UnionType_3 data;
+};
+
+void $run(void* env);
+
+trophy_int $eval(void* env, $ParseTree $tree34);
+
+$ParseResult $parse(void* env, ArrayType0 $input39);
+
+$ParseResult $add_expr(void* env, $Lexer* $lex53);
+
+$ParseResult $mult_expr(void* env, $Lexer* $lex64);
+
+$ParseResult $atom(void* env, $Lexer* $lex74);
+
+$Token $Lexer$next(void* env, $Lexer* $lex5) {
     Region* heap = (Region*)env;
 
-    $parallel_mergesort_helper(heap, $arr0, 16U);
-}
-
-static void $parallel_mergesort_helper$$block1$$block11$$block13$$lambda15(void* environment) {
-    ClosureEnvironment0* environment_temp1 = (ClosureEnvironment0*)environment;
-
-    // Unpack the closure environment
-    trophy_int* $tasks17 = ((*environment_temp1).$tasks17);
-    ArrayType0* $part15 = ((*environment_temp1).$part15);
-
-    // Create new region
-    Region* $async_region14 = 0U;
-    jmp_buf async_jump_buffer_0;
-    if (HEDLEY_UNLIKELY((0U != setjmp(async_jump_buffer_0)))) {
-        region_delete($async_region14);
-        return;
-    }
-
-    $async_region14 = region_create((&async_jump_buffer_0));
-
-    $parallel_mergesort_helper($async_region14, (*$part15), ((*$tasks17) / 2U));
-    region_delete($async_region14);
-}
-
-void $parallel_mergesort_helper(void* env, ArrayType0 $arr16, trophy_int $tasks17) {
-    Region* heap = (Region*)env;
+    // Is Expression
+    $Token $is_temp_0 = (*((*$lex5).next_tok));
 
     // If statement
     trophy_void if_temp_0;
-    if ((($arr16.size) <= 15U)) {
-        $selection_sort(heap, $arr16);
-        return;
+    if ((($is_temp_0.tag) == 0U)) {
+        // Definition of variable '$member_invoke_temp0'
+        $Lexer $$member_invoke_temp00 = (*$lex5);
+
+        (&$$member_invoke_temp00);
+        $Lexer$peek(heap, (&$$member_invoke_temp00));
         if_temp_0 = 0U;
     }
     else {
@@ -77,421 +122,663 @@ void $parallel_mergesort_helper(void* env, ArrayType0 $arr16, trophy_int $tasks1
     }
 
     if_temp_0;
-    // Definition of variable 'mid'
-    trophy_int $mid4 = (($arr16.size) / 2U);
+    // Definition of variable 'result'
+    $Token $result4 = (*((*$lex5).next_tok));
 
-    (&$mid4);
-    // Array slice bounds check
-    if (HEDLEY_UNLIKELY(((0U < 0U) | (($mid4 < 0U) | ($mid4 > ($arr16.size)))))) {
-        region_panic(heap, "Panic! Array slice bounds \"0U\" and \"$mid4\" are outside the bounds of the array \"$arr16\"");
-    }
+    (&$result4);
+    // New union literal for 'Token'
+    $Token new_union_0;
+    (new_union_0.tag) = 0U;
+    ((new_union_0.data).eof) = 0U;
 
-    // Array slice
-    ArrayType0 array_slice_0;
-    (array_slice_0.data) = (($arr16.data) + 0U);
-    (array_slice_0.size) = ($mid4 - 0U);
+    // Variable store
+    (*((*$lex5).next_tok)) = new_union_0;
 
-    // Definition of variable 'part1'
-    ArrayType0 $part15 = array_slice_0;
+    return $result4;
+}
 
-    (&$part15);
-    // Definition of variable '$slice_temp6'
-    ArrayType0 $$slice_temp68 = $arr16;
+$Token $Lexer$peek(void* env, $Lexer* $lex16) {
+    Region* heap = (Region*)env;
 
-    (&$$slice_temp68);
-    // Array slice bounds check
-    if (HEDLEY_UNLIKELY((($mid4 < 0U) | ((($$slice_temp68.size) < $mid4) | (($$slice_temp68.size) > ($$slice_temp68.size)))))) {
-        region_panic(heap, "Panic! Array slice bounds \"$mid4\" and \"($$slice_temp68.size)\" are outside the bounds of the array \"$$slice_temp68\"");
-    }
+    // Is Expression
+    $Token $is_temp_1 = (*((*$lex16).next_tok));
 
-    // Array slice
-    ArrayType0 array_slice_1;
-    (array_slice_1.data) = (($$slice_temp68.data) + $mid4);
-    (array_slice_1.size) = (($$slice_temp68.size) - $mid4);
-
-    // Definition of variable 'part2'
-    ArrayType0 $part29 = array_slice_1;
-
-    (&$part29);
     // If statement
     trophy_void if_temp_1;
-    if (1) {
-        $parallel_mergesort_helper(heap, $part15, 1U);
-        $parallel_mergesort_helper(heap, $part29, 1U);
+    if ((1U ^ (($is_temp_1.tag) == 0U))) {
+        return (*((*$lex16).next_tok));
         if_temp_1 = 0U;
     }
     else {
-        // Create new region
-        Region* $anon_region_12 = 0U;
-        jmp_buf jump_buffer_0;
-        if (HEDLEY_UNLIKELY((0U != setjmp(jump_buffer_0)))) {
-            region_delete($anon_region_12);
-            region_panic(heap, "at region $anon_region_12");
-        }
-
-        $anon_region_12 = region_create((&jump_buffer_0));
-
-        Region* $async_region14 = $anon_region_12;
-        // Pack the lambda environment
-        ClosureEnvironment0* closure_environment2 = (ClosureEnvironment0*)region_alloc($async_region14, sizeof(ClosureEnvironment0));
-        ((*closure_environment2).$tasks17) = (&$tasks17);
-        ((*closure_environment2).$part15) = (&$part15);
-
-        // Lambda expression literal
-        ClosureType_2 closure_temp3;
-        (closure_temp3.environment) = closure_environment2;
-        (closure_temp3.function) = (&$parallel_mergesort_helper$$block1$$block11$$block13$$lambda15);
-
-        region_async($anon_region_12, (closure_temp3.function), (closure_temp3.environment));
-
-        $parallel_mergesort_helper($anon_region_12, $part29, ($tasks17 / 2U));
-        region_delete($anon_region_12);
         if_temp_1 = 0U;
     }
 
     if_temp_1;
-    $merge(heap, $arr16, $mid4);
-}
+    // If statement
+    trophy_void if_temp_2;
+    if (((*((*$lex16).pos)) >= (((*$lex16).chars).size))) {
+        // New union literal for 'Token'
+        $Token new_union_1;
+        (new_union_1.tag) = 0U;
+        ((new_union_1.data).eof) = 0U;
 
-void $merge(void* env, ArrayType0 $arr33, trophy_int $mid34) {
-    Region* heap = (Region*)env;
-
-    // Fixed array literal
-    ArrayType0 fixed_array_0;
-    (fixed_array_0.data) = (trophy_int*)region_alloc(heap, (10U * sizeof(trophy_int)));
-    (fixed_array_0.size) = 10U;
-    memset((fixed_array_0.data), 0U, (10U * sizeof(trophy_int)));
-
-    // Definition of variable 'copy'
-    ArrayType0 $copy19 = fixed_array_0;
-
-    (&$copy19);
-    // Definition of variable '$for_counter_20'
-    trophy_int $$for_counter_2022 = 0U;
-
-    (&$$for_counter_2022);
-    // While loop
-    while (1U) {
-        if ((!($$for_counter_2022 <= ($mid34 - 1U)))) {
-            break;
-        }
-
-        // Definition of variable 'i'
-        trophy_int $i24 = $$for_counter_2022;
-
-        (&$i24);
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($i24 < 0U) | ($i24 >= ($copy19.size))))) {
-            region_panic(heap, "Panic! Expression \"$i24\" is outside the bounds of the array \"$copy19\"");
-        }
-
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($i24 < 0U) | ($i24 >= ($arr33.size))))) {
-            region_panic(heap, "Panic! Expression \"$i24\" is outside the bounds of the array \"$arr33\"");
-        }
-
-        // Variable store
-        (*(($copy19.data) + $i24)) = (*(($arr33.data) + $i24));
-
-        // Variable store
-        $$for_counter_2022 = ($$for_counter_2022 + 1U);
-
+        return new_union_1;
+        if_temp_2 = 0U;
+    }
+    else {
+        if_temp_2 = 0U;
     }
 
-    // Definition of variable 'i'
-    trophy_int $i26 = 0U;
+    if_temp_2;
+    // Array access bounds check
+    if (HEDLEY_UNLIKELY((((*((*$lex16).pos)) < 0U) | ((*((*$lex16).pos)) >= (((*$lex16).chars).size))))) {
+        region_panic(heap, "Panic! Expression \"(*((*$lex16).pos))\" is outside the bounds of the array \"((*$lex16).chars)\"");
+    }
 
-    (&$i26);
-    // Definition of variable 'j'
-    trophy_int $j27 = $mid34;
+    // Definition of variable 'c'
+    trophy_int $c12 = (*((((*$lex16).chars).data) + (*((*$lex16).pos))));
 
-    (&$j27);
-    // Definition of variable 'k'
-    trophy_int $k28 = 0U;
+    (&$c12);
+    // If statement
+    $Token if_temp_8;
+    if (($c12 == 40U)) {
+        // New union literal for 'Token'
+        $Token new_union_2;
+        (new_union_2.tag) = 4U;
+        ((new_union_2.data).open_paren) = 0U;
 
-    (&$k28);
-    // While loop
-    while (1U) {
-        if ((!(($i26 < ($copy19.size)) & ($j27 < ($arr33.size))))) {
-            break;
-        }
-
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($i26 < 0U) | ($i26 >= ($copy19.size))))) {
-            region_panic(heap, "Panic! Expression \"$i26\" is outside the bounds of the array \"$copy19\"");
-        }
-
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($j27 < 0U) | ($j27 >= ($arr33.size))))) {
-            region_panic(heap, "Panic! Expression \"$j27\" is outside the bounds of the array \"$arr33\"");
-        }
-
+        if_temp_8 = new_union_2;
+    }
+    else {
         // If statement
-        trophy_void if_temp_2;
-        if (((*(($copy19.data) + $i26)) < (*(($arr33.data) + $j27)))) {
-            // Array access bounds check
-            if (HEDLEY_UNLIKELY((($k28 < 0U) | ($k28 >= ($arr33.size))))) {
-                region_panic(heap, "Panic! Expression \"$k28\" is outside the bounds of the array \"$arr33\"");
-            }
+        $Token if_temp_7;
+        if (($c12 == 41U)) {
+            // New union literal for 'Token'
+            $Token new_union_3;
+            (new_union_3.tag) = 5U;
+            ((new_union_3.data).close_paren) = 0U;
 
-            // Array access bounds check
-            if (HEDLEY_UNLIKELY((($i26 < 0U) | ($i26 >= ($copy19.size))))) {
-                region_panic(heap, "Panic! Expression \"$i26\" is outside the bounds of the array \"$copy19\"");
-            }
-
-            // Variable store
-            (*(($arr33.data) + $k28)) = (*(($copy19.data) + $i26));
-
-            // Variable store
-            $i26 = ($i26 + 1U);
-
-            if_temp_2 = 0U;
-        }
-        else {
-            // Array access bounds check
-            if (HEDLEY_UNLIKELY((($k28 < 0U) | ($k28 >= ($arr33.size))))) {
-                region_panic(heap, "Panic! Expression \"$k28\" is outside the bounds of the array \"$arr33\"");
-            }
-
-            // Array access bounds check
-            if (HEDLEY_UNLIKELY((($j27 < 0U) | ($j27 >= ($arr33.size))))) {
-                region_panic(heap, "Panic! Expression \"$j27\" is outside the bounds of the array \"$arr33\"");
-            }
-
-            // Variable store
-            (*(($arr33.data) + $k28)) = (*(($arr33.data) + $j27));
-
-            // Variable store
-            $j27 = ($j27 + 1U);
-
-            if_temp_2 = 0U;
-        }
-
-        if_temp_2;
-        // Variable store
-        $k28 = ($k28 + 1U);
-
-    }
-
-    // While loop
-    while (1U) {
-        if ((!($i26 < ($copy19.size)))) {
-            break;
-        }
-
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($k28 < 0U) | ($k28 >= ($arr33.size))))) {
-            region_panic(heap, "Panic! Expression \"$k28\" is outside the bounds of the array \"$arr33\"");
-        }
-
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($i26 < 0U) | ($i26 >= ($copy19.size))))) {
-            region_panic(heap, "Panic! Expression \"$i26\" is outside the bounds of the array \"$copy19\"");
-        }
-
-        // Variable store
-        (*(($arr33.data) + $k28)) = (*(($copy19.data) + $i26));
-
-        // Variable store
-        $i26 = ($i26 + 1U);
-
-        // Variable store
-        $k28 = ($k28 + 1U);
-
-    }
-
-}
-
-trophy_int $binary_search(void* env, ArrayType0 $arr47, trophy_int $to_find48) {
-    Region* heap = (Region*)env;
-
-    // Definition of variable 'start'
-    trophy_int $start36 = 0U;
-
-    (&$start36);
-    // Definition of variable 'slice'
-    ArrayType0 $slice37 = $arr47;
-
-    (&$slice37);
-    // While loop
-    while (1U) {
-        if ((!(($slice37.size) > 0U))) {
-            break;
-        }
-
-        // Definition of variable 'mid'
-        trophy_int $mid39 = (($slice37.size) / 2U);
-
-        (&$mid39);
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($mid39 < 0U) | ($mid39 >= ($slice37.size))))) {
-            region_panic(heap, "Panic! Expression \"$mid39\" is outside the bounds of the array \"$slice37\"");
-        }
-
-        // Definition of variable 'mid_value'
-        trophy_int $mid_value40 = (*(($slice37.data) + $mid39));
-
-        (&$mid_value40);
-        // If statement
-        trophy_void if_temp_4;
-        if (($to_find48 == $mid_value40)) {
-            return ($start36 + $mid39);
-            if_temp_4 = 0U;
+            if_temp_7 = new_union_3;
         }
         else {
             // If statement
-            trophy_void if_temp_3;
-            if (($to_find48 < $mid_value40)) {
-                // Array slice bounds check
-                if (HEDLEY_UNLIKELY(((0U < 0U) | (($mid39 < 0U) | ($mid39 > ($slice37.size)))))) {
-                    region_panic(heap, "Panic! Array slice bounds \"0U\" and \"$mid39\" are outside the bounds of the array \"$slice37\"");
-                }
+            $Token if_temp_6;
+            if (($c12 == 43U)) {
+                // New union literal for 'Token'
+                $Token new_union_4;
+                (new_union_4.tag) = 1U;
+                ((new_union_4.data).plus) = 0U;
 
-                // Array slice
-                ArrayType0 array_slice_2;
-                (array_slice_2.data) = (($slice37.data) + 0U);
-                (array_slice_2.size) = ($mid39 - 0U);
-
-                // Variable store
-                $slice37 = array_slice_2;
-
-                if_temp_3 = 0U;
+                if_temp_6 = new_union_4;
             }
             else {
-                // Definition of variable '$slice_temp44'
-                ArrayType0 $$slice_temp4446 = $slice37;
+                // If statement
+                $Token if_temp_5;
+                if (($c12 == 45U)) {
+                    // New union literal for 'Token'
+                    $Token new_union_5;
+                    (new_union_5.tag) = 2U;
+                    ((new_union_5.data).minus) = 0U;
 
-                (&$$slice_temp4446);
-                // Array slice bounds check
-                if (HEDLEY_UNLIKELY((($mid39 < 0U) | ((($$slice_temp4446.size) < $mid39) | (($$slice_temp4446.size) > ($$slice_temp4446.size)))))) {
-                    region_panic(heap, "Panic! Array slice bounds \"$mid39\" and \"($$slice_temp4446.size)\" are outside the bounds of the array \"$$slice_temp4446\"");
+                    if_temp_5 = new_union_5;
+                }
+                else {
+                    // If statement
+                    $Token if_temp_4;
+                    if (($c12 == 42U)) {
+                        // New union literal for 'Token'
+                        $Token new_union_6;
+                        (new_union_6.tag) = 3U;
+                        ((new_union_6.data).multiply) = 0U;
+
+                        if_temp_4 = new_union_6;
+                    }
+                    else {
+                        // If statement
+                        $Token if_temp_3;
+                        if ((($c12 >= 48U) & ($c12 <= 57U))) {
+                            // Definition of variable 'value'
+                            trophy_int $value14 = 0U;
+
+                            (&$value14);
+                            // While loop
+                            while (1U) {
+                                if ((!(($c12 >= 48U) & ($c12 <= 57U)))) {
+                                    break;
+                                }
+
+                                // Variable store
+                                $value14 = (($value14 * 10U) + ($c12 - 48U));
+
+                                // Variable store
+                                (*((*$lex16).pos)) = ((*((*$lex16).pos)) + 1U);
+
+                                // Array access bounds check
+                                if (HEDLEY_UNLIKELY((((*((*$lex16).pos)) < 0U) | ((*((*$lex16).pos)) >= (((*$lex16).chars).size))))) {
+                                    region_panic(heap, "Panic! Expression \"(*((*$lex16).pos))\" is outside the bounds of the array \"((*$lex16).chars)\"");
+                                }
+
+                                // Variable store
+                                $c12 = (*((((*$lex16).chars).data) + (*((*$lex16).pos))));
+
+                            }
+
+                            // Variable store
+                            (*((*$lex16).pos)) = ((*((*$lex16).pos)) - 1U);
+
+                            // New union literal for 'Token'
+                            $Token new_union_7;
+                            (new_union_7.tag) = 6U;
+                            ((new_union_7.data).int_literal) = $value14;
+
+                            if_temp_3 = new_union_7;
+                        }
+                        else {
+                            // New union literal for 'Token'
+                            $Token new_union_8;
+                            (new_union_8.tag) = 0U;
+                            ((new_union_8.data).eof) = 0U;
+
+                            if_temp_3 = new_union_8;
+                        }
+
+                        if_temp_4 = if_temp_3;
+                    }
+
+                    if_temp_5 = if_temp_4;
                 }
 
-                // Array slice
-                ArrayType0 array_slice_3;
-                (array_slice_3.data) = (($$slice_temp4446.data) + $mid39);
-                (array_slice_3.size) = (($$slice_temp4446.size) - $mid39);
-
-                // Variable store
-                $slice37 = array_slice_3;
-
-                // Variable store
-                $start36 = ($start36 + $mid39);
-
-                if_temp_3 = 0U;
+                if_temp_6 = if_temp_5;
             }
 
-            if_temp_4 = if_temp_3;
+            if_temp_7 = if_temp_6;
         }
 
+        if_temp_8 = if_temp_7;
     }
 
-    return (0U - 1U);
+    // Variable store
+    (*((*$lex16).next_tok)) = if_temp_8;
+
+    // Variable store
+    (*((*$lex16).pos)) = ((*((*$lex16).pos)) + 1U);
+
+    return (*((*$lex16).next_tok));
 }
 
-void $selection_sort(void* env, ArrayType0 $arr67) {
+void $run(void* env) {
     Region* heap = (Region*)env;
 
-    // Definition of variable '$for_counter_50'
-    trophy_int $$for_counter_5052 = 0U;
+    // Array literal on region 'stack'
+    ArrayType0 array_0;
+    trophy_int array_temp_1[4U];
+    (array_0.data) = array_temp_1;
+    (array_0.size) = 4U;
+    (array_0.data)[0U] = 50U;
+    (array_0.data)[1U] = 43U;
+    (array_0.data)[2U] = 52U;
+    (array_0.data)[3U] = 0U;
 
-    (&$$for_counter_5052);
+    // Definition of variable 'input'
+    ArrayType0 $input18 = array_0;
+
+    (&$input18);
+    // Create new region
+    Region* $anon_region_19 = 0U;
+    jmp_buf jump_buffer_0;
+    if (HEDLEY_UNLIKELY((0U != setjmp(jump_buffer_0)))) {
+        region_delete($anon_region_19);
+        region_panic(heap, "at region $anon_region_19");
+    }
+
+    $anon_region_19 = region_create((&jump_buffer_0));
+
+    // New union literal for 'ParseTree'
+    $ParseTree new_union_9;
+    (new_union_9.tag) = 0U;
+    ((new_union_9.data).int_literal) = 0U;
+
+    // Is Expression
+    $ParseResult $is_temp_2 = $parse($anon_region_19, $input18);
+    $ParseTree $tree21 = new_union_9;
+    if ((($is_temp_2.tag) == 1U)) {
+        $tree21 = (($is_temp_2.data).success);
+    }
+
+    // If statement
+    trophy_void if_temp_9;
+    if ((($is_temp_2.tag) == 1U)) {
+        // Definition of variable 'result'
+        trophy_int $result24 = $eval($anon_region_19, $tree21);
+
+        (&$result24);
+        if_temp_9 = 0U;
+    }
+    else {
+        if_temp_9 = 0U;
+    }
+
+    region_delete($anon_region_19);
+    if_temp_9;
+}
+
+trophy_int $eval(void* env, $ParseTree $tree34) {
+    Region* heap = (Region*)env;
+
+    $ParseTree $switch_arg_temp_0 = $tree34;
+    trophy_int $switch_temp_1;
+    switch (($switch_arg_temp_0.tag)) {
+    case 0U: {
+        trophy_int $i26 = (($switch_arg_temp_0.data).int_literal);
+
+        $switch_temp_1 = $i26;
+        break;
+    }
+    case 1U: {
+        $BinarySyntax* $b33 = (($switch_arg_temp_0.data).binary_expr);
+
+        // Definition of variable 'left'
+        trophy_int $left28 = $eval(heap, ((*$b33).left));
+
+        (&$left28);
+        // Definition of variable 'right'
+        trophy_int $right29 = $eval(heap, ((*$b33).right));
+
+        (&$right29);
+        $BinaryOperator $switch_arg_temp_2 = ((*$b33).op);
+        trophy_int $switch_temp_3;
+        switch (($switch_arg_temp_2.tag)) {
+        case 1U: {
+            $switch_temp_3 = ($left28 + $right29);
+            break;
+        }
+        case 2U: {
+            $switch_temp_3 = ($left28 - $right29);
+            break;
+        }
+        case 0U: {
+            $switch_temp_3 = ($left28 * $right29);
+            break;
+        }
+        }
+
+        $switch_temp_1 = $switch_temp_3;
+        break;
+    }
+    }
+
+    return $switch_temp_1;
+}
+
+$ParseResult $parse(void* env, ArrayType0 $input39) {
+    Region* heap = (Region*)env;
+
+    // Definition of variable 'pos'
+    trophy_int $pos36 = 0U;
+
+    (&$pos36);
+    // New union literal for 'Token'
+    $Token new_union_10;
+    (new_union_10.tag) = 0U;
+    ((new_union_10.data).eof) = 0U;
+
+    // Definition of variable 'next_tok'
+    $Token $next_tok37 = new_union_10;
+
+    (&$next_tok37);
+    // New struct literal for 'Lexer'
+    $Lexer new_struct_0;
+    (new_struct_0.pos) = (&$pos36);
+    (new_struct_0.next_tok) = (&$next_tok37);
+    (new_struct_0.chars) = $input39;
+
+    // Definition of variable 'lex'
+    $Lexer $lex38 = new_struct_0;
+
+    (&$lex38);
+    return $add_expr(heap, (&$lex38));
+}
+
+$ParseResult $add_expr(void* env, $Lexer* $lex53) {
+    Region* heap = (Region*)env;
+
+    // New union literal for 'ParseTree'
+    $ParseTree new_union_12;
+    (new_union_12.tag) = 0U;
+    ((new_union_12.data).int_literal) = 0U;
+
+    // Is Expression
+    $ParseResult $is_temp_3 = $mult_expr(heap, $lex53);
+    $ParseTree $first41 = new_union_12;
+    if ((($is_temp_3.tag) == 1U)) {
+        $first41 = (($is_temp_3.data).success);
+    }
+
+    // If statement
+    trophy_void if_temp_10;
+    if ((1U ^ (($is_temp_3.tag) == 1U))) {
+        // New union literal for 'ParseResult'
+        $ParseResult new_union_13;
+        (new_union_13.tag) = 0U;
+        ((new_union_13.data).error) = 0U;
+
+        return new_union_13;
+        if_temp_10 = 0U;
+    }
+    else {
+        if_temp_10 = 0U;
+    }
+
+    if_temp_10;
     // While loop
     while (1U) {
-        if ((!($$for_counter_5052 <= (($arr67.size) - 1U)))) {
+        // Definition of variable '$member_invoke_temp1'
+        $Lexer $$member_invoke_temp11 = (*$lex53);
+
+        (&$$member_invoke_temp11);
+        // Is Expression
+        $Token $is_temp_4 = $Lexer$peek(heap, (&$$member_invoke_temp11));
+
+        // Definition of variable '$member_invoke_temp2'
+        $Lexer $$member_invoke_temp22 = (*$lex53);
+
+        (&$$member_invoke_temp22);
+        // Is Expression
+        $Token $is_temp_5 = $Lexer$peek(heap, (&$$member_invoke_temp22));
+
+        if ((!((($is_temp_4.tag) == 1U) | (($is_temp_5.tag) == 2U)))) {
             break;
         }
 
-        // Definition of variable 'i'
-        trophy_int $i54 = $$for_counter_5052;
+        // Definition of variable '$member_invoke_temp3'
+        $Lexer $$member_invoke_temp33 = (*$lex53);
 
-        (&$i54);
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($i54 < 0U) | ($i54 >= ($arr67.size))))) {
-            region_panic(heap, "Panic! Expression \"$i54\" is outside the bounds of the array \"$arr67\"");
+        (&$$member_invoke_temp33);
+        $Token $switch_arg_temp_4 = $Lexer$next(heap, (&$$member_invoke_temp33));
+        $BinaryOperator $switch_temp_5;
+        switch (($switch_arg_temp_4.tag)) {
+        case 1U: {
+            // New union literal for 'BinaryOperator'
+            $BinaryOperator new_union_14;
+            (new_union_14.tag) = 1U;
+            ((new_union_14.data).op_add) = 0U;
+
+            $switch_temp_5 = new_union_14;
+            break;
+        }
+        default: {
+            // New union literal for 'BinaryOperator'
+            $BinaryOperator new_union_15;
+            (new_union_15.tag) = 2U;
+            ((new_union_15.data).op_subtract) = 0U;
+
+            $switch_temp_5 = new_union_15;
+            break;
+        }
         }
 
-        // Definition of variable 'smallest'
-        trophy_int $smallest56 = (*(($arr67.data) + $i54));
+        // Definition of variable 'op'
+        $BinaryOperator $op48 = $switch_temp_5;
 
-        (&$smallest56);
-        // Definition of variable 'smallest_index'
-        trophy_int $smallest_index57 = $i54;
+        (&$op48);
+        // New union literal for 'ParseTree'
+        $ParseTree new_union_16;
+        (new_union_16.tag) = 0U;
+        ((new_union_16.data).int_literal) = 0U;
 
-        (&$smallest_index57);
-        // Definition of variable '$for_counter_58'
-        trophy_int $$for_counter_5860 = ($i54 + 1U);
-
-        (&$$for_counter_5860);
-        // While loop
-        while (1U) {
-            if ((!($$for_counter_5860 <= (($arr67.size) - 1U)))) {
-                break;
-            }
-
-            // Definition of variable 'j'
-            trophy_int $j62 = $$for_counter_5860;
-
-            (&$j62);
-            // Array access bounds check
-            if (HEDLEY_UNLIKELY((($j62 < 0U) | ($j62 >= ($arr67.size))))) {
-                region_panic(heap, "Panic! Expression \"$j62\" is outside the bounds of the array \"$arr67\"");
-            }
-
-            // If statement
-            trophy_void if_temp_5;
-            if (((*(($arr67.data) + $j62)) < $smallest56)) {
-                // Variable store
-                $smallest_index57 = $j62;
-
-                // Array access bounds check
-                if (HEDLEY_UNLIKELY((($j62 < 0U) | ($j62 >= ($arr67.size))))) {
-                    region_panic(heap, "Panic! Expression \"$j62\" is outside the bounds of the array \"$arr67\"");
-                }
-
-                // Variable store
-                $smallest56 = (*(($arr67.data) + $j62));
-
-                if_temp_5 = 0U;
-            }
-            else {
-                if_temp_5 = 0U;
-            }
-
-            if_temp_5;
-            // Variable store
-            $$for_counter_5860 = ($$for_counter_5860 + 1U);
-
+        // Is Expression
+        $ParseResult $is_temp_6 = $mult_expr(heap, $lex53);
+        $ParseTree $next49 = new_union_16;
+        if ((($is_temp_6.tag) == 1U)) {
+            $next49 = (($is_temp_6.data).success);
         }
 
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($i54 < 0U) | ($i54 >= ($arr67.size))))) {
-            region_panic(heap, "Panic! Expression \"$i54\" is outside the bounds of the array \"$arr67\"");
+        // If statement
+        trophy_void if_temp_11;
+        if ((1U ^ (($is_temp_6.tag) == 1U))) {
+            // New union literal for 'ParseResult'
+            $ParseResult new_union_17;
+            (new_union_17.tag) = 0U;
+            ((new_union_17.data).error) = 0U;
+
+            return new_union_17;
+            if_temp_11 = 0U;
+        }
+        else {
+            if_temp_11 = 0U;
         }
 
-        // Definition of variable 'swap'
-        trophy_int $swap66 = (*(($arr67.data) + $i54));
+        if_temp_11;
+        // New struct literal for 'BinarySyntax'
+        $BinarySyntax new_struct_1;
+        (new_struct_1.left) = $first41;
+        (new_struct_1.right) = $next49;
+        (new_struct_1.op) = $op48;
 
-        (&$swap66);
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($i54 < 0U) | ($i54 >= ($arr67.size))))) {
-            region_panic(heap, "Panic! Expression \"$i54\" is outside the bounds of the array \"$arr67\"");
-        }
+        // Definition of variable 'node'
+        $BinarySyntax* $node52 = region_alloc(heap, sizeof($BinarySyntax));
+        (*$node52) = new_struct_1;
+
+        (&$node52);
+        // New union literal for 'ParseTree'
+        $ParseTree new_union_18;
+        (new_union_18.tag) = 1U;
+        ((new_union_18.data).binary_expr) = $node52;
 
         // Variable store
-        (*(($arr67.data) + $i54)) = $smallest56;
-
-        // Array access bounds check
-        if (HEDLEY_UNLIKELY((($smallest_index57 < 0U) | ($smallest_index57 >= ($arr67.size))))) {
-            region_panic(heap, "Panic! Expression \"$smallest_index57\" is outside the bounds of the array \"$arr67\"");
-        }
-
-        // Variable store
-        (*(($arr67.data) + $smallest_index57)) = $swap66;
-
-        // Variable store
-        $$for_counter_5052 = ($$for_counter_5052 + 1U);
+        $first41 = new_union_18;
 
     }
 
+    // New union literal for 'ParseResult'
+    $ParseResult new_union_11;
+    (new_union_11.tag) = 1U;
+    ((new_union_11.data).success) = $first41;
+
+    return new_union_11;
+}
+
+$ParseResult $mult_expr(void* env, $Lexer* $lex64) {
+    Region* heap = (Region*)env;
+
+    // New union literal for 'ParseTree'
+    $ParseTree new_union_20;
+    (new_union_20.tag) = 0U;
+    ((new_union_20.data).int_literal) = 0U;
+
+    // Is Expression
+    $ParseResult $is_temp_7 = $atom(heap, $lex64);
+    $ParseTree $first55 = new_union_20;
+    if ((($is_temp_7.tag) == 1U)) {
+        $first55 = (($is_temp_7.data).success);
+    }
+
+    // If statement
+    trophy_void if_temp_12;
+    if ((1U ^ (($is_temp_7.tag) == 1U))) {
+        // New union literal for 'ParseResult'
+        $ParseResult new_union_21;
+        (new_union_21.tag) = 0U;
+        ((new_union_21.data).error) = 0U;
+
+        return new_union_21;
+        if_temp_12 = 0U;
+    }
+    else {
+        if_temp_12 = 0U;
+    }
+
+    if_temp_12;
+    // While loop
+    while (1U) {
+        // Definition of variable '$member_invoke_temp4'
+        $Lexer $$member_invoke_temp44 = (*$lex64);
+
+        (&$$member_invoke_temp44);
+        // Is Expression
+        $Token $is_temp_8 = $Lexer$peek(heap, (&$$member_invoke_temp44));
+
+        if ((!(($is_temp_8.tag) == 3U))) {
+            break;
+        }
+
+        // Definition of variable '$member_invoke_temp5'
+        $Lexer $$member_invoke_temp55 = (*$lex64);
+
+        (&$$member_invoke_temp55);
+        $Lexer$next(heap, (&$$member_invoke_temp55));
+        // New union literal for 'ParseTree'
+        $ParseTree new_union_22;
+        (new_union_22.tag) = 0U;
+        ((new_union_22.data).int_literal) = 0U;
+
+        // Is Expression
+        $ParseResult $is_temp_9 = $atom(heap, $lex64);
+        $ParseTree $next60 = new_union_22;
+        if ((($is_temp_9.tag) == 1U)) {
+            $next60 = (($is_temp_9.data).success);
+        }
+
+        // If statement
+        trophy_void if_temp_13;
+        if ((1U ^ (($is_temp_9.tag) == 1U))) {
+            // New union literal for 'ParseResult'
+            $ParseResult new_union_23;
+            (new_union_23.tag) = 0U;
+            ((new_union_23.data).error) = 0U;
+
+            return new_union_23;
+            if_temp_13 = 0U;
+        }
+        else {
+            if_temp_13 = 0U;
+        }
+
+        if_temp_13;
+        // New union literal for 'BinaryOperator'
+        $BinaryOperator new_union_24;
+        (new_union_24.tag) = 0U;
+        ((new_union_24.data).op_multiply) = 0U;
+
+        // New struct literal for 'BinarySyntax'
+        $BinarySyntax new_struct_2;
+        (new_struct_2.left) = $first55;
+        (new_struct_2.right) = $next60;
+        (new_struct_2.op) = new_union_24;
+
+        // Definition of variable 'node'
+        $BinarySyntax* $node63 = region_alloc(heap, sizeof($BinarySyntax));
+        (*$node63) = new_struct_2;
+
+        (&$node63);
+        // New union literal for 'ParseTree'
+        $ParseTree new_union_25;
+        (new_union_25.tag) = 1U;
+        ((new_union_25.data).binary_expr) = $node63;
+
+        // Variable store
+        $first55 = new_union_25;
+
+    }
+
+    // New union literal for 'ParseResult'
+    $ParseResult new_union_19;
+    (new_union_19.tag) = 1U;
+    ((new_union_19.data).success) = $first55;
+
+    return new_union_19;
+}
+
+$ParseResult $atom(void* env, $Lexer* $lex74) {
+    Region* heap = (Region*)env;
+
+    // Definition of variable '$member_invoke_temp6'
+    $Lexer $$member_invoke_temp66 = (*$lex74);
+
+    (&$$member_invoke_temp66);
+    // Is Expression
+    $Token $is_temp_10 = $Lexer$peek(heap, (&$$member_invoke_temp66));
+
+    // If statement
+    $ParseResult if_temp_16;
+    if ((($is_temp_10.tag) == 4U)) {
+        // Definition of variable '$member_invoke_temp7'
+        $Lexer $$member_invoke_temp77 = (*$lex74);
+
+        (&$$member_invoke_temp77);
+        $Lexer$next(heap, (&$$member_invoke_temp77));
+        // Definition of variable 'result'
+        $ParseResult $result68 = $add_expr(heap, $lex74);
+
+        (&$result68);
+        // Definition of variable '$member_invoke_temp8'
+        $Lexer $$member_invoke_temp88 = (*$lex74);
+
+        (&$$member_invoke_temp88);
+        // Is Expression
+        $Token $is_temp_11 = $Lexer$next(heap, (&$$member_invoke_temp88));
+
+        // If statement
+        trophy_void if_temp_14;
+        if ((1U ^ (($is_temp_11.tag) == 5U))) {
+            // New union literal for 'ParseResult'
+            $ParseResult new_union_26;
+            (new_union_26.tag) = 0U;
+            ((new_union_26.data).error) = 0U;
+
+            return new_union_26;
+            if_temp_14 = 0U;
+        }
+        else {
+            if_temp_14 = 0U;
+        }
+
+        if_temp_14;
+        if_temp_16 = $result68;
+    }
+    else {
+        // Definition of variable '$member_invoke_temp9'
+        $Lexer $$member_invoke_temp99 = (*$lex74);
+
+        (&$$member_invoke_temp99);
+        // Is Expression
+        $Token $is_temp_12 = $Lexer$peek(heap, (&$$member_invoke_temp99));
+        trophy_int $i72 = 0U;
+        if ((($is_temp_12.tag) == 6U)) {
+            $i72 = (($is_temp_12.data).int_literal);
+        }
+
+        // If statement
+        $ParseTree if_temp_15;
+        if ((($is_temp_12.tag) == 6U)) {
+            // Definition of variable '$member_invoke_temp10'
+            $Lexer $$member_invoke_temp1010 = (*$lex74);
+
+            (&$$member_invoke_temp1010);
+            $Lexer$next(heap, (&$$member_invoke_temp1010));
+            // New union literal for 'ParseTree'
+            $ParseTree new_union_28;
+            (new_union_28.tag) = 0U;
+            ((new_union_28.data).int_literal) = $i72;
+
+            if_temp_15 = new_union_28;
+        }
+        else {
+            // New union literal for 'ParseTree'
+            $ParseTree new_union_29;
+            (new_union_29.tag) = 0U;
+            ((new_union_29.data).int_literal) = 0U;
+
+            if_temp_15 = new_union_29;
+        }
+
+        // New union literal for 'ParseResult'
+        $ParseResult new_union_27;
+        (new_union_27.tag) = 1U;
+        ((new_union_27.data).success) = if_temp_15;
+
+        if_temp_16 = new_union_27;
+    }
+
+    return if_temp_16;
 }

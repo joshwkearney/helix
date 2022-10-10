@@ -43,7 +43,7 @@ namespace Trophy.Features.Containers.Arrays {
             }
             else {
                 var tempName = "$slice_temp" + names.GetNewVariableId();
-                var letSyntax = new VarRefSyntaxA(this.Location, tempName, target, false);
+                var letSyntax = new VarRefSyntaxA(this.Location, tempName, target, false, false);
                 var accessSyntax = new IdentifierAccessSyntaxA(this.Location, tempName, VariableAccessKind.ValueAccess);
 
                 return new BlockSyntaxA(this.Location, new ISyntaxA[] {

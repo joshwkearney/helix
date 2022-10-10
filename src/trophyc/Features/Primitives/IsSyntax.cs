@@ -136,6 +136,7 @@ namespace Trophy.Features.Primitives {
             var argName = "$is_temp_" + counter++;          
             var argType = writer.ConvertType(this.Argument.ReturnType);
             var argDecl = CStatement.VariableDeclaration(argType, argName, arg);
+            var exprOpt = this.PatternDefaultValue.Select(x => x.GenerateCode(writer, statWriter));
 
             statWriter.WriteStatement(CStatement.Comment("Is Expression"));
             statWriter.WriteStatement(argDecl);
@@ -147,13 +148,12 @@ namespace Trophy.Features.Primitives {
 
             if (this.PatternInfo.TryGetValue(out var info)) {
                 var type = writer.ConvertType((info.Type as VarRefType).InnerType);
-                var expr = this.PatternDefaultValue.GetValue().GenerateCode(writer, statWriter);
 
-                var assign = CStatement.VariableDeclaration(type, info.Name, expr);
+                var assign = CStatement.VariableDeclaration(type, "$" + info.Name + info.UniqueId, exprOpt.GetValue());
                 var iff = CStatement.If(tagTest, new[] { 
                     CStatement.Assignment(
-                        CExpression.VariableLiteral(info.Name), 
-                        CExpression.MemberAccess(CExpression.VariableLiteral(argName), this.MemberName))
+                        CExpression.VariableLiteral("$" + info.Name + info.UniqueId), 
+                        CExpression.MemberAccess(CExpression.MemberAccess(CExpression.VariableLiteral(argName), "data"), this.MemberName))
                 });
 
                 statWriter.WriteStatement(assign);

@@ -174,7 +174,7 @@ namespace Trophy.Features.FlowControl {
                 if (pattern.Name.TryGetValue(out var name)) {
                     var info = new VariableInfo(
                         name: name,
-                        innerType: new VarRefType(mem.MemberType, false),
+                        innerType: mem.MemberType,
                         kind: mem.Kind,
                         source: mem.Kind == VariableKind.Value ? VariableSource.Local : VariableSource.Parameter,
                         pattern.Id
@@ -252,16 +252,20 @@ namespace Trophy.Features.FlowControl {
 
         public CExpression GenerateCode(ICWriter writer, ICStatementWriter statWriter) {
             var arg = this.arg.GenerateCode(writer, statWriter);
-            var tag = CExpression.MemberAccess(arg, "tag");
+            var argName = "$switch_arg_temp_" + counter++;
+            var argType = writer.ConvertType(this.arg.ReturnType);
+
+            var tag = CExpression.MemberAccess(CExpression.VariableLiteral(argName), "tag");
             var cases = new List<CStatement>();
 
             var varName = "$switch_temp_" + counter++;
             var varType = writer.ConvertType(this.ReturnType);
 
+            statWriter.WriteStatement(CStatement.VariableDeclaration(argType, argName, arg));
             statWriter.WriteStatement(CStatement.VariableDeclaration(varType, varName));
 
             foreach (var pattern in this.patterns) {
-                var member = CExpression.MemberAccess(CExpression.MemberAccess(arg, "data"), pattern.Member);
+                var member = CExpression.MemberAccess(CExpression.MemberAccess(CExpression.VariableLiteral(argName), "data"), pattern.Member);
                 var body = new List<CStatement>();
 
                 if (pattern.Info.TryGetValue(out var info)) {

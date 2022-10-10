@@ -1,0 +1,164 @@
+﻿union Token {
+    eof         as void;
+    plus        as void;
+    minus       as void;
+    multiply    as void;
+    open_paren  as void;
+    close_paren as void;
+    int_literal as int;
+};
+
+union BinaryOperator {
+	op_multiply as void;
+	op_add 		as void;
+	op_subtract as void;
+};
+
+union ParseTree {
+	int_literal 	as int;
+	ref binary_expr as BinarySyntax;
+};
+
+struct BinarySyntax {
+	left 		as ParseTree;
+	right 		as ParseTree;
+	op 			as BinaryOperator;
+};
+
+union ParseResult {
+    error   as void;
+    success	as ParseTree;
+};
+
+func run () as void => {
+	ref input = put [50, 43, 52, 0];
+
+	region {		
+		if parse(input) is success tree do {
+			ref result = eval(tree);
+			
+			# Do something cool with result
+		};
+	};
+};
+
+func eval (tree as ParseTree) as int => {
+	match tree
+		if int_literal i then i
+		if binary_expr b then {
+			ref left = eval(b.left);
+			ref right = eval(b.right);
+			
+			match b.op
+				if op_add then left + right
+				if op_subtract then left - right
+				if op_multiply then left * right;
+		};
+};
+
+func parse (input as span[int]) as ParseResult => {
+    var pos = 0;	
+	ref toks = chars_to_tokens(input);
+
+	add_expr(toks, @pos);
+};
+
+func chars_to_tokens (toks as span[int]) as span[Token] => {
+    ref result = new array[Token] { size=toks.size+1 };
+    var result_pos = 0;
+
+    for i = 0 to toks.size-1 do {
+        if toks[i] != 32 do {
+            result@[result_pos] = char_to_token(toks[i]);
+            @result_pos = result_pos + 1;
+        };
+    };
+
+    result;
+};
+
+func char_to_token (c as int) as Token => {
+    if c == 40                      then put Token { open_paren }
+    else if c == 41                 then put Token { close_paren }
+    else if c == 43                 then put Token { plus }
+    else if c == 45                 then put Token { minus }
+    else if c == 42                 then put Token { multiply }
+    else if (c >= 48) and (c <= 57) then put Token { int_literal=c-48 }
+    else void;
+};
+
+func add_expr (toks as span[Token], var pos as int) as ParseResult => {
+	if mult_expr(toks, @pos) is not success first do {
+		return void;
+	};
+	
+    while (toks[pos] is plus) or (toks[pos] is minus) do {
+        ref op = match toks[pos]
+			if plus then put BinaryOperator { op_add }
+			else 		 put BinaryOperator { op_subtract };
+		
+        @pos = pos + 1;
+
+		if mult_expr(toks, @pos) is not success next do {
+			return void;
+		};
+
+		new ref node = put BinarySyntax { 
+			left=first, 
+			right=next, 
+			op=op };
+		
+        @first = put ParseTree { binary_expr=@node };		
+    };
+
+    first;
+};
+
+func mult_expr (toks as span[Token], var pos as int) as ParseResult => {
+	if atom(toks, @pos) is not success first do {
+		return void;
+	};
+
+    while toks[pos] is multiply do {
+        @pos = pos + 1;
+
+		if atom(toks, @pos) is not success next do {
+			return void;
+		};
+
+		new ref node = put BinarySyntax { 
+			left=first, 
+			right=next, 
+			op= put BinaryOperator { op_multiply } };
+
+        @first = put ParseTree { binary_expr=@node };		
+    };
+    
+    first;
+};
+
+func atom (toks as span[Token], var pos as int) as ParseResult => {
+    if toks[pos] is open_paren then {
+        @pos = pos + 1;
+
+        ref result = add_expr(toks, @pos);
+
+        if toks[pos] is not close_paren do {
+			return void;
+		};
+		
+		@pos = pos + 1;
+		result;
+    }
+    else if toks[pos] is int_literal then {
+        var value = 0;
+
+        while toks[pos] is int_literal i do {
+            @value = 10 * value + i;
+            @pos = pos + 1;
+        };
+
+        put ParseTree { int_literal=value };
+    }
+    else void;
+};

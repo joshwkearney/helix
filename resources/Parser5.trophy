@@ -1,0 +1,115 @@
+﻿union Token {
+    eof         as void;
+    plus        as void;
+    minus       as void;
+    multiply    as void;
+    open_paren  as void;
+    close_paren as void;
+    int_literal as int;
+};
+
+union Result {
+    error   as void;
+    success as int;
+};
+
+func parse (input as span[int]) as int => {
+    var pos = 0;
+	
+	region R {
+		ref toks = chars_to_tokens[R](input);
+	
+		return match add_expr(toks, @pos)
+			if success s then s
+			else 0;
+	};
+};
+
+func chars_to_tokens (toks as span[int]) as span[Token] => {
+    ref result = new array[Token] { size=toks.size+1 };
+    var result_pos = 0;
+
+    for i = 0 to toks.size-1 do {
+        if toks[i] != 32 do {
+            result@[result_pos] = char_to_token(toks[i]);
+            @result_pos = result_pos + 1;
+        };
+    };
+
+    result;
+};
+
+func char_to_token (c as int) as Token => {
+    if c == 40                      then put Token { open_paren }
+    else if c == 41                 then put Token { close_paren }
+    else if c == 43                 then put Token { plus }
+    else if c == 45                 then put Token { minus }
+    else if c == 42                 then put Token { multiply }
+    else if (c >= 48) and (c <= 57) then put Token { int_literal=c-48 }
+    else void;
+};
+
+func add_expr (toks as span[Token], var pos as int) as Result => {
+	if mult_expr(toks, @pos) is not success first do {
+		return void;
+	};
+	
+    while (toks[pos] is plus) or (toks[pos] is minus) do {
+        ref op = toks[pos];
+        @pos = pos + 1;
+
+		if mult_expr(toks, @pos) is not success next do {
+			return void;
+		};
+
+        @first = if op is plus
+            then first + next
+            else first - next;
+    };
+
+    first;
+};
+
+func mult_expr (toks as span[Token], var pos as int) as Result => {
+	if atom(toks, @pos) is not success first do {
+		return void;
+	};
+
+    while toks[pos] is multiply do {
+        @pos = pos + 1;
+
+		if atom(toks, @pos) is not success next do {
+			return void;
+		};
+
+        @first = first * next;
+    };
+    
+    first;
+};
+
+func atom (toks as span[Token], var pos as int) as Result => {
+    if toks[pos] is open_paren then {
+        @pos = pos + 1;
+
+        ref result = add_expr(toks, @pos);
+
+        if toks[pos] is not close_paren do {
+			return void;
+		};
+		
+		@pos = pos + 1;
+		result;
+    }
+    else if toks[pos] is int_literal then {
+        var value = 0;
+
+        while toks[pos] is int_literal i do {
+            @value = 10 * value + i;
+            @pos = pos + 1;
+        };
+
+        value;
+    }
+    else void;
+};

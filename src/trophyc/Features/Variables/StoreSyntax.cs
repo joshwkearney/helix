@@ -67,23 +67,6 @@ namespace Trophy.Features.Variables {
                 throw TypeCheckingErrors.UnexpectedType(this.assign.Location, varType.InnerType, assign.ReturnType);
             }
 
-            // Make sure all escaping variables in value outlive all of the
-            // escaping variables in target
-            /*foreach (var targetCap in target.Lifetimes) {
-                foreach (var valueCap in assign.Lifetimes) {
-                    // TODO - Make this more robust
-                    if (targetCap.Segments.Any() && valueCap.Segments.Any()) {
-                        if (!targetCap.Segments.First().StartsWith("$args") && valueCap.Segments.First().StartsWith("$args")) {
-                            continue;
-                        }
-                    }
-
-                    if (!valueCap.Outlives(targetCap) && valueCap != targetCap) {
-                        throw TypeCheckingErrors.LifetimeExceeded(this.Location, targetCap, valueCap);
-                    }
-                }
-            }*/
-
             return new StoreSyntaxC(target, assign);
         }
     }

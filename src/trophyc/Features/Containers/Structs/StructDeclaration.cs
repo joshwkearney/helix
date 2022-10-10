@@ -5,6 +5,7 @@ using System.Linq;
 
 namespace Trophy.Features.Containers {
     public class StructDeclarationC : IDeclarationC {
+        private bool generated = false;
         private readonly AggregateSignature sig;
         private readonly IdentifierPath structPath;
         private readonly IReadOnlyList<IDeclarationC> decls;
@@ -16,6 +17,10 @@ namespace Trophy.Features.Containers {
         }
 
         public void GenerateCode(ICWriter declWriter) {
+            if (this.generated) {
+                return;
+            }
+
             // Write forward declaration
             declWriter.WriteDeclaration1(CDeclaration.StructPrototype("$" + this.structPath));
             declWriter.WriteDeclaration1(CDeclaration.EmptyLine());
@@ -33,6 +38,8 @@ namespace Trophy.Features.Containers {
             foreach (var decl in this.decls) {
                 decl.GenerateCode(declWriter);
             }
+
+            this.generated = true;
         }
     }
 }

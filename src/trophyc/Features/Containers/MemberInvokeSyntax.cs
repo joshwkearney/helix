@@ -106,7 +106,7 @@ namespace Trophy.Features.Containers {
                             id);
 
                         var block = new BlockSyntaxC(new ISyntaxC[] { 
-                            new VarRefSyntaxC(info, args[i]),
+                            new VarRefSyntaxC(info, args[i], new IdentifierPath()),
                             new VariableAccessdSyntaxC(info, VariableAccessKind.LiteralAccess, info.Type)
                         });
 
