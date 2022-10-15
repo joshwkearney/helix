@@ -2,21 +2,21 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Trophy.Parsing {
+namespace Trophy.Features.Functions {
     public class FunctionSignature : IEquatable<FunctionSignature> {
-        public ITrophyType ReturnType { get; }
+        public TrophyType ReturnType { get; }
 
-        public ImmutableList<Parameter> Parameters { get; }
+        public ImmutableList<FunctionParameter> Parameters { get; }
 
-        public string Name { get; }
+        public IdentifierPath Path { get; }
 
-        public FunctionSignature(string name, ITrophyType returnType, ImmutableList<Parameter> pars) {
-            this.Name = name;
+        public FunctionSignature(IdentifierPath path, TrophyType returnType, ImmutableList<FunctionParameter> pars) {
+            this.Path = path;
             this.ReturnType = returnType;
             this.Parameters = pars;
         }
 
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
             if (obj is FunctionSignature sig) {
                 return this.Equals(sig);
             }
@@ -25,17 +25,17 @@ namespace Trophy.Parsing {
         }
 
         public override int GetHashCode() {
-            return this.Name.GetHashCode()
+            return this.Path.GetHashCode()
                 + 7 * this.ReturnType.GetHashCode()
                 + 11 * this.Parameters.Aggregate(23, (x, y) => x + 101 * y.GetHashCode());
         }
 
-        public bool Equals(FunctionSignature other) {
+        public bool Equals(FunctionSignature? other) {
             if (other is null) {
                 return false;
             }
 
-            if (this.Name != other.Name) {
+            if (this.Path != other.Path) {
                 return false;
             }
 
@@ -63,18 +63,18 @@ namespace Trophy.Parsing {
         }
     }
 
-    public class Parameter : IEquatable<Parameter> {
+    public class FunctionParameter : IEquatable<FunctionParameter> {
         public string Name { get; }
 
-        public ITrophyType Type { get; }
+        public TrophyType Type { get; }
 
-        public Parameter(string name, ITrophyType type) {
+        public FunctionParameter(string name, TrophyType type) {
             this.Name = name;
             this.Type = type;
         }
 
-        public override bool Equals(object obj) {
-            if (obj is Parameter par) {
+        public override bool Equals(object? obj) {
+            if (obj is FunctionParameter par) {
                 return this.Equals(par);
             }
 
@@ -85,7 +85,7 @@ namespace Trophy.Parsing {
             return this.Name.GetHashCode() + 7 * this.Type.GetHashCode();
         }
 
-        public bool Equals(Parameter other) {
+        public bool Equals(FunctionParameter? other) {
             if (other is null) {
                 return false;
             }
@@ -101,7 +101,7 @@ namespace Trophy.Parsing {
             return true;
         }
 
-        public static bool operator ==(Parameter par1, Parameter par2) {
+        public static bool operator ==(FunctionParameter par1, FunctionParameter par2) {
             if (par1 is null) {
                 return par2 is null;
             }
@@ -110,7 +110,7 @@ namespace Trophy.Parsing {
             }
         }
 
-        public static bool operator !=(Parameter par1, Parameter par2) {
+        public static bool operator !=(FunctionParameter par1, FunctionParameter par2) {
             return !(par1 == par2);
         }
     }

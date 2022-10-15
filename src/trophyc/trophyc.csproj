@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Trophy</RootNamespace>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -18,6 +18,9 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="LineCount.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\c_playground\c_playground.vcxproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="resources\Parser4.txt">

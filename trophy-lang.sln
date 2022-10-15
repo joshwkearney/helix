@@ -1,12 +1,14 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29102.190
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "trophyc", "src\trophyc\trophyc.csproj", "{AB9EA283-17C3-45D2-9537-141204D5028C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c_playground", "src\c_playground\c_playground.vcxproj", "{91A43EF8-BF5B-4469-AF7B-B636FC752729}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "trophyc-new", "trophyc-new\trophyc-new.csproj", "{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "trophyc-new", "trophyc-new\trophyc-new.csproj", "{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "trophyc-new2", "trophyc-new2\trophyc-new2.csproj", "{E4FDEBA6-73AE-4657-913F-E4E65289690E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,6 +54,18 @@ Global
 		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|x64.Build.0 = Release|Any CPU
 		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|x86.ActiveCfg = Release|Any CPU
 		{B6E2F48A-9B40-43E8-8EB6-F851CF2BDFE8}.Release|x86.Build.0 = Release|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Debug|x64.Build.0 = Debug|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Debug|x86.Build.0 = Debug|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Release|x64.ActiveCfg = Release|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Release|x64.Build.0 = Release|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Release|x86.ActiveCfg = Release|Any CPU
+		{E4FDEBA6-73AE-4657-913F-E4E65289690E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
