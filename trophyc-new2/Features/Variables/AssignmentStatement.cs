@@ -7,7 +7,8 @@ using Trophy.CodeGeneration.CSyntax;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Features.Variables {
+namespace Trophy.Features.Variables
+{
     public class AssignmentParseTree : IParseTree {
         private readonly IParseTree target, assign;
 

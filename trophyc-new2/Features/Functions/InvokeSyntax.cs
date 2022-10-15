@@ -11,7 +11,8 @@ using Trophy.Features.Functions;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree InvokeExpression(IParseTree first) {
             this.Advance(TokenKind.OpenParenthesis);
@@ -34,7 +35,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.Functions {
+namespace Trophy.Features.Functions
+{
     public class InvokeParseTree : IParseTree {
         private readonly IParseTree target;
         private readonly IReadOnlyList<IParseTree> args;

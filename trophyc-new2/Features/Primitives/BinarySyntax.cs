@@ -9,7 +9,8 @@ using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree OrExpression() {
             var first = this.XorExpression();
@@ -128,7 +129,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.Primitives {
+namespace Trophy.Features.Primitives
+{
     public enum BinaryOperation {
         Add, Subtract, Multiply, Modulo, FloorDivide,
         And, Or, Xor,

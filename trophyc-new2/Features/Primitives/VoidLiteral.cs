@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Trophy.Analysis;
 using Trophy.Analysis.SyntaxTree;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
@@ -10,7 +11,8 @@ using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree VoidLiteral() {
             var tok = this.Advance(TokenKind.VoidKeyword);
@@ -20,7 +22,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.Primitives {
+namespace Trophy.Features.Primitives
+{
     public class VoidLiteral : IParseTree, ISyntaxTree {
         public TokenLocation Location { get; }
 

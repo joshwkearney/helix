@@ -8,7 +8,8 @@ using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree UnaryExpression() {
             if (this.Peek(TokenKind.Subtract) || this.Peek(TokenKind.Add) || this.Peek(TokenKind.Not)) {
@@ -32,7 +33,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.Primitives {
+namespace Trophy.Features.Primitives
+{
     public enum UnaryOperator {
         Not, Plus, Minus
     }

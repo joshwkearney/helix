@@ -83,5 +83,14 @@ namespace Trophy {
                 return Option.None;
             }
         }
+
+        public static Option<TValue> GetValueOrNone<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) {
+            if (dict.TryGetValue(key, out var value)) {
+                return value;
+            }
+            else {
+                return Option.None;
+            }
+        }
     }
 }

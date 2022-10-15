@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Trophy.Analysis;
 using Trophy.Analysis.SyntaxTree;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
@@ -8,7 +9,8 @@ using Trophy.Features.FlowControl;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree Block() {
             var start = this.Advance(TokenKind.OpenBrace);
@@ -26,7 +28,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.FlowControl {
+namespace Trophy.Features.FlowControl
+{
     public class BlockParseTree : IParseTree {
         private static int idCounter = 0;
 

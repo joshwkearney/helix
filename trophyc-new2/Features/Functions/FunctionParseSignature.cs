@@ -11,7 +11,10 @@ namespace Trophy.Features.Functions {
 
         public IReadOnlyList<ParseFunctionParameter> Parameters { get; }
 
-        public FunctionParseSignature(string name, ITypeTree returnType, IReadOnlyList<ParseFunctionParameter> pars) {
+        public TokenLocation Location { get; }
+
+        public FunctionParseSignature(TokenLocation loc, string name, ITypeTree returnType, IReadOnlyList<ParseFunctionParameter> pars) {
+            this.Location = loc;
             this.ReturnType = returnType;
             this.Name = name;
             this.Parameters = pars;
@@ -33,9 +36,15 @@ namespace Trophy.Features.Functions {
 
         public ITypeTree Type { get; }
 
-        public ParseFunctionParameter(string name, ITypeTree type) {
+        public bool IsWritable { get; }
+
+        public TokenLocation Location { get; }
+
+        public ParseFunctionParameter(TokenLocation loc, string name, ITypeTree type, bool isWritable) {
+            this.Location = loc;
             this.Name = name;
             this.Type = type;
+            this.IsWritable = isWritable;
         }
     }
 }

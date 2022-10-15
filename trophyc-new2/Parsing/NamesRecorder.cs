@@ -7,14 +7,15 @@
         private int tempCounter = 0;
         private readonly Dictionary<IdentifierPath, NameTarget> names = new();
         
-        public void PutName(IdentifierPath scope, string name, NameTarget target) {
+        public bool TrySetName(IdentifierPath scope, string name, NameTarget target) {
             scope = scope.Append(name);
 
             if (this.names.ContainsKey(scope)) {
-                throw new Exception();
+                return false;
             }
 
             this.names[scope] = target;
+            return true;
         }
 
         public Option<NameTarget> TryGetName(IdentifierPath name) {

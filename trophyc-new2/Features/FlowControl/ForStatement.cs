@@ -9,7 +9,8 @@ using Trophy.Features.Variables;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree ForStatement() {
             var start = this.Advance(TokenKind.ForKeyword);
@@ -31,7 +32,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.FlowControl {
+namespace Trophy.Features.FlowControl
+{
     public class ForParseStatement : IParseTree {
         private readonly string iteratorName;
         private readonly IParseTree startIndex, endIndex, body;
@@ -59,7 +61,7 @@ namespace Trophy.Features.FlowControl {
                 new PrimitiveTypeTree(this.startIndex.Location, PrimitiveType.Int));
 
             var counterName = names.GetTempVariableName();
-            var counterDecl = new VarParseStatement(this.Location, counterName, start, false);
+            var counterDecl = new VarParseStatement(this.Location, counterName, start, true);
 
             var counterAccess = new VariableAccessParseTree(this.Location, counterName);
             var iteratorDecl = new VarParseStatement(this.Location, this.iteratorName, counterAccess, false);

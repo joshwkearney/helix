@@ -3,7 +3,8 @@
 namespace Trophy.Parsing {
     public class Lexer {
         private static readonly Dictionary<string, TokenKind> keywords = new Dictionary<string, TokenKind>() {
-            { "var", TokenKind.VarKeyword }, { "func", TokenKind.FunctionKeyword },
+            { "var", TokenKind.VarKeyword }, { "let", TokenKind.LetKeyword }, 
+            { "func", TokenKind.FunctionKeyword },
             { "int", TokenKind.IntKeyword }, { "void", TokenKind.VoidKeyword },
             { "bool", TokenKind.BoolKeyword }, { "as", TokenKind.AsKeyword },
             { "is", TokenKind.IsKeyword }, { "if", TokenKind.IfKeyword },

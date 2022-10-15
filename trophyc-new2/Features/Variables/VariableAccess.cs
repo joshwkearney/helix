@@ -6,7 +6,8 @@ using Trophy.CodeGeneration.CSyntax;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree VariableAccess() {
             var tok = this.Advance(TokenKind.Identifier);
@@ -28,16 +29,19 @@ namespace Trophy {
         }
 
         public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
+            // Make sure this name exists
             if (!names.TryFindName(scope, this.name).TryGetValue(out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
+            // Make sure this name exists
             if (!names.TryGetName(path).TryGetValue(out var target)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
+            // Make sure this name is a variable
             if (target == NameTarget.Variable) {
-                return new VariableAccessSyntax(path, types.Variables[path], false);
+                return new VariableAccessSyntax(path, types.GetVariableType(path), false);
             }
 
             throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);

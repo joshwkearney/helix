@@ -1,6 +1,8 @@
-﻿using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
+using Trophy.Analysis.SyntaxTree;
 
-namespace Trophy.Parsing.ParseTree {
+namespace Trophy.Parsing.ParseTree
+{
     public interface IParseDeclaration {
         public TokenLocation Location { get; }
 

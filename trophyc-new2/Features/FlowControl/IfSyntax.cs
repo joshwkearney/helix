@@ -9,7 +9,8 @@ using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
@@ -33,7 +34,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.FlowControl {
+namespace Trophy.Features.FlowControl
+{
     public class IfParseTree : IParseTree {
         private readonly IParseTree cond, iftrue;
         private readonly Option<IParseTree> iffalse;

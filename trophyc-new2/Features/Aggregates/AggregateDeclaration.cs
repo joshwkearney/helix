@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Trophy.Analysis;
 using Trophy.Analysis.SyntaxTree;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
@@ -67,17 +68,25 @@ namespace Trophy.Features.Aggregates {
         }
 
         public void DeclareNames(IdentifierPath scope, NamesRecorder names) {
+            bool nameTaken = false;
+
             // Declare this struct
             if (this.Kind == AggregateKind.Struct) {
-                names.PutName(scope, this.Signature.Name, NameTarget.Struct);
+                nameTaken = !names.TrySetName(scope, this.Signature.Name, NameTarget.Struct);
             }
             else {
-                names.PutName(scope, this.Signature.Name, NameTarget.Union);
+                nameTaken = !names.TrySetName(scope, this.Signature.Name, NameTarget.Union);
+            }
+
+            if (nameTaken) {
+                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.Signature.Name);
             }
 
             // Declare the parameters
             foreach (var par in this.Signature.Members) {
-                names.PutName(scope.Append(this.Signature.Name), par.MemberName, NameTarget.Reserved);
+                if (!names.TrySetName(scope.Append(this.Signature.Name), par.MemberName, NameTarget.Reserved)) {
+                    throw TypeCheckingErrors.IdentifierDefined(this.Location, par.MemberName);
+                }
             }
         }
 
@@ -85,7 +94,7 @@ namespace Trophy.Features.Aggregates {
             var sig = this.Signature.ResolveNames(scope, names);
 
             // Declare this aggregate
-            types.Aggregates[sig.Path] = sig;
+            types.SetAggregate(sig);
         }
 
         public IDeclaration ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types) {

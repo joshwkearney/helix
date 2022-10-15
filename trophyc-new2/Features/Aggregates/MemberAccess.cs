@@ -9,7 +9,8 @@ using Trophy.Features.Aggregates;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree MemberAccess(IParseTree first) {
             this.Advance(TokenKind.Dot);
@@ -22,7 +23,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.Aggregates {
+namespace Trophy.Features.Aggregates
+{
     public class MemberAccessParseTree : IParseTree {
         private readonly IParseTree target;
         private readonly string memberName;
@@ -40,22 +42,27 @@ namespace Trophy.Features.Aggregates {
 
             // If this is a named type it could be a struct or union
             if (target.ReturnType.AsNamedType().Select(x => x.FullName).TryGetValue(out var path)) {
-                // If this is a struct or union we can access the fields
-                if (types.Aggregates.TryGetValue(path, out var sig)) {
-                    var fieldOpt = sig
-                        .Members
-                        .Where(x => x.MemberName == this.memberName)
-                        .FirstOrNone();
 
-                    // Make sure this field is present
-                    if (fieldOpt.TryGetValue(out var field)) {
-                        return new MemberAccessSyntax(
-                            this.Location,
-                            target,
-                            this.memberName,
-                            field.MemberType);
+                // If this is a struct or union we can access the fields
+                if (names.TryGetName(path).TryGetValue(out var name)) {
+                    if (name == NameTarget.Struct || name == NameTarget.Union) {
+
+                        var sig = types.GetAggregate(path);
+                        var fieldOpt = sig
+                            .Members
+                            .Where(x => x.MemberName == this.memberName)
+                            .FirstOrNone();
+
+                        // Make sure this field is present
+                        if (fieldOpt.TryGetValue(out var field)) {
+                            return new MemberAccessSyntax(
+                                this.Location,
+                                target,
+                                this.memberName,
+                                field.MemberType);
+                        }
                     }
-                }
+                }                
             }
 
             throw TypeCheckingErrors.MemberUndefined(this.Location, target.ReturnType, this.memberName);

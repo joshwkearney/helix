@@ -90,6 +90,7 @@ namespace Trophy.Features.Functions {
                 return false;
             }
 
+
             if (this.Name != other.Name) {
                 return false;
             }

@@ -6,7 +6,8 @@ using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree AsExpression() {
             var first = this.BinaryExpression();
@@ -25,7 +26,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.Primitives {
+namespace Trophy.Features.Primitives
+{
     public class AsParseTree : IParseTree {
         private readonly IParseTree arg;
         private readonly ITypeTree target;

@@ -13,33 +13,48 @@ using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 using static System.Formats.Asn1.AsnWriter;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private FunctionParseSignature FunctionSignature() {
-            this.Advance(TokenKind.FunctionKeyword);
+            var start = this.Advance(TokenKind.FunctionKeyword);
             var funcName = this.Advance(TokenKind.Identifier).Value;
 
             this.Advance(TokenKind.OpenParenthesis);
 
             var pars = ImmutableList<ParseFunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
+                bool isWritable;
+                Token parStart;
+
+                if (this.Peek(TokenKind.VarKeyword)) {
+                    parStart = this.Advance(TokenKind.VarKeyword);
+                    isWritable = true;
+                }
+                else {
+                    parStart = this.Advance(TokenKind.LetKeyword);
+                    isWritable = false;
+                }
+
                 var parName = this.Advance(TokenKind.Identifier).Value;
                 this.Advance(TokenKind.AsKeyword);
 
                 var parType = this.TypeExpression();
+                var parLoc = parStart.Location.Span(parType.Location);
 
                 if (!this.Peek(TokenKind.CloseParenthesis)) {
                     this.Advance(TokenKind.Comma);
                 }
 
-                pars = pars.Add(new ParseFunctionParameter(parName, parType));
+                pars = pars.Add(new ParseFunctionParameter(parLoc, parName, parType, isWritable));
             }
 
             this.Advance(TokenKind.CloseParenthesis);
             this.Advance(TokenKind.AsKeyword);
 
             var returnType = this.TypeExpression();
-            var sig = new FunctionParseSignature(funcName, returnType, pars);
+            var loc = start.Location.Span(returnType.Location);
+            var sig = new FunctionParseSignature(loc, funcName, returnType, pars);
 
             return sig;
         }
@@ -77,11 +92,17 @@ namespace Trophy.Features.Functions {
             CheckForDuplicateParameters(this.Location, this.Signature.Parameters.Select(x => x.Name));
 
             // Declare this function
-            names.PutName(scope, this.Signature.Name, NameTarget.Function);
+            if (!names.TrySetName(scope, this.Signature.Name, NameTarget.Function)) {
+                throw TypeCheckingErrors.IdentifierDefined(this.Signature.Location, this.Signature.Name);
+            }
 
             // Declare the parameters
             foreach (var par in this.Signature.Parameters) {
-                names.PutName(scope.Append(this.Signature.Name), par.Name, NameTarget.Variable);
+                var path = scope.Append(this.Signature.Name);
+
+                if (!names.TrySetName(path, par.Name, NameTarget.Variable)) {
+                    throw TypeCheckingErrors.IdentifierDefined(par.Location, par.Name);
+                }
             }
         }
 
@@ -89,14 +110,16 @@ namespace Trophy.Features.Functions {
             var sig = this.Signature.ResolveNames(scope, names);
 
             // Declare this function
-            types.Functions[sig.Path] = sig;
-            types.Variables[sig.Path] = new FunctionType(sig);
+            types.SetFunction(sig);
+            types.SetVariable(sig.Path, new FunctionType(sig), false);
 
             // Declare the parameters
-            foreach (var par in sig.Parameters) {
-                var path = sig.Path.Append(par.Name);
+            for (int i = 0; i < this.Signature.Parameters.Count; i++) {
+                var parsePar = this.Signature.Parameters[i];
+                var type = sig.Parameters[i].Type;
+                var path = sig.Path.Append(parsePar.Name);
 
-                types.Variables[path] = par.Type;
+                types.SetVariable(path, type, parsePar.IsWritable);
             }
         }
 

@@ -9,7 +9,8 @@ using Trophy.Features.FlowControl;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree WhileStatement() {
             var start = this.Advance(TokenKind.WhileKeyword);
@@ -24,7 +25,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy.Features.FlowControl {
+namespace Trophy.Features.FlowControl
+{
     public class WhileParseStatement : IParseTree {
         private readonly IParseTree cond, body;
 

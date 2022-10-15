@@ -8,7 +8,8 @@ using Trophy.CodeGeneration.CSyntax;
 using Trophy.Parsing;
 using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private IParseTree VarExpression() {
             var tok = this.Advance(TokenKind.VarKeyword);
@@ -19,7 +20,7 @@ namespace Trophy.Parsing {
             var assign = this.TopExpression();
             var loc = tok.Location.Span(assign.Location);
 
-            return new VarParseStatement(loc, name, assign, false);
+            return new VarParseStatement(loc, name, assign, true);
         }
     }
 }
@@ -28,29 +29,27 @@ namespace Trophy {
     public class VarParseStatement : IParseTree {
         private readonly string name;
         private readonly IParseTree assign;
-        private readonly bool isReadonly;
+        private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
-        public VarParseStatement(TokenLocation loc, string name, IParseTree assign, bool isreadonly) {
+        public VarParseStatement(TokenLocation loc, string name, IParseTree assign, bool isWritable) {
             this.Location = loc;
             this.name = name;
             this.assign = assign;
-            this.isReadonly = isreadonly;
+            this.isWritable = isWritable;
         }
 
         public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
-            // Make sure we're not shadowing another variable
-            if (names.TryFindName(scope, this.name).HasValue) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.name);
-            }
-
             // Type check the assignment value
             var assign = this.assign.ResolveTypes(scope, names, types);
 
-            // Declare this variable
-            names.PutName(scope, this.name, NameTarget.Variable);
-            types.Variables[scope.Append(this.name)] = assign.ReturnType;
+            // Declare this variable and make sure we're not shadowing another variable
+            if (!names.TrySetName(scope, this.name, NameTarget.Variable)) {
+                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.name);
+            }
+
+            types.SetVariable(scope.Append(this.name), assign.ReturnType, this.isWritable);
 
             return new VarStatement(scope.Append(this.name), assign, new PointerType(assign.ReturnType));
         }
