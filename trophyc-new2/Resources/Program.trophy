@@ -15,3 +15,5 @@ struct Point {
 	let x as int;
 	let y as int;
 };
+
+extern func add(let x as int, let y as int) as int;

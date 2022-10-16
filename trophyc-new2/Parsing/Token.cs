@@ -11,7 +11,7 @@
         LessThan, GreaterThan, LessThanOrEqualTo, GreaterThanOrEqualTo,
 
         VarKeyword, LetKeyword, Assignment,
-        FunctionKeyword, Yields,
+        FunctionKeyword, ExternKeyword, Yields,
 
         IntKeyword, VoidKeyword, BoolKeyword, AsKeyword, IsKeyword,
 

@@ -64,9 +64,12 @@
 
         public TrophyType Type { get; }
 
-        public FunctionParameter(string name, TrophyType type) {
+        public bool IsWritable { get; }
+
+        public FunctionParameter(string name, TrophyType type, bool isWritable) {
             this.Name = name;
             this.Type = type;
+            this.IsWritable = isWritable;
         }
 
         public override bool Equals(object? obj) {
@@ -78,7 +81,9 @@
         }
 
         public override int GetHashCode() {
-            return this.Name.GetHashCode() + 7 * this.Type.GetHashCode();
+            return this.Name.GetHashCode() 
+                 + 7 * this.Type.GetHashCode() 
+                 + 11 * this.IsWritable.GetHashCode();
         }
 
         public bool Equals(FunctionParameter? other) {
@@ -86,6 +91,9 @@
                 return false;
             }
 
+            if (this.IsWritable != other.IsWritable) {
+                return false;
+            }
 
             if (this.Name != other.Name) {
                 return false;

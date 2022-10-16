@@ -64,6 +64,9 @@
             else if (this.Peek(TokenKind.StructKeyword) || this.Peek(TokenKind.UnionKeyword)) {
                 return this.AggregateDeclaration();
             }
+            else if (this.Peek(TokenKind.ExternKeyword)) {
+                return this.ExternFunctionDeclaration();
+            }
 
             throw ParsingErrors.UnexpectedToken(this.Advance());
         }

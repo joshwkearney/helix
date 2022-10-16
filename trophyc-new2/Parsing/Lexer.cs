@@ -2,7 +2,7 @@
     public class Lexer {
         private static readonly Dictionary<string, TokenKind> keywords = new Dictionary<string, TokenKind>() {
             { "var", TokenKind.VarKeyword }, { "let", TokenKind.LetKeyword }, 
-            { "func", TokenKind.FunctionKeyword },
+            { "func", TokenKind.FunctionKeyword }, { "extern", TokenKind.ExternKeyword },
             { "int", TokenKind.IntKeyword }, { "void", TokenKind.VoidKeyword },
             { "bool", TokenKind.BoolKeyword }, { "as", TokenKind.AsKeyword },
             { "is", TokenKind.IsKeyword }, { "if", TokenKind.IfKeyword },

@@ -31,7 +31,7 @@ namespace Trophy.Features.Functions {
                     throw TypeCheckingErrors.ExpectedTypeExpression(par.Location);
                 }
 
-                pars.Add(new FunctionParameter(par.Name, parType));
+                pars.Add(new FunctionParameter(par.Name, parType, par.IsWritable));
             }
 
             return new FunctionSignature(path, retType, pars);
