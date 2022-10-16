@@ -2,9 +2,10 @@
 	var x = 2 + 9;
 
 	while x < 4 do {
-		x = x + 1;
+		x = x / 2;
 	};
 
+	// Comment
 	if x > 3 then x else 0;
 };
 

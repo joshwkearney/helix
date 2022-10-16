@@ -21,7 +21,7 @@
             { ',', TokenKind.Comma }, { '.', TokenKind.Dot },
             { ';', TokenKind.Semicolon }, { '+', TokenKind.Add },
             { '-', TokenKind.Subtract }, { '*', TokenKind.Multiply },
-            { '/', TokenKind.Divide }, { '%', TokenKind.Modulo }
+            { '%', TokenKind.Modulo }
         };
 
         private readonly string text;
@@ -150,17 +150,23 @@
             }
         }
 
-        private Token GetComment() {
-            int start = pos;
+        private Token GetSlashOrComment() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '/') {
+                    int start = pos;
 
-            while (pos < text.Length && text[pos] != '\n') {
-                pos++;
+                    while (pos < text.Length && text[pos] != '\n') {
+                        pos++;
+                    }
+
+                    pos--;
+
+                    var location = new TokenLocation(start, pos - start + 1);
+                    return new Token(TokenKind.Whitespace, location, "");
+                }
             }
 
-            pos--;
-
-            var location = new TokenLocation(start, pos - start + 1);
-            return new Token(TokenKind.Whitespace, location, "");
+            return new Token(TokenKind.Divide, location, "/");            
         }
 
         private Token GetToken() {
@@ -194,8 +200,8 @@
             else if (char.IsWhiteSpace(current)) {
                 return new Token(TokenKind.Whitespace, location, current.ToString());
             }
-            else if (current == '#') {
-                return this.GetComment();
+            else if (current == '/') {
+                return this.GetSlashOrComment();
             }
             else {
                 throw ParsingErrors.UnexpectedCharacter(location, current);
