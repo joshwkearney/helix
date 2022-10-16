@@ -131,7 +131,7 @@ namespace Trophy.Features.Aggregates {
         public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
 
         public void GenerateCode(TypesRecorder types, CWriter writer) {
-            var name = this.signature.Path.ToCName();
+            var name = writer.GetVariableName(this.signature.Path);
 
             if (this.kind == AggregateKind.Struct) {
                 // Write forward declaration
@@ -142,7 +142,9 @@ namespace Trophy.Features.Aggregates {
                 writer.WriteDeclaration2(CDeclaration.Struct(
                     name,
                     this.signature.Members
-                        .Select(x => new CParameter(writer.ConvertType(x.MemberType), x.MemberName))
+                        .Select(x => new CParameter(
+                            writer.ConvertType(x.MemberType), 
+                            writer.GetVariableName(this.signature.Path.Append(x.MemberName))))
                         .ToArray()));
 
                 writer.WriteDeclaration2(CDeclaration.EmptyLine());

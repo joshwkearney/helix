@@ -1,4 +1,4 @@
-﻿func test() => {
+﻿func test() as int => {
 	var x = 2 + 9;
 
 	while x < 4 do {
@@ -7,8 +7,6 @@
 
 	// Comment
 	if x > 3 then x else 0;
-
-	5;
 };
 
 func other(let x as int) as int => x + 10;

@@ -134,12 +134,14 @@ namespace Trophy {
             return result;
         }
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
+            var name = writer.GetVariableName(this.path);
+
             if (this.isLValue) {
-                return CExpression.AddressOf(CExpression.VariableLiteral(this.path.ToCName()));
+                return CExpression.AddressOf(CExpression.VariableLiteral(name));
             }
             else {
-                return CExpression.VariableLiteral(this.path.ToCName());
+                return CExpression.VariableLiteral(name);
             }
         }
     }

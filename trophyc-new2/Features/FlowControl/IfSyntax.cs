@@ -111,7 +111,7 @@ namespace Trophy.Features.FlowControl {
             var affirm = this.iftrue.GenerateCode(types, affirmWriter);
             var neg = this.iffalse.GenerateCode(types, negWriter);
 
-            var tempName = writer.GetTempVariableName();
+            var tempName = writer.GetVariableName();
             var returnType = writer.ConvertType(types.GetReturnType(this));
 
             affirmList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), affirm));

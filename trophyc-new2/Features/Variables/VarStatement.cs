@@ -90,7 +90,8 @@ namespace Trophy {
         public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
             var type = writer.ConvertType(types.GetReturnType(this.assign));
             var value = this.assign.GenerateCode(types, writer);
-            var assign = CStatement.VariableDeclaration(type, this.path.ToCName(), value);
+            var name = writer.GetVariableName(this.path);
+            var assign = CStatement.VariableDeclaration(type, name, value);
 
             writer.WriteSpacingLine();
             writer.WriteStatement(CStatement.Comment("Variable declaration statement"));

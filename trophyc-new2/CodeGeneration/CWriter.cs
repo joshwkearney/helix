@@ -4,8 +4,8 @@ using Trophy.CodeGeneration.CSyntax;
 namespace Trophy.CodeGeneration {
     public class CWriter {
         private int tempCounter = 0;
-        private int typeCounter = 0;
-        private readonly Dictionary<TrophyType, CType> typeNames = new Dictionary<TrophyType, CType>();
+        private readonly Dictionary<TrophyType, CType> typeNames = new();
+        private readonly Dictionary<IdentifierPath, string> tempNames = new();
 
         private readonly StringBuilder decl1Sb = new StringBuilder();
         private readonly StringBuilder decl2Sb = new StringBuilder();
@@ -24,8 +24,20 @@ namespace Trophy.CodeGeneration {
                 .ToString();
         }
 
-        public string GetTempVariableName() {
-            return "$trophy_temp_" + this.tempCounter++;
+        public string GetVariableName() {
+            return "$t_" + this.tempCounter++;
+        }
+
+        public string GetVariableName(IdentifierPath path) {
+            if (path.Segments.Count == 1) {
+                return path.Segments.First();
+            }
+
+            if (!this.tempNames.TryGetValue(path, out var value)) {
+                value = this.tempNames[path] = path.Segments.Last() + "_" + this.tempCounter++;
+            }
+
+            return value;
         }
 
         public void WriteDeclaration1(CDeclaration decl) {

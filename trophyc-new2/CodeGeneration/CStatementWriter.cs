@@ -23,7 +23,7 @@ namespace Trophy.CodeGeneration {
         }
 
         public CExpression WriteImpureExpression(CType type, CExpression expr) {
-            var name = this.GetTempVariableName();
+            var name = this.GetVariableName();
             var stat = CStatement.VariableDeclaration(type, name, expr);
 
             this.WriteStatement(stat);

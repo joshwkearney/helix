@@ -75,18 +75,21 @@ namespace Trophy.Features.Functions {
             var returnType = writer.ConvertType(this.Signature.ReturnType);
             var pars = this.Signature
                 .Parameters
-                .Select((x, i) => new CParameter(writer.ConvertType(x.Type), this.Signature.Path.Append(x.Name).ToCName()))
+                .Select((x, i) => new CParameter(
+                    writer.ConvertType(x.Type), 
+                    writer.GetVariableName(this.Signature.Path.Append(x.Name))))
                 .ToArray();
 
+            var funcName = writer.GetVariableName(this.Signature.Path);
             var stats = new List<CStatement>();
 
             CDeclaration forwardDecl;
 
             if (this.Signature.ReturnType == PrimitiveType.Void) {
-                forwardDecl = CDeclaration.FunctionPrototype(this.Signature.Path.ToCName(), false, pars);
+                forwardDecl = CDeclaration.FunctionPrototype(funcName, false, pars);
             }
             else {
-                forwardDecl = CDeclaration.FunctionPrototype(returnType, this.Signature.Path.ToCName(), false, pars);
+                forwardDecl = CDeclaration.FunctionPrototype(returnType, funcName, false, pars);
             }
 
             writer.WriteDeclaration2(forwardDecl);
