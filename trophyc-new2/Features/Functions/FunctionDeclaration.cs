@@ -3,7 +3,9 @@ using Trophy.Analysis;
 using Trophy.Analysis.Unification;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
+using Trophy.Features.FlowControl;
 using Trophy.Features.Functions;
+using Trophy.Features.Primitives;
 using Trophy.Parsing;
 
 namespace Trophy.Parsing {
@@ -41,10 +43,13 @@ namespace Trophy.Parsing {
                 pars = pars.Add(new ParseFunctionParameter(parLoc, parName, parType, isWritable));
             }
 
-            this.Advance(TokenKind.CloseParenthesis);
-            this.Advance(TokenKind.AsKeyword);
+            var end = this.Advance(TokenKind.CloseParenthesis);
+            var returnType = new VoidLiteral(end.Location) as ISyntaxTree;
 
-            var returnType = this.TopExpression();
+            if (this.TryAdvance(TokenKind.AsKeyword)) {
+                returnType = this.TopExpression();
+            }
+
             var loc = start.Location.Span(returnType.Location);
             var sig = new FunctionParseSignature(loc, funcName, returnType, pars);
 
@@ -81,43 +86,35 @@ namespace Trophy.Features.Functions {
         }
 
         public void DeclareNames(IdentifierPath scope, TypesRecorder names) {
-            CheckForDuplicateParameters(this.Location, this.Signature.Parameters.Select(x => x.Name));
+            FunctionsHelper. CheckForDuplicateParameters(
+                this.Location, 
+                this.Signature.Parameters.Select(x => x.Name));
 
-            // Declare this function
-            if (!names.TrySetNameTarget(scope, this.Signature.Name, NameTarget.Function)) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Signature.Location, this.Signature.Name);
-            }
-
-            // Declare the parameters
-            foreach (var par in this.Signature.Parameters) {
-                var path = scope.Append(this.Signature.Name);
-
-                if (!names.TrySetNameTarget(path, par.Name, NameTarget.Variable)) {
-                    throw TypeCheckingErrors.IdentifierDefined(par.Location, par.Name);
-                }
-            }
+            FunctionsHelper.DeclareSignatureNames(this.Signature, scope, names);
         }
 
         public void DeclareTypes(IdentifierPath scope, TypesRecorder types) {
             var sig = this.Signature.ResolveNames(scope, types);
 
-            // Declare this function
-            types.SetFunction(sig);
-            types.SetVariable(sig.Path, new FunctionType(sig), false);
-
-            // Declare the parameters
-            for (int i = 0; i < this.Signature.Parameters.Count; i++) {
-                var parsePar = this.Signature.Parameters[i];
-                var type = sig.Parameters[i].Type;
-                var path = sig.Path.Append(parsePar.Name);
-
-                types.SetVariable(path, type, parsePar.IsWritable);
-            }
+            FunctionsHelper.DeclareSignatureTypes(sig, scope, types);
         }
 
         public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
             var sig = this.Signature.ResolveNames(scope, types);
-            var body = this.Body.ResolveTypes(sig.Path, types);
+            var body = this.Body;
+
+            // If this function returns void, wrap the body so we don't get weird type errors
+            if (sig.ReturnType == PrimitiveType.Void) {
+                body = new BlockSyntax(this.Body.Location, new ISyntaxTree[] { 
+                    body, new VoidLiteral(body.Location)
+                });
+            }
+
+            // Make sure the body is an rvalue
+            if (!body.ResolveTypes(sig.Path, types).ToRValue(types).TryGetValue(out body)) {
+                throw TypeCheckingErrors.RValueRequired(this.Body.Location);
+            }
+
             var bodyType = types.GetReturnType(body);
 
             // Make sure the return type matches the body's type
@@ -133,18 +130,6 @@ namespace Trophy.Features.Functions {
 
         public void GenerateCode(TypesRecorder types, CWriter writer) {
             throw new InvalidOperationException();
-        }
-
-        private static void CheckForDuplicateParameters(TokenLocation loc, IEnumerable<string> pars) {
-            var dups = pars
-                .GroupBy(x => x)
-                .Where(x => x.Count() > 1)
-                .Select(x => x.Key)
-                .ToArray();
-
-            if (dups.Any()) {
-                throw TypeCheckingErrors.IdentifierDefined(loc, dups.First());
-            }
         }
     }
 
