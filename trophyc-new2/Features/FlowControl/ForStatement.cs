@@ -1,18 +1,14 @@
-﻿using Trophy;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree ForStatement() {
+        private ISyntaxTree ForStatement() {
             var start = this.Advance(TokenKind.ForKeyword);
             var id = this.Advance(TokenKind.Identifier).Value;
 
@@ -32,15 +28,14 @@ namespace Trophy.Parsing
     }
 }
 
-namespace Trophy.Features.FlowControl
-{
-    public class ForParseStatement : IParseTree {
+namespace Trophy.Features.FlowControl {
+    public class ForParseStatement : ISyntaxTree {
         private readonly string iteratorName;
-        private readonly IParseTree startIndex, endIndex, body;
+        private readonly ISyntaxTree startIndex, endIndex, body;
 
         public TokenLocation Location { get; }
 
-        public ForParseStatement(TokenLocation loc, string id, IParseTree start, IParseTree end, IParseTree body) {
+        public ForParseStatement(TokenLocation loc, string id, ISyntaxTree start, ISyntaxTree end, ISyntaxTree body) {
             this.Location = loc;
             this.iteratorName = id;
             this.startIndex = start;
@@ -48,48 +43,62 @@ namespace Trophy.Features.FlowControl
             this.body = body;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
             // Rewrite for syntax to use while loops
             var start = new AsParseTree(
                 this.startIndex.Location, 
                 this.startIndex, 
-                new PrimitiveTypeTree(this.startIndex.Location, PrimitiveType.Int));
+                new IdenfifierAccessParseTree(this.startIndex.Location, "int"));
 
             var end = new AsParseTree(
                 this.endIndex.Location,
                 this.endIndex,
-                new PrimitiveTypeTree(this.startIndex.Location, PrimitiveType.Int));
+                new IdenfifierAccessParseTree(this.startIndex.Location, "int"));
 
-            var counterName = names.GetTempVariableName();
+            var counterName = types.GetTempVariableName();
             var counterDecl = new VarParseStatement(this.Location, counterName, start, true);
 
-            var counterAccess = new VariableAccessParseTree(this.Location, counterName);
+            var counterAccess = new IdenfifierAccessParseTree(this.Location, counterName);
             var iteratorDecl = new VarParseStatement(this.Location, this.iteratorName, counterAccess, false);
 
-            var comp = new BinaryParseTree(this.Location, counterAccess, end, BinaryOperation.LessThan);
+            var comp = new BinarySyntax(this.Location, counterAccess, end, BinaryOperationKind.LessThan);
 
-            var assign = new AssignmentParseTree(
+            var assign = new AssignmentStatement(
                 this.Location,
                 counterAccess,
-                new BinaryParseTree(
+                new BinarySyntax(
                     this.Location,
                     counterAccess,
-                    new IntParseLiteral(this.Location, 1),
-                    BinaryOperation.Add));
+                    new IntLiteral(this.Location, 1),
+                    BinaryOperationKind.Add));
 
-            var block = new BlockParseTree(this.Location, new IParseTree[] {
+            var block = new BlockSyntax(this.Location, new ISyntaxTree[] {
                 counterDecl,
-                new WhileParseStatement(
+                new WhileStatement(
                     this.Location,
                     comp,
-                    new BlockParseTree(this.Location, new IParseTree[] { 
+                    new BlockSyntax(this.Location, new ISyntaxTree[] { 
                         iteratorDecl,
                         this.body,
                         assign
                     }))
             });
 
-            return block.ResolveTypes(scope, names, types, context);
+            return block.ResolveTypes(scope, types);
+        }
+
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) {
+            throw new InvalidOperationException();
+        }
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) {
+            throw new InvalidOperationException();
+        }
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+            throw new InvalidOperationException();
         }
     }
 }

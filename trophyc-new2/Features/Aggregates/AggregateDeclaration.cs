@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.Aggregates;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseDeclaration AggregateDeclaration() {
+        private IDeclarationTree AggregateDeclaration() {
             Token start;
             if (this.Peek(TokenKind.StructKeyword)) {
                 start = this.Advance(TokenKind.StructKeyword);
@@ -29,13 +21,14 @@ namespace Trophy.Parsing {
             this.Advance(TokenKind.OpenBrace);
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                var memName = this.Advance(TokenKind.Identifier).Value;
+                var memName = this.Advance(TokenKind.Identifier);
                 this.Advance(TokenKind.AsKeyword);
 
-                var memType = this.TypeExpression();
+                var memType = this.TopExpression();
+                var memLoc = memName.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);
-                mems.Add(new ParseAggregateMember(memName, memType));
+                mems.Add(new ParseAggregateMember(memLoc, memName.Value, memType));
             }
 
             this.Advance(TokenKind.CloseBrace);
@@ -54,73 +47,81 @@ namespace Trophy.Features.Aggregates {
         Struct, Union
     }
 
-    public class AggregateParseDeclaration : IParseDeclaration {
+    public class AggregateParseDeclaration : IDeclarationTree {
+        private readonly AggregateParseSignature signature;
+        private readonly AggregateKind kind;
+
         public TokenLocation Location { get; }
-
-        public AggregateParseSignature Signature { get; }
-
-        public AggregateKind Kind { get; }
 
         public AggregateParseDeclaration(TokenLocation loc, AggregateParseSignature sig, AggregateKind kind) {
             this.Location = loc;
-            this.Signature = sig;
-            this.Kind = kind;
+            this.signature = sig;
+            this.kind = kind;
         }
 
-        public void DeclareNames(IdentifierPath scope, NamesRecorder names) {
-            bool nameTaken = false;
+        public void DeclareNames(IdentifierPath scope, TypesRecorder types) {
+            bool nameTaken;
 
             // Declare this struct
-            if (this.Kind == AggregateKind.Struct) {
-                nameTaken = !names.TrySetName(scope, this.Signature.Name, NameTarget.Struct);
+            if (this.kind == AggregateKind.Struct) {
+                nameTaken = !types.TrySetNameTarget(scope, this.signature.Name, NameTarget.Struct);
             }
             else {
-                nameTaken = !names.TrySetName(scope, this.Signature.Name, NameTarget.Union);
+                nameTaken = !types.TrySetNameTarget(scope, this.signature.Name, NameTarget.Union);
             }
 
             if (nameTaken) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.Signature.Name);
+                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.signature.Name);
             }
 
             // Declare the parameters
-            foreach (var par in this.Signature.Members) {
-                if (!names.TrySetName(scope.Append(this.Signature.Name), par.MemberName, NameTarget.Reserved)) {
+            foreach (var par in this.signature.Members) {
+                if (!types.TrySetNameTarget(scope.Append(this.signature.Name), par.MemberName, NameTarget.Reserved)) {
                     throw TypeCheckingErrors.IdentifierDefined(this.Location, par.MemberName);
                 }
             }
         }
 
-        public void DeclareTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types) {
-            var sig = this.Signature.ResolveNames(scope, names);
+        public void DeclareTypes(IdentifierPath scope, TypesRecorder types) {
+            var sig = this.signature.ResolveNames(scope, types);
 
             // Declare this aggregate
             types.SetAggregate(sig);
         }
 
-        public IDeclaration ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types) {
-            var sig = this.Signature.ResolveNames(scope, names);
+        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+            var sig = this.signature.ResolveNames(scope, types);
 
-            return new AggregateDeclaration(this.Location, sig, this.Kind);
+            return new AggregateDeclaration(this.Location, sig, this.kind);
+        }
+
+        public void GenerateCode(TypesRecorder types, CWriter writer) {
+            throw new InvalidOperationException();
         }
     }
 
-    public class AggregateDeclaration : IDeclaration {
+    public class AggregateDeclaration : IDeclarationTree {
+        private readonly AggregateSignature signature;
+        private readonly AggregateKind kind;
+
         public TokenLocation Location { get; }
-
-        public AggregateSignature Signature { get; }
-
-        public AggregateKind Kind { get; }
 
         public AggregateDeclaration(TokenLocation loc, AggregateSignature sig, AggregateKind kind) {
             this.Location = loc;
-            this.Signature = sig;
-            this.Kind = kind;
+            this.signature = sig;
+            this.kind = kind;
         }
 
-        public void GenerateCode(CWriter writer) {
-            var name = this.Signature.Path.ToCName();
+        public void DeclareNames(IdentifierPath scope, TypesRecorder types) { }
 
-            if (this.Kind == AggregateKind.Struct) {
+        public void DeclareTypes(IdentifierPath scope, TypesRecorder types) { }
+
+        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
+
+        public void GenerateCode(TypesRecorder types, CWriter writer) {
+            var name = this.signature.Path.ToCName();
+
+            if (this.kind == AggregateKind.Struct) {
                 // Write forward declaration
                 writer.WriteDeclaration1(CDeclaration.StructPrototype(name));
                 writer.WriteDeclaration1(CDeclaration.EmptyLine());
@@ -128,13 +129,13 @@ namespace Trophy.Features.Aggregates {
                 // Write full struct
                 writer.WriteDeclaration2(CDeclaration.Struct(
                     name,
-                    this.Signature.Members
+                    this.signature.Members
                         .Select(x => new CParameter(writer.ConvertType(x.MemberType), x.MemberName))
                         .ToArray()));
 
                 writer.WriteDeclaration2(CDeclaration.EmptyLine());
             }
-            else if (this.Kind == AggregateKind.Union) {
+            else if (this.kind == AggregateKind.Union) {
                 // Write forward declaration
                 writer.WriteDeclaration1(CDeclaration.UnionPrototype(name));
                 writer.WriteDeclaration1(CDeclaration.EmptyLine());
@@ -142,7 +143,7 @@ namespace Trophy.Features.Aggregates {
                 // Write full union
                 writer.WriteDeclaration2(CDeclaration.Union(
                     name,
-                    this.Signature.Members
+                    this.signature.Members
                         .Select(x => new CParameter(writer.ConvertType(x.MemberType), x.MemberName))
                         .ToArray()));
 

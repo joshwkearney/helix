@@ -1,50 +1,51 @@
-﻿using System.Collections.Immutable;
-using System.Linq;
-using Trophy;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.Aggregates;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree MemberAccess(IParseTree first) {
+        private ISyntaxTree MemberAccess(ISyntaxTree first) {
             this.Advance(TokenKind.Dot);
 
             var tok = this.Advance(TokenKind.Identifier);
             var loc = first.Location.Span(tok.Location);
 
-            return new MemberAccessParseTree(loc, first, tok.Value);
+            return new MemberAccessSyntax(loc, first, tok.Value);
         }
     }
 }
 
-namespace Trophy.Features.Aggregates
-{
-    public class MemberAccessParseTree : IParseTree {
-        private readonly IParseTree target;
+namespace Trophy.Features.Aggregates {
+    public class MemberAccessSyntax : ISyntaxTree {
+        private readonly ISyntaxTree target;
         private readonly string memberName;
 
         public TokenLocation Location { get; }
 
-        public MemberAccessParseTree(TokenLocation location, IParseTree target, string memberName) {
+        public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, string memberName) {
             this.Location = location;
             this.target = target;
             this.memberName = memberName;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
-            var target = this.target.ResolveTypes(scope, names, types);
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+            return Option.None;
+        }
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+            if (this.target.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var target)) {
+                throw TypeCheckingErrors.RValueRequired(this.target.Location);
+            }
+
+            var targetType = types.GetReturnType(this.target);
 
             // If this is a named type it could be a struct or union
-            if (target.ReturnType.AsNamedType().Select(x => x.FullName).TryGetValue(out var path)) {
+            if (targetType.AsNamedType().Select(x => x.FullName).TryGetValue(out var path)) {
 
                 // If this is a struct or union we can access the fields
-                if (names.TryGetName(path).TryGetValue(out var name)) {
+                if (types.TryGetNameTarget(path).TryGetValue(out var name)) {
                     if (name == NameTarget.Struct || name == NameTarget.Union) {
 
                         var sig = types.GetAggregate(path);
@@ -55,37 +56,28 @@ namespace Trophy.Features.Aggregates
 
                         // Make sure this field is present
                         if (fieldOpt.TryGetValue(out var field)) {
-                            return new MemberAccessSyntax(
+                            var result = new MemberAccessSyntax(
                                 this.Location,
                                 target,
-                                this.memberName,
-                                field.MemberType);
+                                this.memberName);
+
+                            types.SetReturnType(result, field.MemberType);
+
+                            return result;
                         }
                     }
                 }                
             }
 
-            throw TypeCheckingErrors.MemberUndefined(this.Location, target.ReturnType, this.memberName);
-        }
-    }
-
-    public class MemberAccessSyntax : ISyntaxTree {
-        private readonly ISyntaxTree target;
-        private readonly string memberName;
-
-        public TokenLocation Location { get; }
-
-        public TrophyType ReturnType { get; }
-
-        public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, string memberName, TrophyType retType) {
-            this.Location = location;
-            this.target = target;
-            this.memberName = memberName;
-            this.ReturnType = retType;
+            throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        public CExpression GenerateCode(CWriter writer, CStatementWriter statWriter) {
-            var target = this.target.GenerateCode(writer, statWriter);
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
+            var target = this.target.GenerateCode(types, writer);
 
             return CExpression.MemberAccess(target, this.memberName);
         }

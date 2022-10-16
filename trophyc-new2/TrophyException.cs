@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Trophy.Parsing;
+﻿using Trophy.Parsing;
 
 namespace Trophy {
     public class TrophyException : Exception {

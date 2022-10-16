@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Trophy.Features.Primitives;
+﻿using Trophy.Features.Primitives;
 
 namespace Trophy.CodeGeneration.CSyntax {
     public abstract class CExpression {
@@ -8,7 +6,7 @@ namespace Trophy.CodeGeneration.CSyntax {
             return new CIntExpression(value);
         }
 
-        public static CExpression BinaryExpression(CExpression left, CExpression right, BinaryOperation op) {
+        public static CExpression BinaryExpression(CExpression left, CExpression right, BinaryOperationKind op) {
             return new CBinaryExpression(left, right, op);
         }
 
@@ -145,9 +143,9 @@ namespace Trophy.CodeGeneration.CSyntax {
 
         private class CBinaryExpression : CExpression {
             private readonly CExpression left, right;
-            private readonly BinaryOperation op;
+            private readonly BinaryOperationKind op;
 
-            public CBinaryExpression(CExpression left, CExpression right, BinaryOperation op) {
+            public CBinaryExpression(CExpression left, CExpression right, BinaryOperationKind op) {
                 this.left = left;
                 this.right = right;
                 this.op = op;
@@ -155,20 +153,20 @@ namespace Trophy.CodeGeneration.CSyntax {
 
             public override string ToString() {
                 var op = this.op switch {
-                    BinaryOperation.Add => "+",
-                    BinaryOperation.And => "&",
-                    BinaryOperation.EqualTo => "==",
-                    BinaryOperation.GreaterThan => ">",
-                    BinaryOperation.GreaterThanOrEqualTo => ">=",
-                    BinaryOperation.LessThan => "<",
-                    BinaryOperation.LessThanOrEqualTo => "<=",
-                    BinaryOperation.Multiply => "*",
-                    BinaryOperation.NotEqualTo => "!=",
-                    BinaryOperation.Or => "|",
-                    BinaryOperation.Subtract => "-",
-                    BinaryOperation.Xor => "^",
-                    BinaryOperation.Modulo => "%",
-                    BinaryOperation.FloorDivide => "/",
+                    BinaryOperationKind.Add => "+",
+                    BinaryOperationKind.And => "&",
+                    BinaryOperationKind.EqualTo => "==",
+                    BinaryOperationKind.GreaterThan => ">",
+                    BinaryOperationKind.GreaterThanOrEqualTo => ">=",
+                    BinaryOperationKind.LessThan => "<",
+                    BinaryOperationKind.LessThanOrEqualTo => "<=",
+                    BinaryOperationKind.Multiply => "*",
+                    BinaryOperationKind.NotEqualTo => "!=",
+                    BinaryOperationKind.Or => "|",
+                    BinaryOperationKind.Subtract => "-",
+                    BinaryOperationKind.Xor => "^",
+                    BinaryOperationKind.Modulo => "%",
+                    BinaryOperationKind.FloorDivide => "/",
                     _ => throw new Exception()
                 };
 

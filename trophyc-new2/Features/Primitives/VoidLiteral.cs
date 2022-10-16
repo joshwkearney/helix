@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree VoidLiteral() {
+        private ISyntaxTree VoidLiteral() {
             var tok = this.Advance(TokenKind.VoidKeyword);
 
             return new VoidLiteral(tok.Location);
@@ -22,22 +14,29 @@ namespace Trophy.Parsing
     }
 }
 
-namespace Trophy.Features.Primitives
-{
-    public class VoidLiteral : IParseTree, ISyntaxTree {
+namespace Trophy.Features.Primitives {
+    public class VoidLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
-
-        public TrophyType ReturnType => PrimitiveType.Void;
 
         public VoidLiteral(TokenLocation loc) {
             this.Location = loc;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+            return PrimitiveType.Void;
+        }
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+            types.SetReturnType(this, PrimitiveType.Void);
+
             return this;
         }
 
-        public CExpression GenerateCode(CWriter writer, CStatementWriter statWriter) {
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
             return CExpression.IntLiteral(0);
         }
     }

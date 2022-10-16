@@ -1,50 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
+using Trophy.Analysis.Unification;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree OrExpression() {
+        private ISyntaxTree OrExpression() {
             var first = this.XorExpression();
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
                 var second = this.XorExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree(loc, first, second, BinaryOperation.Or);
+                first = new BinarySyntax(loc, first, second, BinaryOperationKind.Or);
             }
 
             return first;
         }
 
-        private IParseTree XorExpression() {
+        private ISyntaxTree XorExpression() {
             var first = this.ComparisonExpression();
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
                 var second = this.ComparisonExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree(loc, first, second, BinaryOperation.Xor);
+                first = new BinarySyntax(loc, first, second, BinaryOperationKind.Xor);
             }
 
             return first;
         }
 
-        private IParseTree ComparisonExpression() {
+        private ISyntaxTree ComparisonExpression() {
             var first = this.AndExpression();
-            var comparators = new Dictionary<TokenKind, BinaryOperation>() {
-                { TokenKind.Equals, BinaryOperation.EqualTo }, { TokenKind.NotEquals, BinaryOperation.NotEqualTo },
-                { TokenKind.LessThan, BinaryOperation.LessThan }, { TokenKind.GreaterThan, BinaryOperation.GreaterThan },
-                { TokenKind.LessThanOrEqualTo, BinaryOperation.LessThanOrEqualTo },
-                { TokenKind.GreaterThanOrEqualTo, BinaryOperation.GreaterThanOrEqualTo }
+            var comparators = new Dictionary<TokenKind, BinaryOperationKind>() {
+                { TokenKind.Equals, BinaryOperationKind.EqualTo }, { TokenKind.NotEquals, BinaryOperationKind.NotEqualTo },
+                { TokenKind.LessThan, BinaryOperationKind.LessThan }, { TokenKind.GreaterThan, BinaryOperationKind.GreaterThan },
+                { TokenKind.LessThanOrEqualTo, BinaryOperationKind.LessThanOrEqualTo },
+                { TokenKind.GreaterThanOrEqualTo, BinaryOperationKind.GreaterThanOrEqualTo }
             };
 
             while (true) {
@@ -62,26 +57,26 @@ namespace Trophy.Parsing
                 var second = this.AndExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree(loc, first, second, op);
+                first = new BinarySyntax(loc, first, second, op);
             }
 
             return first;
         }
 
-        private IParseTree AndExpression() {
+        private ISyntaxTree AndExpression() {
             var first = this.AddExpression();
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
                 var second = this.AddExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree(loc, first, second, BinaryOperation.And);
+                first = new BinarySyntax(loc, first, second, BinaryOperationKind.And);
             }
 
             return first;
         }
 
-        private IParseTree AddExpression() {
+        private ISyntaxTree AddExpression() {
             var first = this.MultiplyExpression();
 
             while (true) {
@@ -90,17 +85,17 @@ namespace Trophy.Parsing
                 }
 
                 var tok = this.Advance().Kind;
-                var op = tok == TokenKind.Add ? BinaryOperation.Add : BinaryOperation.Subtract;
+                var op = tok == TokenKind.Add ? BinaryOperationKind.Add : BinaryOperationKind.Subtract;
                 var second = this.MultiplyExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree(loc, first, second, op);
+                first = new BinarySyntax(loc, first, second, op);
             }
 
             return first;
         }
 
-        private IParseTree MultiplyExpression() {
+        private ISyntaxTree MultiplyExpression() {
             var first = this.PrefixExpression();
 
             while (true) {
@@ -109,19 +104,19 @@ namespace Trophy.Parsing
                 }
 
                 var tok = this.Advance().Kind;
-                var op = BinaryOperation.Modulo;
+                var op = BinaryOperationKind.Modulo;
 
                 if (tok == TokenKind.Multiply) {
-                    op = BinaryOperation.Multiply;
+                    op = BinaryOperationKind.Multiply;
                 }
                 else if (tok == TokenKind.Divide) {
-                    op = BinaryOperation.FloorDivide;
+                    op = BinaryOperationKind.FloorDivide;
                 }
 
                 var second = this.PrefixExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree(loc, first, second, op);
+                first = new BinarySyntax(loc, first, second, op);
             }
 
             return first;
@@ -129,9 +124,8 @@ namespace Trophy.Parsing
     }
 }
 
-namespace Trophy.Features.Primitives
-{
-    public enum BinaryOperation {
+namespace Trophy.Features.Primitives {
+    public enum BinaryOperationKind {
         Add, Subtract, Multiply, Modulo, FloorDivide,
         And, Or, Xor,
         EqualTo, NotEqualTo,
@@ -139,82 +133,89 @@ namespace Trophy.Features.Primitives
         GreaterThanOrEqualTo, LessThanOrEqualTo
     }
 
-    public class BinaryParseTree : IParseTree {
-        private static readonly Dictionary<BinaryOperation, TrophyType> intOperations = new() {
-            { BinaryOperation.Add,                  PrimitiveType.Int },
-            { BinaryOperation.Subtract,             PrimitiveType.Int },
-            { BinaryOperation.Multiply,             PrimitiveType.Int },
-            { BinaryOperation.Modulo,               PrimitiveType.Int },
-            { BinaryOperation.FloorDivide,          PrimitiveType.Int },
-            { BinaryOperation.And,                  PrimitiveType.Int },
-            { BinaryOperation.Or,                   PrimitiveType.Int },
-            { BinaryOperation.Xor,                  PrimitiveType.Int },
-            { BinaryOperation.EqualTo,              PrimitiveType.Bool },
-            { BinaryOperation.NotEqualTo,           PrimitiveType.Bool },
-            { BinaryOperation.GreaterThan,          PrimitiveType.Bool },
-            { BinaryOperation.LessThan,             PrimitiveType.Bool },
-            { BinaryOperation.GreaterThanOrEqualTo, PrimitiveType.Bool },
-            { BinaryOperation.LessThanOrEqualTo,    PrimitiveType.Bool },
+    public class BinarySyntax : ISyntaxTree {
+        private static readonly Dictionary<BinaryOperationKind, TrophyType> intOperations = new() {
+            { BinaryOperationKind.Add,                  PrimitiveType.Int },
+            { BinaryOperationKind.Subtract,             PrimitiveType.Int },
+            { BinaryOperationKind.Multiply,             PrimitiveType.Int },
+            { BinaryOperationKind.Modulo,               PrimitiveType.Int },
+            { BinaryOperationKind.FloorDivide,          PrimitiveType.Int },
+            { BinaryOperationKind.And,                  PrimitiveType.Int },
+            { BinaryOperationKind.Or,                   PrimitiveType.Int },
+            { BinaryOperationKind.Xor,                  PrimitiveType.Int },
+            { BinaryOperationKind.EqualTo,              PrimitiveType.Bool },
+            { BinaryOperationKind.NotEqualTo,           PrimitiveType.Bool },
+            { BinaryOperationKind.GreaterThan,          PrimitiveType.Bool },
+            { BinaryOperationKind.LessThan,             PrimitiveType.Bool },
+            { BinaryOperationKind.GreaterThanOrEqualTo, PrimitiveType.Bool },
+            { BinaryOperationKind.LessThanOrEqualTo,    PrimitiveType.Bool },
         };
 
-        private static readonly Dictionary<BinaryOperation, TrophyType> boolOperations = new() {
-            { BinaryOperation.And,                  PrimitiveType.Bool },
-            { BinaryOperation.Or,                   PrimitiveType.Bool },
-            { BinaryOperation.Xor,                  PrimitiveType.Bool },
-            { BinaryOperation.EqualTo,              PrimitiveType.Bool },
-            { BinaryOperation.NotEqualTo,           PrimitiveType.Bool },
+        private static readonly Dictionary<BinaryOperationKind, TrophyType> boolOperations = new() {
+            { BinaryOperationKind.And,                  PrimitiveType.Bool },
+            { BinaryOperationKind.Or,                   PrimitiveType.Bool },
+            { BinaryOperationKind.Xor,                  PrimitiveType.Bool },
+            { BinaryOperationKind.EqualTo,              PrimitiveType.Bool },
+            { BinaryOperationKind.NotEqualTo,           PrimitiveType.Bool },
         };
 
-        private readonly IParseTree left, right;
-        private readonly BinaryOperation op;
+        private readonly ISyntaxTree left, right;
+        private readonly BinaryOperationKind op;
 
         public TokenLocation Location { get; }
 
-        public BinaryParseTree(TokenLocation loc, IParseTree left, IParseTree right, BinaryOperation op) {
+        public BinarySyntax(TokenLocation loc, ISyntaxTree left, ISyntaxTree right, BinaryOperationKind op) {
             this.Location = loc;
             this.left = left;
             this.right = right;
             this.op = op;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
             // Delegate type resolution
-            var left = this.left.ResolveTypes(scope, names, types);
-            var right = this.right.ResolveTypes(scope, names, types);
+            var left = this.left.ResolveTypes(scope, types);
+            var right = this.right.ResolveTypes(scope, types);
+
+            var leftType = types.GetReturnType(left);
+            var rightType = types.GetReturnType(right);
             var returnType = PrimitiveType.Void as TrophyType;
 
             // Check if left is a valid type
-            if (left.ReturnType != PrimitiveType.Int && left.ReturnType != PrimitiveType.Bool) {
-                throw TypeCheckingErrors.UnexpectedType(this.left.Location, left.ReturnType);
+            if (leftType != PrimitiveType.Int && leftType != PrimitiveType.Bool) {
+                throw TypeCheckingErrors.UnexpectedType(this.left.Location, leftType);
             }
 
             // Check if right is a valid type
-            if (right.ReturnType != PrimitiveType.Int && right.ReturnType != PrimitiveType.Bool) {
-                throw TypeCheckingErrors.UnexpectedType(this.right.Location, right.ReturnType);
+            if (rightType != PrimitiveType.Int && rightType != PrimitiveType.Bool) {
+                throw TypeCheckingErrors.UnexpectedType(this.right.Location, rightType);
             }
 
             // Make sure types match
-            if (right.TryUnifyTo(left.ReturnType).TryGetValue(out var newRight)) {
+            if (TypeUnifier.TryUnifyTo(right, rightType, leftType).TryGetValue(out var newRight)) { 
                 right = newRight;
+                rightType = leftType;
             }
-            else if (left.TryUnifyTo(right.ReturnType).TryGetValue(out var newLeft)) {
+            else if (TypeUnifier.TryUnifyTo(left, leftType, rightType).TryGetValue(out var newLeft)) {
                 left = newLeft;
+                leftType = rightType;
             }
             else { 
-                throw TypeCheckingErrors.UnexpectedType(this.right.Location, left.ReturnType, right.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.right.Location, leftType, rightType);
             }
 
             // Make sure this is a valid operation
-            if (left.ReturnType == PrimitiveType.Int) {
+            if (leftType == PrimitiveType.Int) {
                 if (!intOperations.TryGetValue(this.op, out var ret)) {
-                    throw TypeCheckingErrors.UnexpectedType(this.left.Location, left.ReturnType);
+                    throw TypeCheckingErrors.UnexpectedType(this.left.Location, leftType);
                 }
 
                 returnType = ret;
             }
-            else if (left.ReturnType == PrimitiveType.Bool) {
+            else if (leftType == PrimitiveType.Bool) {
                 if (!boolOperations.TryGetValue(this.op, out var ret)) {
-                    throw TypeCheckingErrors.UnexpectedType(this.left.Location, left.ReturnType);
+                    throw TypeCheckingErrors.UnexpectedType(this.left.Location, leftType);
                 }
 
                 returnType = ret;
@@ -223,26 +224,19 @@ namespace Trophy.Features.Primitives
                 throw new Exception("This should never happen");
             }
 
-            return new BinarySyntax(left, right, this.op, returnType);
-        }
-    }
+            var result = new BinarySyntax(this.Location, left, right, this.op);
+            types.SetReturnType(result, returnType);
 
-    public class BinarySyntax : ISyntaxTree {
-        private readonly ISyntaxTree left, right;
-        private readonly BinaryOperation op;
-
-        public TrophyType ReturnType { get; }
-
-        public BinarySyntax(ISyntaxTree left, ISyntaxTree right, BinaryOperation op, TrophyType returnType) {
-            this.left = left;
-            this.right = right;
-            this.op = op;
-            this.ReturnType = returnType;
+            return result;
         }
 
-        public CExpression GenerateCode(CWriter writer, CStatementWriter statWriter) {
-            var left = this.left.GenerateCode(writer, statWriter);
-            var right = this.right.GenerateCode(writer, statWriter);
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
+            var left = this.left.GenerateCode(types, writer);
+            var right = this.right.GenerateCode(types, writer);
             var bin = CExpression.BinaryExpression(left, right, this.op);
 
             return bin;

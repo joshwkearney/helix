@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using Trophy.Analysis;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
 namespace Trophy.Features.Aggregates {
     public class AggregateParseSignature {
@@ -14,10 +12,14 @@ namespace Trophy.Features.Aggregates {
             this.Members = mems;
         }
 
-        public AggregateSignature ResolveNames(IdentifierPath scope, NamesRecorder names) {
-            var mems = this.Members
-                .Select(x => new AggregateMember(x.MemberName, x.MemberType.ResolveNames(scope, names)))
-                .ToImmutableList();
+        public AggregateSignature ResolveNames(IdentifierPath scope, TypesRecorder types) {
+            var mems = new List<AggregateMember>();
+
+            foreach (var mem in this.Members) {
+                if (!mem.MemberType.ToType(scope, types).TryGetValue(out var type)) {
+                    throw TypeCheckingErrors.ExpectedTypeExpression(mem.Location);
+                }
+            }
 
             return new AggregateSignature(scope.Append(this.Name), mems);
         }
@@ -26,9 +28,12 @@ namespace Trophy.Features.Aggregates {
     public class ParseAggregateMember {
         public string MemberName { get; }
 
-        public ITypeTree MemberType { get; }
+        public ISyntaxTree MemberType { get; }
 
-        public ParseAggregateMember(string name, ITypeTree type) {
+        public TokenLocation Location { get; }
+
+        public ParseAggregateMember(TokenLocation loc, string name, ISyntaxTree type) {
+            this.Location = loc;
             this.MemberName = name;
             this.MemberType = type;
         }

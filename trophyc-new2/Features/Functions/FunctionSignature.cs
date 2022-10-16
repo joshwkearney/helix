@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.Linq;
-
-namespace Trophy.Features.Functions {
+﻿namespace Trophy.Features.Functions {
     public class FunctionSignature : IEquatable<FunctionSignature> {
         public TrophyType ReturnType { get; }
 
-        public ImmutableList<FunctionParameter> Parameters { get; }
+        public IReadOnlyList<FunctionParameter> Parameters { get; }
 
         public IdentifierPath Path { get; }
 
-        public FunctionSignature(IdentifierPath path, TrophyType returnType, ImmutableList<FunctionParameter> pars) {
+        public FunctionSignature(IdentifierPath path, TrophyType returnType, IReadOnlyList<FunctionParameter> pars) {
             this.Path = path;
             this.ReturnType = returnType;
             this.Parameters = pars;

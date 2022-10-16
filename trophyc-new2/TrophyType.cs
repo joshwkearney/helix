@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Trophy.Features.Functions;
+﻿using Trophy.Features.Functions;
 
 namespace Trophy {
     public abstract class TrophyType : IEquatable<TrophyType> {

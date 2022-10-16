@@ -1,56 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree IntLiteral() {
+        private ISyntaxTree IntLiteral() {
             var tok = this.Advance(TokenKind.IntLiteral);
             var num = int.Parse(tok.Value);
 
-            return new IntParseLiteral(tok.Location, num);
+            return new IntLiteral(tok.Location, num);
         }
     }
 }
 
-namespace Trophy.Features.Primitives
-{
-    public class IntParseLiteral : IParseTree {
+namespace Trophy.Features.Primitives {
+    public class IntLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
 
         public int Value { get; }
 
-        public IntParseLiteral(TokenLocation loc, int value) {
+        public IntLiteral(TokenLocation loc, int value) {
             this.Location = loc;
             this.Value = value;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
-            return new IntLiteral(this.Value);
-        }
-    }
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
 
-    public class IntLiteral : ISyntaxTree {
-        public int Value { get; }
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+            types.SetReturnType(this, PrimitiveType.Int);
 
-        public TrophyType ReturnType => PrimitiveType.Int;
-
-        public IntLiteral(int value) {
-            this.Value = value;
+            return this;
         }
 
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
 
-        public CExpression GenerateCode(CWriter writer, CStatementWriter statWriter) {
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
             return CExpression.IntLiteral(this.Value);
         }
     }

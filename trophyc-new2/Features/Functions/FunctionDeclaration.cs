@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Immutable;
 using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+using Trophy.Analysis.Unification;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
-using static System.Formats.Asn1.AsnWriter;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
         private FunctionParseSignature FunctionSignature() {
             var start = this.Advance(TokenKind.FunctionKeyword);
@@ -39,7 +31,7 @@ namespace Trophy.Parsing
                 var parName = this.Advance(TokenKind.Identifier).Value;
                 this.Advance(TokenKind.AsKeyword);
 
-                var parType = this.TypeExpression();
+                var parType = this.TopExpression();
                 var parLoc = parStart.Location.Span(parType.Location);
 
                 if (!this.Peek(TokenKind.CloseParenthesis)) {
@@ -52,14 +44,14 @@ namespace Trophy.Parsing
             this.Advance(TokenKind.CloseParenthesis);
             this.Advance(TokenKind.AsKeyword);
 
-            var returnType = this.TypeExpression();
+            var returnType = this.TopExpression();
             var loc = start.Location.Span(returnType.Location);
             var sig = new FunctionParseSignature(loc, funcName, returnType, pars);
 
             return sig;
         }
 
-        private IParseDeclaration FunctionDeclaration() {
+        private IDeclarationTree FunctionDeclaration() {
             var start = this.tokens[this.pos];
             var sig = this.FunctionSignature();
             var end = this.Advance(TokenKind.Yields);
@@ -75,24 +67,24 @@ namespace Trophy.Parsing
 }
 
 namespace Trophy.Features.Functions {
-    public class FunctionParseDeclaration : IParseDeclaration {
+    public class FunctionParseDeclaration : IDeclarationTree {
         public TokenLocation Location { get; }
 
         public FunctionParseSignature Signature { get; }
 
-        public IParseTree Body { get; }
+        public ISyntaxTree Body { get; }
 
-        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, IParseTree body) {
+        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntaxTree body) {
             this.Location = loc;
             this.Signature = sig;
             this.Body = body;
         }
 
-        public void DeclareNames(IdentifierPath scope, NamesRecorder names) {
+        public void DeclareNames(IdentifierPath scope, TypesRecorder names) {
             CheckForDuplicateParameters(this.Location, this.Signature.Parameters.Select(x => x.Name));
 
             // Declare this function
-            if (!names.TrySetName(scope, this.Signature.Name, NameTarget.Function)) {
+            if (!names.TrySetNameTarget(scope, this.Signature.Name, NameTarget.Function)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Signature.Location, this.Signature.Name);
             }
 
@@ -100,14 +92,14 @@ namespace Trophy.Features.Functions {
             foreach (var par in this.Signature.Parameters) {
                 var path = scope.Append(this.Signature.Name);
 
-                if (!names.TrySetName(path, par.Name, NameTarget.Variable)) {
+                if (!names.TrySetNameTarget(path, par.Name, NameTarget.Variable)) {
                     throw TypeCheckingErrors.IdentifierDefined(par.Location, par.Name);
                 }
             }
         }
 
-        public void DeclareTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types) {
-            var sig = this.Signature.ResolveNames(scope, names);
+        public void DeclareTypes(IdentifierPath scope, TypesRecorder types) {
+            var sig = this.Signature.ResolveNames(scope, types);
 
             // Declare this function
             types.SetFunction(sig);
@@ -123,19 +115,24 @@ namespace Trophy.Features.Functions {
             }
         }
 
-        public IDeclaration ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types) {
-            var sig = this.Signature.ResolveNames(scope, names);
-            var body = this.Body.ResolveTypes(sig.Path, names, types);
+        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+            var sig = this.Signature.ResolveNames(scope, types);
+            var body = this.Body.ResolveTypes(sig.Path, types);
+            var bodyType = types.GetReturnType(body);
 
             // Make sure the return type matches the body's type
-            if (body.TryUnifyTo(sig.ReturnType).TryGetValue(out var newBody)) {
+            if (TypeUnifier.TryUnifyTo(body, bodyType, sig.ReturnType).TryGetValue(out var newBody)) {
                 body = newBody;
             }
             else { 
-                throw TypeCheckingErrors.UnexpectedType(this.Location, sig.ReturnType, body.ReturnType);
+                throw TypeCheckingErrors.UnexpectedType(this.Location, sig.ReturnType, bodyType);
             }
 
             return new FunctionDeclaration(this.Location, sig, body);
+        }
+
+        public void GenerateCode(TypesRecorder types, CWriter writer) {
+            throw new InvalidOperationException();
         }
 
         private static void CheckForDuplicateParameters(TokenLocation loc, IEnumerable<string> pars) {
@@ -151,7 +148,7 @@ namespace Trophy.Features.Functions {
         }
     }
 
-    public class FunctionDeclaration : IDeclaration {
+    public class FunctionDeclaration : IDeclarationTree {
         public TokenLocation Location { get; }
 
         public FunctionSignature Signature { get; }
@@ -164,7 +161,13 @@ namespace Trophy.Features.Functions {
             this.Body = body;
         }
 
-        public void GenerateCode(CWriter writer) {
+        public void DeclareNames(IdentifierPath scope, TypesRecorder types) { }
+
+        public void DeclareTypes(IdentifierPath scope, TypesRecorder types) { }
+
+        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
+
+        public void GenerateCode(TypesRecorder types, CWriter writer) {
             var returnType = writer.ConvertType(this.Signature.ReturnType);
             var pars = this.Signature
                 .Parameters
@@ -173,7 +176,7 @@ namespace Trophy.Features.Functions {
 
             var stats = new List<CStatement>();
             var bodyWriter = new CStatementWriter(writer, stats);
-            var retExpr = this.Body.GenerateCode(writer, bodyWriter);
+            var retExpr = this.Body.GenerateCode(types, bodyWriter);
 
             if (this.Signature.ReturnType != PrimitiveType.Void) {
                 bodyWriter.WriteSpacingLine();
@@ -198,5 +201,6 @@ namespace Trophy.Features.Functions {
             writer.WriteDeclaration2(forwardDecl);
             writer.WriteDeclaration2(CDeclaration.EmptyLine());
         }
+
     }
 }

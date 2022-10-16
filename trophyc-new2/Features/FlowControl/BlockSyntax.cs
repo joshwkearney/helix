@@ -1,20 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree Block() {
+        private ISyntaxTree Block() {
             var start = this.Advance(TokenKind.OpenBrace);
-            var stats = new List<IParseTree>();
+            var stats = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
                 stats.Add(this.Statement());
@@ -23,20 +17,19 @@ namespace Trophy.Parsing
             var end = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(end.Location);
 
-            return new BlockParseTree(loc, stats);
+            return new BlockSyntax(loc, stats);
         }
     }
 }
 
-namespace Trophy.Features.FlowControl
-{
-    public class BlockParseTree : IParseTree {
+namespace Trophy.Features.FlowControl {
+    public class BlockSyntax : ISyntaxTree {
         private static int idCounter = 0;
 
-        private readonly IReadOnlyList<IParseTree> statements;
+        private readonly IReadOnlyList<ISyntaxTree> statements;
         private readonly int id;
 
-        public BlockParseTree(TokenLocation location, IReadOnlyList<IParseTree> statements) {
+        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements) {
             this.Location = location;
             this.statements = statements;
             this.id = idCounter++;
@@ -44,44 +37,36 @@ namespace Trophy.Features.FlowControl
 
         public TokenLocation Location { get; }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+            return Option.None;
+        }
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
             var blockScope = scope = scope.Append("$block" + this.id);
-            var stats = this.statements.Select(x => x.ResolveTypes(blockScope, names, types)).ToArray();
+            var stats = this.statements.Select(x => x.ResolveTypes(blockScope, types)).ToArray();
 
-            return new BlockSyntax(this.Location, this.id, stats);
-        }
-    }
+            var result = new BlockSyntax(this.Location, stats);
+            var returnType = stats
+                .LastOrNone()
+                .Select(types.GetReturnType)
+                .OrElse(() => PrimitiveType.Void);
 
-    public class BlockSyntax : ISyntaxTree {
-        private readonly IReadOnlyList<ISyntaxTree> statements;
-        private readonly int id;
+            types.SetReturnType(result, returnType);
 
-        public TokenLocation Location { get; }
-
-        public TrophyType ReturnType { 
-            get {
-                if (this.statements.Any()) {
-                    return this.statements.Last().ReturnType;
-                }
-                else {
-                    return PrimitiveType.Void;
-                }
-            }
+            return result;
         }
 
-        public BlockSyntax(TokenLocation location, int id, IReadOnlyList<ISyntaxTree> statements) {
-            this.Location = location;
-            this.id = id;
-            this.statements = statements;
-        }
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
 
-        public CExpression GenerateCode(CWriter writer, CStatementWriter statWriter) {
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
             if (this.statements.Any()) {
                 foreach (var stat in this.statements.SkipLast(1)) {
-                    stat.GenerateCode(writer, statWriter);
+                    stat.GenerateCode(types, writer);
                 }
 
-                return this.statements.Last().GenerateCode(writer, statWriter);
+                return this.statements.Last().GenerateCode(types, writer);
             }
             else {
                 return CExpression.IntLiteral(0);

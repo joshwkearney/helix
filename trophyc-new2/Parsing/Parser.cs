@@ -1,10 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using Trophy.Features.Variables;
-using Trophy.Parsing.ParseTree;
-
-namespace Trophy.Parsing {
+﻿namespace Trophy.Parsing {
     public partial class Parser {
         private int pos = 0;
         private readonly IReadOnlyList<Token> tokens;
@@ -13,8 +7,8 @@ namespace Trophy.Parsing {
             this.tokens = tokens;
         }
 
-        public IReadOnlyList<IParseDeclaration> Parse() {
-            var list = new List<IParseDeclaration>();
+        public IReadOnlyList<IDeclarationTree> Parse() {
+            var list = new List<IDeclarationTree>();
 
             while (pos < tokens.Count) {
                 list.Add(this.Declaration());
@@ -62,36 +56,8 @@ namespace Trophy.Parsing {
             return tok;
         }        
 
-        /** Type Parsing **/
-        private ITypeTree TypeExpression() {
-            return this.TypeAtom();
-        }        
-
-        private ITypeTree TypeAtom() {
-            if (this.Peek(TokenKind.IntKeyword)) {
-                var tok = this.Advance(TokenKind.IntKeyword);
-
-                return new PrimitiveTypeTree(tok.Location, PrimitiveType.Int);
-            }
-            else if (this.Peek(TokenKind.VoidKeyword)) {
-                var tok = this.Advance(TokenKind.VoidKeyword);
-
-                return new PrimitiveTypeTree(tok.Location, PrimitiveType.Void);
-            }
-            else if (this.Peek(TokenKind.BoolKeyword)) {
-                var tok = this.Advance(TokenKind.BoolKeyword);
-
-                return new PrimitiveTypeTree(tok.Location, PrimitiveType.Bool);
-            }
-            else {
-                Token tok = this.Advance(TokenKind.Identifier);
-
-                return new TypeVariableAccess(tok.Location, tok.Value);
-            }
-        }
-
         /** Declaration Parsing **/
-        private IParseDeclaration Declaration() {
+        private IDeclarationTree Declaration() {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
@@ -103,13 +69,13 @@ namespace Trophy.Parsing {
         }
 
         /** Expression Parsing **/
-        private IParseTree TopExpression() => this.AsExpression();
+        private ISyntaxTree TopExpression() => this.AsExpression();
 
-        private IParseTree BinaryExpression() => this.OrExpression();
+        private ISyntaxTree BinaryExpression() => this.OrExpression();
 
-        private IParseTree PrefixExpression() => this.UnaryExpression();        
+        private ISyntaxTree PrefixExpression() => this.UnaryExpression();        
 
-        private IParseTree SuffixExpression() {
+        private ISyntaxTree SuffixExpression() {
             var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) || this.Peek(TokenKind.Dot)) {
@@ -127,7 +93,7 @@ namespace Trophy.Parsing {
             return first;
         }        
 
-        private IParseTree Atom() {
+        private ISyntaxTree Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -152,6 +118,16 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.VarKeyword)) {
                 return this.VarExpression();
             }
+            else if (this.Peek(TokenKind.IntKeyword)) {
+                var tok = this.Advance(TokenKind.IntKeyword);
+
+                return new IdenfifierAccessParseTree(tok.Location, "int");
+            }
+            else if (this.Peek(TokenKind.BoolKeyword)) {
+                var tok = this.Advance(TokenKind.BoolKeyword);
+
+                return new IdenfifierAccessParseTree(tok.Location, "bool");
+            }
             else {
                 var next = this.Advance();
 
@@ -159,7 +135,7 @@ namespace Trophy.Parsing {
             }
         }        
 
-        private IParseTree ParenExpression() {
+        private ISyntaxTree ParenExpression() {
             this.Advance(TokenKind.OpenParenthesis);
             var result = this.TopExpression();
             this.Advance(TokenKind.CloseParenthesis);
@@ -167,8 +143,8 @@ namespace Trophy.Parsing {
             return result;
         }
 
-        private IParseTree Statement() {
-            IParseTree result;
+        private ISyntaxTree Statement() {
+            ISyntaxTree result;
 
             if (this.Peek(TokenKind.WhileKeyword)) {
                 result = this.WhileStatement();
@@ -176,9 +152,6 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.ForKeyword)) {
                 result = this.ForStatement();
             }
-            //else if (this.Peek(TokenKind.ReturnKeyword)) {
-            //    result = this.ReturnStatement();
-            //}
             else {
                 result = this.AssignmentStatement();
             }
@@ -186,19 +159,6 @@ namespace Trophy.Parsing {
             this.Advance(TokenKind.Semicolon);
 
             return result;
-        }
-
-        private IParseTree AssignmentStatement() {
-            var start = this.TopExpression();
-
-            if (this.TryAdvance(TokenKind.Assignment)) {
-                var assign = this.TopExpression();
-                var loc = start.Location.Span(assign.Location);
-
-                return new AssignmentParseTree(loc, start, assign);
-            }
-
-            return start;
-        }        
+        }    
     }
 }

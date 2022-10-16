@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Trophy.Features.Aggregates {
+﻿namespace Trophy.Features.Aggregates {
     public class AggregateSignature : IEquatable<AggregateSignature> {
         public IdentifierPath Path { get; }
 

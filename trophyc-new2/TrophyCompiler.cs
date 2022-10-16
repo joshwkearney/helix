@@ -1,9 +1,5 @@
 ﻿using Trophy.Parsing;
-using System.Linq;
 using Trophy.Analysis;
-using System.Text.RegularExpressions;
-using System;
-using Trophy.Analysis.SyntaxTree;
 using Trophy.CodeGeneration;
 
 namespace Trophy {
@@ -17,7 +13,6 @@ namespace Trophy {
         public string Compile() {
             var lexer = new Lexer(this.input);
             var parser = new Parser(lexer.GetTokens());
-            var names = new NamesRecorder();
             var types = new TypesRecorder();
             var writer = new CWriter();
 
@@ -29,17 +24,17 @@ namespace Trophy {
                 var emptyScope = new IdentifierPath();
 
                 foreach (var stat in parseStats) {
-                    stat.DeclareNames(emptyScope, names);
+                    stat.DeclareNames(emptyScope, types);
                 }
 
                 foreach (var stat in parseStats) {
-                    stat.DeclareTypes(emptyScope, names, types);
+                    stat.DeclareTypes(emptyScope, types);
                 }
 
-                var stats = parseStats.Select(x => x.ResolveTypes(emptyScope, names, types)).ToArray();
+                var stats = parseStats.Select(x => x.ResolveTypes(emptyScope, types)).ToArray();
 
                 foreach (var stat in stats) {
-                    stat.GenerateCode(writer);
+                    stat.GenerateCode(types, writer);
                 }
 
                 return writer.ToString();

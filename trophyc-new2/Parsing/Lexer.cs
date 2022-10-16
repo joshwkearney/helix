@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Trophy.Parsing {
+﻿namespace Trophy.Parsing {
     public class Lexer {
         private static readonly Dictionary<string, TokenKind> keywords = new Dictionary<string, TokenKind>() {
             { "var", TokenKind.VarKeyword }, { "let", TokenKind.LetKeyword }, 

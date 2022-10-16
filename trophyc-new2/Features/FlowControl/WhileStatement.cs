@@ -1,18 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using Trophy;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
+using Trophy.Analysis.Unification;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree WhileStatement() {
+        private ISyntaxTree WhileStatement() {
             var start = this.Advance(TokenKind.WhileKeyword);
             var cond = this.TopExpression();
 
@@ -20,64 +15,68 @@ namespace Trophy.Parsing
             var body = this.TopExpression();
             var loc = start.Location.Span(body.Location);
 
-            return new WhileParseStatement(loc, cond, body);
+            return new WhileStatement(loc, cond, body);
         }
     }
 }
 
-namespace Trophy.Features.FlowControl
-{
-    public class WhileParseStatement : IParseTree {
-        private readonly IParseTree cond, body;
+namespace Trophy.Features.FlowControl {
+    public class WhileStatement : ISyntaxTree {
+        private readonly ISyntaxTree cond, body;
 
         public TokenLocation Location { get; }
 
-        public WhileParseStatement(TokenLocation location, IParseTree cond, IParseTree body) {
+        public WhileStatement(TokenLocation location, ISyntaxTree cond, ISyntaxTree body) {
             this.Location = location;
             this.cond = cond;
             this.body = body;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
-            var cond = this.cond.ResolveTypes(scope, names, types);
-            var body = this.body.ResolveTypes(scope, names, types);
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+            return Option.None;
+        }
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+            if (!this.cond.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var cond)) {
+                throw TypeCheckingErrors.RValueRequired(this.cond.Location);
+            }
+
+            if (!this.body.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var body)) {
+                throw TypeCheckingErrors.RValueRequired(this.body.Location);
+            }
+
+            var condType = types.GetReturnType(cond);
+            var bodyType = types.GetReturnType(body);
 
             // Make sure the condition is a boolean
-            if (cond.TryUnifyTo(PrimitiveType.Bool).TryGetValue(out var newCond)) {
-                cond = newCond;
-            }
-            else {
-                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, PrimitiveType.Bool, cond.ReturnType);
+            if (!TypeUnifier.TryUnifyTo(cond, condType, PrimitiveType.Bool).TryGetValue(out cond)) {
+                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, PrimitiveType.Bool, condType);
             }
 
-            return new WhileStatement(cond, body);
-        }
-    }
+            var result = new WhileStatement(this.Location, cond, body);
+            types.SetReturnType(result, PrimitiveType.Void);
 
-    public class WhileStatement : ISyntaxTree {
-        private readonly ISyntaxTree cond, body;
-
-        public TrophyType ReturnType => PrimitiveType.Void;
-
-        public WhileStatement(ISyntaxTree cond, ISyntaxTree body) {
-            this.cond = cond;
-            this.body = body;
+            return result;
         }
 
-        public CExpression GenerateCode(CWriter declWriter, CStatementWriter statWriter) {
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
             var loopBody = new List<CStatement>();
-            var bodyWriter = new CStatementWriter(declWriter, loopBody);
-            var cond = CExpression.Not(this.cond.GenerateCode(declWriter, bodyWriter));
+            var bodyWriter = new CStatementWriter(writer, loopBody);
+            var cond = CExpression.Not(this.cond.GenerateCode(types, bodyWriter));
 
             loopBody.Add(CStatement.If(cond, new[] { CStatement.Break() }));
             loopBody.Add(CStatement.NewLine());
 
-            this.body.GenerateCode(declWriter, bodyWriter);
+            this.body.GenerateCode(types, bodyWriter);
 
-            statWriter.WriteSpacingLine();
-            statWriter.WriteStatement(CStatement.Comment("While loop"));
-            statWriter.WriteStatement(CStatement.While(CExpression.IntLiteral(1), loopBody));
-            statWriter.WriteSpacingLine();
+            writer.WriteSpacingLine();
+            writer.WriteStatement(CStatement.Comment("While loop"));
+            writer.WriteStatement(CStatement.While(CExpression.IntLiteral(1), loopBody));
+            writer.WriteSpacingLine();
 
             return CExpression.IntLiteral(0);
         }

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Trophy.Parsing {
+﻿namespace Trophy.Parsing {
     public struct TokenLocation {
         public int StartIndex { get; }
 

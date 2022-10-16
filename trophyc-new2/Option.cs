@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace Trophy {
+﻿namespace Trophy {
     public struct Option<T> {
         private readonly T value;
 
@@ -9,6 +7,14 @@ namespace Trophy {
         public Option(T value) {
             this.value = value;
             this.HasValue = true;
+        }
+
+        public T GetValue() {
+            if (!this.HasValue) {
+                throw new InvalidOperationException();
+            }
+
+            return this.value;
         }
 
         public Option<E> Select<E>(Func<T, E> selector) {
@@ -78,6 +84,15 @@ namespace Trophy {
         public static Option<T> FirstOrNone<T>(this IEnumerable<T> seq) {
             if (seq.Any()) {
                 return seq.First();
+            }
+            else {
+                return Option.None;
+            }
+        }
+
+        public static Option<T> LastOrNone<T>(this IEnumerable<T> seq) {
+            if (seq.Any()) {
+                return seq.Last();
             }
             else {
                 return Option.None;

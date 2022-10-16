@@ -1,26 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Trophy.Analysis.SyntaxTree;
-using Trophy.Features.Primitives;
+﻿using Trophy.Parsing;
 
 namespace Trophy.Analysis.Unification {
     public static partial class TypeUnifier {
-        public static Option<ISyntaxTree> TryUnify(ISyntaxTree syntax, TrophyType type) {
-            if (syntax.ReturnType == type) {
-                return Option.Some(syntax);
+        public static Option<ISyntaxTree> TryUnifyTo(ISyntaxTree fromTree, TrophyType fromType, TrophyType toType) {
+            return TryUnifyToHelper(fromType, toType).Select(x => x(fromTree));
+        }
+
+        public static Option<TrophyType> TryUnifyFrom(TrophyType type1, TrophyType type2) {
+            if (TryUnifyToHelper(type1, type2).HasValue) {
+                return type2;
+            }
+            else if (TryUnifyToHelper(type2, type1).HasValue) {
+                return type1;
             }
 
-            var result = (Option<ISyntaxTree>)Option.None; 
-            
-            result = TryUnifyPrimitives(syntax, type);
-            if (result.HasValue) {
-                return result;
+            return Option.None;
+        }
+
+        private static Option<Func<ISyntaxTree, ISyntaxTree>> TryUnifyToHelper(TrophyType fromType, TrophyType toType) {
+            if (fromType == toType) {
+                return Option.Some<Func<ISyntaxTree, ISyntaxTree>>(x => x);
             }
 
-            return result;
+            var result = TryUnifyToPrimitives(fromType, toType);
+            if (result != null) {
+                return Option.Some(result);
+            }
+
+            return Option.None;
         }
     }
 }

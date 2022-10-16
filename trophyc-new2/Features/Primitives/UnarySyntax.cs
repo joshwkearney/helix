@@ -1,28 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Text;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
+using Trophy.CodeGeneration;
+using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree UnaryExpression() {
+        private ISyntaxTree UnaryExpression() {
             if (this.Peek(TokenKind.Subtract) || this.Peek(TokenKind.Add) || this.Peek(TokenKind.Not)) {
                 var tokOp = this.Advance();
                 var first = this.SuffixExpression();
                 var loc = tokOp.Location.Span(first.Location);
-                var op = UnaryOperator.Not;
+                var op = UnaryOperatorKind.Not;
 
                 if (tokOp.Kind == TokenKind.Add) {
-                    op = UnaryOperator.Plus;
+                    op = UnaryOperatorKind.Plus;
                 }
                 else if (tokOp.Kind == TokenKind.Subtract) {
-                    op = UnaryOperator.Minus;
+                    op = UnaryOperatorKind.Minus;
                 }
 
                 return new UnaryParseSyntax(loc, op, first);
@@ -33,64 +28,63 @@ namespace Trophy.Parsing
     }
 }
 
-namespace Trophy.Features.Primitives
-{
-    public enum UnaryOperator {
+namespace Trophy.Features.Primitives {
+    public enum UnaryOperatorKind {
         Not, Plus, Minus
     }
 
-    public class UnaryParseSyntax : IParseTree {
-        private readonly UnaryOperator op;
-        private readonly IParseTree arg;
+    public class UnaryParseSyntax : ISyntaxTree {
+        private readonly UnaryOperatorKind op;
+        private readonly ISyntaxTree arg;
 
         public TokenLocation Location { get; }
 
-        public UnaryParseSyntax(TokenLocation location, UnaryOperator op, IParseTree arg) {
+        public UnaryParseSyntax(TokenLocation location, UnaryOperatorKind op, ISyntaxTree arg) {
             this.Location = location;
             this.op = op;
             this.arg = arg;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
-            var syntax = this.arg.ResolveTypes(scope, names, types);
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+            return Option.None;
+        }
 
-            if (this.op == UnaryOperator.Plus || this.op == UnaryOperator.Minus) {
-                if (syntax.TryUnifyTo(PrimitiveType.Int).TryGetValue(out var newSyntax)) {
-                    syntax = newSyntax;
-                }
-                else { 
-                    throw TypeCheckingErrors.UnexpectedType(this.Location, PrimitiveType.Int, syntax.ReturnType);
-                }
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+            if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
+                var left = new IntLiteral(this.Location, 0);
 
-                if (op == UnaryOperator.Minus) {
-                    syntax = new BinarySyntax(
-                        new IntLiteral(0), 
-                        syntax, 
-                        BinaryOperation.Subtract, 
-                        PrimitiveType.Int);
-                }
+                var op = this.op == UnaryOperatorKind.Plus 
+                    ? BinaryOperationKind.Add 
+                    : BinaryOperationKind.Subtract;
 
-                return syntax;
+                var result = new BinarySyntax(this.Location, left, this.arg, op);
+
+                return result.ResolveTypes(scope, types);
             }
-            else if (this.op == UnaryOperator.Not) {
-                if (syntax.TryUnifyTo(PrimitiveType.Bool).TryGetValue(out var newSyntax)) {
-                    syntax = newSyntax;
-                }
-                else {
-                    throw TypeCheckingErrors.UnexpectedType(this.Location, PrimitiveType.Int, syntax.ReturnType);
-                }
+            else if (this.op == UnaryOperatorKind.Not) {
+                var result = new BinarySyntax(
+                    this.Location, 
+                    new BoolLiteral(this.Location, true), 
+                    this.arg, 
+                    BinaryOperationKind.Xor);
 
-                syntax = new BinarySyntax(
-                        new BoolLiteral(true),
-                        syntax,
-                        BinaryOperation.Xor,
-                        PrimitiveType.Bool);
-
-                return syntax;
+                return result.ResolveTypes(scope, types);
             }
             else {
-                throw new Exception("Unexpected unary operator type");
+                throw new Exception("Unexpected unary operator kind");
             }
+        }
+
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) {
+            throw new InvalidOperationException();
+        }
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) {
+            throw new InvalidOperationException();
+        }
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+            throw new InvalidOperationException();
         }
     }
 }

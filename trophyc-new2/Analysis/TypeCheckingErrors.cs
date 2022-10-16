@@ -1,10 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Trophy.Parsing;
+﻿using Trophy.Parsing;
 
 namespace Trophy.Analysis {
     public static class TypeCheckingErrors {
+        public static Exception RValueRequired(TokenLocation location) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: RValue Required",
+                $"An rvalue is required in this context. Are you trying to store a type in a variable?");
+        }
+
+        public static Exception LValueRequired(TokenLocation location) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: LValue Required",
+                $"An lvalue is required in this context. Are you trying to assign to a read-only variable?");
+        }
+
+
         public static Exception InvalidHeapAllocation(TokenLocation location, TrophyType type) {
             return new TypeCheckingException(
                 location,

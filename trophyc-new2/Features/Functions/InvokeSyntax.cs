@@ -1,23 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using Trophy;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
+using Trophy.Analysis.Unification;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree InvokeExpression(IParseTree first) {
+        private ISyntaxTree InvokeExpression(ISyntaxTree first) {
             this.Advance(TokenKind.OpenParenthesis);
 
-            var args = new List<IParseTree>();
+            var args = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseParenthesis)) {
                 args.Add(this.TopExpression());
@@ -35,26 +28,28 @@ namespace Trophy.Parsing
     }
 }
 
-namespace Trophy.Features.Functions
-{
-    public class InvokeParseTree : IParseTree {
-        private readonly IParseTree target;
-        private readonly IReadOnlyList<IParseTree> args;
+namespace Trophy.Features.Functions {
+    public class InvokeParseTree : ISyntaxTree {
+        private readonly ISyntaxTree target;
+        private readonly IReadOnlyList<ISyntaxTree> args;
 
         public TokenLocation Location { get; }
 
-        public InvokeParseTree(TokenLocation loc, IParseTree target, IReadOnlyList<IParseTree> args) {
+        public InvokeParseTree(TokenLocation loc, ISyntaxTree target, IReadOnlyList<ISyntaxTree> args) {
             this.Location = loc;
             this.target = target;
             this.args = args;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
-            var target = this.target.ResolveTypes(scope, names, types);
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+            var target = this.target.ResolveTypes(scope, types);
+            var targetType = types.GetReturnType(target);
 
             // Make sure the target is a function
-            if (target.ReturnType is not FunctionType funcType) {
-                throw TypeCheckingErrors.ExpectedFunctionType(this.target.Location, target.ReturnType);
+            if (targetType is not FunctionType funcType) {
+                throw TypeCheckingErrors.ExpectedFunctionType(this.target.Location, targetType);
             }
 
             // Make sure the arg count lines up
@@ -69,18 +64,34 @@ namespace Trophy.Features.Functions
 
             // Make sure the arg types line up
             for (int i = 0; i < this.args.Count; i++) {
-                var expected = funcType.Signature.Parameters[i].Type;
-                var arg = this.args[i].ResolveTypes(scope, names, types);
+                var expectedType = funcType.Signature.Parameters[i].Type;
+                var arg = this.args[i].ResolveTypes(scope, types);
+                var argType = types.GetReturnType(arg);
 
-                if (arg.TryUnifyTo(expected).TryGetValue(out var newArg)) {
+                if (TypeUnifier.TryUnifyTo(arg, argType, expectedType).TryGetValue(out var newArg)) {
                     newArgs[i] = newArg;
                 }
                 else { 
-                    throw TypeCheckingErrors.UnexpectedType(this.Location, expected, arg.ReturnType);
+                    throw TypeCheckingErrors.UnexpectedType(this.Location, expectedType, argType);
                 }
             }
 
-            return new InvokeSyntax(funcType.Signature, newArgs);
+            var result = new InvokeSyntax(this.Location, funcType.Signature, newArgs);
+            types.SetReturnType(result, funcType.Signature.ReturnType);
+
+            return result;
+        }
+
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) {
+            throw new InvalidOperationException();
+        }
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) {
+            throw new InvalidOperationException();
+        }
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+            throw new InvalidOperationException();
         }
     }
 
@@ -88,26 +99,36 @@ namespace Trophy.Features.Functions
         private readonly FunctionSignature sig;
         private readonly IReadOnlyList<ISyntaxTree> args;
 
-        public TrophyType ReturnType => this.sig.ReturnType;
+        public TokenLocation Location { get; }
 
         public InvokeSyntax(
+            TokenLocation loc,
             FunctionSignature sig,
             IReadOnlyList<ISyntaxTree> args) {
 
+            this.Location = loc;
             this.sig = sig;
             this.args = args;
         }
 
-        public CExpression GenerateCode(CWriter writer, CStatementWriter statWriter) {
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
+
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
             var args = this.args
-                .Select(x => x.GenerateCode(writer, statWriter))
+                .Select(x => x.GenerateCode(types, writer))
                 .ToArray();
 
-            var type = writer.ConvertType(this.ReturnType);
+            var type = writer.ConvertType(this.sig.ReturnType);
             var target = CExpression.VariableLiteral(this.sig.Path.ToCName());
             var invoke = CExpression.Invoke(target, args);
 
-            return statWriter.WriteImpureExpression(type, invoke);
+            return writer.WriteImpureExpression(type, invoke);
         }
     }
 }

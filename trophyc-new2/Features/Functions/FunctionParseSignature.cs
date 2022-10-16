@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using Trophy.Analysis;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
 namespace Trophy.Features.Functions {
     public class FunctionParseSignature {
-        public ITypeTree ReturnType { get; }
+        public ISyntaxTree ReturnType { get; }
 
         public string Name { get; }
 
@@ -13,34 +11,43 @@ namespace Trophy.Features.Functions {
 
         public TokenLocation Location { get; }
 
-        public FunctionParseSignature(TokenLocation loc, string name, ITypeTree returnType, IReadOnlyList<ParseFunctionParameter> pars) {
+        public FunctionParseSignature(TokenLocation loc, string name, ISyntaxTree returnType, IReadOnlyList<ParseFunctionParameter> pars) {
             this.Location = loc;
             this.ReturnType = returnType;
             this.Name = name;
             this.Parameters = pars;
         }
 
-        public FunctionSignature ResolveNames(IdentifierPath scope, NamesRecorder names) {
+        public FunctionSignature ResolveNames(IdentifierPath scope, TypesRecorder names) {
             var path = scope.Append(this.Name);
-            var ret = this.ReturnType.ResolveNames(scope, names);
-            var pars = this.Parameters
-                .Select(x => new FunctionParameter(x.Name, x.Type.ResolveNames(scope, names)))
-                .ToImmutableList();
+            var pars = new List<FunctionParameter>();
 
-            return new FunctionSignature(path, ret, pars);
+            if (!this.ReturnType.ToType(scope, names).TryGetValue(out var retType)) {
+                throw TypeCheckingErrors.ExpectedTypeExpression(this.ReturnType.Location);
+            }
+
+            foreach (var par in this.Parameters) {
+                if (!par.Type.ToType(scope, names).TryGetValue(out var parType)) {
+                    throw TypeCheckingErrors.ExpectedTypeExpression(par.Location);
+                }
+
+                pars.Add(new FunctionParameter(par.Name, parType));
+            }
+
+            return new FunctionSignature(path, retType, pars);
         }
     }
 
     public class ParseFunctionParameter {
         public string Name { get; }
 
-        public ITypeTree Type { get; }
+        public ISyntaxTree Type { get; }
 
         public bool IsWritable { get; }
 
         public TokenLocation Location { get; }
 
-        public ParseFunctionParameter(TokenLocation loc, string name, ITypeTree type, bool isWritable) {
+        public ParseFunctionParameter(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
             this.Location = loc;
             this.Name = name;
             this.Type = type;

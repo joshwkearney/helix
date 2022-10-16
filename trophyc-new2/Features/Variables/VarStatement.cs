@@ -1,17 +1,11 @@
-﻿using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using Trophy.Analysis;
-using Trophy.Analysis.SyntaxTree;
+﻿using Trophy.Analysis;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
 using Trophy.Parsing;
-using Trophy.Parsing.ParseTree;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
-        private IParseTree VarExpression() {
+        private ISyntaxTree VarExpression() {
             var tok = this.Advance(TokenKind.VarKeyword);
             var name = this.Advance(TokenKind.Identifier).Value;
 
@@ -26,32 +20,50 @@ namespace Trophy.Parsing
 }
 
 namespace Trophy {
-    public class VarParseStatement : IParseTree {
+    public class VarParseStatement : ISyntaxTree {
         private readonly string name;
-        private readonly IParseTree assign;
+        private readonly ISyntaxTree assign;
         private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
-        public VarParseStatement(TokenLocation loc, string name, IParseTree assign, bool isWritable) {
+        public VarParseStatement(TokenLocation loc, string name, ISyntaxTree assign, bool isWritable) {
             this.Location = loc;
             this.name = name;
             this.assign = assign;
             this.isWritable = isWritable;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, NamesRecorder names, TypesRecorder types, TypeContext context) {
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
             // Type check the assignment value
-            var assign = this.assign.ResolveTypes(scope, names, types);
+            if (!this.assign.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var assign)) {
+                throw TypeCheckingErrors.RValueRequired(this.assign.Location);
+            }
 
             // Declare this variable and make sure we're not shadowing another variable
-            if (!names.TrySetName(scope, this.name, NameTarget.Variable)) {
+            if (!types.TrySetNameTarget(scope, this.name, NameTarget.Variable)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.name);
             }
 
-            types.SetVariable(scope.Append(this.name), assign.ReturnType, this.isWritable);
+            // Declare this variable
+            var assignType = types.GetReturnType(assign);
+            types.SetVariable(scope.Append(this.name), assignType, this.isWritable);
 
-            return new VarStatement(scope.Append(this.name), assign, new PointerType(assign.ReturnType));
+            // Set the return type of the new syntax tree
+            var result = new VarStatement(this.Location, scope.Append(this.name), assign);
+            types.SetReturnType(result, new PointerType(assignType));
+
+            return result;
+        }
+
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => throw new InvalidOperationException();
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => throw new InvalidOperationException();
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+            throw new InvalidOperationException();
         }
     }
 
@@ -59,23 +71,31 @@ namespace Trophy {
         private readonly IdentifierPath path;
         private readonly ISyntaxTree assign;
 
-        public TrophyType ReturnType { get; }
+        public TokenLocation Location { get; }
 
-        public VarStatement(IdentifierPath path, ISyntaxTree assign, TrophyType retType) {
+        public VarStatement(TokenLocation loc, IdentifierPath path, ISyntaxTree assign) {
+            this.Location = loc;
             this.path = path;
             this.assign = assign;
-            this.ReturnType = retType;
         }
 
-        public CExpression GenerateCode(CWriter writer, CStatementWriter statWriter) {
-            var type = writer.ConvertType(this.assign.ReturnType);
-            var value = this.assign.GenerateCode(writer, statWriter);
+        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+
+        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
+
+        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+
+        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
+            var type = writer.ConvertType(types.GetReturnType(this.assign));
+            var value = this.assign.GenerateCode(types, writer);
             var assign = CStatement.VariableDeclaration(type, this.path.ToCName(), value);
 
-            statWriter.WriteSpacingLine();
-            statWriter.WriteStatement(CStatement.Comment("Variable declaration statement"));
-            statWriter.WriteStatement(assign);
-            statWriter.WriteSpacingLine();
+            writer.WriteSpacingLine();
+            writer.WriteStatement(CStatement.Comment("Variable declaration statement"));
+            writer.WriteStatement(assign);
+            writer.WriteSpacingLine();
 
             return CExpression.AddressOf(CExpression.VariableLiteral(this.path.ToCName()));
         }
