@@ -31,9 +31,12 @@
 
         public TrophyType MemberType { get; }
 
-        public AggregateMember(string name, TrophyType type) {
+        public bool IsWritable { get; }
+
+        public AggregateMember(string name, TrophyType type, bool isWritable) {
             this.MemberName = name;
             this.MemberType = type;
+            this.IsWritable = isWritable;
         }
 
         public bool Equals(AggregateMember? other) {

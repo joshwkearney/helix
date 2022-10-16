@@ -5,12 +5,12 @@
 		x = x + 1;
 	};
 
-	if x > 3 then (x) else 0;
+	if x > 3 then x else 0;
 };
 
 func other(let x as int) as int => x + 10;
 
 struct Point {
-	x as int;
-	y as int;
+	let x as int;
+	let y as int;
 };

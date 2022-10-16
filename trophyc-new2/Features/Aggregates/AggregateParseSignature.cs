@@ -19,6 +19,8 @@ namespace Trophy.Features.Aggregates {
                 if (!mem.MemberType.ToType(scope, types).TryGetValue(out var type)) {
                     throw TypeCheckingErrors.ExpectedTypeExpression(mem.Location);
                 }
+
+                mems.Add(new AggregateMember(mem.MemberName, type, mem.IsWritable));
             }
 
             return new AggregateSignature(scope.Append(this.Name), mems);
@@ -32,10 +34,13 @@ namespace Trophy.Features.Aggregates {
 
         public TokenLocation Location { get; }
 
-        public ParseAggregateMember(TokenLocation loc, string name, ISyntaxTree type) {
+        public bool IsWritable { get; }
+
+        public ParseAggregateMember(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
             this.Location = loc;
             this.MemberName = name;
             this.MemberType = type;
+            this.IsWritable = isWritable;
         }
     }
 }

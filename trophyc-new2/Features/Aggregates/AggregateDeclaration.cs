@@ -21,14 +21,26 @@ namespace Trophy.Parsing {
             this.Advance(TokenKind.OpenBrace);
 
             while (!this.Peek(TokenKind.CloseBrace)) {
+                bool isWritable;
+                Token memStart;
+
+                if (this.Peek(TokenKind.VarKeyword)) {
+                    memStart = this.Advance(TokenKind.VarKeyword);
+                    isWritable = true;
+                }
+                else {
+                    memStart = this.Advance(TokenKind.LetKeyword);
+                    isWritable = false;
+                }
+
                 var memName = this.Advance(TokenKind.Identifier);
                 this.Advance(TokenKind.AsKeyword);
 
                 var memType = this.TopExpression();
-                var memLoc = memName.Location.Span(memType.Location);
+                var memLoc = memStart.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);
-                mems.Add(new ParseAggregateMember(memLoc, memName.Value, memType));
+                mems.Add(new ParseAggregateMember(memLoc, memName.Value, memType, isWritable));
             }
 
             this.Advance(TokenKind.CloseBrace);
