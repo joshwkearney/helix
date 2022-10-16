@@ -1,12 +1,18 @@
-﻿func test() as int => {
-	var x = 2 + 9;
+﻿func test(let z as int^) as int => {
+	//var x = *z;
+	let x = 45;
 
 	while x < 4 do {
-		x = x / 2;
+		//x = x / 2;
 	};
+
+	//void as Point
+	//void as int^
 
 	// Comment
 	if x > 3 then x else 0;
+
+	// let z = put Point { x= 1, y= 4 };
 };
 
 func other(let x as int) as int => x + 10;

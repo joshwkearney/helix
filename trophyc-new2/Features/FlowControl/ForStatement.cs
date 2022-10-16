@@ -22,20 +22,20 @@ namespace Trophy.Parsing {
             var body = this.TopExpression();
             var loc = start.Location.Span(body.Location);
 
-            return new ForParseStatement(loc, id, startIndex, endIndex, body);
+            return new ForStatement(loc, id, startIndex, endIndex, body);
         }
 
     }
 }
 
 namespace Trophy.Features.FlowControl {
-    public class ForParseStatement : ISyntaxTree {
+    public class ForStatement : ISyntaxTree {
         private readonly string iteratorName;
         private readonly ISyntaxTree startIndex, endIndex, body;
 
         public TokenLocation Location { get; }
 
-        public ForParseStatement(TokenLocation loc, string id, ISyntaxTree start, ISyntaxTree end, ISyntaxTree body) {
+        public ForStatement(TokenLocation loc, string id, ISyntaxTree start, ISyntaxTree end, ISyntaxTree body) {
             this.Location = loc;
             this.iteratorName = id;
             this.startIndex = start;
@@ -43,25 +43,25 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             // Rewrite for syntax to use while loops
             var start = new AsParseTree(
                 this.startIndex.Location, 
                 this.startIndex, 
-                new IdenfifierAccessParseTree(this.startIndex.Location, "int"));
+                new IdenfifierAccessSyntax(this.startIndex.Location, "int"));
 
             var end = new AsParseTree(
                 this.endIndex.Location,
                 this.endIndex,
-                new IdenfifierAccessParseTree(this.startIndex.Location, "int"));
+                new IdenfifierAccessSyntax(this.startIndex.Location, "int"));
 
-            var counterName = types.GetTempVariableName();
-            var counterDecl = new VarParseStatement(this.Location, counterName, start, true);
+            var counterName = types.GetVariableName();
+            var counterDecl = new VarStatement(this.Location, counterName, start, true);
 
-            var counterAccess = new IdenfifierAccessParseTree(this.Location, counterName);
-            var iteratorDecl = new VarParseStatement(this.Location, this.iteratorName, counterAccess, false);
+            var counterAccess = new IdenfifierAccessSyntax(this.Location, counterName);
+            var iteratorDecl = new VarStatement(this.Location, this.iteratorName, counterAccess, false);
 
             var comp = new BinarySyntax(this.Location, counterAccess, end, BinaryOperationKind.LessThan);
 
@@ -86,18 +86,18 @@ namespace Trophy.Features.FlowControl {
                     }))
             });
 
-            return block.ResolveTypes(scope, types);
+            return block.CheckTypes(types);
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) {
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) {
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+        public CExpression GenerateCode(CStatementWriter statWriter) {
             throw new InvalidOperationException();
         }
     }

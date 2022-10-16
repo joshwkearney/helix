@@ -96,20 +96,28 @@ namespace Trophy {
     public class PointerType : TrophyType {
         public TrophyType ReferencedType { get; }
 
-        public PointerType(TrophyType innerType) {
+        public bool IsWritable { get; }
+
+        public PointerType(TrophyType innerType, bool isWritable) {
             this.ReferencedType = innerType;
+            this.IsWritable = isWritable;
         }
 
         public override Option<PointerType> AsPointerType() => this;
 
         public override bool Equals(TrophyType? other) {
-            return other is PointerType type && type.ReferencedType.Equals(this.ReferencedType);
+            return other is PointerType type 
+                && type.IsWritable == this.IsWritable
+                && type.ReferencedType.Equals(this.ReferencedType);
         }
 
-        public override int GetHashCode() => 67 * this.ReferencedType.GetHashCode();
+        public override int GetHashCode() {
+            return 67 * this.ReferencedType.GetHashCode() 
+                 + 71 * this.IsWritable.GetHashCode();
+        }
 
         public override string ToString() {
-            return this.ReferencedType + "*";
+            return this.ReferencedType + (this.IsWritable ? "*" : "^");
         }
     }
 

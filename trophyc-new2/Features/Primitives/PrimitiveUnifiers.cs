@@ -21,6 +21,13 @@ namespace Trophy.Analysis.Unification {
                     return syntax => new SyntaxAdapter(syntax, new BoolLiteral(syntax.Location, false));
                 }
             }
+            
+            // Pointer to readonly pointer
+            //if (from is PointerType p1 && to is PointerType p2) {
+            //    if (p1.ReferencedType == p2.ReferencedType && p1.IsWritable) {
+            //        return syntax => 
+            //    }
+            //}
 
             return null;
         }
@@ -37,20 +44,20 @@ namespace Trophy.Features.Primitives {
             this.inner = inner;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+        public Option<TrophyType> ToType(INamesObserver types) {
             return Option.None;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             return this;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
-            var inner = this.inner.GenerateCode(types, writer);
+        public CExpression GenerateCode(CStatementWriter writer) {
+            var inner = this.inner.GenerateCode(writer);
             var type = writer.ConvertType(PrimitiveType.Int);
 
             return CExpression.Cast(type, inner);

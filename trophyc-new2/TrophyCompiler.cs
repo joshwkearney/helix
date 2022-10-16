@@ -11,30 +11,30 @@ namespace Trophy {
         }
 
         public string Compile() {
-            var lexer = new Lexer(this.input);
-            var parser = new Parser(lexer.GetTokens());
-            var types = new TypesRecorder();
-            var writer = new CWriter();
-
             // ToList() is after each step so lazy evaluation doesn't mess
             // up the order of the steps
 
             try {
+                var lexer = new Lexer(this.input);
+                var parser = new Parser(lexer.GetTokens());
+                var names = new NamesRecorder();
+                var types = new TypesRecorder(names);
+                var writer = new CWriter(names, types);
+
                 var parseStats = parser.Parse();
-                var emptyScope = new IdentifierPath();
 
                 foreach (var stat in parseStats) {
-                    stat.DeclareNames(emptyScope, types);
+                    stat.DeclareNames(names);
                 }
 
                 foreach (var stat in parseStats) {
-                    stat.DeclareTypes(emptyScope, types);
+                    stat.DeclarePaths(types);
                 }
 
-                var stats = parseStats.Select(x => x.ResolveTypes(emptyScope, types)).ToArray();
+                var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
 
                 foreach (var stat in stats) {
-                    stat.GenerateCode(types, writer);
+                    stat.GenerateCode(writer);
                 }
 
                 return writer.ToString();

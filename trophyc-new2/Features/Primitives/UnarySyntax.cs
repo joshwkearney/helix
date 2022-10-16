@@ -45,11 +45,11 @@ namespace Trophy.Features.Primitives {
             this.arg = arg;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+        public Option<TrophyType> ToType(INamesObserver types) {
             return Option.None;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
                 var left = new IntLiteral(this.Location, 0);
 
@@ -59,7 +59,7 @@ namespace Trophy.Features.Primitives {
 
                 var result = new BinarySyntax(this.Location, left, this.arg, op);
 
-                return result.ResolveTypes(scope, types);
+                return result.CheckTypes(types);
             }
             else if (this.op == UnaryOperatorKind.Not) {
                 var result = new BinarySyntax(
@@ -68,22 +68,22 @@ namespace Trophy.Features.Primitives {
                     this.arg, 
                     BinaryOperationKind.Xor);
 
-                return result.ResolveTypes(scope, types);
+                return result.CheckTypes(types);
             }
             else {
                 throw new Exception("Unexpected unary operator kind");
             }
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) {
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) {
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+        public CExpression GenerateCode(CStatementWriter statWriter) {
             throw new InvalidOperationException();
         }
     }

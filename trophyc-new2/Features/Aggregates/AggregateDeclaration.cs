@@ -49,7 +49,7 @@ namespace Trophy.Parsing {
             var sig = new AggregateParseSignature(name, mems);
             var kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union;
 
-            return new AggregateParseDeclaration(loc, sig, kind);
+            return new AggregateDeclaration(loc, sig, kind);
         }
     }
 }
@@ -59,79 +59,55 @@ namespace Trophy.Features.Aggregates {
         Struct, Union
     }
 
-    public class AggregateParseDeclaration : IDeclarationTree {
+    public class AggregateDeclaration : IDeclarationTree {
         private readonly AggregateParseSignature signature;
         private readonly AggregateKind kind;
 
         public TokenLocation Location { get; }
 
-        public AggregateParseDeclaration(TokenLocation loc, AggregateParseSignature sig, AggregateKind kind) {
+        public AggregateDeclaration(TokenLocation loc, AggregateParseSignature sig, AggregateKind kind) {
             this.Location = loc;
             this.signature = sig;
             this.kind = kind;
         }
 
-        public void DeclareNames(IdentifierPath scope, TypesRecorder types) {
-            bool nameTaken;
-
-            // Declare this struct
-            if (this.kind == AggregateKind.Struct) {
-                nameTaken = !types.TrySetNameTarget(scope, this.signature.Name, NameTarget.Struct);
-            }
-            else {
-                nameTaken = !types.TrySetNameTarget(scope, this.signature.Name, NameTarget.Union);
-            }
-
-            if (nameTaken) {
+        public void DeclareNames(INamesRecorder names) {
+            // Make sure this name isn't taken
+            if (!names.DeclareName(this.signature.Name, NameTarget.Aggregate)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.signature.Name);
             }
 
+            names.PushScope(this.signature.Name);
+
             // Declare the parameters
             foreach (var par in this.signature.Members) {
-                if (!types.TrySetNameTarget(scope.Append(this.signature.Name), par.MemberName, NameTarget.Reserved)) {
+                if (!names.DeclareName(par.MemberName, NameTarget.Reserved)) {
                     throw TypeCheckingErrors.IdentifierDefined(this.Location, par.MemberName);
                 }
             }
+
+            names.PopScope();
         }
 
-        public void DeclareTypes(IdentifierPath scope, TypesRecorder types) {
-            var sig = this.signature.ResolveNames(scope, types);
+        public void DeclarePaths(ITypesRecorder types) {
+            var sig = this.signature.ResolveNames(types);
+            types.DeclareAggregate(sig);
 
-            // Declare this aggregate
-            types.SetAggregate(sig);
+            types.PushScope(this.signature.Name);
+
+            foreach (var mem in this.signature.Members) {
+                types.DeclareReserved(sig.Path.Append(mem.MemberName));
+            }
+
+            types.PopScope();
         }
 
-        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            var sig = this.signature.ResolveNames(scope, types);
+        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
-            return new AggregateDeclaration(this.Location, sig, this.kind);
-        }
-
-        public void GenerateCode(TypesRecorder types, CWriter writer) {
-            throw new InvalidOperationException();
-        }
-    }
-
-    public class AggregateDeclaration : IDeclarationTree {
-        private readonly AggregateSignature signature;
-        private readonly AggregateKind kind;
-
-        public TokenLocation Location { get; }
-
-        public AggregateDeclaration(TokenLocation loc, AggregateSignature sig, AggregateKind kind) {
-            this.Location = loc;
-            this.signature = sig;
-            this.kind = kind;
-        }
-
-        public void DeclareNames(IdentifierPath scope, TypesRecorder types) { }
-
-        public void DeclareTypes(IdentifierPath scope, TypesRecorder types) { }
-
-        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
-
-        public void GenerateCode(TypesRecorder types, CWriter writer) {
-            var name = writer.GetVariableName(this.signature.Path);
+        public void GenerateCode(CWriter writer) {
+            var path = writer.TryFindPath(this.signature.Name).GetValue();
+            var sig = writer.GetAggregate(path);
+            var name = writer.GetVariableName(path);
 
             if (this.kind == AggregateKind.Struct) {
                 // Write forward declaration
@@ -141,10 +117,10 @@ namespace Trophy.Features.Aggregates {
                 // Write full struct
                 writer.WriteDeclaration2(CDeclaration.Struct(
                     name,
-                    this.signature.Members
+                    sig.Members
                         .Select(x => new CParameter(
-                            writer.ConvertType(x.MemberType), 
-                            writer.GetVariableName(this.signature.Path.Append(x.MemberName))))
+                            writer.ConvertType(x.MemberType),
+                            writer.GetVariableName(path.Append(x.MemberName))))
                         .ToArray()));
 
                 writer.WriteDeclaration2(CDeclaration.EmptyLine());
@@ -157,7 +133,7 @@ namespace Trophy.Features.Aggregates {
                 // Write full union
                 writer.WriteDeclaration2(CDeclaration.Union(
                     name,
-                    this.signature.Members
+                    sig.Members
                         .Select(x => new CParameter(writer.ConvertType(x.MemberType), x.MemberName))
                         .ToArray()));
 

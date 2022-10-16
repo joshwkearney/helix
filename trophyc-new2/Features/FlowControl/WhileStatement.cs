@@ -32,16 +32,16 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+        public Option<TrophyType> ToType(INamesObserver types) {
             return Option.None;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            if (!this.cond.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var cond)) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
                 throw TypeCheckingErrors.RValueRequired(this.cond.Location);
             }
 
-            if (!this.body.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var body)) {
+            if (!this.body.CheckTypes(types).ToRValue(types).TryGetValue(out var body)) {
                 throw TypeCheckingErrors.RValueRequired(this.body.Location);
             }
 
@@ -59,19 +59,19 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
+        public CExpression GenerateCode(CStatementWriter writer) {
             var loopBody = new List<CStatement>();
-            var bodyWriter = new CStatementWriter(writer, loopBody);
-            var cond = CExpression.Not(this.cond.GenerateCode(types, bodyWriter));
+            var bodyWriter = new CStatementWriter(loopBody, writer);
+            var cond = CExpression.Not(this.cond.GenerateCode(bodyWriter));
 
             loopBody.Add(CStatement.If(cond, new[] { CStatement.Break() }));
             loopBody.Add(CStatement.NewLine());
 
-            this.body.GenerateCode(types, bodyWriter);
+            this.body.GenerateCode(bodyWriter);
 
             writer.WriteSpacingLine();
             writer.WriteStatement(CStatement.Comment("While loop"));

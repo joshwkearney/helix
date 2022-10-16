@@ -5,12 +5,12 @@ namespace Trophy.Parsing {
     public interface IDeclarationTree {
         public TokenLocation Location { get; }
 
-        public void DeclareNames(IdentifierPath scope, TypesRecorder types);
+        public void DeclareNames(INamesRecorder names);
 
-        public void DeclareTypes(IdentifierPath scope, TypesRecorder types);
+        public void DeclarePaths(ITypesRecorder paths);
 
-        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types);
+        public IDeclarationTree CheckTypes(ITypesRecorder types);
 
-        public void GenerateCode(TypesRecorder types, CWriter writer);
+        public void GenerateCode(CWriter writer);
     }
 }

@@ -41,10 +41,10 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            var target = this.target.ResolveTypes(scope, types);
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            var target = this.target.CheckTypes(types);
             var targetType = types.GetReturnType(target);
 
             // Make sure the target is a function
@@ -65,7 +65,7 @@ namespace Trophy.Features.Functions {
             // Make sure the arg types line up
             for (int i = 0; i < this.args.Count; i++) {
                 var expectedType = funcType.Signature.Parameters[i].Type;
-                var arg = this.args[i].ResolveTypes(scope, types);
+                var arg = this.args[i].CheckTypes(types);
                 var argType = types.GetReturnType(arg);
 
                 if (TypeUnifier.TryUnifyTo(arg, argType, expectedType).TryGetValue(out var newArg)) {
@@ -82,15 +82,15 @@ namespace Trophy.Features.Functions {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) {
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) {
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+        public CExpression GenerateCode(CStatementWriter statWriter) {
             throw new InvalidOperationException();
         }
     }
@@ -111,17 +111,17 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
+        public CExpression GenerateCode(CStatementWriter writer) {
             var args = this.args
-                .Select(x => x.GenerateCode(types, writer))
+                .Select(x => x.GenerateCode(writer))
                 .ToArray();
 
             var type = writer.ConvertType(this.sig.ReturnType);

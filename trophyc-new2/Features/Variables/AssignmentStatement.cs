@@ -34,11 +34,11 @@ namespace Trophy.Features.Variables {
             this.assign = assign;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver names) => Option.None;
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            var targetOp = this.target.ResolveTypes(scope, types).ToLValue(types);
-            var assignOp = this.assign.ResolveTypes(scope, types).ToRValue(types);
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            var targetOp = this.target.CheckTypes(types).ToLValue(types);
+            var assignOp = this.assign.CheckTypes(types).ToRValue(types);
 
             // Make sure the target is an lvalue
             if (!targetOp.TryGetValue(out var target)) {
@@ -54,7 +54,7 @@ namespace Trophy.Features.Variables {
             var assignType = types.GetReturnType(assign);
 
             // Make sure the target is a variable type
-            if (targetType is not PointerType pointerType /*|| pointerType.IsReadOnly*/) {
+            if (targetType is not PointerType pointerType || !pointerType.IsWritable) {
                 throw new Exception("Compiler inconsistency: lvalues must be writable pointers");
             }
 
@@ -75,13 +75,13 @@ namespace Trophy.Features.Variables {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
-            var left = CExpression.Dereference(this.target.GenerateCode(types, writer));
-            var right = this.assign.GenerateCode(types, writer);
+        public CExpression GenerateCode(CStatementWriter writer) {
+            var left = CExpression.Dereference(this.target.GenerateCode(writer));
+            var right = this.assign.GenerateCode(writer);
 
             writer.WriteStatement(CStatement.Assignment(left, right));
 

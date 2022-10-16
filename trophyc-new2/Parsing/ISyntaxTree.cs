@@ -6,14 +6,14 @@ namespace Trophy.Parsing {
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types);
+        public Option<TrophyType> ToType(INamesObserver names);
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types);
+        public ISyntaxTree CheckTypes(ITypesRecorder types);
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types);
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types);
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types);
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types);
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter);
+        public CExpression GenerateCode(CStatementWriter writer);
     }
 }

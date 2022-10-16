@@ -22,21 +22,21 @@ namespace Trophy.Features.Primitives {
             this.Location = loc;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+        public Option<TrophyType> ToType(INamesObserver types) {
             return PrimitiveType.Void;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Void);
 
             return this;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+        public CExpression GenerateCode(CStatementWriter statWriter) {
             return CExpression.IntLiteral(0);
         }
     }

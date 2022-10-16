@@ -171,12 +171,12 @@ namespace Trophy.Features.Primitives {
             this.op = op;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             // Delegate type resolution
-            var left = this.left.ResolveTypes(scope, types);
-            var right = this.right.ResolveTypes(scope, types);
+            var left = this.left.CheckTypes(types);
+            var right = this.right.CheckTypes(types);
 
             var leftType = types.GetReturnType(left);
             var rightType = types.GetReturnType(right);
@@ -230,13 +230,13 @@ namespace Trophy.Features.Primitives {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
-            var left = this.left.GenerateCode(types, writer);
-            var right = this.right.GenerateCode(types, writer);
+        public CExpression GenerateCode(CStatementWriter writer) {
+            var left = this.left.GenerateCode(writer);
+            var right = this.right.GenerateCode(writer);
             var bin = CExpression.BinaryExpression(left, right, this.op);
 
             return bin;

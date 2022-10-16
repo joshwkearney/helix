@@ -20,26 +20,30 @@ namespace Trophy.Features.Functions {
             }
         }
 
-        public static void DeclareSignatureNames(FunctionParseSignature sig, IdentifierPath scope, TypesRecorder types) {
+        public static void DeclareSignatureNames(FunctionParseSignature sig, INamesRecorder names) {
             // Declare this function
-            if (!types.TrySetNameTarget(scope, sig.Name, NameTarget.Function)) {
+            if (!names.DeclareName(sig.Name, NameTarget.Function)) {
                 throw TypeCheckingErrors.IdentifierDefined(sig.Location, sig.Name);
             }
 
+            names.PushScope(sig.Name);
+
             // Declare the parameters
             foreach (var par in sig.Parameters) {
-                var path = scope.Append(sig.Name);
-
-                if (!types.TrySetNameTarget(path, par.Name, NameTarget.Variable)) {
+                if (!names.DeclareName(par.Name, NameTarget.Variable)) {
                     throw TypeCheckingErrors.IdentifierDefined(par.Location, par.Name);
                 }
             }
+
+            names.PopScope();
         }
 
-        public static void DeclareSignatureTypes(FunctionSignature sig, IdentifierPath scope, TypesRecorder types) {
+        public static void DeclareSignaturePaths(FunctionSignature sig, ITypesRecorder paths) {
             // Declare this function
-            types.SetFunction(sig);
-            types.SetVariable(sig.Path, new FunctionType(sig), false);
+            paths.DeclareFunction(sig);
+            paths.DeclareVariable(sig.Path, new FunctionType(sig), false);
+
+            paths.PushScope(sig.Path);
 
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
@@ -47,8 +51,10 @@ namespace Trophy.Features.Functions {
                 var type = sig.Parameters[i].Type;
                 var path = sig.Path.Append(parsePar.Name);
 
-                types.SetVariable(path, type, parsePar.IsWritable);
+                paths.DeclareVariable(path, type, parsePar.IsWritable);
             }
+
+            paths.PopScope();
         }
     }
 }

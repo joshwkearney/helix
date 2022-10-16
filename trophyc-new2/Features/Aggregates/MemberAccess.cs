@@ -30,12 +30,12 @@ namespace Trophy.Features.Aggregates {
             this.memberName = memberName;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+        public Option<TrophyType> ToType(INamesObserver types) {
             return Option.None;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            if (this.target.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var target)) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            if (this.target.CheckTypes(types).ToRValue(types).TryGetValue(out var target)) {
                 throw TypeCheckingErrors.RValueRequired(this.target.Location);
             }
 
@@ -45,8 +45,8 @@ namespace Trophy.Features.Aggregates {
             if (targetType.AsNamedType().Select(x => x.FullName).TryGetValue(out var path)) {
 
                 // If this is a struct or union we can access the fields
-                if (types.TryGetNameTarget(path).TryGetValue(out var name)) {
-                    if (name == NameTarget.Struct || name == NameTarget.Union) {
+                if (types.TryResolveName(path).TryGetValue(out var name)) {
+                    if (name == NameTarget.Aggregate) {
 
                         var sig = types.GetAggregate(path);
                         var fieldOpt = sig
@@ -72,12 +72,12 @@ namespace Trophy.Features.Aggregates {
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
-            var target = this.target.GenerateCode(types, writer);
+        public CExpression GenerateCode(CStatementWriter writer) {
+            var target = this.target.GenerateCode(writer);
 
             return CExpression.MemberAccess(target, this.memberName);
         }

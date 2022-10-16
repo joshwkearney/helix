@@ -81,12 +81,19 @@
         private ISyntaxTree SuffixExpression() {
             var first = this.Atom();
 
-            while (this.Peek(TokenKind.OpenParenthesis) || this.Peek(TokenKind.Dot)) {
+            while (this.Peek(TokenKind.OpenParenthesis) 
+                || this.Peek(TokenKind.Dot) 
+                || this.Peek(TokenKind.Multiply) 
+                || this.Peek(TokenKind.Caret)) {
+
                 if (this.Peek(TokenKind.OpenParenthesis)) {
                     first = this.InvokeExpression(first);
                 }
                 else if (this.Peek(TokenKind.Dot)) {
                     first = this.MemberAccess(first);
+                }
+                else if (this.Peek(TokenKind.Multiply) || this.Peek(TokenKind.Caret)) {
+                    first = this.TypePointer(first);
                 }
                 else {
                     throw new Exception("Unexpected suffix token");
@@ -118,18 +125,18 @@
             else if (this.Peek(TokenKind.IfKeyword)) {
                 return this.IfExpression();
             }     
-            else if (this.Peek(TokenKind.VarKeyword)) {
+            else if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.LetKeyword)) {
                 return this.VarExpression();
             }
             else if (this.Peek(TokenKind.IntKeyword)) {
                 var tok = this.Advance(TokenKind.IntKeyword);
 
-                return new IdenfifierAccessParseTree(tok.Location, "int");
+                return new IdenfifierAccessSyntax(tok.Location, "int");
             }
             else if (this.Peek(TokenKind.BoolKeyword)) {
                 var tok = this.Advance(TokenKind.BoolKeyword);
 
-                return new IdenfifierAccessParseTree(tok.Location, "bool");
+                return new IdenfifierAccessSyntax(tok.Location, "bool");
             }
             else {
                 var next = this.Advance();

@@ -37,16 +37,16 @@ namespace Trophy.Features.Primitives {
             this.target = target;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            if (!this.arg.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var arg)) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            if (!this.arg.CheckTypes(types).ToRValue(types).TryGetValue(out var arg)) {
                 throw TypeCheckingErrors.RValueRequired(this.arg.Location);
             }
 
             var argType = types.GetReturnType(arg);
 
-            if (!this.target.ToType(scope, types).TryGetValue(out var targetType)) {
+            if (!this.target.ToType(types).TryGetValue(out var targetType)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
             }
 
@@ -57,15 +57,15 @@ namespace Trophy.Features.Primitives {
             return arg;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) {
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) {
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter statWriter) {
+        public CExpression GenerateCode(CStatementWriter statWriter) {
             throw new InvalidOperationException();
         }
     }

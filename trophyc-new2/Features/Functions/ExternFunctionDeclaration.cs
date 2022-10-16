@@ -30,62 +30,40 @@ namespace Trophy.Features.Functions {
             this.Signature = sig;
         }
 
-        public void DeclareNames(IdentifierPath scope, TypesRecorder names) {
+        public void DeclareNames(INamesRecorder names) {
             FunctionsHelper.CheckForDuplicateParameters(
                 this.Location, 
                 this.Signature.Parameters.Select(x => x.Name));
 
-            FunctionsHelper.DeclareSignatureNames(this.Signature, scope, names);
+            FunctionsHelper.DeclareSignatureNames(this.Signature, names);
         }
 
-        public void DeclareTypes(IdentifierPath scope, TypesRecorder types) {
-            var sig = this.Signature.ResolveNames(scope, types);
+        public void DeclarePaths(ITypesRecorder types) {
+            var sig = this.Signature.ResolveNames(types);
 
-            FunctionsHelper.DeclareSignatureTypes(sig, scope, types);
+            FunctionsHelper.DeclareSignaturePaths(sig, types);
         }
 
-        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            var sig = this.Signature.ResolveNames(scope, types);
+        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
-            return new ExternFunctionSignature(this.Location, sig);
-        }
+        public void GenerateCode(CWriter writer) {
+            var path = writer.TryFindPath(this.Signature.Name).GetValue();
+            var sig = writer.GetFunction(path);
 
-        public void GenerateCode(TypesRecorder types, CWriter writer) {
-            throw new InvalidOperationException();
-        }
-    }
-
-    public class ExternFunctionSignature : IDeclarationTree {
-        public TokenLocation Location { get; }
-
-        public FunctionSignature Signature { get; }
-
-        public ExternFunctionSignature(TokenLocation loc, FunctionSignature sig) {
-            this.Location = loc;
-            this.Signature = sig;
-        }
-
-        public void DeclareNames(IdentifierPath scope, TypesRecorder types) { }
-
-        public void DeclareTypes(IdentifierPath scope, TypesRecorder types) { }
-
-        public IDeclarationTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
-
-        public void GenerateCode(TypesRecorder types, CWriter writer) {
-            var returnType = writer.ConvertType(this.Signature.ReturnType);
-            var pars = this.Signature
+            var returnType = writer.ConvertType(sig.ReturnType);
+            var pars = sig
                 .Parameters
                 .Select((x, i) => new CParameter(
-                    writer.ConvertType(x.Type), 
-                    writer.GetVariableName(this.Signature.Path.Append(x.Name))))
+                    writer.ConvertType(x.Type),
+                    writer.GetVariableName(sig.Path.Append(x.Name))))
                 .ToArray();
 
-            var funcName = writer.GetVariableName(this.Signature.Path);
+            var funcName = writer.GetVariableName(sig.Path);
             var stats = new List<CStatement>();
 
             CDeclaration forwardDecl;
 
-            if (this.Signature.ReturnType == PrimitiveType.Void) {
+            if (sig.ReturnType == PrimitiveType.Void) {
                 forwardDecl = CDeclaration.FunctionPrototype(funcName, false, pars);
             }
             else {

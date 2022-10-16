@@ -56,20 +56,20 @@ namespace Trophy.Features.FlowControl {
             this.iffalse = iffalse;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+        public Option<TrophyType> ToType(INamesObserver types) {
             return Option.None;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            if (!this.cond.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var cond)) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
                 throw TypeCheckingErrors.RValueRequired(this.cond.Location);
             }
 
-            if (!this.iftrue.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var iftrue)) {
+            if (!this.iftrue.CheckTypes(types).ToRValue(types).TryGetValue(out var iftrue)) {
                 throw TypeCheckingErrors.RValueRequired(this.iftrue.Location);
             }
 
-            if (!this.iffalse.ResolveTypes(scope, types).ToRValue(types).TryGetValue(out var iffalse)) {
+            if (!this.iffalse.CheckTypes(types).ToRValue(types).TryGetValue(out var iffalse)) {
                 throw TypeCheckingErrors.RValueRequired(this.iffalse.Location);
             }
 
@@ -96,23 +96,23 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
+        public CExpression GenerateCode(CStatementWriter writer) {
             var affirmList = new List<CStatement>();
             var negList = new List<CStatement>();
 
-            var affirmWriter = new CStatementWriter(writer, affirmList);
-            var negWriter = new CStatementWriter(writer, negList);
+            var affirmWriter = new CStatementWriter(affirmList, writer);
+            var negWriter = new CStatementWriter(negList, writer);
 
-            var cond = this.cond.GenerateCode(types, writer);
-            var affirm = this.iftrue.GenerateCode(types, affirmWriter);
-            var neg = this.iffalse.GenerateCode(types, negWriter);
+            var cond = this.cond.GenerateCode(writer);
+            var affirm = this.iftrue.GenerateCode(affirmWriter);
+            var neg = this.iffalse.GenerateCode(negWriter);
 
             var tempName = writer.GetVariableName();
-            var returnType = writer.ConvertType(types.GetReturnType(this));
+            var returnType = writer.ConvertType(writer.GetReturnType(this));
 
             affirmList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), affirm));
             negList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), neg));

@@ -37,13 +37,16 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+        public Option<TrophyType> ToType(INamesObserver types) {
             return Option.None;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) {
-            var blockScope = scope = scope.Append("$block" + this.id);
-            var stats = this.statements.Select(x => x.ResolveTypes(blockScope, types)).ToArray();
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            var blockName = "$block" + this.id;
+
+            types.PushScope(blockName);
+            var stats = this.statements.Select(x => x.CheckTypes(types)).ToArray();
+            types.PopScope();
 
             var result = new BlockSyntax(this.Location, stats);
             var returnType = stats
@@ -56,17 +59,17 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
+        public CExpression GenerateCode(CStatementWriter writer) {
             if (this.statements.Any()) {
                 foreach (var stat in this.statements.SkipLast(1)) {
-                    stat.GenerateCode(types, writer);
+                    stat.GenerateCode(writer);
                 }
 
-                return this.statements.Last().GenerateCode(types, writer);
+                return this.statements.Last().GenerateCode(writer);
             }
             else {
                 return CExpression.IntLiteral(0);

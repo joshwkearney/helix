@@ -14,20 +14,20 @@ namespace Trophy.Analysis.Unification {
             this.adapted = adapted;
         }
 
-        public Option<TrophyType> ToType(IdentifierPath scope, TypesRecorder types) {
+        public Option<TrophyType> ToType(INamesObserver types) {
             return Option.None;
         }
 
-        public ISyntaxTree ResolveTypes(IdentifierPath scope, TypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(TypesRecorder types) => Option.None;
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public Option<ISyntaxTree> ToRValue(TypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public CExpression GenerateCode(TypesRecorder types, CStatementWriter writer) {
-            this.original.GenerateCode(types, writer);
+        public CExpression GenerateCode(CStatementWriter writer) {
+            this.original.GenerateCode(writer);
 
-            return this.adapted.GenerateCode(types, writer);
+            return this.adapted.GenerateCode(writer);
         }
     }
 }

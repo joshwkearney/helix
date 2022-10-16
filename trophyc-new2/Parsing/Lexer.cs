@@ -21,7 +21,7 @@
             { ',', TokenKind.Comma }, { '.', TokenKind.Dot },
             { ';', TokenKind.Semicolon }, { '+', TokenKind.Add },
             { '-', TokenKind.Subtract }, { '*', TokenKind.Multiply },
-            { '%', TokenKind.Modulo }
+            { '%', TokenKind.Modulo }, { '^', TokenKind.Caret }
         };
 
         private readonly string text;
