@@ -66,102 +66,115 @@ namespace Trophy.Parsing {
 
             this.Advance(TokenKind.Semicolon);
 
-            return new FunctionDeclaration(loc, sig, body);
+            return new FunctionParseDeclaration(loc, sig, body);
         }
     }
 }
 
 namespace Trophy.Features.Functions {
-    public class FunctionDeclaration : IDeclarationTree {
+    public record FunctionParseDeclaration : IDeclarationTree {
+        private readonly FunctionParseSignature signature;
+        private readonly ISyntaxTree body;
+
         public TokenLocation Location { get; }
 
-        public FunctionParseSignature Signature { get; }
-
-        public ISyntaxTree Body { get; }
-
-        public FunctionDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntaxTree body) {
+        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntaxTree body) {
             this.Location = loc;
-            this.Signature = sig;
-            this.Body = body;
+            this.signature = sig;
+            this.body = body;
         }
 
         public void DeclareNames(INamesRecorder names) {
-            FunctionsHelper. CheckForDuplicateParameters(
+            FunctionsHelper.CheckForDuplicateParameters(
                 this.Location, 
-                this.Signature.Parameters.Select(x => x.Name));
+                this.signature.Parameters.Select(x => x.Name));
 
-            FunctionsHelper.DeclareSignatureNames(this.Signature, names);
+            FunctionsHelper.DeclareSignatureNames(this.signature, names);
         }
 
-        public void DeclarePaths(ITypesRecorder paths) {
-            var sig = this.Signature.ResolveNames(paths);
+        public void DeclarePaths(INamesObserver names, ITypesRecorder types) {
+            var sig = this.signature.ResolveNames(names, types.CurrentScope);
 
-            FunctionsHelper.DeclareSignaturePaths(sig, paths);
+            FunctionsHelper.DeclareSignaturePaths(sig, types);
         }
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types) {
-            var path = types.CurrentScope.Append(this.Signature.Name);
+        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+            var path = types.CurrentScope.Append(this.signature.Name);
             var sig = types.GetFunction(path);
-            var body = this.Body;
+            var body = this.body;
 
             // If this function returns void, wrap the body so we don't get weird type errors
             if (sig.ReturnType == PrimitiveType.Void) {
-                body = new BlockSyntax(this.Body.Location, new ISyntaxTree[] {
+                body = new BlockSyntax(this.body.Location, new ISyntaxTree[] {
                     body, new VoidLiteral(body.Location)
                 });
             }
 
-            types.PushScope(this.Signature.Name);
+            // Set the scope for type checking the body
+            types = types.WithScope(sig.Path);
 
-            {
-                // Make sure the body is an rvalue
-                if (!body.CheckTypes(types).ToRValue(types).TryGetValue(out body)) {
-                    throw TypeCheckingErrors.RValueRequired(this.Body.Location);
-                }
-
-                var bodyType = types.GetReturnType(body);
-
-                // Make sure the return type matches the body's type
-                if (TypeUnifier.TryUnifyTo(body, bodyType, sig.ReturnType).TryGetValue(out var newBody)) {
-                    body = newBody;
-                }
-                else {
-                    throw TypeCheckingErrors.UnexpectedType(this.Location, sig.ReturnType, bodyType);
-                }
+            // Make sure the body is an rvalue
+            if (!body.CheckTypes(names, types).ToRValue(types).TryGetValue(out body)) {
+                throw TypeCheckingErrors.RValueRequired(this.body.Location);
             }
 
-            types.PopScope();
-            return new FunctionDeclaration(this.Location, this.Signature, body);
+            var bodyType = types.GetReturnType(body);
+
+            // Make sure the return type matches the body's type
+            if (TypeUnifier.TryUnifyTo(body, bodyType, sig.ReturnType).TryGetValue(out var newBody)) {
+                body = newBody;
+            }
+            else {
+                throw TypeCheckingErrors.UnexpectedType(this.Location, sig.ReturnType, bodyType);
+            }
+
+            return new FunctionDeclaration(this.Location, sig, body);
         }
 
-        public void GenerateCode(CWriter writer) {
-            var path = writer.CurrentScope.Append(this.Signature.Name);
-            var sig = writer.GetFunction(path);
+        public void GenerateCode(CWriter writer) => throw new InvalidOperationException();
+    }
 
-            var returnType = writer.ConvertType(sig.ReturnType);
-            var pars = sig
+    public record FunctionDeclaration : IDeclarationTree {
+        private readonly FunctionSignature signature;
+        private readonly ISyntaxTree body;
+
+        public TokenLocation Location { get; }
+
+        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, ISyntaxTree body) {
+            this.Location = loc;
+            this.signature = sig;
+            this.body = body;
+        }
+
+        public void DeclareNames(INamesRecorder names) { }
+
+        public void DeclarePaths(INamesObserver names, ITypesRecorder paths) { }
+
+        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+
+        public void GenerateCode(CWriter writer) {
+            var returnType = writer.ConvertType(this.signature.ReturnType);
+            var pars = this.signature
                 .Parameters
                 .Select((x, i) => new CParameter(
                     writer.ConvertType(x.Type),
-                    writer.GetVariableName(sig.Path.Append(x.Name))))
+                    writer.GetVariableName(this.signature.Path.Append(x.Name))))
                 .ToArray();
 
             var stats = new List<CStatement>();
-            var bodyWriter = new CStatementWriter(stats, writer, this.Signature.Name);
-            var retExpr = this.Body.GenerateCode(bodyWriter);
+            var bodyWriter = new CStatementWriter(stats, this.signature.Path);
+            var retExpr = this.body.GenerateCode(bodyWriter);
 
-            if (sig.ReturnType != PrimitiveType.Void) {
+            if (this.signature.ReturnType != PrimitiveType.Void) {
                 bodyWriter.WriteSpacingLine();
                 bodyWriter.WriteStatement(CStatement.Return(retExpr));
             }
 
-            writer.PopScope();
-
-            var funcName = writer.GetVariableName(sig.Path);
+            var funcName = writer.GetVariableName(this.signature.Path);
             CDeclaration decl;
             CDeclaration forwardDecl;
 
-            if (sig.ReturnType == PrimitiveType.Void) {
+            if (this.signature.ReturnType == PrimitiveType.Void) {
                 decl = CDeclaration.Function(funcName, false, pars, stats);
                 forwardDecl = CDeclaration.FunctionPrototype(funcName, false, pars);
             }

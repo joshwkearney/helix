@@ -7,9 +7,9 @@ namespace Trophy.Parsing {
 
         public void DeclareNames(INamesRecorder names);
 
-        public void DeclarePaths(ITypesRecorder paths);
+        public void DeclarePaths(INamesObserver names, ITypesRecorder paths);
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types);
+        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types);
 
         public void GenerateCode(CWriter writer);
     }

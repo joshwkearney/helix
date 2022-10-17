@@ -16,21 +16,19 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public class BoolLiteral : ISyntaxTree {
+    public record BoolLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
 
         public bool Value { get; }
-
-        public TrophyType ReturnType => PrimitiveType.Bool;
 
         public BoolLiteral(TokenLocation loc, bool value) {
             this.Location = loc;
             this.Value = value;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Bool);
 
             return this;

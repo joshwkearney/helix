@@ -26,7 +26,7 @@ namespace Trophy.Features.Functions {
                 throw TypeCheckingErrors.IdentifierDefined(sig.Location, sig.Name);
             }
 
-            names.PushScope(sig.Name);
+            names = names.WithScope(sig.Name);
 
             // Declare the parameters
             foreach (var par in sig.Parameters) {
@@ -34,16 +34,12 @@ namespace Trophy.Features.Functions {
                     throw TypeCheckingErrors.IdentifierDefined(par.Location, par.Name);
                 }
             }
-
-            names.PopScope();
         }
 
         public static void DeclareSignaturePaths(FunctionSignature sig, ITypesRecorder paths) {
             // Declare this function
             paths.DeclareFunction(sig);
-            paths.DeclareVariable(sig.Path, new FunctionType(sig), false);
-
-            paths.PushScope(sig.Path);
+            paths.DeclareVariable(new VariableSignature(sig.Path, new FunctionType(sig), false));
 
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
@@ -51,10 +47,8 @@ namespace Trophy.Features.Functions {
                 var type = sig.Parameters[i].Type;
                 var path = sig.Path.Append(parsePar.Name);
 
-                paths.DeclareVariable(path, type, parsePar.IsWritable);
+                paths.DeclareVariable(new VariableSignature(path, type, parsePar.IsWritable));
             }
-
-            paths.PopScope();
         }
     }
 }

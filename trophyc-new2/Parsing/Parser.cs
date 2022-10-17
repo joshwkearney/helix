@@ -131,12 +131,12 @@
             else if (this.Peek(TokenKind.IntKeyword)) {
                 var tok = this.Advance(TokenKind.IntKeyword);
 
-                return new IdenfifierAccessSyntax(tok.Location, "int");
+                return new VariableAccessParseSyntax(tok.Location, "int");
             }
             else if (this.Peek(TokenKind.BoolKeyword)) {
                 var tok = this.Advance(TokenKind.BoolKeyword);
 
-                return new IdenfifierAccessSyntax(tok.Location, "bool");
+                return new VariableAccessParseSyntax(tok.Location, "bool");
             }
             else {
                 var next = this.Advance();

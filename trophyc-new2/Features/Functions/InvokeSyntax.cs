@@ -29,7 +29,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Functions {
-    public class InvokeParseTree : ISyntaxTree {
+    public record InvokeParseTree : ISyntaxTree {
         private readonly ISyntaxTree target;
         private readonly IReadOnlyList<ISyntaxTree> args;
 
@@ -41,10 +41,10 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
-            var target = this.target.CheckTypes(types);
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+            var target = this.target.CheckTypes(names, types);
             var targetType = types.GetReturnType(target);
 
             // Make sure the target is a function
@@ -65,7 +65,7 @@ namespace Trophy.Features.Functions {
             // Make sure the arg types line up
             for (int i = 0; i < this.args.Count; i++) {
                 var expectedType = funcType.Signature.Parameters[i].Type;
-                var arg = this.args[i].CheckTypes(types);
+                var arg = this.args[i].CheckTypes(names, types);
                 var argType = types.GetReturnType(arg);
 
                 if (TypeUnifier.TryUnifyTo(arg, argType, expectedType).TryGetValue(out var newArg)) {
@@ -82,20 +82,16 @@ namespace Trophy.Features.Functions {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
-            throw new InvalidOperationException();
-        }
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => Option.None;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
-            throw new InvalidOperationException();
-        }
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
         public CExpression GenerateCode(CStatementWriter statWriter) {
             throw new InvalidOperationException();
         }
     }
 
-    public class InvokeSyntax : ISyntaxTree {
+    public record InvokeSyntax : ISyntaxTree {
         private readonly FunctionSignature sig;
         private readonly IReadOnlyList<ISyntaxTree> args;
 
@@ -111,9 +107,9 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 

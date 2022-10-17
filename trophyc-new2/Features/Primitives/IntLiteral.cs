@@ -16,7 +16,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public class IntLiteral : ISyntaxTree {
+    public record IntLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
 
         public int Value { get; }
@@ -26,9 +26,9 @@ namespace Trophy.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Int);
 
             return this;

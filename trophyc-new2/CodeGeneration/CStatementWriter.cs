@@ -5,34 +5,16 @@ using Trophy.Features.Functions;
 using Trophy.Parsing;
 
 namespace Trophy.CodeGeneration {
-    public class CStatementWriter : ITypesObserver, INamesObserver, ISyntaxNavigator {
+    public class CStatementWriter : CWriter {
         private readonly IList<CStatement> stats;
-        private readonly CWriter writer;
 
-        public IdentifierPath CurrentScope { get; }
-
-        public CStatementWriter(IList<CStatement> stats, CWriter writer, string blockName) {
-            this.writer = writer;
+        public CStatementWriter(IList<CStatement> stats) {
             this.stats = stats;
-            this.CurrentScope = writer.CurrentScope.Append(blockName);
         }
 
-        public CStatementWriter(IList<CStatement> stats, CWriter writer) {
-            this.writer = writer;
+        public CStatementWriter(IList<CStatement> stats, IdentifierPath scope) {
             this.stats = stats;
-            this.CurrentScope = writer.CurrentScope;
-        }
-
-        public CType ConvertType(TrophyType type) {
-            return this.writer.ConvertType(type);
-        }
-
-        public string GetVariableName() {
-            return this.writer.GetVariableName();
-        }
-
-        public string GetVariableName(IdentifierPath path) {
-            return this.writer.GetVariableName(path);
+            this.CurrentScope = scope;
         }
 
         public CStatementWriter WriteStatement(CStatement stat) {
@@ -50,45 +32,12 @@ namespace Trophy.CodeGeneration {
         }
 
         public CExpression WriteImpureExpression(CType type, CExpression expr) {
-            var name = this.writer.GetVariableName();
+            var name = this.GetVariableName();
             var stat = CStatement.VariableDeclaration(type, name, expr);
 
             this.WriteStatement(stat);
 
             return CExpression.VariableLiteral(name);
-        }
-
-        // Interface implementations
-        public FunctionSignature GetFunction(IdentifierPath path) {
-            return this.writer.GetFunction(path);
-        }
-
-        public VariableSignature GetVariable(IdentifierPath path) {
-            return this.writer.GetVariable(path);
-        }
-
-        public AggregateSignature GetAggregate(IdentifierPath path) {
-            return this.writer.GetAggregate(path);
-        }
-
-        public bool IsReserved(IdentifierPath path) {
-            return this.writer.IsReserved(path);
-        }
-
-        public TrophyType GetReturnType(ISyntaxTree tree) {
-            return this.writer.GetReturnType(tree);
-        }
-
-        public Option<NameTarget> TryResolveName(IdentifierPath path) {
-            return writer.TryResolveName(path);
-        }
-
-        public void PushScope(IdentifierPath scope) {
-            throw new InvalidOperationException();
-        }
-
-        public void PopScope() {
-            throw new InvalidOperationException();
         }
     }
 }

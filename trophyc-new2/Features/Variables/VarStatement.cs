@@ -25,58 +25,84 @@ namespace Trophy.Parsing {
             var assign = this.TopExpression();
             var loc = startLok.Span(assign.Location);
 
-            return new VarStatement(loc, name, assign, isWritable);
+            return new VarParseStatement(loc, name, assign, isWritable);
         }
     }
 }
 
 namespace Trophy {
-    public class VarStatement : ISyntaxTree {
+    public record VarParseStatement : ISyntaxTree {
         private readonly string name;
         private readonly ISyntaxTree assign;
         private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
-        public VarStatement(TokenLocation loc, string name, ISyntaxTree assign, bool isWritable) {
+        public VarParseStatement(TokenLocation loc, string name, ISyntaxTree assign, bool isWritable) {
             this.Location = loc;
             this.name = name;
             this.assign = assign;
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
             // Type check the assignment value
-            if (!this.assign.CheckTypes(types).ToRValue(types).TryGetValue(out var assign)) {
+            if (!this.assign.CheckTypes(names, types).ToRValue(types).TryGetValue(out var assign)) {
                 throw TypeCheckingErrors.RValueRequired(this.assign.Location);
             }
 
             var assignType = types.GetReturnType(assign);
+            var path = types.CurrentScope.Append(this.name);
+            var sig = new VariableSignature(path, assignType, this.isWritable);
 
             // Declare this variable and make sure we're not shadowing another variable
-            if (!types.DeclareVariable(this.name, assignType, this.isWritable)) {
+            if (!types.DeclareVariable(sig)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.name);
             }
 
             // Set the return type of the new syntax tree
-            var result = new VarStatement(this.Location, this.name, assign, this.isWritable);
+            var result = new VarStatement(this.Location, sig, assign);
             types.SetReturnType(result, PrimitiveType.Void);
             //types.SetReturnType(result, new PointerType(assignType, this.isWritable));
 
             return result;
         }
 
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => Option.None;
+
+        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+
+        public CExpression GenerateCode(CStatementWriter writer) {
+            throw new InvalidOperationException();
+        }
+    }
+
+    public record VarStatement : ISyntaxTree {
+        private readonly ISyntaxTree assign;
+        private readonly VariableSignature signature;
+
+        public TokenLocation Location { get; }
+
+        public VarStatement(TokenLocation loc, VariableSignature sig, ISyntaxTree assign) {
+            this.Location = loc;
+            this.signature = sig;
+            this.assign = assign;
+        }
+
+        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
+
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
         public CExpression GenerateCode(CStatementWriter writer) {
-            var path = writer.TryFindPath(this.name).GetValue();
-            var type = writer.ConvertType(writer.GetReturnType(this.assign));
+            var type = writer.ConvertType(this.signature.Type);
             var value = this.assign.GenerateCode(writer);
-            var name = writer.GetVariableName(path);
+            var name = writer.GetVariableName(this.signature.Path);
             var assign = CStatement.VariableDeclaration(type, name, value);
 
             writer.WriteSpacingLine();

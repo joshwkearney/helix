@@ -32,7 +32,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public class TypePointerSyntax : ISyntaxTree {
+    public record TypePointerSyntax : ISyntaxTree {
         private readonly ISyntaxTree inner;
         private readonly bool isWritable;
 
@@ -44,13 +44,13 @@ namespace Trophy.Features.Primitives {
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) {
-            return this.inner.ToType(types)
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) {
+            return this.inner.ToType(types, currentScope)
                 .Select(x => new PointerType(x, this.isWritable))
                 .Select(x => (TrophyType)x);
         }
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 

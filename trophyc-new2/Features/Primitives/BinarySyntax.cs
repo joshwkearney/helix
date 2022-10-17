@@ -133,7 +133,7 @@ namespace Trophy.Features.Primitives {
         GreaterThanOrEqualTo, LessThanOrEqualTo
     }
 
-    public class BinarySyntax : ISyntaxTree {
+    public record BinarySyntax : ISyntaxTree {
         private static readonly Dictionary<BinaryOperationKind, TrophyType> intOperations = new() {
             { BinaryOperationKind.Add,                  PrimitiveType.Int },
             { BinaryOperationKind.Subtract,             PrimitiveType.Int },
@@ -161,22 +161,25 @@ namespace Trophy.Features.Primitives {
 
         private readonly ISyntaxTree left, right;
         private readonly BinaryOperationKind op;
+        private readonly bool isTypeChecked = false;
 
         public TokenLocation Location { get; }
 
-        public BinarySyntax(TokenLocation loc, ISyntaxTree left, ISyntaxTree right, BinaryOperationKind op) {
+        public BinarySyntax(TokenLocation loc, ISyntaxTree left, ISyntaxTree right, 
+                            BinaryOperationKind op, bool isTypeChecked = false) {
             this.Location = loc;
             this.left = left;
             this.right = right;
             this.op = op;
+            this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
             // Delegate type resolution
-            var left = this.left.CheckTypes(types);
-            var right = this.right.CheckTypes(types);
+            var left = this.left.CheckTypes(names, types);
+            var right = this.right.CheckTypes(names, types);
 
             var leftType = types.GetReturnType(left);
             var rightType = types.GetReturnType(right);
@@ -224,13 +227,15 @@ namespace Trophy.Features.Primitives {
                 throw new Exception("This should never happen");
             }
 
-            var result = new BinarySyntax(this.Location, left, right, this.op);
+            var result = new BinarySyntax(this.Location, left, right, this.op, true);
             types.SetReturnType(result, returnType);
 
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+            return this.isTypeChecked ? this : Option.None;
+        }
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 

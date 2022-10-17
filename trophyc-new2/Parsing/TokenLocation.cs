@@ -1,5 +1,5 @@
 ﻿namespace Trophy.Parsing {
-    public struct TokenLocation {
+    public record struct TokenLocation {
         public int StartIndex { get; }
 
         public int Length { get; }

@@ -15,18 +15,16 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public class VoidLiteral : ISyntaxTree {
+    public record VoidLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
 
         public VoidLiteral(TokenLocation loc) {
             this.Location = loc;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) {
-            return PrimitiveType.Void;
-        }
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => PrimitiveType.Void;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Void);
 
             return this;

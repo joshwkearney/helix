@@ -24,7 +24,7 @@
         Identifier, Whitespace, IntLiteral, BoolLiteral, EOF
     }
 
-    public struct Token {
+    public record struct Token {
         public TokenLocation Location { get; }
 
         public TokenKind Kind { get; }

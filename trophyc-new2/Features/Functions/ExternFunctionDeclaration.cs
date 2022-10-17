@@ -20,7 +20,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Functions {
-    public class ExternFunctionParseSignature : IDeclarationTree {
+    public record ExternFunctionParseSignature : IDeclarationTree {
         public TokenLocation Location { get; }
 
         public FunctionParseSignature Signature { get; }
@@ -38,32 +38,53 @@ namespace Trophy.Features.Functions {
             FunctionsHelper.DeclareSignatureNames(this.Signature, names);
         }
 
-        public void DeclarePaths(ITypesRecorder types) {
-            var sig = this.Signature.ResolveNames(types);
+        public void DeclarePaths(INamesObserver names, ITypesRecorder types) {
+            var sig = this.Signature.ResolveNames(names, types.CurrentScope);
 
             FunctionsHelper.DeclareSignaturePaths(sig, types);
         }
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
+        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+            var path = names.TryFindPath(types.CurrentScope, this.Signature.Name).GetValue();
+            var sig = types.GetFunction(path);
+
+            return new ExternFunctionSignature(this.Location, sig);
+        }
+
+        public void GenerateCode(CWriter writer) => throw new InvalidOperationException();
+    }
+
+    public record ExternFunctionSignature : IDeclarationTree {
+        private readonly FunctionSignature signature;
+
+        public TokenLocation Location { get; }
+
+        public ExternFunctionSignature(TokenLocation loc, FunctionSignature sig) {
+            this.Location = loc;
+            this.signature = sig;
+        }
+
+        public void DeclareNames(INamesRecorder names) { }
+
+        public void DeclarePaths(INamesObserver names, ITypesRecorder types) { }
+
+        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
 
         public void GenerateCode(CWriter writer) {
-            var path = writer.TryFindPath(this.Signature.Name).GetValue();
-            var sig = writer.GetFunction(path);
-
-            var returnType = writer.ConvertType(sig.ReturnType);
-            var pars = sig
+            var returnType = writer.ConvertType(this.signature.ReturnType);
+            var pars = this.signature
                 .Parameters
                 .Select((x, i) => new CParameter(
                     writer.ConvertType(x.Type),
-                    writer.GetVariableName(sig.Path.Append(x.Name))))
+                    writer.GetVariableName(this.signature.Path.Append(x.Name))))
                 .ToArray();
 
-            var funcName = writer.GetVariableName(sig.Path);
+            var funcName = writer.GetVariableName(this.signature.Path);
             var stats = new List<CStatement>();
 
             CDeclaration forwardDecl;
 
-            if (sig.ReturnType == PrimitiveType.Void) {
+            if (this.signature.ReturnType == PrimitiveType.Void) {
                 forwardDecl = CDeclaration.FunctionPrototype(funcName, false, pars);
             }
             else {

@@ -35,7 +35,7 @@ namespace Trophy.Analysis.Unification {
 }
 
 namespace Trophy.Features.Primitives {
-    public class IntSyntaxAdapter : ISyntaxTree {
+    public record IntSyntaxAdapter : ISyntaxTree {
         private readonly ISyntaxTree inner;
 
         public TokenLocation Location => this.inner.Location;
@@ -44,11 +44,11 @@ namespace Trophy.Features.Primitives {
             this.inner = inner;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) {
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
             return this;
         }
 

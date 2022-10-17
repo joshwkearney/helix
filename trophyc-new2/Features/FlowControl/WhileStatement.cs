@@ -21,27 +21,28 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public class WhileStatement : ISyntaxTree {
+    public record WhileStatement : ISyntaxTree {
         private readonly ISyntaxTree cond, body;
+        private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public WhileStatement(TokenLocation location, ISyntaxTree cond, ISyntaxTree body) {
+        public WhileStatement(TokenLocation location, ISyntaxTree cond, 
+                              ISyntaxTree body, bool isTypeChecked = false) {
             this.Location = location;
             this.cond = cond;
             this.body = body;
+            this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) {
-            return Option.None;
-        }
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
-            if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+            if (!this.cond.CheckTypes(names, types).ToRValue(types).TryGetValue(out var cond)) {
                 throw TypeCheckingErrors.RValueRequired(this.cond.Location);
             }
 
-            if (!this.body.CheckTypes(types).ToRValue(types).TryGetValue(out var body)) {
+            if (!this.body.CheckTypes(names, types).ToRValue(types).TryGetValue(out var body)) {
                 throw TypeCheckingErrors.RValueRequired(this.body.Location);
             }
 
@@ -53,23 +54,29 @@ namespace Trophy.Features.FlowControl {
                 throw TypeCheckingErrors.UnexpectedType(this.cond.Location, PrimitiveType.Bool, condType);
             }
 
-            var result = new WhileStatement(this.Location, cond, body);
+            var result = new WhileStatement(this.Location, cond, body, true);
             types.SetReturnType(result, PrimitiveType.Void);
 
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+            return this.isTypeChecked ? this : Option.None;
+        }
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
         public CExpression GenerateCode(CStatementWriter writer) {
+            if (!this.isTypeChecked) {
+                throw new InvalidOperationException();
+            }
+
             var loopBody = new List<CStatement>();
-            var bodyWriter = new CStatementWriter(loopBody, writer);
+            var bodyWriter = new CStatementWriter(loopBody);
             var cond = CExpression.Not(this.cond.GenerateCode(bodyWriter));
 
-            loopBody.Add(CStatement.If(cond, new[] { CStatement.Break() }));
-            loopBody.Add(CStatement.NewLine());
+            bodyWriter.WriteStatement(CStatement.If(cond, new[] { CStatement.Break() }));
+            bodyWriter.WriteSpacingLine();
 
             this.body.GenerateCode(bodyWriter);
 

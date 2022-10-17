@@ -19,7 +19,7 @@ namespace Trophy {
                 var parser = new Parser(lexer.GetTokens());
                 var names = new NamesRecorder();
                 var types = new TypesRecorder(names);
-                var writer = new CWriter(names, types);
+                var writer = new CWriter();
 
                 var parseStats = parser.Parse();
 
@@ -28,10 +28,10 @@ namespace Trophy {
                 }
 
                 foreach (var stat in parseStats) {
-                    stat.DeclarePaths(types);
+                    stat.DeclarePaths(types, types);
                 }
 
-                var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
+                var stats = parseStats.Select(x => x.CheckTypes(types, types)).ToArray();
 
                 foreach (var stat in stats) {
                     stat.GenerateCode(writer);

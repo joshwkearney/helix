@@ -6,9 +6,9 @@ namespace Trophy.Parsing {
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> ToType(INamesObserver names);
+        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope);
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types);
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types);
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types);
 

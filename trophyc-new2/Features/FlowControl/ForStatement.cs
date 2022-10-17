@@ -29,7 +29,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public class ForStatement : ISyntaxTree {
+    public record ForStatement : ISyntaxTree {
         private readonly string iteratorName;
         private readonly ISyntaxTree startIndex, endIndex, body;
 
@@ -43,25 +43,25 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
             // Rewrite for syntax to use while loops
             var start = new AsParseTree(
                 this.startIndex.Location, 
                 this.startIndex, 
-                new IdenfifierAccessSyntax(this.startIndex.Location, "int"));
+                new VariableAccessParseSyntax(this.startIndex.Location, "int"));
 
             var end = new AsParseTree(
                 this.endIndex.Location,
                 this.endIndex,
-                new IdenfifierAccessSyntax(this.startIndex.Location, "int"));
+                new VariableAccessParseSyntax(this.startIndex.Location, "int"));
 
             var counterName = types.GetVariableName();
-            var counterDecl = new VarStatement(this.Location, counterName, start, true);
+            var counterDecl = new VarParseStatement(this.Location, counterName, start, true);
 
-            var counterAccess = new IdenfifierAccessSyntax(this.Location, counterName);
-            var iteratorDecl = new VarStatement(this.Location, this.iteratorName, counterAccess, false);
+            var counterAccess = new VariableAccessParseSyntax(this.Location, counterName);
+            var iteratorDecl = new VarParseStatement(this.Location, this.iteratorName, counterAccess, false);
 
             var comp = new BinarySyntax(this.Location, counterAccess, end, BinaryOperationKind.LessThan);
 
@@ -86,7 +86,7 @@ namespace Trophy.Features.FlowControl {
                     }))
             });
 
-            return block.CheckTypes(types);
+            return block.CheckTypes(names, types);
         }
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {

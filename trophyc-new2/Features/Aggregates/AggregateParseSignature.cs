@@ -2,7 +2,7 @@
 using Trophy.Parsing;
 
 namespace Trophy.Features.Aggregates {
-    public class AggregateParseSignature {
+    public record AggregateParseSignature {
         public string Name { get; }
 
         public IReadOnlyList<ParseAggregateMember> Members { get; }
@@ -12,12 +12,12 @@ namespace Trophy.Features.Aggregates {
             this.Members = mems;
         }
 
-        public AggregateSignature ResolveNames(INamesObserver names) {
-            var path = names.TryFindPath(this.Name).GetValue();
+        public AggregateSignature ResolveNames(INamesObserver names, IdentifierPath scope) {
+            var path = names.TryFindPath(scope, this.Name).GetValue();
             var mems = new List<AggregateMember>();
 
             foreach (var mem in this.Members) {
-                if (!mem.MemberType.ToType(names).TryGetValue(out var type)) {
+                if (!mem.MemberType.ToType(names, scope).TryGetValue(out var type)) {
                     throw TypeCheckingErrors.ExpectedTypeExpression(mem.Location);
                 }
 
@@ -28,7 +28,7 @@ namespace Trophy.Features.Aggregates {
         }
     }
 
-    public class ParseAggregateMember {
+    public record ParseAggregateMember {
         public string MemberName { get; }
 
         public ISyntaxTree MemberType { get; }

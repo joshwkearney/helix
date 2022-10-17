@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Trophy.Features.Aggregates;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
@@ -11,65 +12,8 @@ namespace Trophy.Analysis {
     public enum NameTarget {
         Function, Variable, Aggregate, Reserved
     }
-
-    public static class RecorderExtensions {
-        public static void PushScope(this ISyntaxNavigator syntax, string name) {
-            syntax.PushScope(syntax.CurrentScope.Append(name));
-        }
-
-
-        public static bool DeclareName(this INamesRecorder names, string name, NameTarget target) {
-            var path = names.CurrentScope.Append(name);
-
-            return names.DeclareName(path, target);
-        }
-
-        public static bool DeclareVariable(this ITypesRecorder types, string name, 
-                                           TrophyType type, bool isWritable) {
-
-            var path = types.CurrentScope.Append(name);
-            var sig = new VariableSignature(path, type, isWritable);
-
-            return types.DeclareVariable(sig);
-        }
-
-        public static bool DeclareVariable(this ITypesRecorder types, IdentifierPath path,
-                                           TrophyType type, bool isWritable) {
-
-            var sig = new VariableSignature(path, type, isWritable);
-
-            return types.DeclareVariable(sig);
-        }
-
-        public static Option<NameTarget> TryResolveName(this INamesObserver names, string name) {
-            return ResolveNameHelper(names, name).Select(x => x.target);
-        }
-
-        public static Option<IdentifierPath> TryFindPath(this INamesObserver names, string name) {
-            return ResolveNameHelper(names, name).Select(x => x.path);
-        }
-
-        private static Option<(IdentifierPath path, NameTarget target)> ResolveNameHelper(INamesObserver names, string name) {
-            var scope = names.CurrentScope.Append(name);
-
-            while (true) {
-                var path = scope.Append(name);
-
-                if (names.TryResolveName(path).TryGetValue(out var target)) {
-                    return (path, target);
-                }
-
-                if (scope.Segments.Any()) {
-                    scope = scope.Pop();
-                }
-                else {
-                    return Option.None;
-                }
-            }
-        }
-    }
-
-    public struct VariableSignature { 
+    
+    public record VariableSignature { 
         public TrophyType Type { get; }
 
         public bool IsWritable { get; }
@@ -83,24 +27,49 @@ namespace Trophy.Analysis {
         }
     }
 
-    public interface ISyntaxNavigator {
-        public IdentifierPath CurrentScope { get; }
-
-        public void PushScope(IdentifierPath scope);
-
-        public void PopScope();
-    }
-
     public interface INamesObserver {
-        public IdentifierPath CurrentScope { get; }
-
         public Option<NameTarget> TryResolveName(IdentifierPath path);
+
+        // Mixins
+        public Option<IdentifierPath> TryFindPath(IdentifierPath scope, string name) {
+            scope = scope.Append(name);
+
+            while (true) {
+                var path = scope.Append(name);
+
+                if (this.TryResolveName(path).TryGetValue(out var target)) {
+                    return path;
+                }
+
+                if (scope.Segments.Any()) {
+                    scope = scope.Pop();
+                }
+                else {
+                    return Option.None;
+                }
+            }
+        }
     }
 
-    public interface INamesRecorder : INamesObserver, ISyntaxNavigator {
-        public new IdentifierPath CurrentScope { get; }
+    public interface INamesRecorder : INamesObserver {
+        public IdentifierPath CurrentScope { get; }
+
+        public INamesRecorder WithScope(IdentifierPath newScope);
 
         public bool DeclareName(IdentifierPath path, NameTarget target);
+
+        // Mixins
+        public bool DeclareName(string name, NameTarget target) {
+            var path = this.CurrentScope.Append(name);
+
+            return this.DeclareName(path, target);
+        }
+
+        public INamesRecorder WithScope(string name) {
+            var scope = this.CurrentScope.Append(name);
+
+            return this.WithScope(scope);
+        }
     }
 
     public interface ITypesObserver {      
@@ -115,8 +84,8 @@ namespace Trophy.Analysis {
         public TrophyType GetReturnType(ISyntaxTree tree);
     }
 
-    public interface ITypesRecorder : ITypesObserver, INamesObserver, ISyntaxNavigator {
-        public new IdentifierPath CurrentScope { get; }
+    public interface ITypesRecorder : ITypesObserver, INamesRecorder {
+        public new ITypesRecorder WithScope(IdentifierPath newScope);
 
         public bool DeclareFunction(FunctionSignature sig);
 
@@ -124,7 +93,7 @@ namespace Trophy.Analysis {
 
         public bool DeclareAggregate(AggregateSignature sig);
 
-        public bool DeclareReserved(IdentifierPath path);
+        public void DeclareReserved(IdentifierPath path);
 
         public void SetReturnType(ISyntaxTree tree, TrophyType type);
 
@@ -132,7 +101,7 @@ namespace Trophy.Analysis {
     }
 
     public class NamesRecorder : INamesRecorder {
-        private readonly Stack<IdentifierPath> scopes = new();
+        private readonly Option<INamesRecorder> prev;
 
         private readonly Dictionary<IdentifierPath, NameTarget> targets = new() {
             { new IdentifierPath("int"), NameTarget.Reserved },
@@ -140,13 +109,27 @@ namespace Trophy.Analysis {
             { new IdentifierPath("void"), NameTarget.Reserved }
         };
 
-        public IdentifierPath CurrentScope => this.scopes.Peek();
+        public IdentifierPath CurrentScope { get; }
 
         public NamesRecorder() {
-            this.scopes.Push(new IdentifierPath());
+            this.prev = Option.None;
+            this.CurrentScope = new IdentifierPath();
+        }
+
+        private NamesRecorder(INamesRecorder prev, IdentifierPath scope) {
+            this.prev = Option.Some(prev);
+            this.CurrentScope = scope;
+        }
+
+        public INamesRecorder WithScope(IdentifierPath newScope) {
+            return new NamesRecorder(this, newScope);
         }
 
         public bool DeclareName(IdentifierPath path, NameTarget target) {
+            if (this.prev.TryGetValue(out var prev)) {
+                return prev.DeclareName(path, target);
+            }
+
             if (this.targets.TryGetValue(path, out var old) && old != target) {
                 return false;
             }
@@ -155,11 +138,11 @@ namespace Trophy.Analysis {
             return true;
         }
 
-        public void PopScope() => this.scopes.Pop();
-
-        public void PushScope(IdentifierPath scope) => this.scopes.Push(scope);
-
         public Option<NameTarget> TryResolveName(IdentifierPath path) {
+            if (this.prev.TryGetValue(out var prev)) {
+                return prev.TryResolveName(path);
+            }
+
             return this.targets.GetValueOrNone(path);
         }
     }
@@ -167,9 +150,10 @@ namespace Trophy.Analysis {
     public class TypesRecorder : ITypesRecorder {
         private int tempCounter = 0;
 
+        private readonly Option<ITypesRecorder> prev;
         private readonly INamesRecorder names;
-        private readonly Stack<IdentifierPath> scopes = new();
 
+        private readonly Dictionary<IdentifierPath, NameTarget> nameTargets = new();
         private readonly Dictionary<IdentifierPath, FunctionSignature> functions = new();
         private readonly Dictionary<IdentifierPath, VariableSignature> variables = new();
         private readonly Dictionary<IdentifierPath, AggregateSignature> aggregates = new();
@@ -180,23 +164,51 @@ namespace Trophy.Analysis {
             new IdentifierPath("void")
         };
 
-        public IdentifierPath CurrentScope => this.scopes.Peek();
+        public IdentifierPath CurrentScope { get; }
 
         public TypesRecorder(INamesRecorder names) {
+            this.prev = Option.None;
             this.names = names;
-            this.scopes.Push(new IdentifierPath());
+            this.CurrentScope = new IdentifierPath();
         }
 
-        public void PopScope() => this.scopes.Pop();
+        private TypesRecorder(INamesRecorder names, ITypesRecorder prev, IdentifierPath newScope) {
+            this.prev = Option.Some(prev);
+            this.names = names;
+            this.CurrentScope = newScope;
+        }
 
-        public void PushScope(IdentifierPath scope) => this.scopes.Push(scope);
+        public ITypesRecorder WithScope(IdentifierPath newScope) {
+            return new TypesRecorder(this.names, this, newScope);
+        }
+
+        INamesRecorder INamesRecorder.WithScope(IdentifierPath newScope) {
+            return this.WithScope(newScope);
+        }
+
+        public bool DeclareName(IdentifierPath path, NameTarget target) {
+            if (this.nameTargets.TryGetValue(path, out var old) && old != target) {
+                return false;
+            }
+
+            this.nameTargets[path] = target;
+            return true;
+        }
 
         public Option<NameTarget> TryResolveName(IdentifierPath path) {
+            if (this.nameTargets.TryGetValue(path, out var value)) {
+                return value;
+            }
+
             return this.names.TryResolveName(path);
         }
 
         public bool DeclareFunction(FunctionSignature sig) {
-            if (!names.DeclareName(sig.Path, NameTarget.Function)) {
+            if (!this.DeclareName(sig.Path, NameTarget.Function)) {
+                return false;
+            }
+
+            if (this.functions.TryGetValue(sig.Path, out var old) && old != sig) {
                 return false;
             }
 
@@ -205,7 +217,11 @@ namespace Trophy.Analysis {
         }
 
         public bool DeclareVariable(VariableSignature sig) {
-            if (!names.DeclareName(sig.Path, NameTarget.Variable)) {
+            if (!this.DeclareName(sig.Path, NameTarget.Variable)) {
+                return false;
+            }
+
+            if (this.variables.TryGetValue(sig.Path, out var old) && old != sig) {
                 return false;
             }
 
@@ -214,7 +230,11 @@ namespace Trophy.Analysis {
         }
 
         public bool DeclareAggregate(AggregateSignature sig) {
-            if (!names.DeclareName(sig.Path, NameTarget.Aggregate)) {
+            if (!this.DeclareName(sig.Path, NameTarget.Aggregate)) {
+                return false;
+            }
+
+            if (this.aggregates.TryGetValue(sig.Path, out var old) && old != sig) {
                 return false;
             }
 
@@ -222,13 +242,9 @@ namespace Trophy.Analysis {
             return true;
         }
 
-        public bool DeclareReserved(IdentifierPath path) {
-            if (!names.DeclareName(path, NameTarget.Reserved)) {
-                return false;
-            }
-
+        public void DeclareReserved(IdentifierPath path) {
+            this.DeclareName(path, NameTarget.Reserved);
             this.reserved.Add(path);
-            return true;
         }
 
         public void SetReturnType(ISyntaxTree tree, TrophyType type) {
@@ -236,23 +252,63 @@ namespace Trophy.Analysis {
         }
 
         public FunctionSignature GetFunction(IdentifierPath path) {
-            return this.functions[path];
+            if (this.functions.TryGetValue(path, out var value)) {
+                return value;
+            }
+
+            if (this.prev.Select(x => x.GetFunction(path)).TryGetValue(out value)) {
+                return value;
+            }
+
+            throw new Exception();
         }
 
         public VariableSignature GetVariable(IdentifierPath path) {
-            return this.variables[path];
+            if (this.variables.TryGetValue(path, out var value)) {
+                return value;
+            }
+
+            if (this.prev.Select(x => x.GetVariable(path)).TryGetValue(out value)) {
+                return value;
+            }
+
+            throw new Exception();
         }
 
         public AggregateSignature GetAggregate(IdentifierPath path) {
-            return this.aggregates[path];
+            if (this.aggregates.TryGetValue(path, out var value)) {
+                return value;
+            }
+
+            if (this.prev.Select(x => x.GetAggregate(path)).TryGetValue(out value)) {
+                return value;
+            }
+
+            throw new Exception();
         }
 
         public bool IsReserved(IdentifierPath path) {
-            return this.reserved.Contains(path);
+            if (this.reserved.Contains(path)) {
+                return true;
+            }
+
+            if (this.prev.Select(x => x.IsReserved(path)).HasValue) {
+                return true;
+            }
+
+            return false;
         }
 
         public TrophyType GetReturnType(ISyntaxTree tree) {
-            return this.returnTypes[tree];
+            if (this.returnTypes.TryGetValue(tree, out var value)) {
+                return value;
+            }
+
+            if (this.prev.Select(x => x.GetReturnType(tree)).TryGetValue(out value)) {
+                return value;
+            }
+
+            throw new Exception();
         }
 
         public string GetVariableName() {

@@ -23,35 +23,34 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public class BlockSyntax : ISyntaxTree {
+    public record BlockSyntax : ISyntaxTree {
         private static int idCounter = 0;
 
         private readonly IReadOnlyList<ISyntaxTree> statements;
         private readonly int id;
+        private readonly bool isTypeChecked;
 
-        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements) {
+        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements, 
+                           bool isTypeChecked = false) {
             this.Location = location;
             this.statements = statements;
             this.id = idCounter++;
+            this.isTypeChecked = isTypeChecked;
         }
 
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> ToType(INamesObserver types) {
-            return Option.None;
-        }
+        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
-            var blockName = "$block" + this.id;
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+            var newScope = types.CurrentScope.Append("$block" + this.id);
+            var bodyTypes = types.WithScope(newScope);
 
-            types.PushScope(blockName);
-            var stats = this.statements.Select(x => x.CheckTypes(types)).ToArray();
-            types.PopScope();
-
-            var result = new BlockSyntax(this.Location, stats);
+            var stats = this.statements.Select(x => x.CheckTypes(bodyTypes, bodyTypes)).ToArray();
+            var result = new BlockSyntax(this.Location, stats, true);
             var returnType = stats
                 .LastOrNone()
-                .Select(types.GetReturnType)
+                .Select(bodyTypes.GetReturnType)
                 .OrElse(() => PrimitiveType.Void);
 
             types.SetReturnType(result, returnType);
@@ -59,11 +58,17 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+            return this.isTypeChecked ? this : Option.None;
+        }
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
         public CExpression GenerateCode(CStatementWriter writer) {
+            if (!this.isTypeChecked) {
+                throw new InvalidOperationException();
+            }
+
             if (this.statements.Any()) {
                 foreach (var stat in this.statements.SkipLast(1)) {
                     stat.GenerateCode(writer);

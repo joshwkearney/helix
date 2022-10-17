@@ -23,22 +23,25 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Variables {
-    public class AssignmentStatement : ISyntaxTree {
+    public record AssignmentStatement : ISyntaxTree {
         private readonly ISyntaxTree target, assign;
+        private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, ISyntaxTree assign) {
+        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, 
+                                   ISyntaxTree assign, bool isTypeChecked = false) {
             this.Location = loc;
             this.target = target;
             this.assign = assign;
+            this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names) => Option.None;
+        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
-            var targetOp = this.target.CheckTypes(types).ToLValue(types);
-            var assignOp = this.assign.CheckTypes(types).ToRValue(types);
+        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+            var targetOp = this.target.CheckTypes(names, types).ToLValue(types);
+            var assignOp = this.assign.CheckTypes(names, types).ToRValue(types);
 
             // Make sure the target is an lvalue
             if (!targetOp.TryGetValue(out var target)) {
@@ -69,13 +72,15 @@ namespace Trophy.Features.Variables {
                     assignType);
             }
 
-            var result = new AssignmentStatement(this.Location, target, assign);
+            var result = new AssignmentStatement(this.Location, target, assign, true);
             types.SetReturnType(result, PrimitiveType.Void);
 
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+            return this.isTypeChecked ? this : Option.None;
+        }
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
