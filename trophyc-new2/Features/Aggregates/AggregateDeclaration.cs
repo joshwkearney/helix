@@ -4,6 +4,7 @@ using Trophy.Generation.CSyntax;
 using Trophy.Features.Aggregates;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Analysis.Types;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -100,6 +101,16 @@ namespace Trophy.Features.Aggregates {
         public IDeclaration CheckTypes(ITypesRecorder types) {
             var path = types.TryFindPath(this.signature.Name).GetValue();
             var sig = types.GetAggregate(path);
+
+            var structType = new NamedType(path);
+            var isRecursive = sig.Members
+                .SelectMany(x => x.MemberType.GetContainedValueTypes(types))
+                .Contains(structType);
+
+            // Make sure this is not a recursive struct or union
+            if (isRecursive) {
+                throw TypeCheckingErrors.CircularValueObject(this.Location, structType);
+            }
 
             return new AggregateDeclaration(this.Location, sig, this.kind);
         }

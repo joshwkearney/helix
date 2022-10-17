@@ -30,5 +30,9 @@ namespace Trophy.Analysis.Types {
         }
 
         public virtual TrophyType ToMutableType() => this;
+
+        public virtual IEnumerable<TrophyType> GetContainedValueTypes(ITypesRecorder types) {
+            yield return this;
+        }
     }
 }
