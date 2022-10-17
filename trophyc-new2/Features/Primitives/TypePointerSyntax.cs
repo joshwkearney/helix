@@ -44,13 +44,13 @@ namespace Trophy.Features.Primitives {
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) {
-            return this.inner.ToType(types, currentScope)
+        public Option<TrophyType> ToType(INamesRecorder names) {
+            return this.inner.ToType(names)
                 .Select(x => new PointerType(x, this.isWritable))
                 .Select(x => (TrophyType)x);
         }
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 

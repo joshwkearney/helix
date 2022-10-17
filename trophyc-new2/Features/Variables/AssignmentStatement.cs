@@ -37,11 +37,11 @@ namespace Trophy.Features.Variables {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
-            var targetOp = this.target.CheckTypes(names, types).ToLValue(types);
-            var assignOp = this.assign.CheckTypes(names, types).ToRValue(types);
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            var targetOp = this.target.CheckTypes(types).ToLValue(types);
+            var assignOp = this.assign.CheckTypes(types).ToRValue(types);
 
             // Make sure the target is an lvalue
             if (!targetOp.TryGetValue(out var target)) {

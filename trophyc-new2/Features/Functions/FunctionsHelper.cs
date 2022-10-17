@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Trophy.Analysis;
+using Trophy.Features.Variables;
 using Trophy.Parsing;
 
 namespace Trophy.Features.Functions {

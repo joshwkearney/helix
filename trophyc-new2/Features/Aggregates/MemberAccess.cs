@@ -33,12 +33,12 @@ namespace Trophy.Features.Aggregates {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) {
+        public Option<TrophyType> ToType(INamesRecorder names) {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
-            if (this.target.CheckTypes(names, types).ToRValue(types).TryGetValue(out var target)) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            if (this.target.CheckTypes(types).ToRValue(types).TryGetValue(out var target)) {
                 throw TypeCheckingErrors.RValueRequired(this.target.Location);
             }
 
@@ -48,7 +48,7 @@ namespace Trophy.Features.Aggregates {
             if (targetType.AsNamedType().Select(x => x.FullName).TryGetValue(out var path)) {
 
                 // If this is a struct or union we can access the fields
-                if (names.TryResolveName(path).TryGetValue(out var name)) {
+                if (types.TryResolveName(path).TryGetValue(out var name)) {
                     if (name == NameTarget.Aggregate) {
 
                         var sig = types.GetAggregate(path);

@@ -92,13 +92,13 @@ namespace Trophy.Features.Functions {
             FunctionsHelper.DeclareSignatureNames(this.signature, names);
         }
 
-        public void DeclarePaths(INamesObserver names, ITypesRecorder types) {
-            var sig = this.signature.ResolveNames(names, types.CurrentScope);
+        public void DeclareTypes(ITypesRecorder types) {
+            var sig = this.signature.ResolveNames(types);
 
             FunctionsHelper.DeclareSignaturePaths(sig, types);
         }
 
-        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public IDeclarationTree CheckTypes(ITypesRecorder types) {
             var path = types.CurrentScope.Append(this.signature.Name);
             var sig = types.GetFunction(path);
             var body = this.body;
@@ -114,7 +114,7 @@ namespace Trophy.Features.Functions {
             types = types.WithScope(sig.Path);
 
             // Make sure the body is an rvalue
-            if (!body.CheckTypes(names, types).ToRValue(types).TryGetValue(out body)) {
+            if (!body.CheckTypes(types).ToRValue(types).TryGetValue(out body)) {
                 throw TypeCheckingErrors.RValueRequired(this.body.Location);
             }
 
@@ -148,9 +148,9 @@ namespace Trophy.Features.Functions {
 
         public void DeclareNames(INamesRecorder names) { }
 
-        public void DeclarePaths(INamesObserver names, ITypesRecorder paths) { }
+        public void DeclareTypes(ITypesRecorder paths) { }
 
-        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(CWriter writer) {
             var returnType = writer.ConvertType(this.signature.ReturnType);

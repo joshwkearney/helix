@@ -40,17 +40,17 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             var newScope = types.CurrentScope.Append("$block" + this.id);
-            var bodyTypes = types.WithScope(newScope);
+            types = types.WithScope(newScope);
 
-            var stats = this.statements.Select(x => x.CheckTypes(bodyTypes, bodyTypes)).ToArray();
+            var stats = this.statements.Select(x => x.CheckTypes(types)).ToArray();
             var result = new BlockSyntax(this.Location, stats, true);
             var returnType = stats
                 .LastOrNone()
-                .Select(bodyTypes.GetReturnType)
+                .Select(types.GetReturnType)
                 .OrElse(() => PrimitiveType.Void);
 
             types.SetReturnType(result, returnType);

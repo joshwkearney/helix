@@ -24,9 +24,9 @@ namespace Trophy {
             this.name = name;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) {
+        public Option<TrophyType> ToType(INamesRecorder names) {
             // Make sure this name exists
-            if (!names.TryFindPath(currentScope, this.name).TryGetValue(out var path)) {
+            if (!names.TryFindPath(this.name).TryGetValue(out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
@@ -54,14 +54,14 @@ namespace Trophy {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             // Make sure this name exists
-            if (!names.TryFindPath(types.CurrentScope, this.name).TryGetValue(out var path)) {
+            if (!types.TryFindPath(this.name).TryGetValue(out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
             // Make sure this name exists
-            if (!names.TryResolveName(path).TryGetValue(out var target)) {
+            if (!types.TryResolveName(path).TryGetValue(out var target)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
@@ -95,9 +95,9 @@ namespace Trophy {
             this.variablePath = path;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
             // If we can't be an rvalue we definitely can't be an lvalue
@@ -135,9 +135,9 @@ namespace Trophy {
             this.path = path;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => Option.None;
 

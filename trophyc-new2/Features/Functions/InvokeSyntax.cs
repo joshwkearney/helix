@@ -41,10 +41,10 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
-            var target = this.target.CheckTypes(names, types);
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            var target = this.target.CheckTypes(types);
             var targetType = types.GetReturnType(target);
 
             // Make sure the target is a function
@@ -65,7 +65,7 @@ namespace Trophy.Features.Functions {
             // Make sure the arg types line up
             for (int i = 0; i < this.args.Count; i++) {
                 var expectedType = funcType.Signature.Parameters[i].Type;
-                var arg = this.args[i].CheckTypes(names, types);
+                var arg = this.args[i].CheckTypes(types);
                 var argType = types.GetReturnType(arg);
 
                 if (TypeUnifier.TryUnifyTo(arg, argType, expectedType).TryGetValue(out var newArg)) {
@@ -107,9 +107,9 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 

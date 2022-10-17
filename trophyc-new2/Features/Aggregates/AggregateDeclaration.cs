@@ -87,8 +87,8 @@ namespace Trophy.Features.Aggregates {
             }
         }
 
-        public void DeclarePaths(INamesObserver names, ITypesRecorder types) {
-            var sig = this.signature.ResolveNames(names, types.CurrentScope);
+        public void DeclareTypes(ITypesRecorder types) {
+            var sig = this.signature.ResolveNames(types);
             types.DeclareAggregate(sig);
 
             foreach (var mem in this.signature.Members) {
@@ -96,8 +96,8 @@ namespace Trophy.Features.Aggregates {
             }
         }
 
-        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) {
-            var path = names.TryFindPath(types.CurrentScope, this.signature.Name).GetValue();
+        public IDeclarationTree CheckTypes(ITypesRecorder types) {
+            var path = types.TryFindPath(this.signature.Name).GetValue();
             var sig = types.GetAggregate(path);
 
             return new AggregateDeclaration(this.Location, sig, this.kind);
@@ -120,9 +120,9 @@ namespace Trophy.Features.Aggregates {
 
         public void DeclareNames(INamesRecorder names) { }
 
-        public void DeclarePaths(INamesObserver names, ITypesRecorder types) { }
+        public void DeclareTypes(ITypesRecorder types) { }
 
-        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(CWriter writer) {
             var name = writer.GetVariableName(this.signature.Path);

@@ -14,11 +14,11 @@ namespace Trophy.Analysis.Unification {
             this.adapted = adapted;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) {
+        public Option<TrophyType> ToType(INamesRecorder names) {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 

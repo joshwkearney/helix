@@ -12,12 +12,12 @@ namespace Trophy.Features.Aggregates {
             this.Members = mems;
         }
 
-        public AggregateSignature ResolveNames(INamesObserver names, IdentifierPath scope) {
-            var path = names.TryFindPath(scope, this.Name).GetValue();
+        public AggregateSignature ResolveNames(INamesRecorder names) {
+            var path = names.TryFindPath(this.Name).GetValue();
             var mems = new List<AggregateMember>();
 
             foreach (var mem in this.Members) {
-                if (!mem.MemberType.ToType(names, scope).TryGetValue(out var type)) {
+                if (!mem.MemberType.ToType(names).TryGetValue(out var type)) {
                     throw TypeCheckingErrors.ExpectedTypeExpression(mem.Location);
                 }
 

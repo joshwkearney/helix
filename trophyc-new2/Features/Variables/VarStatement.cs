@@ -1,9 +1,11 @@
 ﻿using Trophy.Analysis;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
+using Trophy.Features.Variables;
 using Trophy.Parsing;
 
-namespace Trophy.Parsing {
+namespace Trophy.Parsing
+{
     public partial class Parser {
         private ISyntaxTree VarExpression() {
             TokenLocation startLok;
@@ -30,7 +32,8 @@ namespace Trophy.Parsing {
     }
 }
 
-namespace Trophy {
+namespace Trophy
+{
     public record VarParseStatement : ISyntaxTree {
         private readonly string name;
         private readonly ISyntaxTree assign;
@@ -45,11 +48,11 @@ namespace Trophy {
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             // Type check the assignment value
-            if (!this.assign.CheckTypes(names, types).ToRValue(types).TryGetValue(out var assign)) {
+            if (!this.assign.CheckTypes(types).ToRValue(types).TryGetValue(out var assign)) {
                 throw TypeCheckingErrors.RValueRequired(this.assign.Location);
             }
 
@@ -91,9 +94,9 @@ namespace Trophy {
             this.assign = assign;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 

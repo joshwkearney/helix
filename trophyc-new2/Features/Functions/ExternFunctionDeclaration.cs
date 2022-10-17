@@ -38,14 +38,14 @@ namespace Trophy.Features.Functions {
             FunctionsHelper.DeclareSignatureNames(this.Signature, names);
         }
 
-        public void DeclarePaths(INamesObserver names, ITypesRecorder types) {
-            var sig = this.Signature.ResolveNames(names, types.CurrentScope);
+        public void DeclareTypes(ITypesRecorder types) {
+            var sig = this.Signature.ResolveNames(types);
 
             FunctionsHelper.DeclareSignaturePaths(sig, types);
         }
 
-        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) {
-            var path = names.TryFindPath(types.CurrentScope, this.Signature.Name).GetValue();
+        public IDeclarationTree CheckTypes(ITypesRecorder types) {
+            var path = types.TryFindPath(this.Signature.Name).GetValue();
             var sig = types.GetFunction(path);
 
             return new ExternFunctionSignature(this.Location, sig);
@@ -66,9 +66,9 @@ namespace Trophy.Features.Functions {
 
         public void DeclareNames(INamesRecorder names) { }
 
-        public void DeclarePaths(INamesObserver names, ITypesRecorder types) { }
+        public void DeclareTypes(ITypesRecorder types) { }
 
-        public IDeclarationTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(CWriter writer) {
             var returnType = writer.ConvertType(this.signature.ReturnType);

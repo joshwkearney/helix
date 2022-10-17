@@ -26,9 +26,9 @@ namespace Trophy.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Int);
 
             return this;

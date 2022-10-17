@@ -45,11 +45,11 @@ namespace Trophy.Features.Primitives {
             this.arg = arg;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) {
+        public Option<TrophyType> ToType(INamesRecorder names) {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
                 var left = new IntLiteral(this.Location, 0);
 
@@ -59,7 +59,7 @@ namespace Trophy.Features.Primitives {
 
                 var result = new BinarySyntax(this.Location, left, this.arg, op);
 
-                return result.CheckTypes(names, types);
+                return result.CheckTypes(types);
             }
             else if (this.op == UnaryOperatorKind.Not) {
                 var result = new BinarySyntax(
@@ -68,7 +68,7 @@ namespace Trophy.Features.Primitives {
                     this.arg, 
                     BinaryOperationKind.Xor);
 
-                return result.CheckTypes(names, types);
+                return result.CheckTypes(types);
             }
             else {
                 throw new Exception("Unexpected unary operator kind");

@@ -37,16 +37,16 @@ namespace Trophy.Features.Primitives {
             this.target = target;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
-            if (!this.arg.CheckTypes(names, types).ToRValue(types).TryGetValue(out var arg)) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            if (!this.arg.CheckTypes(types).ToRValue(types).TryGetValue(out var arg)) {
                 throw TypeCheckingErrors.RValueRequired(this.arg.Location);
             }
 
             var argType = types.GetReturnType(arg);
 
-            if (!this.target.ToType(names, types.CurrentScope).TryGetValue(out var targetType)) {
+            if (!this.target.ToType(types).TryGetValue(out var targetType)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
             }
 

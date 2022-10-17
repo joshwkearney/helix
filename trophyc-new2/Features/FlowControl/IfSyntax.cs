@@ -56,20 +56,20 @@ namespace Trophy.Features.FlowControl {
             this.iffalse = iffalse;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) {
+        public Option<TrophyType> ToType(INamesRecorder names) {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
-            if (!this.cond.CheckTypes(names, types).ToRValue(types).TryGetValue(out var cond)) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
                 throw TypeCheckingErrors.RValueRequired(this.cond.Location);
             }
 
-            if (!this.iftrue.CheckTypes(names, types).ToRValue(types).TryGetValue(out var iftrue)) {
+            if (!this.iftrue.CheckTypes(types).ToRValue(types).TryGetValue(out var iftrue)) {
                 throw TypeCheckingErrors.RValueRequired(this.iftrue.Location);
             }
 
-            if (!this.iffalse.CheckTypes(names, types).ToRValue(types).TryGetValue(out var iffalse)) {
+            if (!this.iffalse.CheckTypes(types).ToRValue(types).TryGetValue(out var iffalse)) {
                 throw TypeCheckingErrors.RValueRequired(this.iffalse.Location);
             }
 
@@ -122,9 +122,9 @@ namespace Trophy.Features.FlowControl {
             this.returnType = returnType;
         }
 
-        public Option<TrophyType> ToType(INamesObserver names, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 

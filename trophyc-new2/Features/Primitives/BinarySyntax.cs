@@ -174,12 +174,12 @@ namespace Trophy.Features.Primitives {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             // Delegate type resolution
-            var left = this.left.CheckTypes(names, types);
-            var right = this.right.CheckTypes(names, types);
+            var left = this.left.CheckTypes(types);
+            var right = this.right.CheckTypes(types);
 
             var leftType = types.GetReturnType(left);
             var rightType = types.GetReturnType(right);

@@ -44,11 +44,11 @@ namespace Trophy.Features.Primitives {
             this.inner = inner;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) {
+        public Option<TrophyType> ToType(INamesRecorder names) {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             return this;
         }
 

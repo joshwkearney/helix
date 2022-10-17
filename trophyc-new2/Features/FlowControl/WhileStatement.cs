@@ -35,14 +35,14 @@ namespace Trophy.Features.FlowControl {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
-            if (!this.cond.CheckTypes(names, types).ToRValue(types).TryGetValue(out var cond)) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+            if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
                 throw TypeCheckingErrors.RValueRequired(this.cond.Location);
             }
 
-            if (!this.body.CheckTypes(names, types).ToRValue(types).TryGetValue(out var body)) {
+            if (!this.body.CheckTypes(types).ToRValue(types).TryGetValue(out var body)) {
                 throw TypeCheckingErrors.RValueRequired(this.body.Location);
             }
 

@@ -43,9 +43,9 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public Option<TrophyType> ToType(INamesObserver types, IdentifierPath currentScope) => Option.None;
+        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(INamesObserver names, ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(ITypesRecorder types) {
             // Rewrite for syntax to use while loops
             var start = new AsParseTree(
                 this.startIndex.Location, 
@@ -86,7 +86,7 @@ namespace Trophy.Features.FlowControl {
                     }))
             });
 
-            return block.CheckTypes(names, types);
+            return block.CheckTypes(types);
         }
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
