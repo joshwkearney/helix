@@ -1,4 +1,7 @@
-﻿namespace Trophy.Features.Aggregates {
+﻿using Trophy.Analysis;
+using Trophy.Analysis.Types;
+
+namespace Trophy.Features.Aggregates {
     public record AggregateSignature {
         public IdentifierPath Path { get; }
 

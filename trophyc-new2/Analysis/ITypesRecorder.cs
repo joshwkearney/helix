@@ -1,4 +1,5 @@
-﻿using Trophy.Features.Aggregates;
+﻿using Trophy.Analysis.Types;
+using Trophy.Features.Aggregates;
 using Trophy.Features.Functions;
 using Trophy.Features.Variables;
 using Trophy.Parsing;

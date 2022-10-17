@@ -1,4 +1,5 @@
 ﻿using Trophy.Analysis;
+using Trophy.Analysis.Types;
 using Trophy.Analysis.Unification;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;

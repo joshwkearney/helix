@@ -1,4 +1,7 @@
-﻿namespace Trophy.Features.Functions {
+﻿using Trophy.Analysis;
+using Trophy.Analysis.Types;
+
+namespace Trophy.Features.Functions {
     public record FunctionSignature  {
         public TrophyType ReturnType { get; }
 

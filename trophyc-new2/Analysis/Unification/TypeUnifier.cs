@@ -1,4 +1,5 @@
-﻿using Trophy.Parsing;
+﻿using Trophy.Analysis.Types;
+using Trophy.Parsing;
 
 namespace Trophy.Analysis.Unification {
     public static partial class TypeUnifier {

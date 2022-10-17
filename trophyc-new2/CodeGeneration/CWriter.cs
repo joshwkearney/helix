@@ -1,9 +1,7 @@
 ﻿using System.Text;
 using Trophy.Analysis;
+using Trophy.Analysis.Types;
 using Trophy.CodeGeneration.CSyntax;
-using Trophy.Features.Aggregates;
-using Trophy.Features.Functions;
-using Trophy.Parsing;
 
 namespace Trophy.CodeGeneration {
     public class CWriter {

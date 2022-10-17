@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Trophy {
+namespace Trophy.Analysis {
     public struct IdentifierPath : IEquatable<IdentifierPath> {
         private readonly Lazy<int> hashCode;
         private readonly ImmutableList<string> segments;

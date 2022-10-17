@@ -1,4 +1,6 @@
-﻿func test(let z as int^) as int => {
+﻿type x = int;
+
+func test(let z as int^) as int => {
 	//var x = *z;
 	let x = 45;
 

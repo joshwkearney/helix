@@ -1,9 +1,9 @@
 ﻿using Trophy.Analysis;
+using Trophy.Analysis.Types;
 using Trophy.CodeGeneration;
 using Trophy.CodeGeneration.CSyntax;
-using Trophy.Parsing;
 
-namespace Trophy {
+namespace Trophy.Parsing {
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
