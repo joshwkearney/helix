@@ -2,7 +2,17 @@
 using Trophy.Parsing;
 
 namespace Trophy.Analysis {
-    public static partial class Unification {
+    public static class AnalysisExtensions {
+        public static PointerType AssertIsPointer(this ISyntax syntax, ITypesRecorder types) {
+            var type = types.GetReturnType(syntax);
+
+            if (!type.AsPointerType().TryGetValue(out var pointer)) {
+                throw TypeCheckingErrors.ExpectedVariableType(syntax.Location, type);
+            }
+
+            return pointer;
+        }
+
         public static ISyntax UnifyTo(this ISyntax fromSyntax, TrophyType toType, ITypesRecorder types) {
             var type = types.GetReturnType(fromSyntax);
 

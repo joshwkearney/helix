@@ -21,7 +21,7 @@ namespace Trophy.Features.Primitives {
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
-            var pointerType = types.AssertIsPointer(target);
+            var pointerType = target.AssertIsPointer(types);
             var result = new DereferenceSyntax(this.Location, target, true);
 
             types.SetReturnType(result, pointerType.ReferencedType);
@@ -33,7 +33,7 @@ namespace Trophy.Features.Primitives {
                 throw TypeCheckingErrors.LValueRequired(this.Location);
             }
 
-            var pointerType = types.AssertIsPointer(this.target);
+            var pointerType = this.target.AssertIsPointer(types);
             if (!pointerType.IsWritable) {
                 throw TypeCheckingErrors.WritingToConstPointer(this.Location);
             }
