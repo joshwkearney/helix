@@ -1,7 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Analysis.Unification;
 using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
@@ -114,17 +113,7 @@ namespace Trophy.Features.Functions {
 
             // Set the scope for type checking the body
             types = types.WithScope(sig.Path);
-
-            body = body.CheckTypes(types).ToRValue(types);
-            var bodyType = types.GetReturnType(body);
-
-            // Make sure the return type matches the body's type
-            if (types.TryUnifyTo(body, bodyType, sig.ReturnType).TryGetValue(out var newBody)) {
-                body = newBody;
-            }
-            else {
-                throw TypeCheckingErrors.UnexpectedType(this.Location, sig.ReturnType, bodyType);
-            }
+            body = body.CheckTypes(types).ToRValue(types).UnifyTo(sig.ReturnType, types);
 
             return new FunctionDeclaration(this.Location, sig, body);
         }

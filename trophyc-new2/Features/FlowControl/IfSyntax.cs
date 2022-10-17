@@ -1,8 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Analysis.Unification;
 using Trophy.Generation;
-using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
@@ -63,30 +61,17 @@ namespace Trophy.Features.FlowControl {
         }
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            var cond = this.cond.CheckTypes(types).ToRValue(types);
+            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
             var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
             var iffalse = this.iffalse.CheckTypes(types).ToRValue(types);
 
-            var condType = types.GetReturnType(cond);
-            var ifTrueType = types.GetReturnType(iftrue);
-            var ifFalseType = types.GetReturnType(iffalse);
+            iftrue = iftrue.UnifyFrom(iffalse, types);
+            iffalse = iffalse.UnifyFrom(iftrue, types);
 
-            // Make sure that the condition is a boolean
-            if (!types.TryUnifyTo(cond, condType, PrimitiveType.Bool).TryGetValue(out cond)) {
-                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, PrimitiveType.Bool, condType);
-            }
+            var resultType = types.GetReturnType(iftrue);
+            var result = new IfSyntax(this.Location, cond, iftrue, iffalse, resultType);
 
-            // Make sure that the branches are the same type
-            if (!types.TryUnifyFrom(ifTrueType, ifFalseType).TryGetValue(out var unified)) {
-                throw TypeCheckingErrors.UnexpectedType(this.Location, ifTrueType, ifFalseType);
-            }
-
-            iftrue = types.TryUnifyTo(iftrue, ifTrueType, unified).GetValue();
-            iffalse = types.TryUnifyTo(iffalse, ifFalseType, unified).GetValue();
-
-            var result = new IfSyntax(this.Location, cond, iftrue, iffalse, unified);
-            types.SetReturnType(result, unified);
-
+            types.SetReturnType(result, resultType);
             return result;
         }
 

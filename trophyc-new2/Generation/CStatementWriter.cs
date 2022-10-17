@@ -1,6 +1,5 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Generation.CSyntax;
 using Trophy.Generation.Syntax;
 
 namespace Trophy.Generation {

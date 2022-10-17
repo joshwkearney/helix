@@ -1,8 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Analysis.Unification;
 using Trophy.Generation;
-using Trophy.Generation.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
@@ -43,15 +41,12 @@ namespace Trophy.Features.Primitives {
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             var arg = this.arg.CheckTypes(types).ToRValue(types);
-            var argType = types.GetReturnType(arg);
 
             if (!this.target.TryInterpret(types).TryGetValue(out var targetType)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
             }
 
-            if (!types.TryUnifyTo(arg, argType, targetType).TryGetValue(out arg)) {
-                throw TypeCheckingErrors.UnexpectedType(this.Location, targetType, argType);
-            }
+            arg = arg.UnifyTo(targetType, types);
 
             return arg;
         }

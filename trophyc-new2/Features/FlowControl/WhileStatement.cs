@@ -1,8 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Analysis.Unification;
 using Trophy.Generation;
-using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
@@ -40,16 +38,8 @@ namespace Trophy.Features.FlowControl {
         public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            var cond = this.cond.CheckTypes(types).ToRValue(types);
+            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
             var body = this.body.CheckTypes(types).ToRValue(types);
-
-            var condType = types.GetReturnType(cond);
-            var bodyType = types.GetReturnType(body);
-
-            // Make sure the condition is a boolean
-            if (!types.TryUnifyTo(cond, condType, PrimitiveType.Bool).TryGetValue(out cond)) {
-                throw TypeCheckingErrors.UnexpectedType(this.cond.Location, PrimitiveType.Bool, condType);
-            }
 
             var result = new WhileStatement(this.Location, cond, body, true);
             types.SetReturnType(result, PrimitiveType.Void);

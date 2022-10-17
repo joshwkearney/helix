@@ -6,6 +6,9 @@ func test(let z as int^) as int => {
 
 	//*z = 45;
 
+
+	let p = void as int;
+
 	while x < 4 do {
 		//x = x / 2;
 	};
@@ -14,7 +17,7 @@ func test(let z as int^) as int => {
 	//void as int^
 
 	// Comment
-	if x > 3 then x else 0;
+	if x > 3 then x else void;
 
 	// let z = put Point { x= 1, y= 4 };
 };

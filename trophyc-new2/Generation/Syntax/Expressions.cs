@@ -6,7 +6,7 @@ namespace Trophy.Generation.Syntax {
     }
 
     public record CIntLiteral(int Value) : ICSyntax {
-        public string WriteToC() => this.Value.ToString();
+        public string WriteToC() => this.Value + "U";
     }
 
     public record CBinaryExpression() : ICSyntax {

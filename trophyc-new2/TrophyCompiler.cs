@@ -1,10 +1,6 @@
 ﻿using Trophy.Parsing;
 using Trophy.Analysis;
 using Trophy.Generation;
-using Trophy.Features.Aggregates;
-using Trophy.Features.Functions;
-using Trophy.Features.Variables;
-using Trophy.Analysis.Types;
 
 namespace Trophy {
     public class TrophyCompiler {

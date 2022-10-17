@@ -1,8 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Analysis.Unification;
 using Trophy.Generation;
-using Trophy.Generation.CSyntax;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
@@ -67,15 +65,8 @@ namespace Trophy.Features.Functions {
             // Make sure the arg types line up
             for (int i = 0; i < this.args.Count; i++) {
                 var expectedType = funcType.Signature.Parameters[i].Type;
-                var arg = this.args[i].CheckTypes(types);
-                var argType = types.GetReturnType(arg);
 
-                if (types.TryUnifyTo(arg, argType, expectedType).TryGetValue(out var newArg)) {
-                    newArgs[i] = newArg;
-                }
-                else { 
-                    throw TypeCheckingErrors.UnexpectedType(this.Location, expectedType, argType);
-                }
+                newArgs[i] = this.args[i].CheckTypes(types).UnifyTo(expectedType, types);
             }
 
             var result = new InvokeSyntax(this.Location, funcType.Signature, newArgs);
@@ -117,7 +108,7 @@ namespace Trophy.Features.Functions {
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
+        public ISyntax ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var args = this.args

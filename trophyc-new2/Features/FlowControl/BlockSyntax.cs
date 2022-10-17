@@ -1,7 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Generation;
-using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;

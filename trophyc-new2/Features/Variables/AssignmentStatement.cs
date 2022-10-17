@@ -1,8 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Analysis.Unification;
 using Trophy.Generation;
-using Trophy.Generation.CSyntax;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
@@ -46,23 +44,13 @@ namespace Trophy.Features.Variables {
             var assign = this.assign.CheckTypes(types).ToRValue(types);
 
             var targetType = types.GetReturnType(target);
-            var assignType = types.GetReturnType(assign);
 
             // Make sure the target is a variable type
             if (targetType is not PointerType pointerType || !pointerType.IsWritable) {
                 throw new Exception("Compiler inconsistency: lvalues must be writable pointers");
             }
 
-            // Make sure the assign expression matches the target's inner type
-            if (types.TryUnifyTo(assign, assignType, pointerType.ReferencedType).TryGetValue(out var newAssign)) {
-                assign = newAssign;
-            }
-            else {
-                throw TypeCheckingErrors.UnexpectedType(
-                    this.assign.Location, 
-                    pointerType.ReferencedType,
-                    assignType);
-            }
+            assign = assign.UnifyTo(pointerType.ReferencedType, types);
 
             var result = new AssignmentStatement(this.Location, target, assign, true);
             types.SetReturnType(result, PrimitiveType.Void);

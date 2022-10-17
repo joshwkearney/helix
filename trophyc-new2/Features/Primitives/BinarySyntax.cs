@@ -1,8 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.Analysis.Unification;
 using Trophy.Generation;
-using Trophy.Generation.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
@@ -180,8 +178,11 @@ namespace Trophy.Features.Primitives {
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Delegate type resolution
-            var left = this.left.CheckTypes(types);
-            var right = this.right.CheckTypes(types);
+            var left = this.left.CheckTypes(types).ToRValue(types);
+            var right = this.right.CheckTypes(types).ToRValue(types);
+
+            left = left.UnifyFrom(right, types);
+            right = right.UnifyFrom(left, types);
 
             var leftType = types.GetReturnType(left);
             var rightType = types.GetReturnType(right);
@@ -195,19 +196,6 @@ namespace Trophy.Features.Primitives {
             // Check if right is a valid type
             if (rightType != PrimitiveType.Int && rightType != PrimitiveType.Bool) {
                 throw TypeCheckingErrors.UnexpectedType(this.right.Location, rightType);
-            }
-
-            // Make sure types match
-            if (types.TryUnifyTo(right, rightType, leftType).TryGetValue(out var newRight)) { 
-                right = newRight;
-                rightType = leftType;
-            }
-            else if (types.TryUnifyTo(left, leftType, rightType).TryGetValue(out var newLeft)) {
-                left = newLeft;
-                leftType = rightType;
-            }
-            else { 
-                throw TypeCheckingErrors.UnexpectedType(this.right.Location, leftType, rightType);
             }
 
             // Make sure this is a valid operation
