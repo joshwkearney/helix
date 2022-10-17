@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace Trophy.CodeGeneration.CSyntax {
+namespace Trophy.Generation.CSyntax {
     public class CParameter {
         public string Name { get; }
 

@@ -1,4 +1,4 @@
-﻿using Trophy.CodeGeneration.CSyntax;
+﻿using Trophy.Generation.CSyntax;
 
 namespace Trophy {
     public interface ICStatementWriter {

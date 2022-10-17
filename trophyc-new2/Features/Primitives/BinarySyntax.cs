@@ -1,8 +1,8 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Analysis.Unification;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 
@@ -240,7 +240,7 @@ namespace Trophy.Features.Primitives {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             var left = this.left.GenerateCode(writer);
             var right = this.right.GenerateCode(writer);
             var bin = CExpression.BinaryExpression(left, right, this.op);

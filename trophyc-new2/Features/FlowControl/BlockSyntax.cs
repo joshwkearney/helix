@@ -1,7 +1,7 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
 
@@ -65,7 +65,7 @@ namespace Trophy.Features.FlowControl {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }

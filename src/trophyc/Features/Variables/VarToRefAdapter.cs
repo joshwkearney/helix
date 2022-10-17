@@ -1,6 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation.CSyntax;
 using System.Collections.Immutable;
 
 namespace Trophy.Features.Variables {

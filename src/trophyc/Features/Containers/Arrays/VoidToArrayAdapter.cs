@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 
 namespace Trophy.Features.Containers.Arrays {

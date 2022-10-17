@@ -2,7 +2,7 @@
 using System.Linq;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
 using Trophy.Features.Variables;

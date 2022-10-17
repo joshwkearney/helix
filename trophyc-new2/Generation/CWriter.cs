@@ -1,10 +1,24 @@
 ﻿using System.Text;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation.CSyntax;
 
-namespace Trophy.CodeGeneration {
-    public class CWriter {
+namespace Trophy.Generation {
+    public interface ICWriter {
+        public string GetVariableName();
+
+        public string GetVariableName(IdentifierPath path);
+
+        public void WriteDeclaration1(CDeclaration decl);
+
+        public void WriteDeclaration2(CDeclaration decl);
+
+        public void WriteDeclaration3(CDeclaration decl);
+
+        public CType ConvertType(TrophyType type);
+    }
+
+    public class CWriter : ICWriter {
         private int tempCounter = 0;
         private readonly Dictionary<TrophyType, CType> typeNames = new();
         private readonly Dictionary<IdentifierPath, string> tempNames = new();
@@ -13,19 +27,9 @@ namespace Trophy.CodeGeneration {
         private readonly StringBuilder decl2Sb = new StringBuilder();
         private readonly StringBuilder decl3Sb = new StringBuilder();
 
-        public IdentifierPath CurrentScope { get; protected set; }
-
         public CWriter() {
             this.decl1Sb.AppendLine("#include \"include/trophy.h\"");
             this.decl1Sb.AppendLine();
-        }
-
-        public override string ToString() {
-            return new StringBuilder()
-                .Append(this.decl1Sb)
-                .Append(this.decl2Sb)
-                .Append(this.decl3Sb)
-                .ToString();
         }
 
         public string GetVariableName() {
@@ -56,7 +60,6 @@ namespace Trophy.CodeGeneration {
             decl.Write(0, this.decl3Sb);
         }
 
-        // Interface wrappers
         public CType ConvertType(TrophyType type) {
             if (this.typeNames.TryGetValue(type, out var ctype)) {
                 return ctype;
@@ -77,12 +80,17 @@ namespace Trophy.CodeGeneration {
             else if (type.AsNamedType().TryGetValue(out var type3)) {
                 return CType.NamedType(string.Join("$", type3.FullName.Segments));
             }
-            //else if (type.AsFunctionType().TryGetValue(out var funcType)) {
-            //    return this.MakeFunctionType(funcType);
-            //}
             else {
                 throw new Exception();
             }
+        }
+
+        public override string ToString() {
+            return new StringBuilder()
+                .Append(this.decl1Sb)
+                .Append(this.decl2Sb)
+                .Append(this.decl3Sb)
+                .ToString();
         }
     }
 }

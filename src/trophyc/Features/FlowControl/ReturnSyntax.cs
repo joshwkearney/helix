@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
 

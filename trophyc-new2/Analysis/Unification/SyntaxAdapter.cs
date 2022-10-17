@@ -1,6 +1,6 @@
 ﻿using Trophy.Analysis.Types;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Parsing;
 
 namespace Trophy.Analysis.Unification {
@@ -25,7 +25,7 @@ namespace Trophy.Analysis.Unification {
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             this.original.GenerateCode(writer);
 
             return this.adapted.GenerateCode(writer);

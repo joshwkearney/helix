@@ -1,8 +1,8 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Analysis.Unification;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 
@@ -66,7 +66,7 @@ namespace Trophy.Features.Primitives {
             throw new InvalidOperationException();
         }
 
-        public CExpression GenerateCode(CStatementWriter statWriter) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

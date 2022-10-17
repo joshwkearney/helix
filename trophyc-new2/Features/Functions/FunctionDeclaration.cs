@@ -2,8 +2,8 @@
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Analysis.Unification;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Features.Functions;
 using Trophy.Features.Primitives;
@@ -132,7 +132,7 @@ namespace Trophy.Features.Functions {
             return new FunctionDeclaration(this.Location, sig, body);
         }
 
-        public void GenerateCode(CWriter writer) => throw new InvalidOperationException();
+        public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record FunctionDeclaration : IDeclarationTree {
@@ -153,7 +153,7 @@ namespace Trophy.Features.Functions {
 
         public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
-        public void GenerateCode(CWriter writer) {
+        public void GenerateCode(ICWriter writer) {
             var returnType = writer.ConvertType(this.signature.ReturnType);
             var pars = this.signature
                 .Parameters
@@ -163,11 +163,11 @@ namespace Trophy.Features.Functions {
                 .ToArray();
 
             var stats = new List<CStatement>();
-            var bodyWriter = new CStatementWriter(stats, this.signature.Path);
+            var bodyWriter = new CStatementWriter(writer, stats);
             var retExpr = this.body.GenerateCode(bodyWriter);
 
             if (this.signature.ReturnType != PrimitiveType.Void) {
-                bodyWriter.WriteSpacingLine();
+                bodyWriter.WriteEmptyLine();
                 bodyWriter.WriteStatement(CStatement.Return(retExpr));
             }
 

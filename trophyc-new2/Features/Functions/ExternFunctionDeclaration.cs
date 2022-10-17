@@ -1,7 +1,7 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
 
@@ -50,7 +50,7 @@ namespace Trophy.Features.Functions {
             return new ExternFunctionSignature(this.Location, sig);
         }
 
-        public void GenerateCode(CWriter writer) => throw new InvalidOperationException();
+        public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record ExternFunctionSignature : IDeclarationTree {
@@ -69,7 +69,7 @@ namespace Trophy.Features.Functions {
 
         public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
-        public void GenerateCode(CWriter writer) {
+        public void GenerateCode(ICWriter writer) {
             var returnType = writer.ConvertType(this.signature.ReturnType);
             var pars = this.signature
                 .Parameters

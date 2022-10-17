@@ -1,8 +1,8 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Analysis.Unification;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
 
@@ -87,7 +87,7 @@ namespace Trophy.Features.Functions {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(CStatementWriter statWriter) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -116,7 +116,7 @@ namespace Trophy.Features.Functions {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             var args = this.args
                 .Select(x => x.GenerateCode(writer))
                 .ToArray();

@@ -1,6 +1,6 @@
 ﻿using Trophy.Features.Primitives;
 
-namespace Trophy.CodeGeneration.CSyntax {
+namespace Trophy.Generation.CSyntax {
     public abstract class CExpression {
         public static CExpression IntLiteral(int value) {
             return new CIntExpression(value);

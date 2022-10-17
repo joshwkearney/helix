@@ -1,7 +1,7 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.Aggregates;
 using Trophy.Parsing;
 
@@ -83,7 +83,7 @@ namespace Trophy.Features.Aggregates {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             var target = this.target.GenerateCode(writer);
 
             return CExpression.MemberAccess(target, this.memberName);

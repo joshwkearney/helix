@@ -1,7 +1,7 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Parsing;
 
 namespace Trophy.Parsing {
@@ -81,7 +81,7 @@ namespace Trophy {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -119,7 +119,7 @@ namespace Trophy {
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
 
             return CExpression.VariableLiteral(name);
@@ -144,7 +144,7 @@ namespace Trophy {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => this;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
 
             return CExpression.AddressOf(CExpression.VariableLiteral(name));

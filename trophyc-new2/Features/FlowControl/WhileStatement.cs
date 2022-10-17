@@ -1,8 +1,8 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Analysis.Unification;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
 
@@ -67,24 +67,24 @@ namespace Trophy.Features.FlowControl {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
 
             var loopBody = new List<CStatement>();
-            var bodyWriter = new CStatementWriter(loopBody);
-            var cond = CExpression.Not(this.cond.GenerateCode(bodyWriter));
+            var bodyWriter = new CStatementWriter(writer, loopBody);
+            var cond = CExpression.Not(this.cond.GenerateCode(writer));
 
             bodyWriter.WriteStatement(CStatement.If(cond, new[] { CStatement.Break() }));
-            bodyWriter.WriteSpacingLine();
+            bodyWriter.WriteEmptyLine();
 
-            this.body.GenerateCode(bodyWriter);
+            this.body.GenerateCode(writer);
 
-            writer.WriteSpacingLine();
+            writer.WriteEmptyLine();
             writer.WriteStatement(CStatement.Comment("While loop"));
             writer.WriteStatement(CStatement.While(CExpression.IntLiteral(1), loopBody));
-            writer.WriteSpacingLine();
+            writer.WriteEmptyLine();
 
             return CExpression.IntLiteral(0);
         }

@@ -2,8 +2,8 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Trophy.Analysis;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Parsing;
 
 namespace Trophy.Features.Functions {

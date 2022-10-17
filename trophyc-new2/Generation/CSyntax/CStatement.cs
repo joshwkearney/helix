@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Trophy.CodeGeneration.CSyntax {
+namespace Trophy.Generation.CSyntax {
     public abstract class CStatement {
         public static CStatement VariableDeclaration(CType type, string name, CExpression assign) {
             return new CVariableDeclaration(type, name, Option.Some(assign));

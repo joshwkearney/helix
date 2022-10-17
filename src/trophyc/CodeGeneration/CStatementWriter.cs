@@ -1,7 +1,7 @@
-﻿using Trophy.CodeGeneration.CSyntax;
+﻿using Trophy.Generation.CSyntax;
 using System;
 
-namespace Trophy.CodeGeneration {
+namespace Trophy.Generation {
     public class CStatementWriter : ICStatementWriter {
         public event EventHandler<CStatement> StatementWritten;
 

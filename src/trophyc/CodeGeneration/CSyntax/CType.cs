@@ -1,4 +1,4 @@
-﻿namespace Trophy.CodeGeneration.CSyntax {
+﻿namespace Trophy.Generation.CSyntax {
     public abstract class CType {
         public static CType Integer { get; } = new CPrimitiveType("int");
 

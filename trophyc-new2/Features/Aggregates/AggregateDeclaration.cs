@@ -1,6 +1,6 @@
 ﻿using Trophy.Analysis;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.Aggregates;
 using Trophy.Parsing;
 
@@ -103,7 +103,7 @@ namespace Trophy.Features.Aggregates {
             return new AggregateDeclaration(this.Location, sig, this.kind);
         }
 
-        public void GenerateCode(CWriter writer) => throw new InvalidOperationException();
+        public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record AggregateDeclaration : IDeclarationTree {
@@ -124,7 +124,7 @@ namespace Trophy.Features.Aggregates {
 
         public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
-        public void GenerateCode(CWriter writer) {
+        public void GenerateCode(ICWriter writer) {
             var name = writer.GetVariableName(this.signature.Path);
 
             if (this.kind == AggregateKind.Struct) {

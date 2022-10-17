@@ -1,7 +1,7 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 
 namespace Trophy.Parsing {
     public interface ISyntaxTree {
@@ -15,7 +15,7 @@ namespace Trophy.Parsing {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types);
 
-        public CExpression GenerateCode(CStatementWriter writer);
+        public CExpression GenerateCode(ICStatementWriter writer);
     }
 
     public interface IDeclarationTree {
@@ -27,6 +27,6 @@ namespace Trophy.Parsing {
 
         public IDeclarationTree CheckTypes(ITypesRecorder types);
 
-        public void GenerateCode(CWriter writer);
+        public void GenerateCode(ICWriter writer);
     }
 }

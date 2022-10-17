@@ -1,8 +1,8 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
 using Trophy.Analysis.Unification;
-using Trophy.CodeGeneration;
-using Trophy.CodeGeneration.CSyntax;
+using Trophy.Generation;
+using Trophy.Generation.CSyntax;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
 
@@ -85,7 +85,7 @@ namespace Trophy.Features.Variables {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(CStatementWriter writer) {
+        public CExpression GenerateCode(ICStatementWriter writer) {
             var left = CExpression.Dereference(this.target.GenerateCode(writer));
             var right = this.assign.GenerateCode(writer);
 
