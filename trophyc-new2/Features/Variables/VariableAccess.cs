@@ -7,7 +7,7 @@ using Trophy.Parsing;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree VariableAccess() {
+        private ISyntax VariableAccess() {
             var tok = this.Advance(TokenKind.Identifier);
 
             return new VariableAccessParseSyntax(tok.Location, tok.Value);
@@ -16,7 +16,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy {
-    public record VariableAccessParseSyntax : ISyntaxTree {
+    public record VariableAccessParseSyntax : ISyntax {
         private readonly string name;
 
         public TokenLocation Location { get; }
@@ -56,7 +56,7 @@ namespace Trophy {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             // Make sure this name exists
             if (!types.TryFindPath(this.name).TryGetValue(out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
@@ -78,16 +78,16 @@ namespace Trophy {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
 
-    public record VariableAccessSyntax : ISyntaxTree {
+    public record VariableAccessSyntax : ISyntax {
         private readonly IdentifierPath variablePath;
 
         public TokenLocation Location { get; }
@@ -99,9 +99,9 @@ namespace Trophy {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
+        public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
+        public Option<ISyntax> ToLValue(ITypesRecorder types) {
             // If we can't be an rvalue we definitely can't be an lvalue
             if (!this.ToRValue(types).HasValue) {
                 return Option.None;
@@ -118,7 +118,7 @@ namespace Trophy {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
@@ -127,7 +127,7 @@ namespace Trophy {
         }
     }
 
-    public record LValueVariableAccessSyntax : ISyntaxTree {
+    public record LValueVariableAccessSyntax : ISyntax {
         private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
@@ -139,11 +139,11 @@ namespace Trophy {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
+        public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => this;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);

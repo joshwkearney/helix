@@ -8,14 +8,22 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree UnaryExpression() {
-            if (this.Peek(TokenKind.Subtract) || this.Peek(TokenKind.Add) || this.Peek(TokenKind.Not)) {
+        private ISyntax UnaryExpression() {
+            var hasOperator = this.Peek(TokenKind.Subtract)
+                || this.Peek(TokenKind.Add)
+                || this.Peek(TokenKind.Not)
+                || this.Peek(TokenKind.Multiply);
+
+            if (hasOperator) {
                 var tokOp = this.Advance();
                 var first = this.SuffixExpression();
                 var loc = tokOp.Location.Span(first.Location);
                 var op = UnaryOperatorKind.Not;
 
-                if (tokOp.Kind == TokenKind.Add) {
+                if (tokOp.Kind == TokenKind.Multiply) {
+                    return new DereferenceSyntax(loc, first);
+                }
+                else if (tokOp.Kind == TokenKind.Add) {
                     op = UnaryOperatorKind.Plus;
                 }
                 else if (tokOp.Kind == TokenKind.Subtract) {
@@ -35,13 +43,13 @@ namespace Trophy.Features.Primitives {
         Not, Plus, Minus
     }
 
-    public record UnaryParseSyntax : ISyntaxTree {
+    public record UnaryParseSyntax : ISyntax {
         private readonly UnaryOperatorKind op;
-        private readonly ISyntaxTree arg;
+        private readonly ISyntax arg;
 
         public TokenLocation Location { get; }
 
-        public UnaryParseSyntax(TokenLocation location, UnaryOperatorKind op, ISyntaxTree arg) {
+        public UnaryParseSyntax(TokenLocation location, UnaryOperatorKind op, ISyntax arg) {
             this.Location = location;
             this.op = op;
             this.arg = arg;
@@ -51,7 +59,7 @@ namespace Trophy.Features.Primitives {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
                 var left = new IntLiteral(this.Location, 0);
 
@@ -77,11 +85,11 @@ namespace Trophy.Features.Primitives {
             }
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+        public Option<ISyntax> ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
+        public Option<ISyntax> ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 

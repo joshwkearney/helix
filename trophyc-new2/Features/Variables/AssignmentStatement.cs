@@ -9,7 +9,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree AssignmentStatement() {
+        private ISyntax AssignmentStatement() {
             var start = this.TopExpression();
 
             if (this.TryAdvance(TokenKind.Assignment)) {
@@ -25,14 +25,14 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Variables {
-    public record AssignmentStatement : ISyntaxTree {
-        private readonly ISyntaxTree target, assign;
+    public record AssignmentStatement : ISyntax {
+        private readonly ISyntax target, assign;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, 
-                                   ISyntaxTree assign, bool isTypeChecked = false) {
+        public AssignmentStatement(TokenLocation loc, ISyntax target, 
+                                   ISyntax assign, bool isTypeChecked = false) {
             this.Location = loc;
             this.target = target;
             this.assign = assign;
@@ -41,7 +41,7 @@ namespace Trophy.Features.Variables {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             var targetOp = this.target.CheckTypes(types).ToLValue(types);
             var assignOp = this.assign.CheckTypes(types).ToRValue(types);
 
@@ -80,11 +80,11 @@ namespace Trophy.Features.Variables {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+        public Option<ISyntax> ToRValue(ITypesRecorder types) {
             return this.isTypeChecked ? this : Option.None;
         }
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var stat = new CAssignment() {

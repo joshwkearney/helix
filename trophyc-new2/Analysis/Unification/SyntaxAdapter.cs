@@ -5,13 +5,13 @@ using Trophy.Generation.Syntax;
 using Trophy.Parsing;
 
 namespace Trophy.Analysis.Unification {
-    public class SyntaxAdapter : ISyntaxTree {
-        private readonly ISyntaxTree original;
-        private readonly ISyntaxTree adapted;
+    public class SyntaxAdapter : ISyntax {
+        private readonly ISyntax original;
+        private readonly ISyntax adapted;
 
         public TokenLocation Location => this.original.Location;
 
-        public SyntaxAdapter(ISyntaxTree original, ISyntaxTree adapted) {
+        public SyntaxAdapter(ISyntax original, ISyntax adapted) {
             this.original = original;
             this.adapted = adapted;
         }
@@ -20,11 +20,11 @@ namespace Trophy.Analysis.Unification {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
+        public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             this.original.GenerateCode(writer);

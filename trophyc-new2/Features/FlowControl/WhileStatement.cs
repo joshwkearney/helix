@@ -9,7 +9,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree WhileStatement() {
+        private ISyntax WhileStatement() {
             var start = this.Advance(TokenKind.WhileKeyword);
             var cond = this.TopExpression();
 
@@ -23,14 +23,14 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record WhileStatement : ISyntaxTree {
-        private readonly ISyntaxTree cond, body;
+    public record WhileStatement : ISyntax {
+        private readonly ISyntax cond, body;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public WhileStatement(TokenLocation location, ISyntaxTree cond, 
-                              ISyntaxTree body, bool isTypeChecked = false) {
+        public WhileStatement(TokenLocation location, ISyntax cond, 
+                              ISyntax body, bool isTypeChecked = false) {
             this.Location = location;
             this.cond = cond;
             this.body = body;
@@ -39,7 +39,7 @@ namespace Trophy.Features.FlowControl {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
                 throw TypeCheckingErrors.RValueRequired(this.cond.Location);
             }
@@ -62,11 +62,11 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+        public Option<ISyntax> ToRValue(ITypesRecorder types) {
             return this.isTypeChecked ? this : Option.None;
         }
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {

@@ -8,7 +8,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree MemberAccess(ISyntaxTree first) {
+        private ISyntax MemberAccess(ISyntax first) {
             this.Advance(TokenKind.Dot);
 
             var tok = this.Advance(TokenKind.Identifier);
@@ -20,14 +20,14 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Aggregates {
-    public record MemberAccessSyntax : ISyntaxTree {
-        private readonly ISyntaxTree target;
+    public record MemberAccessSyntax : ISyntax {
+        private readonly ISyntax target;
         private readonly string memberName;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
+        public MemberAccessSyntax(TokenLocation location, ISyntax target, 
                                   string memberName, bool isTypeChecked = false) {
             this.Location = location;
             this.target = target;
@@ -39,7 +39,7 @@ namespace Trophy.Features.Aggregates {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             if (this.target.CheckTypes(types).ToRValue(types).TryGetValue(out var target)) {
                 throw TypeCheckingErrors.RValueRequired(this.target.Location);
             }
@@ -78,11 +78,11 @@ namespace Trophy.Features.Aggregates {
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+        public Option<ISyntax> ToRValue(ITypesRecorder types) {
             return this.isTypeChecked ? this : Option.None;
         }
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CMemberAccess() {

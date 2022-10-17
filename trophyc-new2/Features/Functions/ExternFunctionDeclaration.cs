@@ -8,7 +8,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private IDeclarationTree ExternFunctionDeclaration() {
+        private IDeclaration ExternFunctionDeclaration() {
             var start = this.Advance(TokenKind.ExternKeyword);
             var sig = this.FunctionSignature();
             var end = this.Advance(TokenKind.Semicolon);        
@@ -20,7 +20,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Functions {
-    public record ExternFunctionParseSignature : IDeclarationTree {
+    public record ExternFunctionParseSignature : IDeclaration {
         public TokenLocation Location { get; }
 
         public FunctionParseSignature Signature { get; }
@@ -44,7 +44,7 @@ namespace Trophy.Features.Functions {
             FunctionsHelper.DeclareSignaturePaths(sig, types);
         }
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types) {
+        public IDeclaration CheckTypes(ITypesRecorder types) {
             var path = types.TryFindPath(this.Signature.Name).GetValue();
             var sig = types.GetFunction(path);
 
@@ -54,7 +54,7 @@ namespace Trophy.Features.Functions {
         public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
     }
 
-    public record ExternFunctionSignature : IDeclarationTree {
+    public record ExternFunctionSignature : IDeclaration {
         private readonly FunctionSignature signature;
 
         public TokenLocation Location { get; }
@@ -68,7 +68,7 @@ namespace Trophy.Features.Functions {
 
         public void DeclareTypes(ITypesRecorder types) { }
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
+        public IDeclaration CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(ICWriter writer) {
             var returnType = this.signature.ReturnType == PrimitiveType.Void

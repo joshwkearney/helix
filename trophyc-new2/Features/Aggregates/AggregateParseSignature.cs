@@ -31,13 +31,13 @@ namespace Trophy.Features.Aggregates {
     public record ParseAggregateMember {
         public string MemberName { get; }
 
-        public ISyntaxTree MemberType { get; }
+        public ISyntax MemberType { get; }
 
         public TokenLocation Location { get; }
 
         public bool IsWritable { get; }
 
-        public ParseAggregateMember(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
+        public ParseAggregateMember(TokenLocation loc, string name, ISyntax type, bool isWritable) {
             this.Location = loc;
             this.MemberName = name;
             this.MemberType = type;

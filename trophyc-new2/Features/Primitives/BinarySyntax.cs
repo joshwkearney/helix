@@ -9,7 +9,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree OrExpression() {
+        private ISyntax OrExpression() {
             var first = this.XorExpression();
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
@@ -22,7 +22,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree XorExpression() {
+        private ISyntax XorExpression() {
             var first = this.ComparisonExpression();
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
@@ -35,7 +35,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree ComparisonExpression() {
+        private ISyntax ComparisonExpression() {
             var first = this.AndExpression();
             var comparators = new Dictionary<TokenKind, BinaryOperationKind>() {
                 { TokenKind.Equals, BinaryOperationKind.EqualTo }, { TokenKind.NotEquals, BinaryOperationKind.NotEqualTo },
@@ -65,7 +65,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree AndExpression() {
+        private ISyntax AndExpression() {
             var first = this.AddExpression();
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
@@ -78,7 +78,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree AddExpression() {
+        private ISyntax AddExpression() {
             var first = this.MultiplyExpression();
 
             while (true) {
@@ -97,7 +97,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree MultiplyExpression() {
+        private ISyntax MultiplyExpression() {
             var first = this.PrefixExpression();
 
             while (true) {
@@ -135,7 +135,7 @@ namespace Trophy.Features.Primitives {
         GreaterThanOrEqualTo, LessThanOrEqualTo
     }
 
-    public record BinarySyntax : ISyntaxTree {
+    public record BinarySyntax : ISyntax {
         private static readonly Dictionary<BinaryOperationKind, TrophyType> intOperations = new() {
             { BinaryOperationKind.Add,                  PrimitiveType.Int },
             { BinaryOperationKind.Subtract,             PrimitiveType.Int },
@@ -161,13 +161,13 @@ namespace Trophy.Features.Primitives {
             { BinaryOperationKind.NotEqualTo,           PrimitiveType.Bool },
         };
 
-        private readonly ISyntaxTree left, right;
+        private readonly ISyntax left, right;
         private readonly BinaryOperationKind op;
         private readonly bool isTypeChecked = false;
 
         public TokenLocation Location { get; }
 
-        public BinarySyntax(TokenLocation loc, ISyntaxTree left, ISyntaxTree right, 
+        public BinarySyntax(TokenLocation loc, ISyntax left, ISyntax right, 
                             BinaryOperationKind op, bool isTypeChecked = false) {
             this.Location = loc;
             this.left = left;
@@ -178,7 +178,7 @@ namespace Trophy.Features.Primitives {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             // Delegate type resolution
             var left = this.left.CheckTypes(types);
             var right = this.right.CheckTypes(types);
@@ -235,11 +235,11 @@ namespace Trophy.Features.Primitives {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+        public Option<ISyntax> ToRValue(ITypesRecorder types) {
             return this.isTypeChecked ? this : Option.None;
         }
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CBinaryExpression() {

@@ -8,9 +8,9 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree Block() {
+        private ISyntax Block() {
             var start = this.Advance(TokenKind.OpenBrace);
-            var stats = new List<ISyntaxTree>();
+            var stats = new List<ISyntax>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
                 stats.Add(this.Statement());
@@ -25,14 +25,14 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record BlockSyntax : ISyntaxTree {
+    public record BlockSyntax : ISyntax {
         private static int idCounter = 0;
 
-        private readonly IReadOnlyList<ISyntaxTree> statements;
+        private readonly IReadOnlyList<ISyntax> statements;
         private readonly int id;
         private readonly bool isTypeChecked;
 
-        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements, 
+        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntax> statements, 
                            bool isTypeChecked = false) {
             this.Location = location;
             this.statements = statements;
@@ -44,7 +44,7 @@ namespace Trophy.Features.FlowControl {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             var newScope = types.CurrentScope.Append("$block" + this.id);
             types = types.WithScope(newScope);
 
@@ -60,11 +60,11 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+        public Option<ISyntax> ToRValue(ITypesRecorder types) {
             return this.isTypeChecked ? this : Option.None;
         }
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {

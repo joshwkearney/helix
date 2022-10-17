@@ -3,7 +3,7 @@ using Trophy.Parsing;
 
 namespace Trophy.Analysis.Unification {
     public static partial class TypeUnifier {
-        public static Option<ISyntaxTree> TryUnifyTo(this ITypesRecorder types, ISyntaxTree fromTree, 
+        public static Option<ISyntax> TryUnifyTo(this ITypesRecorder types, ISyntax fromTree, 
                                                      TrophyType fromType, TrophyType toType) {
 
             if (TryUnifyToHelper(fromType, toType).TryGetValue(out var func)) {
@@ -29,10 +29,10 @@ namespace Trophy.Analysis.Unification {
             return Option.None;
         }
 
-        private static Option<Func<ISyntaxTree, ISyntaxTree>> TryUnifyToHelper(TrophyType fromType, TrophyType toType) {
+        private static Option<Func<ISyntax, ISyntax>> TryUnifyToHelper(TrophyType fromType, TrophyType toType) {
 
             if (fromType == toType) {
-                return Option.Some<Func<ISyntaxTree, ISyntaxTree>>(x => x);
+                return Option.Some<Func<ISyntax, ISyntax>>(x => x);
             }
 
             var result = TryUnifyToPrimitives(fromType, toType);

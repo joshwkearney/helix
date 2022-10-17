@@ -8,7 +8,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree VarExpression() {
+        private ISyntax VarExpression() {
             TokenLocation startLok;
             bool isWritable;
 
@@ -34,14 +34,14 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy {
-    public record VarParseStatement : ISyntaxTree {
+    public record VarParseStatement : ISyntax {
         private readonly string name;
-        private readonly ISyntaxTree assign;
+        private readonly ISyntax assign;
         private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
-        public VarParseStatement(TokenLocation loc, string name, ISyntaxTree assign, bool isWritable) {
+        public VarParseStatement(TokenLocation loc, string name, ISyntax assign, bool isWritable) {
             this.Location = loc;
             this.name = name;
             this.assign = assign;
@@ -50,7 +50,7 @@ namespace Trophy {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             // Type check the assignment value
             if (!this.assign.CheckTypes(types).ToRValue(types).TryGetValue(out var assign)) {
                 throw TypeCheckingErrors.RValueRequired(this.assign.Location);
@@ -73,22 +73,22 @@ namespace Trophy {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
 
-    public record VarStatement : ISyntaxTree {
-        private readonly ISyntaxTree assign;
+    public record VarStatement : ISyntax {
+        private readonly ISyntax assign;
         private readonly VariableSignature signature;
 
         public TokenLocation Location { get; }
 
-        public VarStatement(TokenLocation loc, VariableSignature sig, ISyntaxTree assign) {
+        public VarStatement(TokenLocation loc, VariableSignature sig, ISyntax assign) {
             this.Location = loc;
             this.signature = sig;
             this.assign = assign;
@@ -96,11 +96,11 @@ namespace Trophy {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
+        public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var stat = new CVariableDeclaration() {

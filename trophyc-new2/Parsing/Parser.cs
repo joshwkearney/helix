@@ -7,8 +7,8 @@
             this.tokens = tokens;
         }
 
-        public IReadOnlyList<IDeclarationTree> Parse() {
-            var list = new List<IDeclarationTree>();
+        public IReadOnlyList<IDeclaration> Parse() {
+            var list = new List<IDeclaration>();
 
             while (pos < tokens.Count) {
                 list.Add(this.Declaration());
@@ -57,7 +57,7 @@
         }        
 
         /** Declaration Parsing **/
-        private IDeclarationTree Declaration() {
+        private IDeclaration Declaration() {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
@@ -72,13 +72,13 @@
         }
 
         /** Expression Parsing **/
-        private ISyntaxTree TopExpression() => this.AsExpression();
+        private ISyntax TopExpression() => this.AsExpression();
 
-        private ISyntaxTree BinaryExpression() => this.OrExpression();
+        private ISyntax BinaryExpression() => this.OrExpression();
 
-        private ISyntaxTree PrefixExpression() => this.UnaryExpression();        
+        private ISyntax PrefixExpression() => this.UnaryExpression();        
 
-        private ISyntaxTree SuffixExpression() {
+        private ISyntax SuffixExpression() {
             var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) 
@@ -103,7 +103,7 @@
             return first;
         }        
 
-        private ISyntaxTree Atom() {
+        private ISyntax Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -145,7 +145,7 @@
             }
         }        
 
-        private ISyntaxTree ParenExpression() {
+        private ISyntax ParenExpression() {
             this.Advance(TokenKind.OpenParenthesis);
             var result = this.TopExpression();
             this.Advance(TokenKind.CloseParenthesis);
@@ -153,8 +153,8 @@
             return result;
         }
 
-        private ISyntaxTree Statement() {
-            ISyntaxTree result;
+        private ISyntax Statement() {
+            ISyntax result;
 
             if (this.Peek(TokenKind.WhileKeyword)) {
                 result = this.WhileStatement();

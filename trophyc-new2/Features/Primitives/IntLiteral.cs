@@ -8,7 +8,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree IntLiteral() {
+        private ISyntax IntLiteral() {
             var tok = this.Advance(TokenKind.IntLiteral);
             var num = int.Parse(tok.Value);
 
@@ -18,7 +18,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public record IntLiteral : ISyntaxTree {
+    public record IntLiteral : ISyntax {
         public TokenLocation Location { get; }
 
         public int Value { get; }
@@ -30,15 +30,15 @@ namespace Trophy.Features.Primitives {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Int);
 
             return this;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CIntLiteral(this.Value);

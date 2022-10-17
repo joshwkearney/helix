@@ -10,7 +10,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree IfExpression() {
+        private ISyntax IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
             var cond = this.TopExpression();
 
@@ -33,23 +33,23 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record IfParseSyntax : ISyntaxTree {
-        private readonly ISyntaxTree cond, iftrue, iffalse;
+    public record IfParseSyntax : ISyntax {
+        private readonly ISyntax cond, iftrue, iffalse;
 
         public TokenLocation Location { get; }
 
-        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue) {
+        public IfParseSyntax(TokenLocation location, ISyntax cond, ISyntax iftrue) {
             this.Location = location;
             this.cond = cond;
 
-            this.iftrue = new BlockSyntax(iftrue.Location, new ISyntaxTree[] {
+            this.iftrue = new BlockSyntax(iftrue.Location, new ISyntax[] {
                 iftrue, new VoidLiteral(iftrue.Location)
             });
 
             this.iffalse = new VoidLiteral(location);
         }
 
-        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue, ISyntaxTree iffalse)
+        public IfParseSyntax(TokenLocation location, ISyntax cond, ISyntax iftrue, ISyntax iffalse)
             : this(location, cond, iftrue) {
 
             this.Location = location;
@@ -62,7 +62,7 @@ namespace Trophy.Features.FlowControl {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
                 throw TypeCheckingErrors.RValueRequired(this.cond.Location);
             }
@@ -98,24 +98,24 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
 
-    public record IfSyntax : ISyntaxTree {
-        private readonly ISyntaxTree cond, iftrue, iffalse;
+    public record IfSyntax : ISyntax {
+        private readonly ISyntax cond, iftrue, iffalse;
         private readonly TrophyType returnType;
 
         public TokenLocation Location { get; }
 
-        public IfSyntax(TokenLocation loc, ISyntaxTree cond,
-                         ISyntaxTree iftrue,
-                         ISyntaxTree iffalse, TrophyType returnType) {
+        public IfSyntax(TokenLocation loc, ISyntax cond,
+                         ISyntax iftrue,
+                         ISyntax iffalse, TrophyType returnType) {
 
             this.Location = loc;
             this.cond = cond;
@@ -126,11 +126,11 @@ namespace Trophy.Features.FlowControl {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) => this;
+        public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();

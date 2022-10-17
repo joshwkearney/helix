@@ -9,7 +9,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree AsExpression() {
+        private ISyntax AsExpression() {
             var first = this.BinaryExpression();
 
             while (this.Peek(TokenKind.AsKeyword)) {
@@ -27,13 +27,13 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public record AsParseTree : ISyntaxTree {
-        private readonly ISyntaxTree arg;
-        private readonly ISyntaxTree target;
+    public record AsParseTree : ISyntax {
+        private readonly ISyntax arg;
+        private readonly ISyntax target;
 
         public TokenLocation Location { get; }
 
-        public AsParseTree(TokenLocation loc, ISyntaxTree arg, ISyntaxTree target) {
+        public AsParseTree(TokenLocation loc, ISyntax arg, ISyntax target) {
             this.Location = loc;
             this.arg = arg;
             this.target = target;
@@ -41,7 +41,7 @@ namespace Trophy.Features.Primitives {
 
         public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             if (!this.arg.CheckTypes(types).ToRValue(types).TryGetValue(out var arg)) {
                 throw TypeCheckingErrors.RValueRequired(this.arg.Location);
             }
@@ -59,11 +59,11 @@ namespace Trophy.Features.Primitives {
             return arg;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) {
+        public Option<ISyntax> ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) {
+        public Option<ISyntax> ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 

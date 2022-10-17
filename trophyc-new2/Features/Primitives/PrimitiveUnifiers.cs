@@ -8,7 +8,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Analysis.Unification {
     public static partial class TypeUnifier {
-        private static Func<ISyntaxTree, ISyntaxTree>? TryUnifyToPrimitives(TrophyType from, TrophyType to) {
+        private static Func<ISyntax, ISyntax>? TryUnifyToPrimitives(TrophyType from, TrophyType to) {
             // Bool to Int
             if (from == PrimitiveType.Bool && to == PrimitiveType.Int) {
                 return syntax => new IntSyntaxAdapter(syntax);
@@ -37,12 +37,12 @@ namespace Trophy.Analysis.Unification {
 }
 
 namespace Trophy.Features.Primitives {
-    public record IntSyntaxAdapter : ISyntaxTree {
-        private readonly ISyntaxTree inner;
+    public record IntSyntaxAdapter : ISyntax {
+        private readonly ISyntax inner;
 
         public TokenLocation Location => this.inner.Location;
 
-        public IntSyntaxAdapter(ISyntaxTree inner) {
+        public IntSyntaxAdapter(ISyntax inner) {
             this.inner = inner;
         }
 
@@ -50,13 +50,13 @@ namespace Trophy.Features.Primitives {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(ITypesRecorder types) {
+        public ISyntax CheckTypes(ITypesRecorder types) {
             return this;
         }
 
-        public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
+        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
 
-        public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
+        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CCast() {

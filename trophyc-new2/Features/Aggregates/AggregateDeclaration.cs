@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private IDeclarationTree AggregateDeclaration() {
+        private IDeclaration AggregateDeclaration() {
             Token start;
             if (this.Peek(TokenKind.StructKeyword)) {
                 start = this.Advance(TokenKind.StructKeyword);
@@ -60,7 +60,7 @@ namespace Trophy.Features.Aggregates {
         Struct, Union
     }
 
-    public record AggregateParseDeclaration : IDeclarationTree {
+    public record AggregateParseDeclaration : IDeclaration {
         private readonly AggregateParseSignature signature;
         private readonly AggregateKind kind;
 
@@ -97,7 +97,7 @@ namespace Trophy.Features.Aggregates {
             }
         }
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types) {
+        public IDeclaration CheckTypes(ITypesRecorder types) {
             var path = types.TryFindPath(this.signature.Name).GetValue();
             var sig = types.GetAggregate(path);
 
@@ -107,7 +107,7 @@ namespace Trophy.Features.Aggregates {
         public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
     }
 
-    public record AggregateDeclaration : IDeclarationTree {
+    public record AggregateDeclaration : IDeclaration {
         private readonly AggregateSignature signature;
         private readonly AggregateKind kind;
 
@@ -123,7 +123,7 @@ namespace Trophy.Features.Aggregates {
 
         public void DeclareTypes(ITypesRecorder types) { }
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
+        public IDeclaration CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(ICWriter writer) {
             var name = writer.GetVariableName(this.signature.Path);

@@ -46,7 +46,7 @@ namespace Trophy.Parsing {
             }
 
             var end = this.Advance(TokenKind.CloseParenthesis);
-            var returnType = new VoidLiteral(end.Location) as ISyntaxTree;
+            var returnType = new VoidLiteral(end.Location) as ISyntax;
 
             if (this.TryAdvance(TokenKind.AsKeyword)) {
                 returnType = this.TopExpression();
@@ -58,7 +58,7 @@ namespace Trophy.Parsing {
             return sig;
         }
 
-        private IDeclarationTree FunctionDeclaration() {
+        private IDeclaration FunctionDeclaration() {
             var start = this.tokens[this.pos];
             var sig = this.FunctionSignature();
             var end = this.Advance(TokenKind.Yields);
@@ -74,13 +74,13 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Functions {
-    public record FunctionParseDeclaration : IDeclarationTree {
+    public record FunctionParseDeclaration : IDeclaration {
         private readonly FunctionParseSignature signature;
-        private readonly ISyntaxTree body;
+        private readonly ISyntax body;
 
         public TokenLocation Location { get; }
 
-        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntaxTree body) {
+        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntax body) {
             this.Location = loc;
             this.signature = sig;
             this.body = body;
@@ -100,14 +100,14 @@ namespace Trophy.Features.Functions {
             FunctionsHelper.DeclareSignaturePaths(sig, types);
         }
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types) {
+        public IDeclaration CheckTypes(ITypesRecorder types) {
             var path = types.CurrentScope.Append(this.signature.Name);
             var sig = types.GetFunction(path);
             var body = this.body;
 
             // If this function returns void, wrap the body so we don't get weird type errors
             if (sig.ReturnType == PrimitiveType.Void) {
-                body = new BlockSyntax(this.body.Location, new ISyntaxTree[] {
+                body = new BlockSyntax(this.body.Location, new ISyntax[] {
                     body, new VoidLiteral(body.Location)
                 });
             }
@@ -136,13 +136,13 @@ namespace Trophy.Features.Functions {
         public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
     }
 
-    public record FunctionDeclaration : IDeclarationTree {
+    public record FunctionDeclaration : IDeclaration {
         private readonly FunctionSignature signature;
-        private readonly ISyntaxTree body;
+        private readonly ISyntax body;
 
         public TokenLocation Location { get; }
 
-        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, ISyntaxTree body) {
+        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, ISyntax body) {
             this.Location = loc;
             this.signature = sig;
             this.body = body;
@@ -152,7 +152,7 @@ namespace Trophy.Features.Functions {
 
         public void DeclareTypes(ITypesRecorder paths) { }
 
-        public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
+        public IDeclaration CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(ICWriter writer) {
             var returnType = this.signature.ReturnType == PrimitiveType.Void

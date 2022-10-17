@@ -16,7 +16,7 @@ namespace Trophy.Analysis {
 
         public void DeclareReserved(IdentifierPath path);
 
-        public void SetReturnType(ISyntaxTree tree, TrophyType type);
+        public void SetReturnType(ISyntax tree, TrophyType type);
 
         public FunctionSignature GetFunction(IdentifierPath path);
 
@@ -26,7 +26,7 @@ namespace Trophy.Analysis {
 
         public bool IsReserved(IdentifierPath path);
 
-        public TrophyType GetReturnType(ISyntaxTree tree);
+        public TrophyType GetReturnType(ISyntax tree);
 
         public string GetVariableName();
     }
@@ -42,7 +42,7 @@ namespace Trophy.Analysis {
         private readonly Dictionary<IdentifierPath, VariableSignature> variables = new();
         private readonly Dictionary<IdentifierPath, AggregateSignature> aggregates = new();
 
-        private readonly Dictionary<ISyntaxTree, TrophyType> returnTypes = new();
+        private readonly Dictionary<ISyntax, TrophyType> returnTypes = new();
 
         public IdentifierPath CurrentScope { get; }
 
@@ -126,7 +126,7 @@ namespace Trophy.Analysis {
             this.DeclareName(path, NameTarget.Reserved);
         }
 
-        public void SetReturnType(ISyntaxTree tree, TrophyType type) {
+        public void SetReturnType(ISyntax tree, TrophyType type) {
             if (this.prev.TryGetValue(out var prev)) {
                 prev.SetReturnType(tree, type);
             }
@@ -183,7 +183,7 @@ namespace Trophy.Analysis {
             return false;
         }
 
-        public TrophyType GetReturnType(ISyntaxTree tree) {
+        public TrophyType GetReturnType(ISyntax tree) {
             if (this.returnTypes.TryGetValue(tree, out var value)) {
                 return value;
             }
