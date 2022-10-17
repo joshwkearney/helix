@@ -18,7 +18,7 @@ namespace Trophy.Analysis.Types {
                 return true;
             }
 
-            return other == PrimitiveType.Bool;
+            return other == PrimitiveType.Bool || other == PrimitiveType.Int;
         }
 
         public override ISyntax UnifyTo(TrophyType other, ISyntax syntax) {
@@ -26,7 +26,7 @@ namespace Trophy.Analysis.Types {
                 return base.UnifyTo(other, syntax);
             }
 
-            // Singular bools unifying to bools do not require any syntax changes
+            // Singular bools unifying to bools or ints do not require any syntax changes
             return syntax;
         }
 
@@ -50,6 +50,6 @@ namespace Trophy.Analysis.Types {
             return PrimitiveType.Bool;
         }
 
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value.ToString().ToLower();
     }
 }

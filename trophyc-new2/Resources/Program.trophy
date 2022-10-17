@@ -1,5 +1,13 @@
 ﻿//type x = int;
 
+func opaque() => {
+	
+};
+
+struct Recursive {
+	let x as Recursive;
+};
+
 func test(let z as int^, let test as 4) as int => {
 	var x = *z;
 	//let x = 45;
@@ -19,7 +27,7 @@ func test(let z as int^, let test as 4) as int => {
 	//void as int^
 
 	// Comment
-	if x > 3 then x else 8;
+	if x > 3 then true else 78;
 
 	// let z = put Point { x= 1, y= 4 };
 };
