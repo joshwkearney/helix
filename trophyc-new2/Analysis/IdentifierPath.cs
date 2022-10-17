@@ -47,7 +47,7 @@ namespace Trophy.Analysis {
         }
 
         public override string ToString() {
-            return string.Join("::", this.segments);
+            return string.Join("/", this.segments);
         }
 
         public string ToCName() {

@@ -5,6 +5,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -67,26 +68,37 @@ namespace Trophy.Features.FlowControl {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
 
-            var loopBody = new List<CStatement>();
+            var loopBody = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, loopBody);
-            var cond = CExpression.Not(this.cond.GenerateCode(writer));
 
-            bodyWriter.WriteStatement(CStatement.If(cond, new[] { CStatement.Break() }));
+            var terminator = new CIf() {
+                Condition = new CNot() {
+                    Target = this.cond.GenerateCode(writer)
+                },
+                IfTrue = new[] { new CBreak() }
+            };
+
+            bodyWriter.WriteStatement(terminator);
             bodyWriter.WriteEmptyLine();
 
             this.body.GenerateCode(writer);
 
+            var loop = new CWhile() {
+                Condition = new CIntLiteral(1),
+                Body = loopBody
+            };
+
             writer.WriteEmptyLine();
-            writer.WriteStatement(CStatement.Comment("While loop"));
-            writer.WriteStatement(CStatement.While(CExpression.IntLiteral(1), loopBody));
+            writer.WriteStatement(new CComment("While loop"));
+            writer.WriteStatement(loop);
             writer.WriteEmptyLine();
 
-            return CExpression.IntLiteral(0);
+            return new CIntLiteral(0);
         }
     }
 }

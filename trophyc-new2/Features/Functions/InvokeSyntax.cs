@@ -5,6 +5,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -87,7 +88,7 @@ namespace Trophy.Features.Functions {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -116,14 +117,17 @@ namespace Trophy.Features.Functions {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             var args = this.args
                 .Select(x => x.GenerateCode(writer))
                 .ToArray();
 
+            var invoke = new CInvoke() {
+                Target = new CVariableLiteral(writer.GetVariableName(this.sig.Path)),
+                Arguments = args
+            };
+
             var type = writer.ConvertType(this.sig.ReturnType);
-            var target = CExpression.VariableLiteral(this.sig.Path.ToCName());
-            var invoke = CExpression.Invoke(target, args);
 
             return writer.WriteImpureExpression(type, invoke);
         }

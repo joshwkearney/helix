@@ -5,6 +5,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -240,12 +241,12 @@ namespace Trophy.Features.Primitives {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
-            var left = this.left.GenerateCode(writer);
-            var right = this.right.GenerateCode(writer);
-            var bin = CExpression.BinaryExpression(left, right, this.op);
-
-            return bin;
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            return new CBinaryExpression() {
+                Left = this.left.GenerateCode(writer),
+                Right = this.right.GenerateCode(writer),
+                Operation = this.op
+            };
         }
     }
 }

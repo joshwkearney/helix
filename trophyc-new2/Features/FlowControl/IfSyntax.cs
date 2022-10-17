@@ -6,6 +6,7 @@ using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -101,7 +102,7 @@ namespace Trophy.Features.FlowControl {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -131,30 +132,46 @@ namespace Trophy.Features.FlowControl {
 
         public Option<ISyntaxTree> ToRValue(ITypesRecorder types) => this;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
-            var affirmList = new List<CStatement>();
-            var negList = new List<CStatement>();
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            var affirmList = new List<ICStatement>();
+            var negList = new List<ICStatement>();
 
             var affirmWriter = new CStatementWriter(writer, affirmList);
             var negWriter = new CStatementWriter(writer, negList);
 
-            var cond = this.cond.GenerateCode(writer);
-            var affirm = this.iftrue.GenerateCode(writer);
-            var neg = this.iffalse.GenerateCode(writer);
+            var affirm = this.iftrue.GenerateCode(affirmWriter);
+            var neg = this.iffalse.GenerateCode(negWriter);
 
             var tempName = writer.GetVariableName();
-            var returnType = writer.ConvertType(this.returnType);
 
-            affirmList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), affirm));
-            negList.Add(CStatement.Assignment(CExpression.VariableLiteral(tempName), neg));
+            affirmWriter.WriteStatement(new CAssignment() { 
+                Left = new CVariableLiteral(tempName),
+                Right = affirm
+            });
+
+            negWriter.WriteStatement(new CAssignment() {
+                Left = new CVariableLiteral(tempName),
+                Right = neg
+            });
+
+            var stat = new CVariableDeclaration() {
+                Type = writer.ConvertType(this.returnType),
+                Name = tempName
+            };
+
+            var expr = new CIf() {
+                Condition = this.cond.GenerateCode(writer),
+                IfTrue = affirmList,
+                IfFalse = negList
+            };
 
             writer.WriteEmptyLine();
-            writer.WriteStatement(CStatement.Comment("If statement"));
-            writer.WriteStatement(CStatement.VariableDeclaration(returnType, tempName));
-            writer.WriteStatement(CStatement.If(cond, affirmList, negList));
+            writer.WriteComment("If statement");
+            writer.WriteStatement(stat);
+            writer.WriteStatement(expr);
             writer.WriteEmptyLine();
 
-            return CExpression.VariableLiteral(tempName);
+            return new CVariableLiteral(tempName);
         }
     }
 }

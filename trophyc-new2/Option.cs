@@ -1,5 +1,5 @@
 ﻿namespace Trophy {
-    public struct Option<T> {
+    public record struct Option<T> {
         private readonly T value;
 
         public bool HasValue { get; }
@@ -67,9 +67,9 @@
             }
         }
 
-        public static implicit operator Option<T>(T value) => new Option<T>(value);
+        public static implicit operator Option<T>(T value) => new(value);
 
-        public static implicit operator Option<T>(Option _) => new Option<T>();
+        public static implicit operator Option<T>(Option _) => new();
     }
 
     public class Option {

@@ -6,6 +6,7 @@ using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -98,7 +99,7 @@ namespace Trophy.Features.FlowControl {
             throw new InvalidOperationException();
         }
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

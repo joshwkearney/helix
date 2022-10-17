@@ -3,6 +3,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Aggregates;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -127,39 +128,31 @@ namespace Trophy.Features.Aggregates {
         public void GenerateCode(ICWriter writer) {
             var name = writer.GetVariableName(this.signature.Path);
 
-            if (this.kind == AggregateKind.Struct) {
-                // Write forward declaration
-                writer.WriteDeclaration1(CDeclaration.StructPrototype(name));
-                writer.WriteDeclaration1(CDeclaration.EmptyLine());
+            var mems = this.signature.Members
+                .Select(x => new CParameter() { 
+                    Type = writer.ConvertType(x.MemberType),
+                    Name = writer.GetVariableName(this.signature.Path.Append(x.MemberName))
+                })
+                .ToArray();
 
-                // Write full struct
-                writer.WriteDeclaration2(CDeclaration.Struct(
-                    name,
-                    this.signature.Members
-                        .Select(x => new CParameter(
-                            writer.ConvertType(x.MemberType),
-                            writer.GetVariableName(this.signature.Path.Append(x.MemberName))))
-                        .ToArray()));
+            var prototype = new CAggregateDeclaration() {
+                Kind = this.kind,
+                Name = name
+            };
 
-                writer.WriteDeclaration2(CDeclaration.EmptyLine());
-            }
-            else if (this.kind == AggregateKind.Union) {
-                // Write forward declaration
-                writer.WriteDeclaration1(CDeclaration.UnionPrototype(name));
-                writer.WriteDeclaration1(CDeclaration.EmptyLine());
+            var fullDeclaration = new CAggregateDeclaration() {
+                Kind = this.kind,
+                Name = name,
+                Members = mems
+            };
 
-                // Write full union
-                writer.WriteDeclaration2(CDeclaration.Union(
-                    name,
-                    this.signature.Members
-                        .Select(x => new CParameter(writer.ConvertType(x.MemberType), x.MemberName))
-                        .ToArray()));
+            // Write forward declaration
+            writer.WriteDeclaration1(prototype);
+            writer.WriteDeclaration1(new CEmptyLine());
 
-                writer.WriteDeclaration2(CDeclaration.EmptyLine());
-            }
-            else {
-                throw new Exception("Unexpected aggregate kind");
-            }
+            // Write full struct
+            writer.WriteDeclaration2(fullDeclaration);
+            writer.WriteDeclaration2(new CEmptyLine());
         }
     }
 }

@@ -4,10 +4,11 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Analysis.Unification {
     public static partial class TypeUnifier {
-        private static Func<ISyntaxTree, ISyntaxTree> TryUnifyToPrimitives(TrophyType from, TrophyType to) {
+        private static Func<ISyntaxTree, ISyntaxTree>? TryUnifyToPrimitives(TrophyType from, TrophyType to) {
             // Bool to Int
             if (from == PrimitiveType.Bool && to == PrimitiveType.Int) {
                 return syntax => new IntSyntaxAdapter(syntax);
@@ -57,11 +58,11 @@ namespace Trophy.Features.Primitives {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
-            var inner = this.inner.GenerateCode(writer);
-            var type = writer.ConvertType(PrimitiveType.Int);
-
-            return CExpression.Cast(type, inner);
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            return new CCast() {
+                Type = writer.ConvertType(PrimitiveType.Int),
+                Target = this.inner.GenerateCode(writer)
+            };
         }
     }
 }

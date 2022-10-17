@@ -4,6 +4,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -84,7 +85,7 @@ namespace Trophy.Features.Primitives {
             throw new InvalidOperationException();
         }
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

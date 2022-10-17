@@ -4,6 +4,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -65,7 +66,7 @@ namespace Trophy.Features.FlowControl {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -78,7 +79,7 @@ namespace Trophy.Features.FlowControl {
                 return this.statements.Last().GenerateCode(writer);
             }
             else {
-                return CExpression.IntLiteral(0);
+                return new CIntLiteral(0);
             }
         }
     }

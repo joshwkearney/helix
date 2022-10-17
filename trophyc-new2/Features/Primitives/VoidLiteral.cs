@@ -4,6 +4,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -35,8 +36,8 @@ namespace Trophy.Features.Primitives {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
-            return CExpression.IntLiteral(0);
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            return new CIntLiteral(0);
         }
     }
 }

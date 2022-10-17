@@ -5,6 +5,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -85,13 +86,17 @@ namespace Trophy.Features.Variables {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
-            var left = CExpression.Dereference(this.target.GenerateCode(writer));
-            var right = this.assign.GenerateCode(writer);
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            var stat = new CAssignment() {
+                Left = new CPointerDereference() {
+                    Target = this.target.GenerateCode(writer)
+                },
+                Right = this.assign.GenerateCode(writer)
+            };
 
-            writer.WriteStatement(CStatement.Assignment(left, right));
+            writer.WriteStatement(stat);
 
-            return CExpression.IntLiteral(0);
+            return new CIntLiteral(0);
         }
     }
 }

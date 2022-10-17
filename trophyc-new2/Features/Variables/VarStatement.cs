@@ -4,9 +4,9 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
-namespace Trophy.Parsing
-{
+namespace Trophy.Parsing {
     public partial class Parser {
         private ISyntaxTree VarExpression() {
             TokenLocation startLok;
@@ -33,8 +33,7 @@ namespace Trophy.Parsing
     }
 }
 
-namespace Trophy
-{
+namespace Trophy {
     public record VarParseStatement : ISyntaxTree {
         private readonly string name;
         private readonly ISyntaxTree assign;
@@ -78,7 +77,7 @@ namespace Trophy
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -103,18 +102,19 @@ namespace Trophy
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
-            var type = writer.ConvertType(this.signature.Type);
-            var value = this.assign.GenerateCode(writer);
-            var name = writer.GetVariableName(this.signature.Path);
-            var assign = CStatement.VariableDeclaration(type, name, value);
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            var stat = new CVariableDeclaration() {
+                Type = writer.ConvertType(this.signature.Type),
+                Name = writer.GetVariableName(this.signature.Path),
+                Assignment = this.assign.GenerateCode(writer)
+            };
 
             writer.WriteEmptyLine();
-            writer.WriteStatement(CStatement.Comment("Variable declaration statement"));
-            writer.WriteStatement(assign);
+            writer.WriteComment("Variable declaration statement");
+            writer.WriteStatement(stat);
             writer.WriteEmptyLine();
 
-            return CExpression.IntLiteral(0);
+            return new CIntLiteral(0);
             //return CExpression.AddressOf(CExpression.VariableLiteral(name));
         }
     }

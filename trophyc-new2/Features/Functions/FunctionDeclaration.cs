@@ -8,6 +8,7 @@ using Trophy.Features.FlowControl;
 using Trophy.Features.Functions;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -154,41 +155,48 @@ namespace Trophy.Features.Functions {
         public IDeclarationTree CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(ICWriter writer) {
-            var returnType = writer.ConvertType(this.signature.ReturnType);
+            var returnType = this.signature.ReturnType == PrimitiveType.Void
+                ? new CNamedType("void")
+                : writer.ConvertType(this.signature.ReturnType);
+
             var pars = this.signature
                 .Parameters
-                .Select((x, i) => new CParameter(
-                    writer.ConvertType(x.Type),
-                    writer.GetVariableName(this.signature.Path.Append(x.Name))))
+                .Select((x, i) => new CParameter() { 
+                    Type = writer.ConvertType(x.Type),
+                    Name = writer.GetVariableName(this.signature.Path.Append(x.Name))
+                })
                 .ToArray();
 
-            var stats = new List<CStatement>();
-            var bodyWriter = new CStatementWriter(writer, stats);
+            var funcName = writer.GetVariableName(this.signature.Path);
+            var body = new List<ICStatement>();
+            var bodyWriter = new CStatementWriter(writer, body);
             var retExpr = this.body.GenerateCode(bodyWriter);
 
             if (this.signature.ReturnType != PrimitiveType.Void) {
                 bodyWriter.WriteEmptyLine();
-                bodyWriter.WriteStatement(CStatement.Return(retExpr));
+                bodyWriter.WriteStatement(new CReturn() { 
+                    Target = retExpr
+                });
             }
 
-            var funcName = writer.GetVariableName(this.signature.Path);
-            CDeclaration decl;
-            CDeclaration forwardDecl;
+            var decl = new CFunctionDeclaration() {
+                ReturnType = returnType,
+                Name = funcName,
+                Parameters = pars,
+                Body = body
+            };
 
-            if (this.signature.ReturnType == PrimitiveType.Void) {
-                decl = CDeclaration.Function(funcName, false, pars, stats);
-                forwardDecl = CDeclaration.FunctionPrototype(funcName, false, pars);
-            }
-            else {
-                decl = CDeclaration.Function(returnType, funcName, false, pars, stats);
-                forwardDecl = CDeclaration.FunctionPrototype(returnType, funcName, false, pars);
-            }
+            var forwardDecl = new CFunctionDeclaration() {
+                ReturnType = returnType,
+                Name = funcName,
+                Parameters = pars
+            };
 
             writer.WriteDeclaration3(decl);
-            writer.WriteDeclaration3(CDeclaration.EmptyLine());
+            writer.WriteDeclaration3(new CEmptyLine());
 
             writer.WriteDeclaration2(forwardDecl);
-            writer.WriteDeclaration2(CDeclaration.EmptyLine());
+            writer.WriteDeclaration2(new CEmptyLine());
         }
     }
 }

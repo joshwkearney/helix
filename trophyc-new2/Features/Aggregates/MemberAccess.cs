@@ -4,6 +4,7 @@ using Trophy.Generation;
 using Trophy.Generation.CSyntax;
 using Trophy.Features.Aggregates;
 using Trophy.Parsing;
+using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -83,10 +84,11 @@ namespace Trophy.Features.Aggregates {
 
         public Option<ISyntaxTree> ToLValue(ITypesRecorder types) => Option.None;
 
-        public CExpression GenerateCode(ICStatementWriter writer) {
-            var target = this.target.GenerateCode(writer);
-
-            return CExpression.MemberAccess(target, this.memberName);
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            return new CMemberAccess() {
+                Target = this.target.GenerateCode(writer),
+                MemberName = this.memberName
+            };
         }
     }
 }
