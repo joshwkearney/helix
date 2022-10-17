@@ -52,6 +52,11 @@ namespace Trophy {
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);
+
+            if (this.isWritable) {
+                assign = assign.RemoveDependentTyping(types);
+            }
+
             var assignType = types.GetReturnType(assign);
             var path = types.CurrentScope.Append(this.name);
             var sig = new VariableSignature(path, assignType, this.isWritable);

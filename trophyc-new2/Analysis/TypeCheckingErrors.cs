@@ -7,14 +7,14 @@ namespace Trophy.Analysis {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Read-only Variable",
-                $"Cannot write to read-only variable.");
+                $"Cannot write to a read-only variable.");
         }
 
         public static Exception WritingToConstPointer(TokenLocation location) {
             return new TypeCheckingException(
                 location,
                 "Analysis Exception: Read-only Pointer",
-                $"Cannot write to read-only pointer.");
+                $"Cannot write to a read-only pointer.");
         }
 
         public static Exception RValueRequired(TokenLocation location) {

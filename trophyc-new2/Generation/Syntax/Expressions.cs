@@ -46,7 +46,15 @@ namespace Trophy.Generation.Syntax {
     public record CPointerDereference() : ICSyntax {
         public ICSyntax? Target { get; init; } = null;
 
-        public string WriteToC() => "*" + this.Target!.WriteToC();
+        public string WriteToC() {
+            var target = this.Target!.WriteToC();
+
+            if (target.StartsWith("&")) {
+                return target.Substring(1);
+            }
+
+            return "*" + target;
+        }
     }
 
     public record CNot() : ICSyntax {
@@ -58,7 +66,15 @@ namespace Trophy.Generation.Syntax {
     public record CAddressOf() : ICSyntax {
         public ICSyntax? Target { get; init; } = null;
 
-        public string WriteToC() => "&" + this.Target!.WriteToC();
+        public string WriteToC() {
+            var target = this.Target!.WriteToC();
+
+            if (target.StartsWith("*")) {
+                return target.Substring(1);
+            }
+
+            return "&" + target;
+        }
     }
 
     public record CInvoke() : ICSyntax {

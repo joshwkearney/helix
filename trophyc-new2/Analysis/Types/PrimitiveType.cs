@@ -18,7 +18,7 @@ namespace Trophy.Analysis.Types {
             this.kind = kind;
         }
 
-        public override bool CanUnifyWith(TrophyType other) {
+        public override bool CanUnifyTo(TrophyType other) {
             if (this == other) {
                 return true;
             }

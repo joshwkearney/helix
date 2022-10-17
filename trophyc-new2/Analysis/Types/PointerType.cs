@@ -13,7 +13,7 @@ namespace Trophy.Analysis.Types {
 
         public override Option<PointerType> AsPointerType() => this;
 
-        public override bool CanUnifyWith(TrophyType other) {
+        public override bool CanUnifyTo(TrophyType other) {
             if (this == other) {
                 return true;
             }

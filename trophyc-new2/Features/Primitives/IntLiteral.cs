@@ -30,7 +30,7 @@ namespace Trophy.Features.Primitives {
         public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            types.SetReturnType(this, PrimitiveType.Int);
+            types.SetReturnType(this, new SingularIntType(this.Value));
 
             return this;
         }
