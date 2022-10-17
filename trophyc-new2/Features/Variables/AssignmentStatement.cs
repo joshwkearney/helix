@@ -62,7 +62,7 @@ namespace Trophy.Features.Variables {
             }
 
             // Make sure the assign expression matches the target's inner type
-            if (TypeUnifier.TryUnifyTo(assign, assignType, pointerType.ReferencedType).TryGetValue(out var newAssign)) {
+            if (types.TryUnifyTo(assign, assignType, pointerType.ReferencedType).TryGetValue(out var newAssign)) {
                 assign = newAssign;
             }
             else {

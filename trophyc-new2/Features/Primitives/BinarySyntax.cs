@@ -196,11 +196,11 @@ namespace Trophy.Features.Primitives {
             }
 
             // Make sure types match
-            if (TypeUnifier.TryUnifyTo(right, rightType, leftType).TryGetValue(out var newRight)) { 
+            if (types.TryUnifyTo(right, rightType, leftType).TryGetValue(out var newRight)) { 
                 right = newRight;
                 rightType = leftType;
             }
-            else if (TypeUnifier.TryUnifyTo(left, leftType, rightType).TryGetValue(out var newLeft)) {
+            else if (types.TryUnifyTo(left, leftType, rightType).TryGetValue(out var newLeft)) {
                 left = newLeft;
                 leftType = rightType;
             }

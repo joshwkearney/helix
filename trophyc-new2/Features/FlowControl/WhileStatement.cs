@@ -50,7 +50,7 @@ namespace Trophy.Features.FlowControl {
             var bodyType = types.GetReturnType(body);
 
             // Make sure the condition is a boolean
-            if (!TypeUnifier.TryUnifyTo(cond, condType, PrimitiveType.Bool).TryGetValue(out cond)) {
+            if (!types.TryUnifyTo(cond, condType, PrimitiveType.Bool).TryGetValue(out cond)) {
                 throw TypeCheckingErrors.UnexpectedType(this.cond.Location, PrimitiveType.Bool, condType);
             }
 

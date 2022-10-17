@@ -121,7 +121,7 @@ namespace Trophy.Features.Functions {
             var bodyType = types.GetReturnType(body);
 
             // Make sure the return type matches the body's type
-            if (TypeUnifier.TryUnifyTo(body, bodyType, sig.ReturnType).TryGetValue(out var newBody)) {
+            if (types.TryUnifyTo(body, bodyType, sig.ReturnType).TryGetValue(out var newBody)) {
                 body = newBody;
             }
             else {

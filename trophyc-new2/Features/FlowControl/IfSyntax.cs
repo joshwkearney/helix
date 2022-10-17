@@ -78,17 +78,17 @@ namespace Trophy.Features.FlowControl {
             var ifFalseType = types.GetReturnType(iffalse);
 
             // Make sure that the condition is a boolean
-            if (!TypeUnifier.TryUnifyTo(cond, condType, PrimitiveType.Bool).TryGetValue(out cond)) {
+            if (!types.TryUnifyTo(cond, condType, PrimitiveType.Bool).TryGetValue(out cond)) {
                 throw TypeCheckingErrors.UnexpectedType(this.cond.Location, PrimitiveType.Bool, condType);
             }
 
             // Make sure that the branches are the same type
-            if (!TypeUnifier.TryUnifyFrom(ifTrueType, ifFalseType).TryGetValue(out var unified)) {
+            if (!types.TryUnifyFrom(ifTrueType, ifFalseType).TryGetValue(out var unified)) {
                 throw TypeCheckingErrors.UnexpectedType(this.Location, ifTrueType, ifFalseType);
             }
 
-            iftrue = TypeUnifier.TryUnifyTo(iftrue, ifTrueType, unified).GetValue();
-            iffalse = TypeUnifier.TryUnifyTo(iffalse, ifFalseType, unified).GetValue();
+            iftrue = types.TryUnifyTo(iftrue, ifTrueType, unified).GetValue();
+            iffalse = types.TryUnifyTo(iffalse, ifFalseType, unified).GetValue();
 
             var result = new IfSyntax(this.Location, cond, iftrue, iffalse, unified);
             types.SetReturnType(result, unified);

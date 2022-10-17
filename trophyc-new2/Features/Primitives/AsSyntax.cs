@@ -50,7 +50,7 @@ namespace Trophy.Features.Primitives {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
             }
 
-            if (!TypeUnifier.TryUnifyTo(arg, argType, targetType).TryGetValue(out arg)) {
+            if (!types.TryUnifyTo(arg, argType, targetType).TryGetValue(out arg)) {
                 throw TypeCheckingErrors.UnexpectedType(this.Location, targetType, argType);
             }
 

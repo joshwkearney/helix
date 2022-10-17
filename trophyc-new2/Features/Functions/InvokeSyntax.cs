@@ -68,7 +68,7 @@ namespace Trophy.Features.Functions {
                 var arg = this.args[i].CheckTypes(types);
                 var argType = types.GetReturnType(arg);
 
-                if (TypeUnifier.TryUnifyTo(arg, argType, expectedType).TryGetValue(out var newArg)) {
+                if (types.TryUnifyTo(arg, argType, expectedType).TryGetValue(out var newArg)) {
                     newArgs[i] = newArg;
                 }
                 else { 
