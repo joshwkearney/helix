@@ -17,7 +17,7 @@ namespace Trophy.Features.Aggregates {
             var mems = new List<AggregateMember>();
 
             foreach (var mem in this.Members) {
-                if (!mem.MemberType.ToType(names).TryGetValue(out var type)) {
+                if (!mem.MemberType.TryInterpret(names).TryGetValue(out var type)) {
                     throw TypeCheckingErrors.ExpectedTypeExpression(mem.Location);
                 }
 

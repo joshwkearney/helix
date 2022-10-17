@@ -42,7 +42,7 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             var newScope = types.CurrentScope.Append("$block" + this.id);
@@ -60,11 +60,13 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
-            return this.isTypeChecked ? this : Option.None;
-        }
+        public ISyntax ToRValue(ITypesRecorder types) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+            return this;
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {

@@ -35,15 +35,12 @@ namespace Trophy.Features.Aggregates {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) {
+        public Option<TrophyType> TryInterpret(INamesRecorder names) {
             return Option.None;
         }
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            if (this.target.CheckTypes(types).ToRValue(types).TryGetValue(out var target)) {
-                throw TypeCheckingErrors.RValueRequired(this.target.Location);
-            }
-
+            var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.GetReturnType(this.target);
 
             // If this is a named type it could be a struct or union
@@ -78,11 +75,13 @@ namespace Trophy.Features.Aggregates {
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
-            return this.isTypeChecked ? this : Option.None;
-        }
+        public ISyntax ToRValue(ITypesRecorder types) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+            return this;
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CMemberAccess() {

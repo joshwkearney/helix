@@ -22,12 +22,12 @@ namespace Trophy.Features.Functions {
             var path = names.CurrentScope.Append(this.Name);
             var pars = new List<FunctionParameter>();
 
-            if (!this.ReturnType.ToType(names).TryGetValue(out var retType)) {
+            if (!this.ReturnType.TryInterpret(names).TryGetValue(out var retType)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.ReturnType.Location);
             }
 
             foreach (var par in this.Parameters) {
-                if (!par.Type.ToType(names).TryGetValue(out var parType)) {
+                if (!par.Type.TryInterpret(names).TryGetValue(out var parType)) {
                     throw TypeCheckingErrors.ExpectedTypeExpression(par.Location);
                 }
 

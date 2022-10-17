@@ -37,16 +37,11 @@ namespace Trophy.Features.FlowControl {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
-                throw TypeCheckingErrors.RValueRequired(this.cond.Location);
-            }
-
-            if (!this.body.CheckTypes(types).ToRValue(types).TryGetValue(out var body)) {
-                throw TypeCheckingErrors.RValueRequired(this.body.Location);
-            }
+            var cond = this.cond.CheckTypes(types).ToRValue(types);
+            var body = this.body.CheckTypes(types).ToRValue(types);
 
             var condType = types.GetReturnType(cond);
             var bodyType = types.GetReturnType(body);
@@ -63,10 +58,12 @@ namespace Trophy.Features.FlowControl {
         }
 
         public Option<ISyntax> ToRValue(ITypesRecorder types) {
-            return this.isTypeChecked ? this : Option.None;
-        }
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+            return this;
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {

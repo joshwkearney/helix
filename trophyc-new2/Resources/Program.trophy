@@ -4,7 +4,9 @@ func test(let z as int*) as int => {
 	var x = *z;
 	//let x = 45;
 
-	*z = 45;
+	let w = z as int^;
+
+	//*z = 45;
 
 	while x < 4 do {
 		//x = x / 2;

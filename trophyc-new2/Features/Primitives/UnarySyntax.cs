@@ -55,7 +55,7 @@ namespace Trophy.Features.Primitives {
             this.arg = arg;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) {
+        public Option<TrophyType> TryInterpret(INamesRecorder names) {
             return Option.None;
         }
 

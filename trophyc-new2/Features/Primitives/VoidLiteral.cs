@@ -24,7 +24,7 @@ namespace Trophy.Features.Primitives {
             this.Location = loc;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => PrimitiveType.Void;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => PrimitiveType.Void;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Void);
@@ -32,9 +32,7 @@ namespace Trophy.Features.Primitives {
             return this;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
-
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CIntLiteral(0);

@@ -28,7 +28,7 @@ namespace Trophy.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Bool);
@@ -36,9 +36,7 @@ namespace Trophy.Features.Primitives {
             return this;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
-
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CIntLiteral(this.Value ? 1 : 0);

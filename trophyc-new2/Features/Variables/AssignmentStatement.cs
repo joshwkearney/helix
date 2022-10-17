@@ -39,21 +39,11 @@ namespace Trophy.Features.Variables {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            var targetOp = this.target.CheckTypes(types).ToLValue(types);
-            var assignOp = this.assign.CheckTypes(types).ToRValue(types);
-
-            // Make sure the target is an lvalue
-            if (!targetOp.TryGetValue(out var target)) {
-                throw TypeCheckingErrors.LValueRequired(this.target.Location);
-            }
-
-            // Make sure the assignment value is an rvalue
-            if (!assignOp.TryGetValue(out var assign)) {
-                throw TypeCheckingErrors.RValueRequired(this.assign.Location);
-            }
+            var target = this.target.CheckTypes(types).ToLValue(types);
+            var assign = this.assign.CheckTypes(types).ToRValue(types);
 
             var targetType = types.GetReturnType(target);
             var assignType = types.GetReturnType(assign);
@@ -80,11 +70,13 @@ namespace Trophy.Features.Variables {
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
-            return this.isTypeChecked ? this : Option.None;
-        }
+        public ISyntax ToRValue(ITypesRecorder types) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+            return this;
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var stat = new CAssignment() {

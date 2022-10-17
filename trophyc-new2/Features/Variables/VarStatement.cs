@@ -48,14 +48,11 @@ namespace Trophy {
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Type check the assignment value
-            if (!this.assign.CheckTypes(types).ToRValue(types).TryGetValue(out var assign)) {
-                throw TypeCheckingErrors.RValueRequired(this.assign.Location);
-            }
-
+            var assign = this.assign.CheckTypes(types).ToRValue(types);
             var assignType = types.GetReturnType(assign);
             var path = types.CurrentScope.Append(this.name);
             var sig = new VariableSignature(path, assignType, this.isWritable);
@@ -73,9 +70,13 @@ namespace Trophy {
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToLValue(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
@@ -94,13 +95,11 @@ namespace Trophy {
             this.assign = assign;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
-
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var stat = new CVariableDeclaration() {

@@ -7,13 +7,17 @@ namespace Trophy.Parsing {
     public interface ISyntax {
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> ToType(INamesRecorder names);
+        public Option<TrophyType> TryInterpret(INamesRecorder names);
 
         public ISyntax CheckTypes(ITypesRecorder types);
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types);
+        public ISyntax ToRValue(ITypesRecorder types) {
+            throw TypeCheckingErrors.RValueRequired(this.Location);
+        }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types);
+        public ISyntax ToLValue(ITypesRecorder types) {
+            throw TypeCheckingErrors.LValueRequired(this.Location);
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer);
     }

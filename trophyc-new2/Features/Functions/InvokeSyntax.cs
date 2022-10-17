@@ -43,7 +43,7 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
@@ -84,9 +84,13 @@ namespace Trophy.Features.Functions {
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToLValue(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
@@ -109,13 +113,11 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 
         public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
-
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var args = this.args

@@ -41,17 +41,13 @@ namespace Trophy.Features.Primitives {
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) {
-            return this.inner.ToType(names)
+        public Option<TrophyType> TryInterpret(INamesRecorder names) {
+            return this.inner.TryInterpret(names)
                 .Select(x => new PointerType(x, this.isWritable))
                 .Select(x => (TrophyType)x);
         }
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
-
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
-
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();

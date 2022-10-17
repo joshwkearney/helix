@@ -46,7 +46,7 @@ namespace Trophy.Features.Primitives {
             this.inner = inner;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) {
+        public Option<TrophyType> TryInterpret(INamesRecorder names) {
             return Option.None;
         }
 
@@ -54,9 +54,7 @@ namespace Trophy.Features.Primitives {
             return this;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
-
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CCast() {

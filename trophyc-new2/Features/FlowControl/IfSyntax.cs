@@ -58,22 +58,14 @@ namespace Trophy.Features.FlowControl {
             this.iffalse = iffalse;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) {
+        public Option<TrophyType> TryInterpret(INamesRecorder names) {
             return Option.None;
         }
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            if (!this.cond.CheckTypes(types).ToRValue(types).TryGetValue(out var cond)) {
-                throw TypeCheckingErrors.RValueRequired(this.cond.Location);
-            }
-
-            if (!this.iftrue.CheckTypes(types).ToRValue(types).TryGetValue(out var iftrue)) {
-                throw TypeCheckingErrors.RValueRequired(this.iftrue.Location);
-            }
-
-            if (!this.iffalse.CheckTypes(types).ToRValue(types).TryGetValue(out var iffalse)) {
-                throw TypeCheckingErrors.RValueRequired(this.iffalse.Location);
-            }
+            var cond = this.cond.CheckTypes(types).ToRValue(types);
+            var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
+            var iffalse = this.iffalse.CheckTypes(types).ToRValue(types);
 
             var condType = types.GetReturnType(cond);
             var ifTrueType = types.GetReturnType(iftrue);
@@ -98,9 +90,13 @@ namespace Trophy.Features.FlowControl {
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToLValue(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
@@ -124,13 +120,11 @@ namespace Trophy.Features.FlowControl {
             this.returnType = returnType;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
-
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
+        public ISyntax ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();

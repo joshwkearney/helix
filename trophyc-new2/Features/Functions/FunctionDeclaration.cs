@@ -115,11 +115,7 @@ namespace Trophy.Features.Functions {
             // Set the scope for type checking the body
             types = types.WithScope(sig.Path);
 
-            // Make sure the body is an rvalue
-            if (!body.CheckTypes(types).ToRValue(types).TryGetValue(out body)) {
-                throw TypeCheckingErrors.RValueRequired(this.body.Location);
-            }
-
+            body = body.CheckTypes(types).ToRValue(types);
             var bodyType = types.GetReturnType(body);
 
             // Make sure the return type matches the body's type

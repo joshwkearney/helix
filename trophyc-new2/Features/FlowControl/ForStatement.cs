@@ -45,7 +45,7 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Rewrite for syntax to use while loops
@@ -91,11 +91,11 @@ namespace Trophy.Features.FlowControl {
             return block.CheckTypes(types);
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
+        public ISyntax ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) {
+        public ISyntax ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 

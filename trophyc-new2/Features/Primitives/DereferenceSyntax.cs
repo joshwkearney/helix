@@ -22,7 +22,7 @@ namespace Trophy.Features.Primitives {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
@@ -33,21 +33,25 @@ namespace Trophy.Features.Primitives {
             return result;
         }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) {
+        public ISyntax ToLValue(ITypesRecorder types) {
             if (!this.isTypeChecked) {
-                return Option.None;
+                throw TypeCheckingErrors.LValueRequired(this.Location);
             }
 
             var pointerType = types.AssertIsPointer(this.target);
             if (!pointerType.IsWritable) {
-                return Option.None;
+                throw TypeCheckingErrors.WritingToConstPointer(this.Location);
             }
 
-            return Option.Some(this.target);
+            return this.target;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
-            return this.isTypeChecked ? this : Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
+
+            return this;
         }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {

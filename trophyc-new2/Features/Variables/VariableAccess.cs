@@ -26,7 +26,7 @@ namespace Trophy {
             this.name = name;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) {
+        public Option<TrophyType> TryInterpret(INamesRecorder names) {
             // Make sure this name exists
             if (!names.TryFindPath(this.name).TryGetValue(out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
@@ -78,9 +78,13 @@ namespace Trophy {
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToRValue(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+        public ISyntax ToLValue(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
@@ -97,19 +101,14 @@ namespace Trophy {
             this.variablePath = path;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) {
-            // If we can't be an rvalue we definitely can't be an lvalue
-            if (!this.ToRValue(types).HasValue) {
-                return Option.None;
-            }
-
+        public ISyntax ToLValue(ITypesRecorder types) {
             // Make sure this variable is writable
             if (!types.GetVariable(this.variablePath).IsWritable) {
-                return Option.None;
+                throw TypeCheckingErrors.WritingToConstVariable(this.Location);
             }
 
             var result = new LValueVariableAccessSyntax(this.Location, this.variablePath);
@@ -118,7 +117,7 @@ namespace Trophy {
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => this;
+        public ISyntax ToRValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
@@ -137,13 +136,11 @@ namespace Trophy {
             this.path = path;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) => Option.None;
-
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => this;
+        public ISyntax ToLValue(ITypesRecorder types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);

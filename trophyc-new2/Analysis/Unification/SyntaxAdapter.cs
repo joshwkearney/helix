@@ -16,7 +16,7 @@ namespace Trophy.Analysis.Unification {
             this.adapted = adapted;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) {
+        public Option<TrophyType> TryInterpret(INamesRecorder names) {
             return Option.None;
         }
 

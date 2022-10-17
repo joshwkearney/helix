@@ -3,6 +3,20 @@ using Trophy.Parsing;
 
 namespace Trophy.Analysis {
     public static class TypeCheckingErrors {
+        public static Exception WritingToConstVariable(TokenLocation location) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: Read-only Variable",
+                $"Cannot write to read-only variable.");
+        }
+
+        public static Exception WritingToConstPointer(TokenLocation location) {
+            return new TypeCheckingException(
+                location,
+                "Analysis Exception: Read-only Pointer",
+                $"Cannot write to read-only pointer.");
+        }
+
         public static Exception RValueRequired(TokenLocation location) {
             return new TypeCheckingException(
                 location,

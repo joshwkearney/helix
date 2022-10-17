@@ -39,16 +39,13 @@ namespace Trophy.Features.Primitives {
             this.target = target;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            if (!this.arg.CheckTypes(types).ToRValue(types).TryGetValue(out var arg)) {
-                throw TypeCheckingErrors.RValueRequired(this.arg.Location);
-            }
-
+            var arg = this.arg.CheckTypes(types).ToRValue(types);
             var argType = types.GetReturnType(arg);
 
-            if (!this.target.ToType(types).TryGetValue(out var targetType)) {
+            if (!this.target.TryInterpret(types).TryGetValue(out var targetType)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
             }
 
@@ -59,11 +56,11 @@ namespace Trophy.Features.Primitives {
             return arg;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
+        public ISyntax ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) {
+        public ISyntax ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 

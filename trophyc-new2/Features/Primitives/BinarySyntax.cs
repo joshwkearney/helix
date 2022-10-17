@@ -176,7 +176,7 @@ namespace Trophy.Features.Primitives {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> ToType(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Delegate type resolution
@@ -235,11 +235,13 @@ namespace Trophy.Features.Primitives {
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
-            return this.isTypeChecked ? this : Option.None;
-        }
+        public ISyntax ToRValue(ITypesRecorder types) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) => Option.None;
+            return this;
+        }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CBinaryExpression() {
