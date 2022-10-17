@@ -23,13 +23,13 @@ namespace Trophy.Analysis.Unification {
                     return syntax => new SyntaxAdapter(syntax, new BoolLiteral(syntax.Location, false));
                 }
             }
-            
+
             // Pointer to readonly pointer
-            //if (from is PointerType p1 && to is PointerType p2) {
-            //    if (p1.ReferencedType == p2.ReferencedType && p1.IsWritable) {
-            //        return syntax => 
-            //    }
-            //}
+            if (from is PointerType p1 && to is PointerType p2) {
+                if (p1.ReferencedType == p2.ReferencedType && p1.IsWritable) {
+                    return syntax => syntax;
+                }
+            }
 
             return null;
         }
