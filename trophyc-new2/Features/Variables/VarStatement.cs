@@ -54,7 +54,7 @@ namespace Trophy {
             var assign = this.assign.CheckTypes(types).ToRValue(types);
 
             if (this.isWritable) {
-                assign = assign.RemoveDependentTyping(types);
+                assign = assign.WithMutableType(types);
             }
 
             var assignType = types.GetReturnType(assign);

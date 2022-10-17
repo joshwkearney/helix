@@ -11,8 +11,6 @@ namespace Trophy.Analysis.Types {
             this.IsWritable = isWritable;
         }
 
-        public override Option<PointerType> AsPointerType() => this;
-
         public override bool CanUnifyTo(TrophyType other) {
             if (this == other) {
                 return true;

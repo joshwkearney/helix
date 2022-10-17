@@ -29,10 +29,6 @@ namespace Trophy.Analysis.Types {
             }
         }
 
-        public virtual TrophyType RemoveDependentTyping() => this;
-
-        public virtual Option<PointerType> AsPointerType() => new();
-
-        public virtual Option<NamedType> AsNamedType() => new();
+        public virtual TrophyType ToMutableType() => this;
     }
 }

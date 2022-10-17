@@ -6,16 +6,16 @@ namespace Trophy.Analysis {
         public static PointerType AssertIsPointer(this ISyntax syntax, ITypesRecorder types) {
             var type = types.GetReturnType(syntax);
 
-            if (!type.AsPointerType().TryGetValue(out var pointer)) {
+            if (type is not PointerType pointer) {
                 throw TypeCheckingErrors.ExpectedVariableType(syntax.Location, type);
             }
 
             return pointer;
         }
 
-        public static ISyntax RemoveDependentTyping(this ISyntax syntax, ITypesRecorder types) {
+        public static ISyntax WithMutableType(this ISyntax syntax, ITypesRecorder types) {
             var type = types.GetReturnType(syntax);
-            var betterType = type.RemoveDependentTyping();
+            var betterType = type.ToMutableType();
 
             return syntax.UnifyTo(betterType, types);
         }

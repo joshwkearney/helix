@@ -44,6 +44,10 @@ namespace Trophy.Features.Functions {
                 var type = sig.Parameters[i].Type;
                 var path = sig.Path.Append(parsePar.Name);
 
+                if (parsePar.IsWritable) {
+                    type = type.ToMutableType();
+                }
+
                 paths.DeclareVariable(new VariableSignature(path, type, parsePar.IsWritable));
             }
         }

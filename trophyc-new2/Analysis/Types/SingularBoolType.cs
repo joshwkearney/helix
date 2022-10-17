@@ -46,7 +46,7 @@ namespace Trophy.Analysis.Types {
             return PrimitiveType.Bool;
         }
 
-        public override TrophyType RemoveDependentTyping() {
+        public override TrophyType ToMutableType() {
             return PrimitiveType.Bool;
         }
 

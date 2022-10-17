@@ -74,10 +74,10 @@ namespace Trophy.Generation {
             else if (type == PrimitiveType.Void) {
                 return new CNamedType("unsigned int");
             }
-            else if (type.AsPointerType().TryGetValue(out var type2)) {
+            else if (type is PointerType type2) {
                 return new CPointerType(ConvertType(type2.ReferencedType));
             }
-            else if (type.AsNamedType().TryGetValue(out var type3)) {
+            else if (type is NamedType type3) {
                 return new CNamedType(string.Join("$", type3.FullName.Segments));
             }
             else {
