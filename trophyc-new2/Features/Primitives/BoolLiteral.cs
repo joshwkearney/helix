@@ -27,10 +27,12 @@ namespace Trophy.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
+        public Option<TrophyType> TryInterpret(INamesRecorder names) {
+            return new SingularBoolType(this.Value);
+        }
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            types.SetReturnType(this, PrimitiveType.Bool);
+            types.SetReturnType(this, new SingularBoolType(this.Value));
 
             return this;
         }

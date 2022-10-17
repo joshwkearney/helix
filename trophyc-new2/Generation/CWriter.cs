@@ -65,7 +65,7 @@ namespace Trophy.Generation {
                 return ctype;
             }
 
-            if (type == PrimitiveType.Bool) {
+            if (type == PrimitiveType.Bool || type is SingularBoolType) {
                 return new CNamedType("unsigned int");
             }
             else if (type == PrimitiveType.Int || type is SingularIntType) {

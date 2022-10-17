@@ -1,13 +1,13 @@
 ﻿//type x = int;
 
-func test(let z as int^) as int => {
+func test(let z as int^, let test as 4) as int => {
 	var x = *z;
 	//let x = 45;
 
 	//*z = 45;
 
 
-	var p = 45;
+	var p = test;
 
 	p = 10;
 
