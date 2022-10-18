@@ -7,9 +7,11 @@
 extern "C" {
 #endif
 
-typedef unsigned int _$_bool;
-typedef unsigned int _$_void;
-typedef unsigned int _$_int;
+typedef unsigned int _trophy_bool;
+typedef unsigned int _trophy_void;
+typedef unsigned int _trophy_int;
+
+
 
 #if defined(__cplusplus)
 }

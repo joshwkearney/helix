@@ -49,18 +49,13 @@ namespace Trophy.Generation.CSyntax {
             sb.Append(')');
 
             if (this.body.TryGetValue(out var stats)) {
-                if (stats.Any()) {
-                    sb.AppendLine(" {");
-                }
+                sb.AppendLine(" {");
 
                 foreach (var stat in stats) {
                     stat.WriteToC(indentLevel + 1, sb);
                 }
 
-                if (stats.Any()) {
-                    CHelper.Indent(indentLevel, sb);
-                }
-
+                CHelper.Indent(indentLevel, sb);
                 sb.AppendLine("}");
             }
             else {

@@ -1,4 +1,5 @@
-﻿using Trophy.Features.FlowControl;
+﻿using Trophy.Features.Aggregates;
+using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 
@@ -18,34 +19,38 @@ namespace Trophy.Analysis.Types {
             this.kind = kind;
         }
 
-        public override bool CanUnifyTo(TrophyType other) {
+        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types) {
             if (this == other) {
                 return true;
             }
+            else if (this == Void) {
+                if (other == Int || other == Bool) {
+                    return true;
+                }
+                else if (other is NamedType named && types.TryResolveName(named.Path).TryGetValue(out var target)) {
+                    if (target == NameTarget.Aggregate) {
+                        var sig = types.GetAggregate(named.Path);
 
-            if (this == Void) {
-                return other == Int || other == Bool;
+                        return sig.Members.All(x => x.MemberType.HasDefaultValue(types));
+                    }
+                }
             }
-
+                
             return false;
         }
 
-        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax) {
+        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, ITypesRecorder types) {
             if (this == other) {
                 return syntax;
             }
 
             if (this == Void) {
-                if (other == Int) {
-                    return new BlockSyntax(syntax.Location, new ISyntax[] { 
-                        syntax, new IntLiteral(syntax.Location, 0)
-                    });
-                }
-                else if (other == Bool) {
-                    return new BlockSyntax(syntax.Location, new ISyntax[] {
-                        syntax, new BoolLiteral(syntax.Location, false)
-                    });
-                }
+                return new BlockSyntax(syntax.Location, new ISyntax[] {
+                    syntax,
+                    new PutSyntax(
+                        syntax.Location,
+                        other.ToSyntax(syntax.Location))
+                });
             }
 
             throw new InvalidOperationException();
@@ -59,6 +64,14 @@ namespace Trophy.Analysis.Types {
                 PrimitiveTypeKind.Void  => "void",
                 _                       => throw new Exception("Unexpected primitive type kind"),
             };
+        }
+
+        public override ISyntax ToSyntax(TokenLocation loc) {
+            if (this == Void) {
+                return new VoidLiteral(loc);
+            }
+
+            return base.ToSyntax(loc);
         }
 
         private enum PrimitiveTypeKind {

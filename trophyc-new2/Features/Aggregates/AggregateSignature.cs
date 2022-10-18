@@ -7,9 +7,14 @@ namespace Trophy.Features.Aggregates {
 
         public IReadOnlyList<AggregateMember> Members { get; }
 
-        public AggregateSignature(IdentifierPath name, IReadOnlyList<AggregateMember> mems) {
+        public AggregateKind Kind { get; }
+
+        public AggregateSignature(IdentifierPath name, AggregateKind kind,
+            IReadOnlyList<AggregateMember> mems) {
+
             this.Path = name;
             this.Members = mems;
+            this.Kind = kind;
         }                
     }
 

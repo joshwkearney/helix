@@ -70,10 +70,15 @@ namespace Trophy.Features.FlowControl {
                 IfTrue = new[] { new CBreak() }
             };
 
-            bodyWriter.WriteStatement(terminator);
-            bodyWriter.WriteEmptyLine();
-
             this.body.GenerateCode(writer);
+
+            if (loopBody.Any()) {
+                loopBody.Insert(0, new CEmptyLine());
+                loopBody.Insert(0, terminator);
+            }
+            else {
+                bodyWriter.WriteStatement(terminator);
+            }
 
             var loop = new CWhile() {
                 Condition = new CIntLiteral(1),

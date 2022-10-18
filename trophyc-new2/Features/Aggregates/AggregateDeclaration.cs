@@ -48,8 +48,8 @@ namespace Trophy.Parsing {
             this.Advance(TokenKind.CloseBrace);
             var last = this.Advance(TokenKind.Semicolon);
             var loc = start.Location.Span(last.Location);
-            var sig = new AggregateParseSignature(name, mems);
             var kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union;
+            var sig = new AggregateParseSignature(name, kind, mems);
 
             return new AggregateParseDeclaration(loc, sig, kind);
         }
@@ -142,7 +142,7 @@ namespace Trophy.Features.Aggregates {
             var mems = this.signature.Members
                 .Select(x => new CParameter() { 
                     Type = writer.ConvertType(x.MemberType),
-                    Name = writer.GetVariableName(this.signature.Path.Append(x.MemberName))
+                    Name = x.MemberName
                 })
                 .ToArray();
 

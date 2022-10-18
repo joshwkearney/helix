@@ -15,6 +15,15 @@ namespace Trophy.Generation.Syntax {
         }
     }
 
+    public record CSyntaxStatement : ICStatement {
+        public ICSyntax? Value { get; init; } = null;
+
+        public void WriteToC(int indentLevel, StringBuilder sb) {
+            CHelper.Indent(indentLevel, sb);
+            sb.Append(this.Value!.WriteToC()).AppendLine(";");
+        }
+    }
+
     public record CVariableDeclaration() : ICStatement {
         private readonly Option<ICSyntax> assign = Option.None;
 
@@ -140,7 +149,7 @@ namespace Trophy.Generation.Syntax {
     public record CComment(string Value) : ICStatement {
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
-            sb.Append("// ").AppendLine(this.Value);
+            sb.Append("/* ").Append(this.Value).AppendLine(" */");
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Trophy.Analysis.Types {
             this.IsWritable = isWritable;
         }
 
-        public override bool CanUnifyTo(TrophyType other) {
+        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types) {
             if (this == other) {
                 return true;
             }
@@ -23,7 +23,7 @@ namespace Trophy.Analysis.Types {
             return false;
         }
 
-        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax) => syntax;
+        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, ITypesRecorder types) => syntax;
 
         public override string ToString() {
             return this.ReferencedType + (this.IsWritable ? "*" : "^");

@@ -7,9 +7,12 @@ namespace Trophy.Features.Aggregates {
 
         public IReadOnlyList<ParseAggregateMember> Members { get; }
 
-        public AggregateParseSignature(string name, IReadOnlyList<ParseAggregateMember> mems) {
+        public AggregateKind Kind { get; }
+
+        public AggregateParseSignature(string name, AggregateKind kind, IReadOnlyList<ParseAggregateMember> mems) {
             this.Name = name;
             this.Members = mems;
+            this.Kind = kind;
         }
 
         public AggregateSignature ResolveNames(INamesRecorder names) {
@@ -24,7 +27,7 @@ namespace Trophy.Features.Aggregates {
                 mems.Add(new AggregateMember(mem.MemberName, type, mem.IsWritable));
             }
 
-            return new AggregateSignature(path, mems);
+            return new AggregateSignature(path, this.Kind, mems);
         }
     }
 

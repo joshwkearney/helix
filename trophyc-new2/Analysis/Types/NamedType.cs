@@ -1,20 +1,20 @@
 ﻿namespace Trophy.Analysis.Types {
     public record NamedType : TrophyType {
-        public IdentifierPath FullName { get; } 
+        public IdentifierPath Path { get; } 
 
         public NamedType(IdentifierPath fullName) {
-            this.FullName = fullName;
+            this.Path = fullName;
         }
 
         public override string ToString() {
-            return this.FullName.Segments.Last();
+            return this.Path.Segments.Last();
         }
 
         public override IEnumerable<TrophyType> GetContainedValueTypes(ITypesRecorder types) {
-            var target = types.TryResolveName(this.FullName).GetValue();
+            var target = types.TryResolveName(this.Path).GetValue();
 
             if (target == NameTarget.Aggregate) {
-                var sig = types.GetAggregate(this.FullName);
+                var sig = types.GetAggregate(this.Path);
 
                 return sig.Members
                     .SelectMany(x => x.MemberType.GetContainedValueTypes(types))

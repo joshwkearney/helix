@@ -4,8 +4,12 @@ func opaque() => {
 	
 };
 
-struct Recursive {
-	let x as Recursive;
+struct Recursive2 {
+	let x as int;
+};
+
+struct Recursive1 {
+	let x as Recursive2;
 };
 
 func test(let z as int^, let test as 4) as int => {
@@ -14,10 +18,11 @@ func test(let z as int^, let test as 4) as int => {
 
 	//*z = 45;
 
+	//for i in 0 to 10 do {
 
-	var p = test;
+	//}
 
-	p = 10;
+	var p = put Point;
 
 	while x < 4 do {
 		//x = x / 2;
@@ -29,14 +34,14 @@ func test(let z as int^, let test as 4) as int => {
 	// Comment
 	if x > 3 then true else 78;
 
-	// let z = put Point { x= 1, y= 4 };
+	// let z = put Point { x = 1, y = 4 };
 };
 
 func other(let x as int) as int => x + 10;
 
 struct Point {
 	let x as int;
-	let y as int;
+	let y as Recursive1;
 };
 
 extern func add(let x as int, let y as int) as int;

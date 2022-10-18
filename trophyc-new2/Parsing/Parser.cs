@@ -40,7 +40,7 @@
 
         private Token Advance() {
             if (this.pos >= this.tokens.Count) {
-                throw ParsingErrors.EndOfFile(this.tokens.Last().Location);
+                throw ParsingErrors.EndOfFile(this.tokens[this.tokens.Count - 1].Location);
             }
 
             return this.tokens[this.pos++];
@@ -137,6 +137,9 @@
                 var tok = this.Advance(TokenKind.BoolKeyword);
 
                 return new VariableAccessParseSyntax(tok.Location, "bool");
+            }
+            else if (this.Peek(TokenKind.PutKeyword)) {
+                return this.PutExpression();
             }
             else {
                 var next = this.Advance();

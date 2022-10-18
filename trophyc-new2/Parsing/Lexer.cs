@@ -11,7 +11,7 @@
             { "do", TokenKind.DoKeyword }, { "to", TokenKind.ToKeyword },
             { "struct", TokenKind.StructKeyword }, { "union", TokenKind.UnionKeyword },
             { "and", TokenKind.AndKeyword }, { "or", TokenKind.OrKeyword },
-            { "xor", TokenKind.XorKeyword }
+            { "xor", TokenKind.XorKeyword }, { "put", TokenKind.PutKeyword }
         };
 
         private static readonly Dictionary<char, TokenKind> symbols = new Dictionary<char, TokenKind>() {

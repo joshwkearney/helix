@@ -140,6 +140,8 @@ namespace Trophy.Features.Functions {
         public IDeclaration CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(ICWriter writer) {
+            writer.ResetTempNames();
+
             var returnType = this.signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
                 : writer.ConvertType(this.signature.ReturnType);

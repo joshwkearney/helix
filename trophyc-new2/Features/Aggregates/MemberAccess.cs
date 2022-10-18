@@ -46,10 +46,10 @@ namespace Trophy.Features.Aggregates {
             if (targetType is NamedType named) {
 
                 // If this is a struct or union we can access the fields
-                if (types.TryResolveName(named.FullName).TryGetValue(out var name)) {
+                if (types.TryResolveName(named.Path).TryGetValue(out var name)) {
                     if (name == NameTarget.Aggregate) {
 
-                        var sig = types.GetAggregate(named.FullName);
+                        var sig = types.GetAggregate(named.Path);
                         var fieldOpt = sig
                             .Members
                             .Where(x => x.MemberName == this.memberName)

@@ -23,11 +23,11 @@ namespace Trophy.Analysis {
         public static ISyntax UnifyTo(this ISyntax fromSyntax, TrophyType toType, ITypesRecorder types) {
             var type = types.GetReturnType(fromSyntax);
 
-            if (!type.CanUnifyTo(toType)) {
+            if (!type.CanUnifyTo(toType, types)) {
                 throw TypeCheckingErrors.UnexpectedType(fromSyntax.Location, toType, type);
             }
 
-            var result = type.UnifyTo(toType, fromSyntax).CheckTypes(types);
+            var result = type.UnifyTo(toType, fromSyntax, types).CheckTypes(types);
 
             types.SetReturnType(result, toType);
             return result;
@@ -37,11 +37,11 @@ namespace Trophy.Analysis {
             var type1 = types.GetReturnType(fromSyntax);
             var type2 = types.GetReturnType(otherSyntax);
 
-            if (type1.CanUnifyFrom(type2)) {
-                return fromSyntax.UnifyTo(type1.UnifyFrom(type2), types);
+            if (type1.CanUnifyFrom(type2, types)) {
+                return fromSyntax.UnifyTo(type1.UnifyFrom(type2, types), types);
             }
-            else if (type2.CanUnifyFrom(type1)) {
-                return fromSyntax.UnifyTo(type2.UnifyFrom(type1), types);
+            else if (type2.CanUnifyFrom(type1, types)) {
+                return fromSyntax.UnifyTo(type2.UnifyFrom(type1, types), types);
             }
             else {
                 throw TypeCheckingErrors.UnexpectedType(fromSyntax.Location, type1, type2);

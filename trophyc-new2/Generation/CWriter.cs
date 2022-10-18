@@ -9,6 +9,8 @@ namespace Trophy.Generation {
 
         public string GetVariableName(IdentifierPath path);
 
+        public void ResetTempNames();
+
         public void WriteDeclaration1(ICStatement decl);
 
         public void WriteDeclaration2(ICStatement decl);
@@ -19,21 +21,39 @@ namespace Trophy.Generation {
     }
 
     public class CWriter : ICWriter {
-        private int tempCounter = 0;
+        private char tempLetterCounter = 'A';
+        private int tempNumberCounter = 0;
+
         private readonly Dictionary<TrophyType, ICSyntax> typeNames = new();
-        private readonly Dictionary<IdentifierPath, string> tempNames = new();
+        private readonly Dictionary<IdentifierPath, string> pathNames = new();
+        private readonly Dictionary<string, int> nameCounters = new();
 
         private readonly StringBuilder decl1Sb = new();
         private readonly StringBuilder decl2Sb = new();
         private readonly StringBuilder decl3Sb = new();
 
         public CWriter() {
-            this.decl1Sb.AppendLine("#include \"include/trophy.h\"");
-            this.decl1Sb.AppendLine();
+            decl1Sb.AppendLine("void* memset(void* str, int c, long unsigned int n);");
+            decl1Sb.AppendLine();
         }
 
         public string GetVariableName() {
-            return "$t_" + this.tempCounter++;
+            if (this.tempLetterCounter > 'Z') {
+                this.tempLetterCounter = 'A';
+                this.tempNumberCounter++;
+            }
+
+            if (this.tempNumberCounter > 0) {
+                return "$" + this.tempLetterCounter++ + "_" + this.tempNumberCounter;
+            }
+            else {
+                return "$" + this.tempLetterCounter++;
+            }
+        }
+
+        public void ResetTempNames() {
+            this.tempLetterCounter = 'A';
+            this.tempNumberCounter = 0;
         }
 
         public string GetVariableName(IdentifierPath path) {
@@ -41,8 +61,21 @@ namespace Trophy.Generation {
                 return path.Segments.First();
             }
 
-            if (!this.tempNames.TryGetValue(path, out var value)) {
-                value = this.tempNames[path] = path.Segments.Last() + "_" + this.tempCounter++;
+            var name = path.Segments.Last();
+
+            if (!this.nameCounters.TryGetValue(name, out int counter)) {
+                counter = this.nameCounters[name] = 0;
+            }
+
+            if (!this.pathNames.TryGetValue(path, out var value)) {
+                value = name;
+
+                if (counter > 0) {
+                    value += "_" + counter;
+                }
+
+                this.pathNames[path] = value;
+                this.nameCounters[name]++;
             }
 
             return value;
@@ -78,7 +111,7 @@ namespace Trophy.Generation {
                 return new CPointerType(ConvertType(type2.ReferencedType));
             }
             else if (type is NamedType type3) {
-                return new CNamedType(string.Join("$", type3.FullName.Segments));
+                return new CNamedType(string.Join("$", type3.Path.Segments));
             }
             else {
                 throw new Exception();

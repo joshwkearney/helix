@@ -4,14 +4,21 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Generation {
     public interface ICStatementWriter : ICWriter {
-        public CStatementWriter WriteStatement(ICStatement stat);
+        public ICStatementWriter WriteStatement(ICStatement stat);
 
-        public CStatementWriter WriteEmptyLine();
+        public ICStatementWriter WriteEmptyLine();
 
         public ICSyntax WriteImpureExpression(ICSyntax type, ICSyntax expr);
 
-        public CStatementWriter WriteComment(string comment) {
+        // Mixins
+        public ICStatementWriter WriteComment(string comment) {
             return this.WriteStatement(new CComment(comment));
+        }
+
+        public ICStatementWriter WriteStatement(ICSyntax syntax) {
+            return this.WriteStatement(new CSyntaxStatement() { 
+                Value = syntax
+            });
         }
     }
 
@@ -24,13 +31,13 @@ namespace Trophy.Generation {
             this.stats = stats;
         }
 
-        public CStatementWriter WriteStatement(ICStatement stat) {
+        public ICStatementWriter WriteStatement(ICStatement stat) {
             stats.Add(stat);
 
             return this;
         }
 
-        public CStatementWriter WriteEmptyLine() {
+        public ICStatementWriter WriteEmptyLine() {
             if (this.stats.Any() && !this.stats.Last().IsEmpty) {
                 this.WriteStatement(new CEmptyLine());
             }
@@ -63,5 +70,7 @@ namespace Trophy.Generation {
         public void WriteDeclaration3(ICStatement decl) => this.prev.WriteDeclaration3(decl);
 
         public ICSyntax ConvertType(TrophyType type) => this.prev.ConvertType(type);
+
+        public void ResetTempNames() => this.prev.ResetTempNames();
     }
 }
