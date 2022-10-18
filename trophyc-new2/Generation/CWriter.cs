@@ -135,6 +135,10 @@ namespace Trophy.Generation {
         public override string ToString() {
             var sb = new StringBuilder();
 
+            sb.AppendLine("#if __cplusplus");
+            sb.AppendLine("extern \"C\" {");
+            sb.AppendLine("#endif").AppendLine();
+
             sb.AppendLine(this.header);
 
             if (this.decl1Sb.Length > 0) {
@@ -150,8 +154,12 @@ namespace Trophy.Generation {
             }
 
             if (this.decl4Sb.Length > 0) {
-                sb.Append(this.decl4Sb).AppendLine();
+                sb.Append(this.decl4Sb);
             }
+
+            sb.AppendLine("#if __cplusplus");
+            sb.AppendLine("}");
+            sb.AppendLine("#endif");
 
             return sb.ToString();
         }
