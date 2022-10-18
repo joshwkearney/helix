@@ -12,7 +12,7 @@ struct Recursive1 {
 	let x as Recursive2;
 };
 
-func test(let z as int^, let test as 4) as int => {
+func test(let z as int*, let test as 4) as int => {
 	var x = *z;
 	//let x = 45;
 

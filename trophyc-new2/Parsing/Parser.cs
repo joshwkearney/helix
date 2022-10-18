@@ -83,8 +83,8 @@
 
             while (this.Peek(TokenKind.OpenParenthesis) 
                 || this.Peek(TokenKind.Dot) 
-                || this.Peek(TokenKind.Multiply) 
-                || this.Peek(TokenKind.Caret)) {
+                || this.Peek(TokenKind.Multiply)) {
+                //|| this.Peek(TokenKind.Caret)) {
 
                 if (this.Peek(TokenKind.OpenParenthesis)) {
                     first = this.InvokeExpression(first);
