@@ -4,6 +4,7 @@ using Trophy.Generation;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Features.FlowControl;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -11,20 +12,30 @@ namespace Trophy.Parsing {
             var first = this.XorExpression();
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
+                var branching = this.TryAdvance(TokenKind.ElseKeyword);
                 var second = this.XorExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinarySyntax(loc, first, second, BinaryOperationKind.Or);
+                if (branching) {
+                    first = new IfParseSyntax(
+                        loc,
+                        first,
+                        new BoolLiteral(loc, true),
+                        second);
+                }
+                else {
+                    first = new BinarySyntax(loc, first, second, BinaryOperationKind.Or);
+                }
             }
 
             return first;
         }
 
         private ISyntax XorExpression() {
-            var first = this.ComparisonExpression();
+            var first = this.AndExpression();
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
-                var second = this.ComparisonExpression();
+                var second = this.AndExpression();
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, BinaryOperationKind.Xor);
@@ -33,8 +44,31 @@ namespace Trophy.Parsing {
             return first;
         }
 
+        private ISyntax AndExpression() {
+            var first = this.ComparisonExpression();
+
+            while (this.TryAdvance(TokenKind.AndKeyword)) {
+                var branching = this.TryAdvance(TokenKind.ThenKeyword);
+                var second = this.ComparisonExpression();
+                var loc = first.Location.Span(second.Location);
+
+                if (branching) {
+                    first = new IfParseSyntax(
+                        loc,
+                        new UnaryParseSyntax(loc, UnaryOperatorKind.Not, first),
+                        new BoolLiteral(loc, false),
+                        second);
+                }
+                else {
+                    first = new BinarySyntax(loc, first, second, BinaryOperationKind.And);
+                }
+            }
+
+            return first;
+        }
+
         private ISyntax ComparisonExpression() {
-            var first = this.AndExpression();
+            var first = this.AddExpression();
             var comparators = new Dictionary<TokenKind, BinaryOperationKind>() {
                 { TokenKind.Equals, BinaryOperationKind.EqualTo }, { TokenKind.NotEquals, BinaryOperationKind.NotEqualTo },
                 { TokenKind.LessThan, BinaryOperationKind.LessThan }, { TokenKind.GreaterThan, BinaryOperationKind.GreaterThan },
@@ -54,7 +88,7 @@ namespace Trophy.Parsing {
                 }
 
                 var op = comparators[this.Advance().Kind];
-                var second = this.AndExpression();
+                var second = this.AddExpression();
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, op);
@@ -63,18 +97,6 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntax AndExpression() {
-            var first = this.AddExpression();
-
-            while (this.TryAdvance(TokenKind.AndKeyword)) {
-                var second = this.AddExpression();
-                var loc = first.Location.Span(second.Location);
-
-                first = new BinarySyntax(loc, first, second, BinaryOperationKind.And);
-            }
-
-            return first;
-        }
 
         private ISyntax AddExpression() {
             var first = this.MultiplyExpression();

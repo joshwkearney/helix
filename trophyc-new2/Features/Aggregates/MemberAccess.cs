@@ -40,7 +40,7 @@ namespace Trophy.Features.Aggregates {
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
-            var targetType = types.GetReturnType(this.target);
+            var targetType = types.GetReturnType(target);
 
             // If this is a named type it could be a struct or union
             if (targetType is NamedType named) {

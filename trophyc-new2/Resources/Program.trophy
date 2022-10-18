@@ -1,40 +1,9 @@
-﻿//type x = int;
+﻿extern func test(let x as int) as int;
 
-func opaque() => {
-	
-};
-
-struct Recursive2 {
-	let x as int*;
-};
-
-struct Recursive1 {
-	let x as Recursive2;
-};
-
-func test(let z as int*, let test as 4) as int => {
-	var x = *z;
-	//let x = 45;
-
-	//*z = 45;
-
-	//for i in 0 to 10 do {
-
-	//}
-
-	var p = put Point { 5, 45 };
-
-	while x < 4 do {
-		//x = x / 2;
-	};
-
-	//void as Point
-	//void as int^
-
-	// Comment
-	if x > 3 then true else 78;
-
-	// let z = put Point { x = 1, y = 4 };
+func test(let x as int) as int => {
+	if x > 3 or else 45 < 10
+	then 0 
+	else 10;
 };
 
 func other(let x as int) as int => x + 10;
@@ -44,5 +13,3 @@ struct Point {
 	let y as int;
 	let z as int;
 };
-
-extern func add(let x as int, let y as int) as int;
