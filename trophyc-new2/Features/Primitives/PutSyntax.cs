@@ -32,12 +32,16 @@ namespace Trophy.Parsing {
                     Array.Empty<ISyntax>());
             }
 
-            var names = new List<string>();
+            var names = new List<string?>();
             var values = new List<ISyntax>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                var name = this.Advance(TokenKind.Identifier).Value;
-                this.Advance(TokenKind.Assignment);
+                string? name = null;
+
+                if (this.Peek(TokenKind.Identifier)) {
+                    name = this.Advance(TokenKind.Identifier).Value;
+                    this.Advance(TokenKind.Assignment);
+                }
 
                 var value = this.TopExpression();
 
@@ -60,13 +64,13 @@ namespace Trophy.Parsing {
 namespace Trophy.Features.Primitives {
     public class PutSyntax : ISyntax {
         private readonly ISyntax type;
-        private readonly IReadOnlyList<string> names;
+        private readonly IReadOnlyList<string?> names;
         private readonly IReadOnlyList<ISyntax> values;
 
         public TokenLocation Location { get; }
 
         public PutSyntax(TokenLocation loc, ISyntax type, 
-            IReadOnlyList<string> names, IReadOnlyList<ISyntax> values) {
+            IReadOnlyList<string?> names, IReadOnlyList<ISyntax> values) {
 
             this.Location = loc;
             this.type = type;
@@ -89,6 +93,15 @@ namespace Trophy.Features.Primitives {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);
             }
 
+            if (type is PrimitiveType) {
+                if (this.names.Count > 0) {
+                    throw new TypeCheckingException(
+                        this.Location,
+                        "Member Not Defined",
+                        $"The type '{type}' does not contain the member '{this.names[0]}'");
+                }
+            }
+
             if (type == PrimitiveType.Void) {
                 return new VoidLiteral(this.Location).CheckTypes(types);
             }
@@ -105,15 +118,14 @@ namespace Trophy.Features.Primitives {
                 }
 
                 var sig = types.GetAggregate(named.Path);
-                if (sig.Kind == AggregateKind.Struct) {
-                    var result = new NewAggregateSyntax(
-                        this.Location, 
-                        named, 
-                        this.names, 
-                        this.values);
 
-                    return result.CheckTypes(types);
-                }
+                var result = new NewAggregateSyntax(
+                    this.Location,
+                    sig, 
+                    this.names, 
+                    this.values);
+
+                return result.CheckTypes(types);
             }
 
             throw new TypeCheckingException(

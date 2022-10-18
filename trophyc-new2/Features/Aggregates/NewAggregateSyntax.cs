@@ -8,18 +8,19 @@ using Trophy.Features.Primitives;
 namespace Trophy.Features.Aggregates {
     public class NewAggregateSyntax : ISyntax {
         private readonly bool isTypeChecked;
-        private readonly NamedType returnType;
-        private readonly IReadOnlyList<string> names;
+        private readonly AggregateSignature sig;
+        private readonly IReadOnlyList<string?> names;
         private readonly IReadOnlyList<ISyntax> values;
 
         public TokenLocation Location { get; }
 
-        public NewAggregateSyntax(TokenLocation loc, NamedType type,
-            IReadOnlyList<string> names,
+        public NewAggregateSyntax(TokenLocation loc, 
+            AggregateSignature sig,
+            IReadOnlyList<string?> names,
             IReadOnlyList<ISyntax> values, bool isTypeChecked = false) {
 
             this.Location = loc;
-            this.returnType = type;
+            this.sig = sig;
             this.names = names;
             this.values = values;
             this.isTypeChecked = isTypeChecked;
@@ -28,48 +29,121 @@ namespace Trophy.Features.Aggregates {
         public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
-            var sig = types.GetAggregate(this.returnType.Path);
+            var names = new string[this.names.Count];
+            int missingCounter = 0;
 
-            // Skip all argument checking if there aren't any arguments
-            //if (!this.names.Any()) {
-            //    var result2 = new NewAggregateSyntax(
-            //        this.Location,
-            //        this.returnType,
-            //        Array.Empty<string>(),
-            //        Array.Empty<ISyntax>(),
-            //        true);
+            // Fill in missing names
+            for (int i = 0; i < names.Length; i++) {
+                // If this name is defined then set it and move on
+                if (this.names[i] != null) {
+                    names[i] = this.names[i]!;
 
-            //    types.SetReturnType(result2, this.returnType);
-            //    return result2;
-            //}
+                    var index = this.sig.Members
+                        .Select((x, i) => new { Index = i, Value = x.MemberName })
+                        .Where(x => x.Value == this.names[i])
+                        .Select(x => x.Index)
+                        .First();
+
+                    missingCounter = index + 1;
+                    continue;
+                }
+
+                // Make sure we don't have too many arguments
+                if (missingCounter >= this.sig.Members.Count) {
+                    throw new TypeCheckingException(
+                        this.Location,
+                        "Invalid Initialization",
+                        "This initializer has provided too many "
+                            + $"arguments for the type '{new NamedType(this.sig.Path)}'");
+                }
+
+                names[i] = sig.Members[missingCounter++].MemberName;
+            }
 
             if (sig.Kind == AggregateKind.Struct) {
-                return this.CheckStructTypes(sig, types);
+                return this.CheckStructTypes(names!, types);
             }
             else if (sig.Kind == AggregateKind.Union) {
-                return this.CheckUnionTypes(sig, types);
+                return this.CheckUnionTypes(names!, types);
             }
             else {
                 throw new InvalidOperationException();
             }
         }
 
-        private ISyntax CheckUnionTypes(AggregateSignature sig, ITypesRecorder types) {
-            if (this.names.Count > 1) {
+        private ISyntax CheckUnionTypes(IReadOnlyList<string> names, ITypesRecorder types) {
+            if (names.Count > 1) {
                 throw new TypeCheckingException(
                     this.Location, 
                     "Bad Union Initialization",
                     "Unions cannot be initialized with more than one member.");
             }
 
-            return this.CheckStructTypes(sig, types);
+            ISyntax result;
+
+            // If there aren't any assigned members then assigned the first one
+            if (names.Count == 0) {
+                var values = new[] { 
+                    new VoidLiteral(this.Location)
+                        .CheckTypes(types)
+                        .UnifyTo(sig.Members[0].MemberType, types) 
+                };
+
+                result = new NewAggregateSyntax(
+                    this.Location,
+                    this.sig,
+                    new[] { sig.Members[0].MemberName },
+                    values,
+                    true);
+            }
+            else {
+                // Make sure the member is defined on this union
+                if (!sig.Members.Where(x => x.MemberName == names[0]).FirstOrNone().TryGetValue(out var mem)) {
+                    throw new TypeCheckingException(
+                        this.Location,
+                        "Member Not Defined",
+                        $"The member '{ names[0] }' is undefined on the " 
+                            + "union type '{new NamedType(this.sig.Path)}'");
+                }
+
+                // Make sure that all the other union members have default values
+                var noDefault = sig.Members
+                    .Where(x => x.MemberName != names[0])
+                    .Where(x => !x.MemberType.HasDefaultValue(types))
+                    .Select(x => x.MemberName)
+                    .FirstOrNone();
+
+                if (noDefault.HasValue) {
+                    throw new TypeCheckingException(
+                        this.Location,
+                        "Invalid Union Initialization",
+                        $"The unspecified union member '{noDefault.GetValue()}' has " 
+                            + "no default value, making this initialization invalid.");
+                }
+
+                var values = new[] { 
+                    this.values[0]
+                        .CheckTypes(types)
+                        .UnifyTo(mem.MemberType, types) 
+                };
+
+                result = new NewAggregateSyntax(
+                    this.Location,
+                    this.sig,
+                    new[] { names[0] },
+                    values,
+                    true);
+            }
+
+            types.SetReturnType(result, new NamedType(sig.Path));
+            return result;
         }
 
 
-        private ISyntax CheckStructTypes(AggregateSignature sig, ITypesRecorder types) {
+        private ISyntax CheckStructTypes(IReadOnlyList<string> names, ITypesRecorder types) {
             var type = new NamedType(sig.Path);
 
-            var dups = this.names
+            var dups = names
                 .GroupBy(x => x)
                 .Where(x => x.Count() > 1)
                 .Select(x => x.Key)
@@ -80,7 +154,7 @@ namespace Trophy.Features.Aggregates {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, dups.First());
             }
 
-            var undefinedFields = this.names
+            var undefinedFields = names
                 .Select(x => x)
                 .Except(sig.Members.Select(x => x.MemberName))
                 .ToArray();
@@ -108,7 +182,7 @@ namespace Trophy.Features.Aggregates {
                     requiredAbsentFields.Select(x => x.MemberName));
             }
 
-            var presentFields = this.names
+            var presentFields = names
                 .Zip(this.values)
                 .ToDictionary(x => x.First, x => x.Second);
 
@@ -125,7 +199,7 @@ namespace Trophy.Features.Aggregates {
                 allValues.Add(value);
             }
 
-            var result = new NewAggregateSyntax(this.Location, type, allNames, allValues, true);
+            var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
             types.SetReturnType(result, type);
 
             return result;
@@ -147,7 +221,7 @@ namespace Trophy.Features.Aggregates {
             var name = writer.GetVariableName();
 
             var varDecl = new CVariableDeclaration() {
-                Type = writer.ConvertType(this.returnType),
+                Type = writer.ConvertType(new NamedType(this.sig.Path)),
                 Name = name
             };
 

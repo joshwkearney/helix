@@ -22,7 +22,7 @@ func test(let z as int^, let test as 4) as int => {
 
 	//}
 
-	var p = put Point;
+	var p = put Point { y=5, 10 };
 
 	while x < 4 do {
 		//x = x / 2;
@@ -41,7 +41,8 @@ func other(let x as int) as int => x + 10;
 
 struct Point {
 	let x as int;
-	let y as Recursive1;
+	let y as int;
+	let z as int;
 };
 
 extern func add(let x as int, let y as int) as int;
