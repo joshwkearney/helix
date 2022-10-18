@@ -1,10 +1,18 @@
-﻿namespace Trophy.Analysis {
+﻿using Trophy.Analysis.Types;
+using Trophy.Generation;
+using Trophy.Generation.Syntax;
+
+namespace Trophy.Analysis {
     public enum NameTarget {
         Function, Variable, Aggregate, Reserved
     }
 
+    public delegate void DeclarationCG(ICWriter writer);
+
     public interface INamesRecorder {
         public IdentifierPath CurrentScope { get; }
+
+        public IDictionary<TrophyType, DeclarationCG> TypeDeclarations { get; }
 
         public INamesRecorder WithScope(IdentifierPath newScope);
 
@@ -31,7 +39,7 @@
             while (true) {
                 var path = scope.Append(name);
 
-                if (this.TryResolveName(path).TryGetValue(out var target)) {
+                if (this.TryResolveName(path).HasValue) {
                     return path;
                 }
 
@@ -47,6 +55,7 @@
 
     public class NamesRecorder : INamesRecorder {
         private readonly Option<INamesRecorder> prev;
+        private readonly Dictionary<TrophyType, DeclarationCG>? typeDeclarations;
 
         private readonly Dictionary<IdentifierPath, NameTarget> targets = new() {
                 { new IdentifierPath("int"), NameTarget.Reserved },
@@ -54,10 +63,17 @@
                 { new IdentifierPath("void"), NameTarget.Reserved }
             };
 
+        public IDictionary<TrophyType, DeclarationCG> TypeDeclarations {
+            get => this.prev
+                .Select(x => x.TypeDeclarations)
+                .OrElse(() => this.typeDeclarations!);
+        }
+
         public IdentifierPath CurrentScope { get; }
 
         public NamesRecorder() {
             this.prev = Option.None;
+            this.typeDeclarations = new();
             this.CurrentScope = new IdentifierPath();
         }
 
@@ -75,7 +91,7 @@
                 return prev.DeclareName(path, target);
             }
 
-            if (this.targets.TryGetValue(path, out var old) && old != target) {
+            if (this.targets.TryGetValue(path, out var old) /*&& old != target*/) {
                 return false;
             }
 

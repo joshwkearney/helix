@@ -17,6 +17,8 @@ namespace Trophy.Generation {
 
         public void WriteDeclaration3(ICStatement decl);
 
+        public void WriteDeclaration4(ICStatement decl);
+
         public ICSyntax ConvertType(TrophyType type);
     }
 
@@ -24,17 +26,18 @@ namespace Trophy.Generation {
         private char tempLetterCounter = 'A';
         private int tempNumberCounter = 0;
 
-        private readonly Dictionary<TrophyType, ICSyntax> typeNames = new();
+        private readonly IDictionary<TrophyType, DeclarationCG> typeDeclarations;
+        //private readonly Dictionary<TrophyType, ICSyntax> typeNames = new();
         private readonly Dictionary<IdentifierPath, string> pathNames = new();
         private readonly Dictionary<string, int> nameCounters = new();
 
         private readonly StringBuilder decl1Sb = new();
         private readonly StringBuilder decl2Sb = new();
         private readonly StringBuilder decl3Sb = new();
+        private readonly StringBuilder decl4Sb = new();
 
-        public CWriter() {
-            decl1Sb.AppendLine("void* memset(void* str, int c, long unsigned int n);");
-            decl1Sb.AppendLine();
+        public CWriter(IDictionary<TrophyType, DeclarationCG> typeDecls) {
+            this.typeDeclarations = typeDecls;
         }
 
         public string GetVariableName() {
@@ -93,11 +96,11 @@ namespace Trophy.Generation {
             decl.WriteToC(0, this.decl3Sb);
         }
 
-        public ICSyntax ConvertType(TrophyType type) {
-            if (this.typeNames.TryGetValue(type, out var ctype)) {
-                return ctype;
-            }
+        public void WriteDeclaration4(ICStatement decl) {
+            decl.WriteToC(0, this.decl4Sb);
+        }
 
+        public ICSyntax ConvertType(TrophyType type) {
             if (type == PrimitiveType.Bool || type is SingularBoolType) {
                 return new CNamedType("unsigned int");
             }
@@ -110,8 +113,18 @@ namespace Trophy.Generation {
             else if (type is PointerType type2) {
                 return new CPointerType(ConvertType(type2.ReferencedType));
             }
-            else if (type is NamedType type3) {
-                return new CNamedType(string.Join("$", type3.Path.Segments));
+            else if (type is NamedType named) {
+                if (this.pathNames.TryGetValue(named.Path, out var cname)) {
+                    return new CNamedType(cname);
+                }
+                    
+                if (this.typeDeclarations.TryGetValue(type, out var cg)) {
+                    cg(this);
+                }
+
+                this.pathNames[named.Path] = string.Join("$", named.Path.Segments);
+
+                return new CNamedType(this.pathNames[named.Path]);
             }
             else {
                 throw new Exception();
@@ -121,8 +134,11 @@ namespace Trophy.Generation {
         public override string ToString() {
             return new StringBuilder()
                 .Append(this.decl1Sb)
+                .AppendLine()
                 .Append(this.decl2Sb)
+                .AppendLine()
                 .Append(this.decl3Sb)
+                .Append(this.decl4Sb)
                 .ToString();
         }
     }

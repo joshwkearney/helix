@@ -97,7 +97,10 @@ namespace Trophy.Features.Aggregates {
             foreach (var mem in this.signature.Members) {
                 types.DeclareReserved(sig.Path.Append(mem.MemberName));
             }
+        }
 
+        public IDeclaration CheckTypes(ITypesRecorder types) {
+            var sig = this.signature.ResolveNames(types); 
             var structType = new NamedType(sig.Path);
             var isRecursive = sig.Members
                 .SelectMany(x => x.MemberType.GetContainedValueTypes(types))
@@ -123,43 +126,25 @@ namespace Trophy.Features.Aggregates {
                             "Invalid Union Type",
                             $"The pointer type '{pointer.GetValue()}' cannot be a union member.");
                     }
-                }                
+                }
             }
+
+            var type = new NamedType(sig.Path);
+
+            // Register this declaration with the code generator so 
+            // types are constructed in order
+            types.TypeDeclarations[type] = writer => this.RealCodeGenerator(sig, writer);
+
+            return this;
         }
 
-        public IDeclaration CheckTypes(ITypesRecorder types) {
-            var path = types.TryFindPath(this.signature.Name).GetValue();
-            var sig = types.GetAggregate(path);         
+        public void GenerateCode(ICWriter writer) { }
 
-            return new AggregateDeclaration(this.Location, sig, this.kind);
-        }
+        private void RealCodeGenerator(AggregateSignature signature, ICWriter writer) {
+            var name = writer.GetVariableName(signature.Path);
 
-        public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
-    }
-
-    public record AggregateDeclaration : IDeclaration {
-        private readonly AggregateSignature signature;
-        private readonly AggregateKind kind;
-
-        public TokenLocation Location { get; }
-
-        public AggregateDeclaration(TokenLocation loc, AggregateSignature sig, AggregateKind kind) {
-            this.Location = loc;
-            this.signature = sig;
-            this.kind = kind;
-        }
-
-        public void DeclareNames(INamesRecorder names) { }
-
-        public void DeclareTypes(ITypesRecorder types) { }
-
-        public IDeclaration CheckTypes(ITypesRecorder types) => this;
-
-        public void GenerateCode(ICWriter writer) {
-            var name = writer.GetVariableName(this.signature.Path);
-
-            var mems = this.signature.Members
-                .Select(x => new CParameter() { 
+            var mems = signature.Members
+                .Select(x => new CParameter() {
                     Type = writer.ConvertType(x.MemberType),
                     Name = x.MemberName
                 })
@@ -178,11 +163,10 @@ namespace Trophy.Features.Aggregates {
 
             // Write forward declaration
             writer.WriteDeclaration1(prototype);
-            writer.WriteDeclaration1(new CEmptyLine());
 
             // Write full struct
-            writer.WriteDeclaration2(fullDeclaration);
-            writer.WriteDeclaration2(new CEmptyLine());
+            writer.WriteDeclaration3(fullDeclaration);
+            writer.WriteDeclaration3(new CEmptyLine());
         }
     }
 }

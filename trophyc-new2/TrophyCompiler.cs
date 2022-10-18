@@ -19,7 +19,7 @@ namespace Trophy {
                 var parser = new Parser(lexer.GetTokens());
                 var names = new NamesRecorder();
                 var types = new TypesRecorder(names);
-                var writer = new CWriter();
+                var writer = new CWriter(names.TypeDeclarations);
 
                 var parseStats = parser.Parse();
 

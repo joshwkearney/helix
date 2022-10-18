@@ -69,6 +69,8 @@ namespace Trophy.Generation {
 
         public void WriteDeclaration3(ICStatement decl) => this.prev.WriteDeclaration3(decl);
 
+        public void WriteDeclaration4(ICStatement decl) => this.prev.WriteDeclaration4(decl);
+
         public ICSyntax ConvertType(TrophyType type) => this.prev.ConvertType(type);
 
         public void ResetTempNames() => this.prev.ResetTempNames();

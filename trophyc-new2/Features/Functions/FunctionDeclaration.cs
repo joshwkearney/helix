@@ -179,11 +179,10 @@ namespace Trophy.Features.Functions {
                 Parameters = pars
             };
 
-            writer.WriteDeclaration3(decl);
-            writer.WriteDeclaration3(new CEmptyLine());
-
             writer.WriteDeclaration2(forwardDecl);
-            writer.WriteDeclaration2(new CEmptyLine());
+
+            writer.WriteDeclaration4(decl);
+            writer.WriteDeclaration4(new CEmptyLine());
         }
     }
 }

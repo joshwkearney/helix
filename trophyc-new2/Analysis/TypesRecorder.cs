@@ -46,6 +46,10 @@ namespace Trophy.Analysis {
 
         public IdentifierPath CurrentScope { get; }
 
+        public IDictionary<TrophyType, DeclarationCG> TypeDeclarations {
+            get => this.names.TypeDeclarations;
+        }
+
         public TypesRecorder(INamesRecorder names) {
             this.prev = Option.None;
             this.names = names;

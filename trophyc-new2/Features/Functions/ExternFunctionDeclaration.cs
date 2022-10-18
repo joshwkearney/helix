@@ -92,7 +92,6 @@ namespace Trophy.Features.Functions {
             };
 
             writer.WriteDeclaration2(forwardDecl);
-            writer.WriteDeclaration2(new CEmptyLine());
         }
     }
 }
