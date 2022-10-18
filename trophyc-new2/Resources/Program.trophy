@@ -1,9 +1,7 @@
 ﻿extern func externalFunc(let x as int) as int;
 
 func test(let x as int) as int => {
-	let p = put Point;
-
-	if x > 3 or else (x) < 10
+	if x > 3 and then x < 10
 	then 0 
 	else 10;
 };

@@ -4,10 +4,12 @@ using Trophy.Generation;
 
 namespace Trophy {
     public class TrophyCompiler {
+        private readonly string header;
         private readonly string input;
 
-        public TrophyCompiler(string input) {
-            this.input = input.Replace("\r\n", "\n").Replace('\r', '\n').Replace("\t", "    ");
+        public TrophyCompiler(string header, string input) {
+            this.header = header;
+            this.input = input;
         }
 
         public string Compile() {
@@ -15,11 +17,16 @@ namespace Trophy {
             // up the order of the steps
 
             try {
-                var lexer = new Lexer(this.input);
+                var input = this.input
+                    .Replace("\r\n", "\n")
+                    .Replace('\r', '\n')
+                    .Replace("\t", "    ");
+
+                var lexer = new Lexer(input);
                 var parser = new Parser(lexer.GetTokens());
                 var names = new NamesRecorder();
                 var types = new TypesRecorder(names);
-                var writer = new CWriter(names.TypeDeclarations);
+                var writer = new CWriter(this.header, names.TypeDeclarations);
 
                 var parseStats = parser.Parse();
 

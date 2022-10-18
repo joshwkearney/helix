@@ -26,8 +26,8 @@ namespace Trophy.Generation {
         private char tempLetterCounter = 'A';
         private int tempNumberCounter = 0;
 
+        private readonly string header;
         private readonly IDictionary<TrophyType, DeclarationCG> typeDeclarations;
-        //private readonly Dictionary<TrophyType, ICSyntax> typeNames = new();
         private readonly Dictionary<IdentifierPath, string> pathNames = new();
         private readonly Dictionary<string, int> nameCounters = new();
 
@@ -36,7 +36,8 @@ namespace Trophy.Generation {
         private readonly StringBuilder decl3Sb = new();
         private readonly StringBuilder decl4Sb = new();
 
-        public CWriter(IDictionary<TrophyType, DeclarationCG> typeDecls) {
+        public CWriter(string header, IDictionary<TrophyType, DeclarationCG> typeDecls) {
+            this.header = header;
             this.typeDeclarations = typeDecls;
         }
 
@@ -102,13 +103,13 @@ namespace Trophy.Generation {
 
         public ICSyntax ConvertType(TrophyType type) {
             if (type == PrimitiveType.Bool || type is SingularBoolType) {
-                return new CNamedType("unsigned int");
+                return new CNamedType("_trophy_bool");
             }
             else if (type == PrimitiveType.Int || type is SingularIntType) {
-                return new CNamedType("unsigned int");
+                return new CNamedType("_trophy_int");
             }
             else if (type == PrimitiveType.Void) {
-                return new CNamedType("unsigned int");
+                return new CNamedType("_trophy_void");
             }
             else if (type is PointerType type2) {
                 return new CPointerType(ConvertType(type2.ReferencedType));
@@ -132,14 +133,27 @@ namespace Trophy.Generation {
         }
 
         public override string ToString() {
-            return new StringBuilder()
-                .Append(this.decl1Sb)
-                .AppendLine()
-                .Append(this.decl2Sb)
-                .AppendLine()
-                .Append(this.decl3Sb)
-                .Append(this.decl4Sb)
-                .ToString();
+            var sb = new StringBuilder();
+
+            sb.AppendLine(this.header);
+
+            if (this.decl1Sb.Length > 0) {
+                sb.Append(this.decl1Sb).AppendLine();
+            }
+
+            if (this.decl2Sb.Length > 0) {
+                sb.Append(this.decl2Sb).AppendLine();
+            }
+
+            if (this.decl3Sb.Length > 0) {
+                sb.Append(this.decl3Sb).AppendLine();
+            }
+
+            if (this.decl4Sb.Length > 0) {
+                sb.Append(this.decl4Sb).AppendLine();
+            }
+
+            return sb.ToString();
         }
     }
 }
