@@ -5,7 +5,7 @@ func opaque() => {
 };
 
 struct Recursive2 {
-	let x as int;
+	let x as int*;
 };
 
 struct Recursive1 {
@@ -22,7 +22,7 @@ func test(let z as int^, let test as 4) as int => {
 
 	//}
 
-	var p = put Point { y=5, 10 };
+	var p = put Point { 5, 45 };
 
 	while x < 4 do {
 		//x = x / 2;

@@ -75,7 +75,7 @@ namespace Trophy.Features.Aggregates {
             if (names.Count > 1) {
                 throw new TypeCheckingException(
                     this.Location, 
-                    "Bad Union Initialization",
+                    "Invalid Union Initialization",
                     "Unions cannot be initialized with more than one member.");
             }
 
@@ -101,8 +101,8 @@ namespace Trophy.Features.Aggregates {
                 if (!sig.Members.Where(x => x.MemberName == names[0]).FirstOrNone().TryGetValue(out var mem)) {
                     throw new TypeCheckingException(
                         this.Location,
-                        "Member Not Defined",
-                        $"The member '{ names[0] }' is undefined on the " 
+                        "Invalid Union Initialization",
+                        $"The member '{ names[0] }' does not exist in the " 
                             + "union type '{new NamedType(this.sig.Path)}'");
                 }
 
@@ -117,8 +117,8 @@ namespace Trophy.Features.Aggregates {
                     throw new TypeCheckingException(
                         this.Location,
                         "Invalid Union Initialization",
-                        $"The unspecified union member '{noDefault.GetValue()}' has " 
-                            + "no default value, making this initialization invalid.");
+                        $"The unspecified union member '{noDefault.GetValue()}' does not have a " 
+                            + "default value and must be provided in the union initializer");
                 }
 
                 var values = new[] { 
@@ -151,7 +151,10 @@ namespace Trophy.Features.Aggregates {
 
             // Make sure there are no duplicate names
             if (dups.Any()) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, dups.First());
+                throw new TypeCheckingException(
+                    this.Location,
+                    "Invalid Struct Initialization", 
+                    $"This initializer contains the duplicate member '{ dups.First() }'");
             }
 
             var undefinedFields = names
@@ -161,25 +164,31 @@ namespace Trophy.Features.Aggregates {
 
             // Make sure that all members are defined in the struct
             if (undefinedFields.Any()) {
-                throw TypeCheckingErrors.NewObjectHasExtraneousFields(this.Location, type, undefinedFields);
+                throw new TypeCheckingException(
+                    this.Location,
+                    "Invalid Struct Initialization",
+                    $"The member '{ undefinedFields.First() }' does not exist in the "
+                        + $"struct type '{ type }'");
             }
 
             var absentFields = sig.Members
                 .Select(x => x.MemberName)
-                .Except(this.names)
+                .Except(names)
                 .Select(x => sig.Members.First(y => x == y.MemberName))
                 .ToArray();
 
             var requiredAbsentFields = absentFields
                 .Where(x => !x.MemberType.HasDefaultValue(types))
+                .Select(x => x.MemberName)
                 .ToArray();
 
             // Make sure that all the missing members have a default value
             if (requiredAbsentFields.Any()) {
-                throw TypeCheckingErrors.NewObjectMissingFields(
+                throw new TypeCheckingException(
                     this.Location,
-                    type,
-                    requiredAbsentFields.Select(x => x.MemberName));
+                    "Invalid Struct Initialization",
+                    $"The unspecified struct member '{ requiredAbsentFields.First() }' does not have a default "
+                        + "value and must be provided in the struct initializer");
             }
 
             var presentFields = names

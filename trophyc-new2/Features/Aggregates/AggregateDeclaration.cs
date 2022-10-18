@@ -5,6 +5,7 @@ using Trophy.Features.Aggregates;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
 using Trophy.Analysis.Types;
+using System.IO;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -96,13 +97,8 @@ namespace Trophy.Features.Aggregates {
             foreach (var mem in this.signature.Members) {
                 types.DeclareReserved(sig.Path.Append(mem.MemberName));
             }
-        }
 
-        public IDeclaration CheckTypes(ITypesRecorder types) {
-            var path = types.TryFindPath(this.signature.Name).GetValue();
-            var sig = types.GetAggregate(path);
-
-            var structType = new NamedType(path);
+            var structType = new NamedType(sig.Path);
             var isRecursive = sig.Members
                 .SelectMany(x => x.MemberType.GetContainedValueTypes(types))
                 .Contains(structType);
@@ -111,6 +107,29 @@ namespace Trophy.Features.Aggregates {
             if (isRecursive) {
                 throw TypeCheckingErrors.CircularValueObject(this.Location, structType);
             }
+
+            // Disallow pointers in unions
+            if (sig.Kind == AggregateKind.Union) {
+                // For loop for better error messages
+                for (int i = 0; i < sig.Members.Count; i++) {
+                    var pointer = sig.Members[i].MemberType
+                        .GetContainedValueTypes(types)
+                        .Where(x => x is PointerType)
+                        .FirstOrNone();
+
+                    if (pointer.HasValue) {
+                        throw new TypeCheckingException(
+                            this.signature.Members[i].Location,
+                            "Invalid Union Type",
+                            $"The pointer type '{pointer.GetValue()}' cannot be a union member.");
+                    }
+                }                
+            }
+        }
+
+        public IDeclaration CheckTypes(ITypesRecorder types) {
+            var path = types.TryFindPath(this.signature.Name).GetValue();
+            var sig = types.GetAggregate(path);         
 
             return new AggregateDeclaration(this.Location, sig, this.kind);
         }
