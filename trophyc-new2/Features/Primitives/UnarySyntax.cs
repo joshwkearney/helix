@@ -71,29 +71,56 @@ namespace Trophy.Features.Primitives {
                 return result.CheckTypes(types);
             }
             else if (this.op == UnaryOperatorKind.Not) {
-                var result = new BinarySyntax(
-                    this.Location, 
-                    new BoolLiteral(this.Location, true), 
-                    this.arg, 
-                    BinaryOperationKind.Xor);
+                var arg = this.arg
+                    .CheckTypes(types)
+                    .UnifyTo(PrimitiveType.Bool, types);
 
-                return result.CheckTypes(types);
+                var result = new UnaryNotSyntax(
+                    this.Location, 
+                    arg);
+
+                types.SetReturnType(result, PrimitiveType.Bool);
+
+                return result;
             }
             else {
                 throw new Exception("Unexpected unary operator kind");
             }
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
+        public ISyntax ToRValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
-        public Option<ISyntax> ToLValue(ITypesRecorder types) {
+        public ISyntax ToLValue(ITypesRecorder types) {
             throw new InvalidOperationException();
         }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
+        }
+    }
+
+    public record UnaryNotSyntax : ISyntax {
+        private readonly ISyntax target;
+
+        public TokenLocation Location { get; }
+
+        public UnaryNotSyntax(TokenLocation loc, ISyntax target) {
+            this.Location = loc;
+            this.target = target;
+        }
+
+        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
+
+        public ISyntax CheckTypes(ITypesRecorder types) => this;
+
+        public ISyntax ToRValue(ITypesRecorder types) => this;
+
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            return new CNot() {
+                Target = this.target.GenerateCode(writer)
+            };
         }
     }
 }
