@@ -58,7 +58,7 @@ contexts [] {
       }
       
       : pattern {
-         regex \= (?:\b)(int|bool|void|var|let|func|as|put|cast|extern)(?:\b)
+         regex \= (?:\b)(int|bool|void|var|let|func|as|put|cast|extern|for|to)(?:\b)
          styles []= .keyword;
       }
       

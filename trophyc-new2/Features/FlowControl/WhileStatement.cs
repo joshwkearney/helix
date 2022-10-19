@@ -68,7 +68,7 @@ namespace Trophy.Features.FlowControl {
                 IfTrue = new[] { new CBreak() }
             };
 
-            this.body.GenerateCode(writer);
+            this.body.GenerateCode(bodyWriter);
 
             if (loopBody.Any()) {
                 loopBody.Insert(0, new CEmptyLine());
