@@ -15,8 +15,6 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public CompoundSyntax(TokenLocation loc, IReadOnlyList<ISyntax> args) {
             this.Location = loc;
             this.args = args;

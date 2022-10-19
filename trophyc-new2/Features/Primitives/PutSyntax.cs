@@ -86,10 +86,8 @@ namespace Trophy.Features.Primitives {
             this.values = Array.Empty<ISyntax>();
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
-            if (!this.type.TryInterpret(types).TryGetValue(out var type)) {
+            if (!this.type.AsType(types).TryGetValue(out var type)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);
             }
 

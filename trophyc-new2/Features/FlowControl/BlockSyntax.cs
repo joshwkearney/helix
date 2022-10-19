@@ -41,8 +41,6 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var newScope = types.CurrentScope.Append("$block" + this.id);
             types = types.WithScope(newScope);

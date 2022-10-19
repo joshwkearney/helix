@@ -3,7 +3,7 @@
         private readonly T? value;
         private readonly Exception? error;
 
-        public bool HasValue => this.error != null;
+        public bool HasValue => this.error == null;
 
         public Result(T value) {
             this.value = value;

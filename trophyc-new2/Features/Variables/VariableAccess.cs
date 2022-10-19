@@ -25,7 +25,7 @@ namespace Trophy {
             this.name = name;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) {
+        public Result<TrophyType> AsType(INamesRecorder names) {
             // Make sure this name exists
             if (!names.TryFindPath(this.name).TryGetValue(out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
@@ -52,7 +52,10 @@ namespace Trophy {
                 return new NamedType(path);
             }
 
-            return Option.None;
+            return new TypeCheckingException(
+                this.Location, 
+                "Variable Not Defined",
+                $"The variable or type '{this.name}' is not defined in the current context.");
         }
 
         public ISyntax CheckTypes(ITypesRecorder types) {
@@ -100,8 +103,6 @@ namespace Trophy {
             this.variablePath = path;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 
         public ISyntax ToLValue(ITypesRecorder types) {
@@ -134,8 +135,6 @@ namespace Trophy {
             this.Location = loc;
             this.path = path;
         }
-
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 

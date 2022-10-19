@@ -196,8 +196,6 @@ namespace Trophy.Features.Primitives {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Delegate type resolution
             var left = this.left.CheckTypes(types).ToRValue(types);

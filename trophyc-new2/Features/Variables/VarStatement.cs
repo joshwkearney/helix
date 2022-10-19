@@ -58,8 +58,6 @@ namespace Trophy {
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);
@@ -167,8 +165,6 @@ namespace Trophy {
             this.signature = sig;
             this.assign = assign;
         }
-
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 

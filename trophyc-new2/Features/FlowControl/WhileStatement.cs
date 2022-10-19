@@ -35,8 +35,6 @@ namespace Trophy.Features.FlowControl {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
             var body = this.body.CheckTypes(types).ToRValue(types);

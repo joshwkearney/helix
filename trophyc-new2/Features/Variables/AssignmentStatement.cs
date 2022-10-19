@@ -37,8 +37,6 @@ namespace Trophy.Features.Variables {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types).ToLValue(types);
             var assign = this.assign.CheckTypes(types).ToRValue(types);

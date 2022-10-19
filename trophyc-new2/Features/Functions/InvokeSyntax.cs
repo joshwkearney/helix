@@ -41,8 +41,6 @@ namespace Trophy.Features.Functions {
             this.args = args;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var targetType = types.GetReturnType(target);
@@ -103,8 +101,6 @@ namespace Trophy.Features.Functions {
             this.sig = sig;
             this.args = args;
         }
-
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 

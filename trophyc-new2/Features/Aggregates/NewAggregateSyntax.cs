@@ -26,8 +26,6 @@ namespace Trophy.Features.Aggregates {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var names = new string[this.names.Count];
             int missingCounter = 0;

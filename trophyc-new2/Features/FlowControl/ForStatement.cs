@@ -44,8 +44,6 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Rewrite for syntax to use while loops
             var start = new AsParseTree(

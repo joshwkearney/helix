@@ -56,10 +56,6 @@ namespace Trophy.Features.FlowControl {
             this.iffalse = iffalse;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) {
-            return Option.None;
-        }
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
             var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
@@ -104,8 +100,6 @@ namespace Trophy.Features.FlowControl {
             this.iffalse = iffalse;
             this.returnType = returnType;
         }
-
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 

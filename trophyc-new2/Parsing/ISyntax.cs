@@ -7,7 +7,10 @@ namespace Trophy.Parsing {
     public interface ISyntax {
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names);
+        public Result<TrophyType> AsType(INamesRecorder names) {
+            return new InvalidOperationException(
+                "Compiler error: This syntax tree cannot be construed as a type");
+        }
 
         public ISyntax CheckTypes(ITypesRecorder types);
 

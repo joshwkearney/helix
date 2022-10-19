@@ -54,10 +54,6 @@ namespace Trophy.Features.Primitives {
             this.arg = arg;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) {
-            return Option.None;
-        }
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
                 var left = new IntLiteral(this.Location, 0);
@@ -110,8 +106,6 @@ namespace Trophy.Features.Primitives {
             this.Location = loc;
             this.target = target;
         }
-
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
 
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 

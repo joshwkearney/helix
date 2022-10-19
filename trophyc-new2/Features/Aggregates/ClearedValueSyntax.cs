@@ -16,8 +16,6 @@ namespace Trophy.Features.Aggregates {
             this.returnType = type;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) => this;
 
         public ISyntax ToRValue(ITypesRecorder types) => this;

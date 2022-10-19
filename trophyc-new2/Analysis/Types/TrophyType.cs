@@ -55,7 +55,7 @@ namespace Trophy.Analysis.Types {
                 this.type = type;
             }
 
-            public Option<TrophyType> TryInterpret(INamesRecorder names) => this.type;
+            public Result<TrophyType> AsType(INamesRecorder names) => this.type;
 
             public ISyntax CheckTypes(ITypesRecorder types) {
                 throw new InvalidOperationException();

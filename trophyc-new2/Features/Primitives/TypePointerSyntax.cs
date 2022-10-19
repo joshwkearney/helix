@@ -40,8 +40,8 @@ namespace Trophy.Features.Primitives {
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) {
-            return this.inner.TryInterpret(names)
+        public Result<TrophyType> AsType(INamesRecorder names) {
+            return this.inner.AsType(names)
                 .Select(x => new PointerType(x, this.isWritable))
                 .Select(x => (TrophyType)x);
         }

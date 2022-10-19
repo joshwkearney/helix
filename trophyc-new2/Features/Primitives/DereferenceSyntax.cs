@@ -17,8 +17,6 @@ namespace Trophy.Features.Primitives {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types);
             var pointerType = target.AssertIsPointer(types);

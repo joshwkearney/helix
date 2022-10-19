@@ -37,12 +37,10 @@ namespace Trophy.Features.Primitives {
             this.target = target;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) => Option.None;
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var arg = this.arg.CheckTypes(types).ToRValue(types);
 
-            if (!this.target.TryInterpret(types).TryGetValue(out var targetType)) {
+            if (!this.target.AsType(types).TryGetValue(out var targetType)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
             }
 

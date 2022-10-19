@@ -34,10 +34,6 @@ namespace Trophy.Features.Aggregates {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) {
-            return Option.None;
-        }
-
         public ISyntax CheckTypes(ITypesRecorder types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.GetReturnType(target);

@@ -1,14 +1,11 @@
 ﻿extern func externalFunc(let x as int) as int;
 
 func test(let x as int) as int => {
-	//let a, b = put Point { 4, 5 };
-	let t = put Point { 4, 5 };
-	let a = t.xx;
-	let b = t.y;
+	let a, b = put Point { 4, 5 };
 
 	//let x = cast 45 as int;
 
-	let p = put Point;
+	let p = put Point { (a + 8) };
 
 	if x > 3 and then x < 10
 	then 0 

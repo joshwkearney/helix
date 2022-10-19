@@ -27,7 +27,7 @@ namespace Trophy.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<TrophyType> TryInterpret(INamesRecorder names) {
+        public Result<TrophyType> AsType(INamesRecorder names) {
             return new SingularBoolType(this.Value);
         }
 
