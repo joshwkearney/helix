@@ -30,7 +30,7 @@ namespace Trophy.Features.Functions {
             this.Signature = sig;
         }
 
-        public void DeclareNames(ITypesRecorder names) {
+        public void DeclareNames(SyntaxFrame names) {
             FunctionsHelper.CheckForDuplicateParameters(
                 this.Location, 
                 this.Signature.Parameters.Select(x => x.Name));
@@ -38,20 +38,20 @@ namespace Trophy.Features.Functions {
             FunctionsHelper.DeclareName(this.Signature, names);
         }
 
-        public void DeclareTypes(ITypesRecorder types) {
+        public void DeclareTypes(SyntaxFrame types) {
             var sig = this.Signature.ResolveNames(types);
             var decl = new ExternFunctionDeclaration(this.Location, sig);
 
             // Replace the temporary wrapper object with a full declaration
-            types.SetValue(sig.Path, new TypeSyntax(this.Location, new NamedType(sig.Path)));
+            types.Trees[sig.Path] = new TypeSyntax(this.Location, new NamedType(sig.Path));
 
             // Declare this function
-            types.DeclareFunction(sig);
+            types.Functions[sig.Path] = sig;
         }
 
-        public IDeclaration CheckTypes(ITypesRecorder types) {
+        public IDeclaration CheckTypes(SyntaxFrame types) {
             var path = types.ResolvePath(this.Signature.Name);
-            var sig = types.GetFunction(path);
+            var sig = types.Functions[path];
 
             return new ExternFunctionDeclaration(this.Location, sig);
         }
@@ -69,15 +69,15 @@ namespace Trophy.Features.Functions {
             this.Signature = sig;
         }
 
-        public void DeclareNames(ITypesRecorder names) {
+        public void DeclareNames(SyntaxFrame names) {
             throw new InvalidOperationException();
         }
 
-        public void DeclareTypes(ITypesRecorder types) {
+        public void DeclareTypes(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
-        public IDeclaration CheckTypes(ITypesRecorder types) => this;
+        public IDeclaration CheckTypes(SyntaxFrame types) => this;
 
         public void GenerateCode(ICWriter writer) {
             var returnType = this.Signature.ReturnType == PrimitiveType.Void

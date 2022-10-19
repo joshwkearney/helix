@@ -11,7 +11,7 @@ namespace Trophy.Analysis.Types {
             this.IsWritable = isWritable;
         }
 
-        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types, bool isCast) {
+        public override bool CanUnifyTo(TrophyType other, SyntaxFrame types, bool isCast) {
             if (this == other) {
                 return true;
             }
@@ -23,7 +23,7 @@ namespace Trophy.Analysis.Types {
             return false;
         }
 
-        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, bool isCast, ITypesRecorder types) => syntax;
+        public override ISyntaxTree UnifyTo(TrophyType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) => syntax;
 
         public override string ToString() {
             return this.ReferencedType + (this.IsWritable ? "*" : "^");

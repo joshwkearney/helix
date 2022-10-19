@@ -9,7 +9,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax ForStatement() {
+        private ISyntaxTree ForStatement() {
             var start = this.Advance(TokenKind.ForKeyword);
             var id = this.Advance(TokenKind.Identifier).Value;
 
@@ -30,13 +30,13 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record ForStatement : ISyntax {
+    public record ForStatement : ISyntaxTree {
         private readonly string iteratorName;
-        private readonly ISyntax startIndex, endIndex, body;
+        private readonly ISyntaxTree startIndex, endIndex, body;
 
         public TokenLocation Location { get; }
 
-        public ForStatement(TokenLocation loc, string id, ISyntax start, ISyntax end, ISyntax body) {
+        public ForStatement(TokenLocation loc, string id, ISyntaxTree start, ISyntaxTree end, ISyntaxTree body) {
             this.Location = loc;
             this.iteratorName = id;
             this.startIndex = start;
@@ -44,7 +44,7 @@ namespace Trophy.Features.FlowControl {
             this.body = body;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             // Rewrite for syntax to use while loops
             var start = new AsParseTree(
                 this.startIndex.Location, 
@@ -73,12 +73,12 @@ namespace Trophy.Features.FlowControl {
                     new IntLiteral(this.Location, 1),
                     BinaryOperationKind.Add));
 
-            var block = new BlockSyntax(this.Location, new ISyntax[] {
+            var block = new BlockSyntax(this.Location, new ISyntaxTree[] {
                 counterDecl,
                 new WhileStatement(
                     this.Location,
                     comp,
-                    new BlockSyntax(this.Location, new ISyntax[] { 
+                    new BlockSyntax(this.Location, new ISyntaxTree[] { 
                         iteratorDecl,
                         this.body,
                         assign
@@ -88,11 +88,11 @@ namespace Trophy.Features.FlowControl {
             return block.CheckTypes(types);
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 

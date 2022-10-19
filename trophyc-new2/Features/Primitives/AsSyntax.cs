@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax AsExpression() {
+        private ISyntaxTree AsExpression() {
             var first = this.BinaryExpression();
 
             while (this.Peek(TokenKind.AsKeyword)) {
@@ -25,19 +25,19 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public record AsParseTree : ISyntax {
-        private readonly ISyntax arg;
-        private readonly ISyntax target;
+    public record AsParseTree : ISyntaxTree {
+        private readonly ISyntaxTree arg;
+        private readonly ISyntaxTree target;
 
         public TokenLocation Location { get; }
 
-        public AsParseTree(TokenLocation loc, ISyntax arg, ISyntax target) {
+        public AsParseTree(TokenLocation loc, ISyntaxTree arg, ISyntaxTree target) {
             this.Location = loc;
             this.arg = arg;
             this.target = target;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var arg = this.arg.CheckTypes(types).ToRValue(types);
 
             if (!this.target.AsType(types).TryGetValue(out var targetType)) {
@@ -49,11 +49,11 @@ namespace Trophy.Features.Primitives {
             return arg;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 

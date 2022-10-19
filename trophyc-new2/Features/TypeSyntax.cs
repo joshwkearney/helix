@@ -10,7 +10,7 @@ using Trophy.Generation.Syntax;
 using Trophy.Parsing;
 
 namespace Trophy.Features {
-    public record TypeSyntax : ISyntax {
+    public record TypeSyntax : ISyntaxTree {
         private readonly TrophyType type;
 
         public TokenLocation Location { get; }
@@ -20,9 +20,9 @@ namespace Trophy.Features {
             this.type = type;
         }
 
-        public Option<TrophyType> AsType(ITypesRecorder types) => this.type;
+        public Option<TrophyType> AsType(SyntaxFrame types) => this.type;
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 

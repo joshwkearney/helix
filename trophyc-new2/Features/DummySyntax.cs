@@ -9,14 +9,14 @@ using Trophy.Generation.Syntax;
 using Trophy.Parsing;
 
 namespace Trophy.Features {
-    public record DummySyntax : ISyntax {
+    public record DummySyntax : ISyntaxTree {
         public TokenLocation Location { get; }
 
         public DummySyntax(TokenLocation loc) {
             this.Location = loc;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 

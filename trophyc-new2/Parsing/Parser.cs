@@ -72,13 +72,13 @@
         }
 
         /** Expression Parsing **/
-        private ISyntax TopExpression() => this.AsExpression();
+        private ISyntaxTree TopExpression() => this.AsExpression();
 
-        private ISyntax BinaryExpression() => this.OrExpression();
+        private ISyntaxTree BinaryExpression() => this.OrExpression();
 
-        private ISyntax PrefixExpression() => this.UnaryExpression();        
+        private ISyntaxTree PrefixExpression() => this.UnaryExpression();        
 
-        private ISyntax SuffixExpression() {
+        private ISyntaxTree SuffixExpression() {
             var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) 
@@ -103,7 +103,7 @@
             return first;
         }        
 
-        private ISyntax Atom() {
+        private ISyntaxTree Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -148,7 +148,7 @@
             }
         }        
 
-        private ISyntax ParenExpression() {
+        private ISyntaxTree ParenExpression() {
             this.Advance(TokenKind.OpenParenthesis);
             var result = this.TopExpression();
             this.Advance(TokenKind.CloseParenthesis);
@@ -156,8 +156,8 @@
             return result;
         }
 
-        private ISyntax Statement() {
-            ISyntax result;
+        private ISyntaxTree Statement() {
+            ISyntaxTree result;
 
             if (this.Peek(TokenKind.WhileKeyword)) {
                 result = this.WhileStatement();

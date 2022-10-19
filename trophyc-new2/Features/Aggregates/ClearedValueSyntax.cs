@@ -5,7 +5,7 @@ using Trophy.Generation.Syntax;
 using Trophy.Generation;
 
 namespace Trophy.Features.Aggregates {
-    public class ClearedValueSyntax : ISyntax {
+    public class ClearedValueSyntax : ISyntaxTree {
         private readonly TrophyType returnType;
 
         public TokenLocation Location { get; }
@@ -16,9 +16,9 @@ namespace Trophy.Features.Aggregates {
             this.returnType = type;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ISyntax ToRValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName();

@@ -25,7 +25,7 @@ namespace Trophy {
                 var lexer = new Lexer(input);
                 var parser = new Parser(lexer.GetTokens());
                // var names = new NamesRecorder();
-                var types = new TypesRecorder();
+                var types = new SyntaxFrame();
                 var writer = new CWriter(this.header, types.TypeDeclarations);
 
                 var parseStats = parser.Parse();

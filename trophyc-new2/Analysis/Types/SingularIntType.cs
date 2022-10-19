@@ -14,11 +14,11 @@ namespace Trophy.Analysis.Types {
             this.Value = value;
         }
 
-        public override ISyntax ToSyntax(TokenLocation loc) {
+        public override ISyntaxTree ToSyntax(TokenLocation loc) {
             return new IntLiteral(loc, this.Value);
         }
 
-        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types, bool isCast) {
+        public override bool CanUnifyTo(TrophyType other, SyntaxFrame types, bool isCast) {
             if (base.CanUnifyTo(other, types, isCast)) {
                 return true;
             }
@@ -26,7 +26,7 @@ namespace Trophy.Analysis.Types {
             return other == PrimitiveType.Int;
         }
 
-        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, bool isCast, ITypesRecorder types) {
+        public override ISyntaxTree UnifyTo(TrophyType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) {
             if (base.CanUnifyTo(other, types, isCast)) {
                 return base.UnifyTo(other, syntax, isCast, types);
             }
@@ -35,7 +35,7 @@ namespace Trophy.Analysis.Types {
             return syntax;
         }
 
-        public override bool CanUnifyFrom(TrophyType other, ITypesRecorder types) {
+        public override bool CanUnifyFrom(TrophyType other, SyntaxFrame types) {
             if (base.CanUnifyFrom(other, types)) {
                 return true;
             }
@@ -43,7 +43,7 @@ namespace Trophy.Analysis.Types {
             return other.CanUnifyTo(PrimitiveType.Int, types, false);
         }
 
-        public override TrophyType UnifyFrom(TrophyType other, ITypesRecorder types) {
+        public override TrophyType UnifyFrom(TrophyType other, SyntaxFrame types) {
             if (base.CanUnifyFrom(other, types)) {
                 return base.UnifyFrom(other, types);
             }

@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax UnaryExpression() {
+        private ISyntaxTree UnaryExpression() {
             var hasOperator = this.Peek(TokenKind.Subtract)
                 || this.Peek(TokenKind.Add)
                 || this.Peek(TokenKind.Not)
@@ -42,19 +42,19 @@ namespace Trophy.Features.Primitives {
         Not, Plus, Minus
     }
 
-    public record UnaryParseSyntax : ISyntax {
+    public record UnaryParseSyntax : ISyntaxTree {
         private readonly UnaryOperatorKind op;
-        private readonly ISyntax arg;
+        private readonly ISyntaxTree arg;
 
         public TokenLocation Location { get; }
 
-        public UnaryParseSyntax(TokenLocation location, UnaryOperatorKind op, ISyntax arg) {
+        public UnaryParseSyntax(TokenLocation location, UnaryOperatorKind op, ISyntaxTree arg) {
             this.Location = location;
             this.op = op;
             this.arg = arg;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
                 var left = new IntLiteral(this.Location, 0);
 
@@ -75,7 +75,7 @@ namespace Trophy.Features.Primitives {
                     this.Location, 
                     arg);
 
-                types.SetReturnType(result, PrimitiveType.Bool);
+                types.ReturnTypes[result] = PrimitiveType.Bool;
 
                 return result;
             }
@@ -84,11 +84,11 @@ namespace Trophy.Features.Primitives {
             }
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
@@ -97,19 +97,19 @@ namespace Trophy.Features.Primitives {
         }
     }
 
-    public record UnaryNotSyntax : ISyntax {
-        private readonly ISyntax target;
+    public record UnaryNotSyntax : ISyntaxTree {
+        private readonly ISyntaxTree target;
 
         public TokenLocation Location { get; }
 
-        public UnaryNotSyntax(TokenLocation loc, ISyntax target) {
+        public UnaryNotSyntax(TokenLocation loc, ISyntaxTree target) {
             this.Location = loc;
             this.target = target;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ISyntax ToRValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CNot() {

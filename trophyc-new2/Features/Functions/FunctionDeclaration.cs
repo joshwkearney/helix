@@ -45,7 +45,7 @@ namespace Trophy.Parsing {
             }
 
             var end = this.Advance(TokenKind.CloseParenthesis);
-            var returnType = new VoidLiteral(end.Location) as ISyntax;
+            var returnType = new VoidLiteral(end.Location) as ISyntaxTree;
 
             if (this.TryAdvance(TokenKind.AsKeyword)) {
                 returnType = this.TopExpression();
@@ -75,17 +75,17 @@ namespace Trophy.Parsing {
 namespace Trophy.Features.Functions {
     public record FunctionParseDeclaration : IDeclaration {
         private readonly FunctionParseSignature signature;
-        private readonly ISyntax body;
+        private readonly ISyntaxTree body;
 
         public TokenLocation Location { get; }
 
-        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntax body) {
+        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntaxTree body) {
             this.Location = loc;
             this.signature = sig;
             this.body = body;
         }
 
-        public void DeclareNames(ITypesRecorder types) {
+        public void DeclareNames(SyntaxFrame types) {
             FunctionsHelper.CheckForDuplicateParameters(
                 this.Location, 
                 this.signature.Parameters.Select(x => x.Name));
@@ -93,23 +93,22 @@ namespace Trophy.Features.Functions {
             FunctionsHelper.DeclareName(this.signature, types);
         }
 
-        public void DeclareTypes(ITypesRecorder types) {
+        public void DeclareTypes(SyntaxFrame types) {
             var sig = this.signature.ResolveNames(types);
             var decl = new ExternFunctionDeclaration(this.Location, sig);
 
-
             // Declare this function
-            types.DeclareFunction(sig);
+            types.Functions[sig.Path] = sig;
         }
         
-        public IDeclaration CheckTypes(ITypesRecorder types) {
+        public IDeclaration CheckTypes(SyntaxFrame types) {
             var path = types.ResolvePath(this.signature.Name);
-            var sig = types.GetFunction(path);
+            var sig = types.Functions[path];
             var body = this.body;
 
             // If this function returns void, wrap the body so we don't get weird type errors
             if (sig.ReturnType == PrimitiveType.Void) {
-                body = new BlockSyntax(body.Location, new ISyntax[] {
+                body = new BlockSyntax(body.Location, new ISyntaxTree[] {
                     body, new VoidLiteral(body.Location)
                 });
             }
@@ -134,25 +133,25 @@ namespace Trophy.Features.Functions {
     public record FunctionDeclaration : IDeclaration {
         public FunctionSignature Signature { get; }
 
-        public ISyntax Body { get; }
+        public ISyntaxTree Body { get; }
 
         public TokenLocation Location { get; }
 
-        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, ISyntax body) {
+        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, ISyntaxTree body) {
             this.Location = loc;
             this.Signature = sig;
             this.Body = body;
         }
 
-        public void DeclareNames(ITypesRecorder names) {
+        public void DeclareNames(SyntaxFrame names) {
             throw new InvalidOperationException();
         }
 
-        public void DeclareTypes(ITypesRecorder paths) {
+        public void DeclareTypes(SyntaxFrame paths) {
             throw new InvalidOperationException();
         }
 
-        public IDeclaration CheckTypes(ITypesRecorder types) {
+        public IDeclaration CheckTypes(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 

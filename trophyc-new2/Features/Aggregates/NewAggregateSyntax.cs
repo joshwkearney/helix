@@ -6,18 +6,18 @@ using Trophy.Generation;
 using Trophy.Features.Primitives;
 
 namespace Trophy.Features.Aggregates {
-    public class NewAggregateSyntax : ISyntax {
+    public class NewAggregateSyntax : ISyntaxTree {
         private readonly bool isTypeChecked;
         private readonly AggregateSignature sig;
         private readonly IReadOnlyList<string?> names;
-        private readonly IReadOnlyList<ISyntax> values;
+        private readonly IReadOnlyList<ISyntaxTree> values;
 
         public TokenLocation Location { get; }
 
         public NewAggregateSyntax(TokenLocation loc, 
             AggregateSignature sig,
             IReadOnlyList<string?> names,
-            IReadOnlyList<ISyntax> values, bool isTypeChecked = false) {
+            IReadOnlyList<ISyntaxTree> values, bool isTypeChecked = false) {
 
             this.Location = loc;
             this.sig = sig;
@@ -26,7 +26,7 @@ namespace Trophy.Features.Aggregates {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var names = new string[this.names.Count];
             int missingCounter = 0;
 
@@ -69,7 +69,7 @@ namespace Trophy.Features.Aggregates {
             }
         }
 
-        private ISyntax CheckUnionTypes(IReadOnlyList<string> names, ITypesRecorder types) {
+        private ISyntaxTree CheckUnionTypes(IReadOnlyList<string> names, SyntaxFrame types) {
             if (names.Count > 1) {
                 throw new TypeCheckingException(
                     this.Location, 
@@ -77,7 +77,7 @@ namespace Trophy.Features.Aggregates {
                     "Unions cannot be initialized with more than one member.");
             }
 
-            ISyntax result;
+            ISyntaxTree result;
 
             // If there aren't any assigned members then assigned the first one
             if (names.Count == 0) {
@@ -133,12 +133,12 @@ namespace Trophy.Features.Aggregates {
                     true);
             }
 
-            types.SetReturnType(result, new NamedType(sig.Path));
+            types.ReturnTypes[result] = new NamedType(sig.Path);
             return result;
         }
 
 
-        private ISyntax CheckStructTypes(IReadOnlyList<string> names, ITypesRecorder types) {
+        private ISyntaxTree CheckStructTypes(IReadOnlyList<string> names, SyntaxFrame types) {
             var type = new NamedType(sig.Path);
 
             var dups = names
@@ -194,7 +194,7 @@ namespace Trophy.Features.Aggregates {
                 .ToDictionary(x => x.First, x => x.Second);
 
             var allNames = sig.Members.Select(x => x.Name).ToArray();
-            var allValues = new List<ISyntax>();
+            var allValues = new List<ISyntaxTree>();
 
             // Unify the arguments to the correct type
             foreach (var mem in sig.Members) {
@@ -207,12 +207,12 @@ namespace Trophy.Features.Aggregates {
             }
 
             var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
-            types.SetReturnType(result, type);
+            types.ReturnTypes[result] = type;
 
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }

@@ -10,26 +10,26 @@ using Trophy.Generation.Syntax;
 using Trophy.Parsing;
 
 namespace Trophy.Features.Variables {
-    public class CompoundSyntax : ISyntax {
-        private readonly IReadOnlyList<ISyntax> args;
+    public class CompoundSyntax : ISyntaxTree {
+        private readonly IReadOnlyList<ISyntaxTree> args;
 
         public TokenLocation Location { get; }
 
-        public CompoundSyntax(TokenLocation loc, IReadOnlyList<ISyntax> args) {
+        public CompoundSyntax(TokenLocation loc, IReadOnlyList<ISyntaxTree> args) {
             this.Location = loc;
             this.args = args;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var result = new CompoundSyntax(
                 this.Location, 
                 this.args.Select(x => x.CheckTypes(types)).ToArray());
 
-            types.SetReturnType(result, PrimitiveType.Void);
+            types.ReturnTypes[result] = PrimitiveType.Void;
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             foreach (var arg in this.args) {

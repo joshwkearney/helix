@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax MemberAccess(ISyntax first) {
+        private ISyntaxTree MemberAccess(ISyntaxTree first) {
             this.Advance(TokenKind.Dot);
 
             var tok = this.Advance(TokenKind.Identifier);
@@ -19,14 +19,14 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Aggregates {
-    public record MemberAccessSyntax : ISyntax {
-        private readonly ISyntax target;
+    public record MemberAccessSyntax : ISyntaxTree {
+        private readonly ISyntaxTree target;
         private readonly string memberName;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public MemberAccessSyntax(TokenLocation location, ISyntax target, 
+        public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
                                   string memberName, bool isTypeChecked = false) {
             this.Location = location;
             this.target = target;
@@ -34,15 +34,15 @@ namespace Trophy.Features.Aggregates {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
-            var targetType = types.GetReturnType(target);
+            var targetType = types.ReturnTypes[target];
 
             // If this is a named type it could be a struct or union
             if (targetType is NamedType named) {
 
                 // If this is a struct or union we can access the fields
-                if (types.TryGetAggregate(named.Path).TryGetValue(out var sig)) {
+                if (types.Aggregates.TryGetValue(named.Path, out var sig)) {
                     var fieldOpt = sig
                         .Members
                         .Where(x => x.Name == this.memberName)
@@ -56,7 +56,7 @@ namespace Trophy.Features.Aggregates {
                             this.memberName,
                             true);
 
-                        types.SetReturnType(result, field.Type);
+                        types.ReturnTypes[result] = field.Type;
 
                         return result;
                     }
@@ -67,7 +67,7 @@ namespace Trophy.Features.Aggregates {
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }

@@ -15,12 +15,12 @@ namespace Trophy.Features.Aggregates {
             this.Kind = kind;
         }
 
-        public AggregateSignature ResolveNames(ITypesRecorder names) {
-            var path = names.TryResolvePath(this.Name).GetValue();
+        public AggregateSignature ResolveNames(SyntaxFrame types) {
+            var path = types.ResolvePath(this.Name);
             var mems = new List<AggregateMember>();
 
             foreach (var mem in this.Members) {
-                if (!mem.MemberType.AsType(names).TryGetValue(out var type)) {
+                if (!mem.MemberType.AsType(types).TryGetValue(out var type)) {
                     throw TypeCheckingErrors.ExpectedTypeExpression(mem.Location);
                 }
 
@@ -34,13 +34,13 @@ namespace Trophy.Features.Aggregates {
     public record ParseAggregateMember {
         public string MemberName { get; }
 
-        public ISyntax MemberType { get; }
+        public ISyntaxTree MemberType { get; }
 
         public TokenLocation Location { get; }
 
         public bool IsWritable { get; }
 
-        public ParseAggregateMember(TokenLocation loc, string name, ISyntax type, bool isWritable) {
+        public ParseAggregateMember(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
             this.Location = loc;
             this.MemberName = name;
             this.MemberType = type;

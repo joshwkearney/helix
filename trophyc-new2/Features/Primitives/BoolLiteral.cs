@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax BoolLiteral() {
+        private ISyntaxTree BoolLiteral() {
             var start = this.Advance(TokenKind.BoolLiteral);
             var value = bool.Parse(start.Value);
 
@@ -17,7 +17,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public record BoolLiteral : ISyntax {
+    public record BoolLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
 
         public bool Value { get; }
@@ -27,17 +27,17 @@ namespace Trophy.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<TrophyType> AsType(ITypesRecorder names) {
+        public Option<TrophyType> AsType(SyntaxFrame types) {
             return new SingularBoolType(this.Value);
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
-            types.SetReturnType(this, new SingularBoolType(this.Value));
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+            types.ReturnTypes[this] = new SingularBoolType(this.Value);
 
             return this;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CIntLiteral(this.Value ? 1 : 0);

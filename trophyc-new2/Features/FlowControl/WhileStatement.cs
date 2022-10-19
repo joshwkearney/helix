@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax WhileStatement() {
+        private ISyntaxTree WhileStatement() {
             var start = this.Advance(TokenKind.WhileKeyword);
             var cond = this.TopExpression();
 
@@ -21,31 +21,31 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record WhileStatement : ISyntax {
-        private readonly ISyntax cond, body;
+    public record WhileStatement : ISyntaxTree {
+        private readonly ISyntaxTree cond, body;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public WhileStatement(TokenLocation location, ISyntax cond, 
-                              ISyntax body, bool isTypeChecked = false) {
+        public WhileStatement(TokenLocation location, ISyntaxTree cond, 
+                              ISyntaxTree body, bool isTypeChecked = false) {
             this.Location = location;
             this.cond = cond;
             this.body = body;
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
             var body = this.body.CheckTypes(types).ToRValue(types);
 
             var result = new WhileStatement(this.Location, cond, body, true);
-            types.SetReturnType(result, PrimitiveType.Void);
+            types.ReturnTypes[result] = PrimitiveType.Void;
 
             return result;
         }
 
-        public Option<ISyntax> ToRValue(ITypesRecorder types) {
+        public Option<ISyntaxTree> ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }

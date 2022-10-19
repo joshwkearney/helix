@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax TypePointer(ISyntax start) {
+        private ISyntaxTree TypePointer(ISyntaxTree start) {
             TokenLocation loc;
             bool isWritable;
 
@@ -28,25 +28,25 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public record TypePointerSyntax : ISyntax {
-        private readonly ISyntax inner;
+    public record TypePointerSyntax : ISyntaxTree {
+        private readonly ISyntaxTree inner;
         private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
-        public TypePointerSyntax(TokenLocation loc, ISyntax inner, bool isWritable) {
+        public TypePointerSyntax(TokenLocation loc, ISyntaxTree inner, bool isWritable) {
             this.Location = loc;
             this.inner = inner;
             this.isWritable = isWritable;
         }
 
-        public Option<TrophyType> AsType(ITypesRecorder names) {
-            return this.inner.AsType(names)
+        public Option<TrophyType> AsType(SyntaxFrame types) {
+            return this.inner.AsType(types)
                 .Select(x => new PointerType(x, this.isWritable))
                 .Select(x => (TrophyType)x);
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();

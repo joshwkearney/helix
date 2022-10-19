@@ -6,17 +6,17 @@ namespace Trophy.Analysis.Types {
     public abstract record TrophyType {
         public virtual TrophyType ToMutableType() => this;
 
-        public virtual ISyntax ToSyntax(TokenLocation loc) {
+        public virtual ISyntaxTree ToSyntax(TokenLocation loc) {
             return new TypeSyntaxWrapper(loc, this);
         }
 
-        public virtual IEnumerable<TrophyType> GetContainedValueTypes(ITypesRecorder types) {
+        public virtual IEnumerable<TrophyType> GetContainedValueTypes(SyntaxFrame types) {
             yield return this;
         }
 
-        public virtual bool CanUnifyTo(TrophyType other, ITypesRecorder types, bool isCast) => this == other;
+        public virtual bool CanUnifyTo(TrophyType other, SyntaxFrame types, bool isCast) => this == other;
 
-        public virtual ISyntax UnifyTo(TrophyType other, ISyntax syntax, bool isCast, ITypesRecorder types) {
+        public virtual ISyntaxTree UnifyTo(TrophyType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) {
             if (this == other) {
                 return syntax;
             }
@@ -25,11 +25,11 @@ namespace Trophy.Analysis.Types {
             }
         }
 
-        public virtual bool CanUnifyFrom(TrophyType other, ITypesRecorder types) {
+        public virtual bool CanUnifyFrom(TrophyType other, SyntaxFrame types) {
             return this.CanUnifyTo(other, types, false) || other.CanUnifyTo(this, types, false);
         }
 
-        public virtual TrophyType UnifyFrom(TrophyType other, ITypesRecorder types) {
+        public virtual TrophyType UnifyFrom(TrophyType other, SyntaxFrame types) {
             if (this.CanUnifyTo(other, types, false)) {
                 return other;
             }
@@ -41,11 +41,11 @@ namespace Trophy.Analysis.Types {
             }
         }
 
-        public bool HasDefaultValue(ITypesRecorder types) {
+        public bool HasDefaultValue(SyntaxFrame types) {
             return PrimitiveType.Void.CanUnifyTo(this, types, false);
         }
 
-        private class TypeSyntaxWrapper : ISyntax {
+        private class TypeSyntaxWrapper : ISyntaxTree {
             private readonly TrophyType type;
 
             public TokenLocation Location { get; }
@@ -55,9 +55,9 @@ namespace Trophy.Analysis.Types {
                 this.type = type;
             }
 
-            public Option<TrophyType> AsType(ITypesRecorder names) => this.type;
+            public Option<TrophyType> AsType(SyntaxFrame types) => this.type;
 
-            public ISyntax CheckTypes(ITypesRecorder types) {
+            public ISyntaxTree CheckTypes(SyntaxFrame types) {
                 throw new InvalidOperationException();
             }
 

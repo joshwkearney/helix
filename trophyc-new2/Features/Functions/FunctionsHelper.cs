@@ -17,16 +17,16 @@ namespace Trophy.Features.Functions {
             }
         }
 
-        public static void DeclareName(FunctionParseSignature sig, ITypesRecorder types) {
+        public static void DeclareName(FunctionParseSignature sig, SyntaxFrame types) {
             // Make sure this name isn't taken
-            if (types.TryResolvePath(sig.Name).HasValue) {
+            if (types.TryResolvePath(sig.Name, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(sig.Location, sig.Name);
             }
 
             // Declare this function
             var path = types.CurrentScope.Append(sig.Name);
 
-            types.SetValue(path, new TypeSyntax(sig.Location, new NamedType(path)));
+            types.Trees[path] = new TypeSyntax(sig.Location, new NamedType(path));
             //names = names.WithScope(sig.Name);
 
             // Declare the parameters
@@ -39,7 +39,7 @@ namespace Trophy.Features.Functions {
             //}
         }
 
-        public static void DeclareParameters(FunctionSignature sig, ITypesRecorder types) {
+        public static void DeclareParameters(FunctionSignature sig, SyntaxFrame types) {
             // Declare this function
             //paths.DeclareFunction(sig);
             //paths.DeclareVariable(new VariableSignature(sig.Path, new FunctionType(sig), false));
@@ -54,8 +54,8 @@ namespace Trophy.Features.Functions {
                     type = type.ToMutableType();
                 }
 
-                types.DeclareVariable(new VariableSignature(path, type, parsePar.IsWritable));
-                types.SetValue(path, new VariableAccessSyntax(default, path));
+                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable);
+                types.Trees[path] = new VariableAccessSyntax(default, path);
             }
         }
     }

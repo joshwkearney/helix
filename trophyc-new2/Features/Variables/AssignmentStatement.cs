@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax AssignmentStatement() {
+        private ISyntaxTree AssignmentStatement() {
             var start = this.TopExpression();
 
             if (this.TryAdvance(TokenKind.Assignment)) {
@@ -23,25 +23,25 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Variables {
-    public record AssignmentStatement : ISyntax {
-        private readonly ISyntax target, assign;
+    public record AssignmentStatement : ISyntaxTree {
+        private readonly ISyntaxTree target, assign;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public AssignmentStatement(TokenLocation loc, ISyntax target, 
-                                   ISyntax assign, bool isTypeChecked = false) {
+        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, 
+                                   ISyntaxTree assign, bool isTypeChecked = false) {
             this.Location = loc;
             this.target = target;
             this.assign = assign;
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var target = this.target.CheckTypes(types).ToLValue(types);
             var assign = this.assign.CheckTypes(types).ToRValue(types);
 
-            var targetType = types.GetReturnType(target);
+            var targetType = types.ReturnTypes[target];
 
             // Make sure the target is a variable type
             if (targetType is not PointerType pointerType || !pointerType.IsWritable) {
@@ -51,12 +51,12 @@ namespace Trophy.Features.Variables {
             assign = assign.UnifyTo(pointerType.ReferencedType, types);
 
             var result = new AssignmentStatement(this.Location, target, assign, true);
-            types.SetReturnType(result, PrimitiveType.Void);
+            types.ReturnTypes[result] = PrimitiveType.Void;
 
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }

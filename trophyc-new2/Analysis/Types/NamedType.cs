@@ -10,8 +10,8 @@
             return this.Path.Segments.Last();
         }
 
-        public override IEnumerable<TrophyType> GetContainedValueTypes(ITypesRecorder types) {
-            if (types.TryGetAggregate(this.Path).TryGetValue(out var sig)) {
+        public override IEnumerable<TrophyType> GetContainedValueTypes(SyntaxFrame types) {
+            if (types.Aggregates.TryGetValue(this.Path, out var sig)) {
 
                 return sig.Members
                     .SelectMany(x => x.Type.GetContainedValueTypes(types))

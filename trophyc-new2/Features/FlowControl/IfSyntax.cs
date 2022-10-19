@@ -8,7 +8,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax IfExpression() {
+        private ISyntaxTree IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
             var cond = this.TopExpression();
 
@@ -31,23 +31,23 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record IfParseSyntax : ISyntax {
-        private readonly ISyntax cond, iftrue, iffalse;
+    public record IfParseSyntax : ISyntaxTree {
+        private readonly ISyntaxTree cond, iftrue, iffalse;
 
         public TokenLocation Location { get; }
 
-        public IfParseSyntax(TokenLocation location, ISyntax cond, ISyntax iftrue) {
+        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue) {
             this.Location = location;
             this.cond = cond;
 
-            this.iftrue = new BlockSyntax(iftrue.Location, new ISyntax[] {
+            this.iftrue = new BlockSyntax(iftrue.Location, new ISyntaxTree[] {
                 iftrue, new VoidLiteral(iftrue.Location)
             });
 
             this.iffalse = new VoidLiteral(location);
         }
 
-        public IfParseSyntax(TokenLocation location, ISyntax cond, ISyntax iftrue, ISyntax iffalse)
+        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue, ISyntaxTree iffalse)
             : this(location, cond, iftrue) {
 
             this.Location = location;
@@ -56,7 +56,7 @@ namespace Trophy.Features.FlowControl {
             this.iffalse = iffalse;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
             var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
             var iffalse = this.iffalse.CheckTypes(types).ToRValue(types);
@@ -64,18 +64,18 @@ namespace Trophy.Features.FlowControl {
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
 
-            var resultType = types.GetReturnType(iftrue);
+            var resultType = types.ReturnTypes[iftrue];
             var result = new IfSyntax(this.Location, cond, iftrue, iffalse, resultType);
 
-            types.SetReturnType(result, resultType);
+            types.ReturnTypes[result] = resultType;
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
@@ -84,15 +84,15 @@ namespace Trophy.Features.FlowControl {
         }
     }
 
-    public record IfSyntax : ISyntax {
-        private readonly ISyntax cond, iftrue, iffalse;
+    public record IfSyntax : ISyntaxTree {
+        private readonly ISyntaxTree cond, iftrue, iffalse;
         private readonly TrophyType returnType;
 
         public TokenLocation Location { get; }
 
-        public IfSyntax(TokenLocation loc, ISyntax cond,
-                         ISyntax iftrue,
-                         ISyntax iffalse, TrophyType returnType) {
+        public IfSyntax(TokenLocation loc, ISyntaxTree cond,
+                         ISyntaxTree iftrue,
+                         ISyntaxTree iffalse, TrophyType returnType) {
 
             this.Location = loc;
             this.cond = cond;
@@ -101,9 +101,9 @@ namespace Trophy.Features.FlowControl {
             this.returnType = returnType;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ISyntax ToRValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();

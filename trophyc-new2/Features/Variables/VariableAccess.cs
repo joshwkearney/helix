@@ -6,7 +6,7 @@ using Trophy.Parsing;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax VariableAccess() {
+        private ISyntaxTree VariableAccess() {
             var tok = this.Advance(TokenKind.Identifier);
 
             return new VariableAccessParseSyntax(tok.Location, tok.Value);
@@ -15,7 +15,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy {
-    public record VariableAccessParseSyntax : ISyntax {
+    public record VariableAccessParseSyntax : ISyntaxTree {
         private readonly string name;
 
         public TokenLocation Location { get; }
@@ -25,7 +25,7 @@ namespace Trophy {
             this.name = name;
         }
 
-        public Option<TrophyType> AsType(ITypesRecorder types) {
+        public Option<TrophyType> AsType(SyntaxFrame types) {
             // Make sure this name exists
             //if (!types.TryResolvePath(this.name).TryGetValue(out var path)) {
             //    throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
@@ -43,7 +43,7 @@ namespace Trophy {
             //}
 
             // If we're pointing at a type then return it
-            if (types.TryResolveValue(this.name).TryGetValue(out var syntax)) {
+            if (types.TryResolveName(this.name, out var syntax)) {
                 if (syntax.AsType(types).TryGetValue(out var type)) {
                     return type;
                 }
@@ -52,28 +52,28 @@ namespace Trophy {
             return Option.None;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             // Make sure this name exists
-            if (!types.TryResolvePath(this.name).TryGetValue(out var path)) {
+            if (!types.TryResolvePath(this.name, out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
             // Make sure we are accessing a variable
-            if (!types.TryGetVariable(path).HasValue) {
+            if (!types.Variables.ContainsKey(path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
             var result = new VariableAccessSyntax(this.Location, path);
-            types.SetReturnType(result, types.GetVariable(path).Type);
+            types.ReturnTypes[result] = types.Variables[path].Type;
 
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
@@ -82,7 +82,7 @@ namespace Trophy {
         }
     }
 
-    public record VariableAccessSyntax : ISyntax {
+    public record VariableAccessSyntax : ISyntaxTree {
         private readonly IdentifierPath variablePath;
 
         public TokenLocation Location { get; }
@@ -92,21 +92,21 @@ namespace Trophy {
             this.variablePath = path;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             // Make sure this variable is writable
-            if (!types.GetVariable(this.variablePath).IsWritable) {
+            if (!types.Variables[this.variablePath].IsWritable) {
                 throw TypeCheckingErrors.WritingToConstVariable(this.Location);
             }
 
             var result = new LValueVariableAccessSyntax(this.Location, this.variablePath);
-            types.SetReturnType(result, new PointerType(types.GetReturnType(this), true));
+            types.ReturnTypes[result] = new PointerType(types.ReturnTypes[this], true);
 
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
@@ -115,7 +115,7 @@ namespace Trophy {
         }
     }
 
-    public record LValueVariableAccessSyntax : ISyntax {
+    public record LValueVariableAccessSyntax : ISyntaxTree {
         private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
@@ -125,9 +125,9 @@ namespace Trophy {
             this.path = path;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ISyntax ToLValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToLValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);

@@ -74,15 +74,15 @@ namespace Trophy.Features.Aggregates {
             this.kind = kind;
         }
 
-        public void DeclareNames(ITypesRecorder names) {
+        public void DeclareNames(SyntaxFrame names) {
             // Make sure this name isn't taken
-            if (names.TryResolvePath(this.signature.Name).HasValue) {
+            if (names.TryResolvePath(this.signature.Name, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.signature.Name);
             }
 
             var path = names.CurrentScope.Append(this.signature.Name);
 
-            names.SetValue(path, new TypeSyntax(this.Location, new NamedType(path)));
+            names.Trees[path] = new TypeSyntax(this.Location, new NamedType(path));
             //names = names.WithScope(this.signature.Name);
 
             // Declare the parameters
@@ -93,17 +93,17 @@ namespace Trophy.Features.Aggregates {
             //}
         }
 
-        public void DeclareTypes(ITypesRecorder types) {
+        public void DeclareTypes(SyntaxFrame types) {
             var sig = this.signature.ResolveNames(types);
 
-            types.DeclareAggregate(sig);
+            types.Aggregates[sig.Path] = sig;
 
             //foreach (var mem in this.signature.Members) {
             //    types.DeclareReserved(sig.Path.Append(mem.MemberName));
             //}
         }
 
-        public IDeclaration CheckTypes(ITypesRecorder types) {
+        public IDeclaration CheckTypes(SyntaxFrame types) {
             var sig = this.signature.ResolveNames(types); 
             var structType = new NamedType(sig.Path);
             var isRecursive = sig.Members

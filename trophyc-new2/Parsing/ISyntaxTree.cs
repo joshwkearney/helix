@@ -4,21 +4,21 @@ using Trophy.Generation;
 using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
-    public interface ISyntax {
+    public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> AsType(ITypesRecorder names) {
+        public Option<TrophyType> AsType(SyntaxFrame types) {
             throw new InvalidOperationException(
                 "Compiler error: This syntax tree cannot be construed as a type");
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types);
+        public ISyntaxTree CheckTypes(SyntaxFrame types);
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             throw TypeCheckingErrors.RValueRequired(this.Location);
         }
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             throw TypeCheckingErrors.LValueRequired(this.Location);
         }
 
@@ -28,11 +28,11 @@ namespace Trophy.Parsing {
     public interface IDeclaration {
         public TokenLocation Location { get; }
 
-        public void DeclareNames(ITypesRecorder names);
+        public void DeclareNames(SyntaxFrame names);
 
-        public void DeclareTypes(ITypesRecorder types);
+        public void DeclareTypes(SyntaxFrame types);
 
-        public IDeclaration CheckTypes(ITypesRecorder types);
+        public IDeclaration CheckTypes(SyntaxFrame types);
 
         public void GenerateCode(ICWriter writer);
     }

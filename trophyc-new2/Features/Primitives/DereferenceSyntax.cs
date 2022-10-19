@@ -5,28 +5,28 @@ using Trophy.Generation.Syntax;
 using Trophy.Parsing;
 
 namespace Trophy.Features.Primitives {
-    public record DereferenceSyntax : ISyntax {
-        private readonly ISyntax target;
+    public record DereferenceSyntax : ISyntaxTree {
+        private readonly ISyntaxTree target;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public DereferenceSyntax(TokenLocation loc, ISyntax target, bool isTypeChecked = false) {
+        public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, bool isTypeChecked = false) {
             this.Location = loc;
             this.target = target;
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var target = this.target.CheckTypes(types);
             var pointerType = target.AssertIsPointer(types);
             var result = new DereferenceSyntax(this.Location, target, true);
 
-            types.SetReturnType(result, pointerType.ReferencedType);
+            types.ReturnTypes[result] = pointerType.ReferencedType;
             return result;
         }
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.LValueRequired(this.Location);
             }
@@ -39,7 +39,7 @@ namespace Trophy.Features.Primitives {
             return this.target;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }

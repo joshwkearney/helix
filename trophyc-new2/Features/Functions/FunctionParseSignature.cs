@@ -3,7 +3,7 @@ using Trophy.Parsing;
 
 namespace Trophy.Features.Functions {
     public record FunctionParseSignature {
-        public ISyntax ReturnType { get; }
+        public ISyntaxTree ReturnType { get; }
 
         public string Name { get; }
 
@@ -11,14 +11,14 @@ namespace Trophy.Features.Functions {
 
         public TokenLocation Location { get; }
 
-        public FunctionParseSignature(TokenLocation loc, string name, ISyntax returnType, IReadOnlyList<ParseFunctionParameter> pars) {
+        public FunctionParseSignature(TokenLocation loc, string name, ISyntaxTree returnType, IReadOnlyList<ParseFunctionParameter> pars) {
             this.Location = loc;
             this.ReturnType = returnType;
             this.Name = name;
             this.Parameters = pars;
         }
 
-        public FunctionSignature ResolveNames(ITypesRecorder types) {
+        public FunctionSignature ResolveNames(SyntaxFrame types) {
             var path = types.CurrentScope.Append(this.Name);
             var pars = new List<FunctionParameter>();
 
@@ -41,13 +41,13 @@ namespace Trophy.Features.Functions {
     public record ParseFunctionParameter {
         public string Name { get; }
 
-        public ISyntax Type { get; }
+        public ISyntaxTree Type { get; }
 
         public bool IsWritable { get; }
 
         public TokenLocation Location { get; }
 
-        public ParseFunctionParameter(TokenLocation loc, string name, ISyntax type, bool isWritable) {
+        public ParseFunctionParameter(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
             this.Location = loc;
             this.Name = name;
             this.Type = type;

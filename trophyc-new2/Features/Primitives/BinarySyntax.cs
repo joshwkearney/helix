@@ -8,7 +8,7 @@ using Trophy.Features.FlowControl;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax OrExpression() {
+        private ISyntaxTree OrExpression() {
             var first = this.XorExpression();
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
@@ -31,7 +31,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntax XorExpression() {
+        private ISyntaxTree XorExpression() {
             var first = this.AndExpression();
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
@@ -44,7 +44,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntax AndExpression() {
+        private ISyntaxTree AndExpression() {
             var first = this.ComparisonExpression();
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
@@ -67,7 +67,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntax ComparisonExpression() {
+        private ISyntaxTree ComparisonExpression() {
             var first = this.AddExpression();
             var comparators = new Dictionary<TokenKind, BinaryOperationKind>() {
                 { TokenKind.Equals, BinaryOperationKind.EqualTo }, { TokenKind.NotEquals, BinaryOperationKind.NotEqualTo },
@@ -98,7 +98,7 @@ namespace Trophy.Parsing {
         }
 
 
-        private ISyntax AddExpression() {
+        private ISyntaxTree AddExpression() {
             var first = this.MultiplyExpression();
 
             while (true) {
@@ -117,7 +117,7 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntax MultiplyExpression() {
+        private ISyntaxTree MultiplyExpression() {
             var first = this.PrefixExpression();
 
             while (true) {
@@ -155,7 +155,7 @@ namespace Trophy.Features.Primitives {
         GreaterThanOrEqualTo, LessThanOrEqualTo
     }
 
-    public record BinarySyntax : ISyntax {
+    public record BinarySyntax : ISyntaxTree {
         private static readonly Dictionary<BinaryOperationKind, TrophyType> intOperations = new() {
             { BinaryOperationKind.Add,                  PrimitiveType.Int },
             { BinaryOperationKind.Subtract,             PrimitiveType.Int },
@@ -181,13 +181,13 @@ namespace Trophy.Features.Primitives {
             { BinaryOperationKind.NotEqualTo,           PrimitiveType.Bool },
         };
 
-        private readonly ISyntax left, right;
+        private readonly ISyntaxTree left, right;
         private readonly BinaryOperationKind op;
         private readonly bool isTypeChecked = false;
 
         public TokenLocation Location { get; }
 
-        public BinarySyntax(TokenLocation loc, ISyntax left, ISyntax right, 
+        public BinarySyntax(TokenLocation loc, ISyntaxTree left, ISyntaxTree right, 
                             BinaryOperationKind op, bool isTypeChecked = false) {
             this.Location = loc;
             this.left = left;
@@ -196,7 +196,7 @@ namespace Trophy.Features.Primitives {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             // Delegate type resolution
             var left = this.left.CheckTypes(types).ToRValue(types);
             var right = this.right.CheckTypes(types).ToRValue(types);
@@ -204,8 +204,8 @@ namespace Trophy.Features.Primitives {
             left = left.UnifyFrom(right, types);
             right = right.UnifyFrom(left, types);
 
-            var leftType = types.GetReturnType(left);
-            var rightType = types.GetReturnType(right);
+            var leftType = types.ReturnTypes[left];
+            var rightType = types.ReturnTypes[right];
             var returnType = PrimitiveType.Void as TrophyType;
 
             // Check if left is a valid type
@@ -238,12 +238,12 @@ namespace Trophy.Features.Primitives {
             }
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
-            types.SetReturnType(result, returnType);
+            types.ReturnTypes[result] = returnType;
 
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }

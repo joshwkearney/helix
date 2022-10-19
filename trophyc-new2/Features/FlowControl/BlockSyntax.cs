@@ -7,9 +7,9 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax Block() {
+        private ISyntaxTree Block() {
             var start = this.Advance(TokenKind.OpenBrace);
-            var stats = new List<ISyntax>();
+            var stats = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
                 stats.Add(this.Statement());
@@ -24,14 +24,14 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record BlockSyntax : ISyntax {
+    public record BlockSyntax : ISyntaxTree {
         private static int idCounter = 0;
 
-        private readonly IReadOnlyList<ISyntax> statements;
+        private readonly IReadOnlyList<ISyntaxTree> statements;
         private readonly int id;
         private readonly bool isTypeChecked;
 
-        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntax> statements, 
+        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements, 
                            bool isTypeChecked = false) {
             this.Location = location;
             this.statements = statements;
@@ -41,7 +41,7 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var newScope = types.CurrentScope.Append("$block" + this.id);
             types = types.WithScope(newScope);
 
@@ -49,15 +49,15 @@ namespace Trophy.Features.FlowControl {
             var result = new BlockSyntax(this.Location, stats, true);
             var returnType = stats
                 .LastOrNone()
-                .Select(types.GetReturnType)
+                .Select(x => types.ReturnTypes[x])
                 .OrElse(() => PrimitiveType.Void);
 
-            types.SetReturnType(result, returnType);
+            types.ReturnTypes[result] = returnType;
 
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }

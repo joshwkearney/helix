@@ -7,10 +7,10 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax InvokeExpression(ISyntax first) {
+        private ISyntaxTree InvokeExpression(ISyntaxTree first) {
             this.Advance(TokenKind.OpenParenthesis);
 
-            var args = new List<ISyntax>();
+            var args = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseParenthesis)) {
                 args.Add(this.TopExpression());
@@ -29,21 +29,21 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Functions {
-    public record InvokeParseTree : ISyntax {
-        private readonly ISyntax target;
-        private readonly IReadOnlyList<ISyntax> args;
+    public record InvokeParseTree : ISyntaxTree {
+        private readonly ISyntaxTree target;
+        private readonly IReadOnlyList<ISyntaxTree> args;
 
         public TokenLocation Location { get; }
 
-        public InvokeParseTree(TokenLocation loc, ISyntax target, IReadOnlyList<ISyntax> args) {
+        public InvokeParseTree(TokenLocation loc, ISyntaxTree target, IReadOnlyList<ISyntaxTree> args) {
             this.Location = loc;
             this.target = target;
             this.args = args;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var target = this.target.CheckTypes(types);
-            var targetType = types.GetReturnType(target);
+            var targetType = types.ReturnTypes[target];
 
             // Make sure the target is a function
             if (targetType is not FunctionType funcType) {
@@ -58,7 +58,7 @@ namespace Trophy.Features.Functions {
                     this.args.Count);
             }
 
-            var newArgs = new ISyntax[this.args.Count];
+            var newArgs = new ISyntaxTree[this.args.Count];
 
             // Make sure the arg types line up
             for (int i = 0; i < this.args.Count; i++) {
@@ -68,16 +68,16 @@ namespace Trophy.Features.Functions {
             }
 
             var result = new InvokeSyntax(this.Location, funcType.Signature, newArgs);
-            types.SetReturnType(result, funcType.Signature.ReturnType);
+            types.ReturnTypes[result] = funcType.Signature.ReturnType;
 
             return result;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) {
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntax ToLValue(ITypesRecorder types) {
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
@@ -86,25 +86,25 @@ namespace Trophy.Features.Functions {
         }
     }
 
-    public record InvokeSyntax : ISyntax {
+    public record InvokeSyntax : ISyntaxTree {
         private readonly FunctionSignature sig;
-        private readonly IReadOnlyList<ISyntax> args;
+        private readonly IReadOnlyList<ISyntaxTree> args;
 
         public TokenLocation Location { get; }
 
         public InvokeSyntax(
             TokenLocation loc,
             FunctionSignature sig,
-            IReadOnlyList<ISyntax> args) {
+            IReadOnlyList<ISyntaxTree> args) {
 
             this.Location = loc;
             this.sig = sig;
             this.args = args;
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) => this;
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ISyntax ToRValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var args = this.args

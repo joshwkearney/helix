@@ -19,7 +19,7 @@ namespace Trophy.Analysis.Types {
             this.kind = kind;
         }
 
-        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types, bool isCast) {
+        public override bool CanUnifyTo(TrophyType other, SyntaxFrame types, bool isCast) {
             if (this == other) {
                 return true;
             }
@@ -28,7 +28,7 @@ namespace Trophy.Analysis.Types {
                     return true;
                 }
                 else if (other is NamedType named) {
-                    if (types.TryGetAggregate(named.Path).TryGetValue(out var sig)) {
+                    if (types.Aggregates.TryGetValue(named.Path, out var sig)) {
                         return sig.Members.All(x => x.Type.HasDefaultValue(types));
                     }
                 }
@@ -37,13 +37,13 @@ namespace Trophy.Analysis.Types {
             return false;
         }
 
-        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, bool isCast, ITypesRecorder types) {
+        public override ISyntaxTree UnifyTo(TrophyType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) {
             if (this == other) {
                 return syntax;
             }
 
             if (this == Void) {
-                return new BlockSyntax(syntax.Location, new ISyntax[] {
+                return new BlockSyntax(syntax.Location, new ISyntaxTree[] {
                     syntax,
                     new PutSyntax(
                         syntax.Location,
@@ -64,7 +64,7 @@ namespace Trophy.Analysis.Types {
             };
         }
 
-        public override ISyntax ToSyntax(TokenLocation loc) {
+        public override ISyntaxTree ToSyntax(TokenLocation loc) {
             if (this == Void) {
                 return new VoidLiteral(loc);
             }

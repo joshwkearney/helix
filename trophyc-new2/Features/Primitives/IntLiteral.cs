@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax IntLiteral() {
+        private ISyntaxTree IntLiteral() {
             var tok = this.Advance(TokenKind.IntLiteral);
             var num = int.Parse(tok.Value);
 
@@ -17,7 +17,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public record IntLiteral : ISyntax {
+    public record IntLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
 
         public int Value { get; }
@@ -27,17 +27,17 @@ namespace Trophy.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<TrophyType> AsType(ITypesRecorder names) {
+        public Option<TrophyType> AsType(SyntaxFrame types) {
             return new SingularIntType(this.Value);
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
-            types.SetReturnType(this, new SingularIntType(this.Value));
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+            types.ReturnTypes[this] = new SingularIntType(this.Value);
 
             return this;
         }
 
-        public ISyntax ToRValue(ITypesRecorder types) => this;
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CIntLiteral(this.Value);

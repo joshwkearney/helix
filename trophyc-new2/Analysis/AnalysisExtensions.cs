@@ -4,8 +4,8 @@ using Trophy.Parsing;
 
 namespace Trophy.Analysis {
     public static partial class AnalysisExtensions {
-        public static PointerType AssertIsPointer(this ISyntax syntax, ITypesRecorder types) {
-            var type = types.GetReturnType(syntax);
+        public static PointerType AssertIsPointer(this ISyntaxTree syntax, SyntaxFrame types) {
+            var type = types.ReturnTypes[syntax];
 
             if (type is not PointerType pointer) {
                 throw TypeCheckingErrors.ExpectedVariableType(syntax.Location, type);
@@ -14,15 +14,14 @@ namespace Trophy.Analysis {
             return pointer;
         }
 
-        public static ISyntax WithMutableType(this ISyntax syntax, ITypesRecorder types) {
-            var type = types.GetReturnType(syntax);
-            var betterType = type.ToMutableType();
+        public static ISyntaxTree WithMutableType(this ISyntaxTree syntax, SyntaxFrame types) {
+            var betterType = types.ReturnTypes[syntax].ToMutableType();
 
             return syntax.UnifyTo(betterType, types);
         }
 
-        public static ISyntax UnifyTo(this ISyntax fromSyntax, TrophyType toType, ITypesRecorder types) {
-            var type = types.GetReturnType(fromSyntax);
+        public static ISyntaxTree UnifyTo(this ISyntaxTree fromSyntax, TrophyType toType, SyntaxFrame types) {
+            var type = types.ReturnTypes[fromSyntax];
 
             if (!type.CanUnifyTo(toType, types, false)) {
                 throw TypeCheckingErrors.UnexpectedType(fromSyntax.Location, toType, type);
@@ -30,13 +29,13 @@ namespace Trophy.Analysis {
 
             var result = type.UnifyTo(toType, fromSyntax, false, types).CheckTypes(types);
 
-            types.SetReturnType(result, toType);
+            types.ReturnTypes[result] = toType;
             return result;
         }
 
-        public static ISyntax UnifyFrom(this ISyntax fromSyntax, ISyntax otherSyntax, ITypesRecorder types) {
-            var type1 = types.GetReturnType(fromSyntax);
-            var type2 = types.GetReturnType(otherSyntax);
+        public static ISyntaxTree UnifyFrom(this ISyntaxTree fromSyntax, ISyntaxTree otherSyntax, SyntaxFrame types) {
+            var type1 = types.ReturnTypes[fromSyntax];
+            var type2 = types.ReturnTypes[otherSyntax];
 
             if (type1.CanUnifyFrom(type2, types)) {
                 return fromSyntax.UnifyTo(type1.UnifyFrom(type2, types), types);

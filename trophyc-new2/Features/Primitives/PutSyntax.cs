@@ -8,7 +8,7 @@ using Trophy.Features.Aggregates;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntax PutExpression() {
+        private ISyntaxTree PutExpression() {
             TokenLocation start;
             bool isStackAllocated;
 
@@ -29,11 +29,11 @@ namespace Trophy.Parsing {
                     loc, 
                     targetType, 
                     Array.Empty<string>(), 
-                    Array.Empty<ISyntax>());
+                    Array.Empty<ISyntaxTree>());
             }
 
             var names = new List<string?>();
-            var values = new List<ISyntax>();
+            var values = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
                 string? name = null;
@@ -62,15 +62,15 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.Primitives {
-    public class PutSyntax : ISyntax {
-        private readonly ISyntax type;
+    public class PutSyntax : ISyntaxTree {
+        private readonly ISyntaxTree type;
         private readonly IReadOnlyList<string?> names;
-        private readonly IReadOnlyList<ISyntax> values;
+        private readonly IReadOnlyList<ISyntaxTree> values;
 
         public TokenLocation Location { get; }
 
-        public PutSyntax(TokenLocation loc, ISyntax type, 
-            IReadOnlyList<string?> names, IReadOnlyList<ISyntax> values) {
+        public PutSyntax(TokenLocation loc, ISyntaxTree type, 
+            IReadOnlyList<string?> names, IReadOnlyList<ISyntaxTree> values) {
 
             this.Location = loc;
             this.type = type;
@@ -78,15 +78,15 @@ namespace Trophy.Features.Primitives {
             this.values = values;
         }
 
-        public PutSyntax(TokenLocation loc, ISyntax type) {
+        public PutSyntax(TokenLocation loc, ISyntaxTree type) {
 
             this.Location = loc;
             this.type = type;
             this.names = Array.Empty<string>();
-            this.values = Array.Empty<ISyntax>();
+            this.values = Array.Empty<ISyntaxTree>();
         }
 
-        public ISyntax CheckTypes(ITypesRecorder types) {
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
             if (!this.type.AsType(types).TryGetValue(out var type)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);
             }
@@ -110,7 +110,7 @@ namespace Trophy.Features.Primitives {
                 return new IntLiteral(this.Location, 0).CheckTypes(types);
             }
             else if (type is NamedType named) {
-                if (!types.TryGetAggregate(named.Path).TryGetValue(out var sig)) {
+                if (!types.Aggregates.TryGetValue(named.Path, out var sig)) {
                     throw TypeCheckingErrors.ExpectedStructType(this.type.Location, type);
                 }
 
