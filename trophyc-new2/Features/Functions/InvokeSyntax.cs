@@ -46,15 +46,15 @@ namespace Trophy.Features.Functions {
             var targetType = types.ReturnTypes[target];
 
             // Make sure the target is a function
-            if (targetType is not FunctionType funcType) {
+            if (targetType is not NamedType named || !types.Functions.TryGetValue(named.Path, out var sig)) {
                 throw TypeCheckingErrors.ExpectedFunctionType(this.target.Location, targetType);
             }
 
             // Make sure the arg count lines up
-            if (this.args.Count != funcType.Signature.Parameters.Count) {
+            if (this.args.Count != sig.Parameters.Count) {
                 throw TypeCheckingErrors.ParameterCountMismatch(
                     this.Location, 
-                    funcType.Signature.Parameters.Count, 
+                    sig.Parameters.Count, 
                     this.args.Count);
             }
 
@@ -62,13 +62,13 @@ namespace Trophy.Features.Functions {
 
             // Make sure the arg types line up
             for (int i = 0; i < this.args.Count; i++) {
-                var expectedType = funcType.Signature.Parameters[i].Type;
+                var expectedType = sig.Parameters[i].Type;
 
                 newArgs[i] = this.args[i].CheckTypes(types).UnifyTo(expectedType, types);
             }
 
-            var result = new InvokeSyntax(this.Location, funcType.Signature, newArgs);
-            types.ReturnTypes[result] = funcType.Signature.ReturnType;
+            var result = new InvokeSyntax(this.Location, sig, newArgs);
+            types.ReturnTypes[result] = sig.ReturnType;
 
             return result;
         }

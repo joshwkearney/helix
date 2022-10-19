@@ -1,5 +1,5 @@
-﻿Struct unpacking
-Fix for loops
+﻿DONE - Struct unpacking
+DONE - Fix for loops
 Fix function calls
 Longs
 Arrays

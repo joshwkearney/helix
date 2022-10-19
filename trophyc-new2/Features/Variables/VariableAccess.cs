@@ -59,14 +59,21 @@ namespace Trophy {
             }
 
             // Make sure we are accessing a variable
-            if (!types.Variables.ContainsKey(path)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
+            if (types.Variables.TryGetValue(path, out var varSig)) {
+                var result = new VariableAccessSyntax(this.Location, path);
+
+                types.ReturnTypes[result] = varSig.Type;
+                return result;
             }
 
-            var result = new VariableAccessSyntax(this.Location, path);
-            types.ReturnTypes[result] = types.Variables[path].Type;
+            if (types.Functions.ContainsKey(path)) {
+                var result = new VariableAccessSyntax(this.Location, path);
 
-            return result;
+                types.ReturnTypes[result] = new NamedType(path);
+                return result;
+            }
+
+            throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
