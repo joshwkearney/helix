@@ -7,7 +7,7 @@ namespace Trophy {
         private readonly string header;
         private readonly string input;
 
-        public TrophyCompiler(string header, string input) {
+        public TrophyCompiler(string header, string input) {          
             this.header = header;
             this.input = input;
         }
@@ -16,12 +16,12 @@ namespace Trophy {
             // ToList() is after each step so lazy evaluation doesn't mess
             // up the order of the steps
 
-            try {
-                var input = this.input
-                    .Replace("\r\n", "\n")
-                    .Replace('\r', '\n')
-                    .Replace("\t", "    ");
+            var input = this.input
+                .Replace("\r\n", "\n")
+                .Replace('\r', '\n')
+                .Replace("\t", "    ");
 
+            try {
                 var lexer = new Lexer(input);
                 var parser = new Parser(lexer.GetTokens());
                 var names = new NamesRecorder();
@@ -47,7 +47,7 @@ namespace Trophy {
                 return writer.ToString();
             }
             catch (TrophyException ex) {
-                Console.WriteLine(ex.CreateConsoleMessage(this.input));
+                Console.WriteLine(ex.CreateConsoleMessage(input));
 
                 return "";
             }

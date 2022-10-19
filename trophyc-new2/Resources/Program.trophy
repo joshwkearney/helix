@@ -1,7 +1,10 @@
 ﻿extern func externalFunc(let x as int) as int;
 
 func test(let x as int) as int => {
-	let a, b = put Point { 4, 5 };
+	//let a, b = put Point { 4, 5 };
+	let t = put Point { 4, 5 };
+	let a = t.xx;
+	let b = t.y;
 
 	//let x = cast 45 as int;
 
