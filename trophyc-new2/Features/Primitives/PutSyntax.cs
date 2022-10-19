@@ -110,12 +110,9 @@ namespace Trophy.Features.Primitives {
                 return new IntLiteral(this.Location, 0).CheckTypes(types);
             }
             else if (type is NamedType named) {
-                var target = types.TryResolveName(named.Path).GetValue();
-                if (target != NameTarget.Aggregate) {
+                if (!types.TryGetAggregate(named.Path).TryGetValue(out var sig)) {
                     throw TypeCheckingErrors.ExpectedStructType(this.type.Location, type);
                 }
-
-                var sig = types.GetAggregate(named.Path);
 
                 var result = new NewAggregateSyntax(
                     this.Location,

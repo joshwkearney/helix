@@ -24,14 +24,14 @@ namespace Trophy {
             try {
                 var lexer = new Lexer(input);
                 var parser = new Parser(lexer.GetTokens());
-                var names = new NamesRecorder();
-                var types = new TypesRecorder(names);
-                var writer = new CWriter(this.header, names.TypeDeclarations);
+               // var names = new NamesRecorder();
+                var types = new TypesRecorder();
+                var writer = new CWriter(this.header, types.TypeDeclarations);
 
                 var parseStats = parser.Parse();
 
                 foreach (var stat in parseStats) {
-                    stat.DeclareNames(names);
+                    stat.DeclareNames(types);
                 }
 
                 foreach (var stat in parseStats) {

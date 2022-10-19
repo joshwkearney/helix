@@ -82,6 +82,9 @@ namespace Trophy {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
             }
 
+            // Put this variable's value in the value table
+            types.SetValue(path, assign);
+
             // Set the return type of the new syntax tree
             var result = new VarStatement(this.Location, sig, assign);
             types.SetReturnType(result, PrimitiveType.Void);
@@ -98,16 +101,12 @@ namespace Trophy {
                     $"Cannot deconstruct non-struct type '{ assignType }'");
             }
 
-            var target = types.TryResolveName(named.Path).GetValue();
-
-            if (target != NameTarget.Aggregate) {
+            if (!types.TryGetAggregate(named.Path).TryGetValue(out var sig)) {
                 throw new TypeCheckingException(
                     this.Location,
                     "Invalid Desconstruction",
                     $"Cannot deconstruct non-struct type '{assignType}'");
             }
-
-            var sig = types.GetAggregate(named.Path);
 
             if (sig.Members.Count != this.names.Count) {
                 throw new TypeCheckingException(

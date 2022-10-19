@@ -1,8 +1,9 @@
 ﻿using Trophy.Analysis.Types;
+using Trophy.Features.Aggregates;
 using Trophy.Parsing;
 
 namespace Trophy.Analysis {
-    public static class AnalysisExtensions {
+    public static partial class AnalysisExtensions {
         public static PointerType AssertIsPointer(this ISyntax syntax, ITypesRecorder types) {
             var type = types.GetReturnType(syntax);
 

@@ -11,10 +11,7 @@
         }
 
         public override IEnumerable<TrophyType> GetContainedValueTypes(ITypesRecorder types) {
-            var target = types.TryResolveName(this.Path).GetValue();
-
-            if (target == NameTarget.Aggregate) {
-                var sig = types.GetAggregate(this.Path);
+            if (types.TryGetAggregate(this.Path).TryGetValue(out var sig)) {
 
                 return sig.Members
                     .SelectMany(x => x.Type.GetContainedValueTypes(types))

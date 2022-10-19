@@ -40,7 +40,7 @@ namespace Trophy.Features.Primitives {
             this.isWritable = isWritable;
         }
 
-        public Result<TrophyType> AsType(INamesRecorder names) {
+        public Option<TrophyType> AsType(ITypesRecorder names) {
             return this.inner.AsType(names)
                 .Select(x => new PointerType(x, this.isWritable))
                 .Select(x => (TrophyType)x);

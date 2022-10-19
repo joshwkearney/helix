@@ -25,52 +25,41 @@ namespace Trophy {
             this.name = name;
         }
 
-        public Result<TrophyType> AsType(INamesRecorder names) {
+        public Option<TrophyType> AsType(ITypesRecorder types) {
             // Make sure this name exists
-            if (!names.TryFindPath(this.name).TryGetValue(out var path)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
+            //if (!types.TryResolvePath(this.name).TryGetValue(out var path)) {
+            //    throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
+            //}
+
+            //// Return primitive types if possible
+            //if (path == new IdentifierPath("int")) {
+            //    return PrimitiveType.Int;
+            //}
+            //else if (path == new IdentifierPath("bool")) {
+            //    return PrimitiveType.Bool;
+            //}
+            //else if (path == new IdentifierPath("void")) {
+            //    return PrimitiveType.Void;
+            //}
+
+            // If we're pointing at a type then return it
+            if (types.TryResolveValue(this.name).TryGetValue(out var syntax)) {
+                if (syntax.AsType(types).TryGetValue(out var type)) {
+                    return type;
+                }
             }
 
-            // Make sure this name exists
-            if (!names.TryResolveName(path).TryGetValue(out var target)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
-            }
-
-            // Return primitive types if possible
-            if (path == new IdentifierPath("int")) {
-                return PrimitiveType.Int;
-            }
-            else if (path == new IdentifierPath("bool")) {
-                return PrimitiveType.Bool;
-            }
-            else if (path == new IdentifierPath("void")) {
-                return PrimitiveType.Void;
-            }
-
-            // If we're pointing at a struct or union return a named type
-            if (target == NameTarget.Aggregate) {
-                return new NamedType(path);
-            }
-
-            return new TypeCheckingException(
-                this.Location, 
-                "Variable Not Defined",
-                $"The variable or type '{this.name}' is not defined in the current context.");
+            return Option.None;
         }
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             // Make sure this name exists
-            if (!types.TryFindPath(this.name).TryGetValue(out var path)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
-            }
-
-            // Make sure this name exists
-            if (!types.TryResolveName(path).TryGetValue(out var target)) {
+            if (!types.TryResolvePath(this.name).TryGetValue(out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 
             // Make sure we are accessing a variable
-            if (target != NameTarget.Variable) {
+            if (!types.TryGetVariable(path).HasValue) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 

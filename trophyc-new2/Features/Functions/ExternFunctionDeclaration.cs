@@ -14,76 +14,85 @@ namespace Trophy.Parsing {
             var end = this.Advance(TokenKind.Semicolon);        
             var loc = start.Location.Span(end.Location);
 
-            return new ExternFunctionParseSignature(loc, sig);
+            return new ExternFunctionParseDeclaration(loc, sig);
         }
     }
 }
 
 namespace Trophy.Features.Functions {
-    public record ExternFunctionParseSignature : IDeclaration {
+    public record ExternFunctionParseDeclaration : IDeclaration {
         public TokenLocation Location { get; }
 
         public FunctionParseSignature Signature { get; }
 
-        public ExternFunctionParseSignature(TokenLocation loc, FunctionParseSignature sig) {
+        public ExternFunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig) {
             this.Location = loc;
             this.Signature = sig;
         }
 
-        public void DeclareNames(INamesRecorder names) {
+        public void DeclareNames(ITypesRecorder names) {
             FunctionsHelper.CheckForDuplicateParameters(
                 this.Location, 
                 this.Signature.Parameters.Select(x => x.Name));
 
-            FunctionsHelper.DeclareSignatureNames(this.Signature, names);
+            FunctionsHelper.DeclareName(this.Signature, names);
         }
 
         public void DeclareTypes(ITypesRecorder types) {
             var sig = this.Signature.ResolveNames(types);
+            var decl = new ExternFunctionDeclaration(this.Location, sig);
 
-            FunctionsHelper.DeclareSignaturePaths(sig, types);
+            // Replace the temporary wrapper object with a full declaration
+            types.SetValue(sig.Path, new TypeSyntax(this.Location, new NamedType(sig.Path)));
+
+            // Declare this function
+            types.DeclareFunction(sig);
         }
 
         public IDeclaration CheckTypes(ITypesRecorder types) {
-            var path = types.TryFindPath(this.Signature.Name).GetValue();
+            var path = types.ResolvePath(this.Signature.Name);
             var sig = types.GetFunction(path);
 
-            return new ExternFunctionSignature(this.Location, sig);
+            return new ExternFunctionDeclaration(this.Location, sig);
         }
 
         public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
     }
 
-    public record ExternFunctionSignature : IDeclaration {
-        private readonly FunctionSignature signature;
+    public record ExternFunctionDeclaration : IDeclaration {
+        public FunctionSignature Signature { get; }
 
         public TokenLocation Location { get; }
 
-        public ExternFunctionSignature(TokenLocation loc, FunctionSignature sig) {
+        public ExternFunctionDeclaration(TokenLocation loc, FunctionSignature sig) {
             this.Location = loc;
-            this.signature = sig;
+            this.Signature = sig;
         }
 
-        public void DeclareNames(INamesRecorder names) { }
+        public void DeclareNames(ITypesRecorder names) {
+            throw new InvalidOperationException();
+        }
 
-        public void DeclareTypes(ITypesRecorder types) { }
+        public void DeclareTypes(ITypesRecorder types) {
+            throw new InvalidOperationException();
+        }
 
         public IDeclaration CheckTypes(ITypesRecorder types) => this;
 
         public void GenerateCode(ICWriter writer) {
-            var returnType = this.signature.ReturnType == PrimitiveType.Void
+            var returnType = this.Signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
-                : writer.ConvertType(this.signature.ReturnType);
+                : writer.ConvertType(this.Signature.ReturnType);
 
-            var pars = this.signature
+            var pars = this.Signature
                 .Parameters
                 .Select((x, i) => new CParameter() {
                     Type = writer.ConvertType(x.Type),
-                    Name = writer.GetVariableName(this.signature.Path.Append(x.Name))
+                    Name = writer.GetVariableName(this.Signature.Path.Append(x.Name))
                 })
                 .ToArray();
 
-            var funcName = writer.GetVariableName(this.signature.Path);
+            var funcName = writer.GetVariableName(this.Signature.Path);
 
             var forwardDecl = new CFunctionDeclaration() {
                 ReturnType = returnType,

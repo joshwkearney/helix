@@ -15,8 +15,8 @@ namespace Trophy.Features.Aggregates {
             this.Kind = kind;
         }
 
-        public AggregateSignature ResolveNames(INamesRecorder names) {
-            var path = names.TryFindPath(this.Name).GetValue();
+        public AggregateSignature ResolveNames(ITypesRecorder names) {
+            var path = names.TryResolvePath(this.Name).GetValue();
             var mems = new List<AggregateMember>();
 
             foreach (var mem in this.Members) {

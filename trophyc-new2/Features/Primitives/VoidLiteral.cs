@@ -23,7 +23,7 @@ namespace Trophy.Features.Primitives {
             this.Location = loc;
         }
 
-        public Result<TrophyType> AsType(INamesRecorder names) => PrimitiveType.Void;
+        public Option<TrophyType> AsType(ITypesRecorder names) => PrimitiveType.Void;
 
         public ISyntax CheckTypes(ITypesRecorder types) {
             types.SetReturnType(this, PrimitiveType.Void);

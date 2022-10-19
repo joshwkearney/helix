@@ -52,7 +52,7 @@ namespace Trophy.Parsing {
             var kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union;
             var sig = new AggregateParseSignature(name, kind, mems);
 
-            return new AggregateParseDeclaration(loc, sig, kind);
+            return new AggregateDeclaration(loc, sig, kind);
         }
     }
 }
@@ -62,41 +62,45 @@ namespace Trophy.Features.Aggregates {
         Struct, Union
     }
 
-    public record AggregateParseDeclaration : IDeclaration {
+    public record AggregateDeclaration : IDeclaration {
         private readonly AggregateParseSignature signature;
         private readonly AggregateKind kind;
 
         public TokenLocation Location { get; }
 
-        public AggregateParseDeclaration(TokenLocation loc, AggregateParseSignature sig, AggregateKind kind) {
+        public AggregateDeclaration(TokenLocation loc, AggregateParseSignature sig, AggregateKind kind) {
             this.Location = loc;
             this.signature = sig;
             this.kind = kind;
         }
 
-        public void DeclareNames(INamesRecorder names) {
+        public void DeclareNames(ITypesRecorder names) {
             // Make sure this name isn't taken
-            if (!names.DeclareName(this.signature.Name, NameTarget.Aggregate)) {
+            if (names.TryResolvePath(this.signature.Name).HasValue) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.signature.Name);
             }
 
-            names = names.WithScope(this.signature.Name);
+            var path = names.CurrentScope.Append(this.signature.Name);
+
+            names.SetValue(path, new TypeSyntax(this.Location, new NamedType(path)));
+            //names = names.WithScope(this.signature.Name);
 
             // Declare the parameters
-            foreach (var par in this.signature.Members) {
-                if (!names.DeclareName(par.MemberName, NameTarget.Reserved)) {
-                    throw TypeCheckingErrors.IdentifierDefined(this.Location, par.MemberName);
-                }
-            }
+            //foreach (var par in this.signature.Members) {
+            //    if (!names.DeclareName(par.MemberName, NameTarget.Reserved)) {
+            //        throw TypeCheckingErrors.IdentifierDefined(this.Location, par.MemberName);
+            //    }
+            //}
         }
 
         public void DeclareTypes(ITypesRecorder types) {
             var sig = this.signature.ResolveNames(types);
+
             types.DeclareAggregate(sig);
 
-            foreach (var mem in this.signature.Members) {
-                types.DeclareReserved(sig.Path.Append(mem.MemberName));
-            }
+            //foreach (var mem in this.signature.Members) {
+            //    types.DeclareReserved(sig.Path.Append(mem.MemberName));
+            //}
         }
 
         public IDeclaration CheckTypes(ITypesRecorder types) {

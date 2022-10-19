@@ -42,29 +42,26 @@ namespace Trophy.Features.Aggregates {
             if (targetType is NamedType named) {
 
                 // If this is a struct or union we can access the fields
-                if (types.TryResolveName(named.Path).TryGetValue(out var name)) {
-                    if (name == NameTarget.Aggregate) {
+                if (types.TryGetAggregate(named.Path).TryGetValue(out var sig)) {
+                    var fieldOpt = sig
+                        .Members
+                        .Where(x => x.Name == this.memberName)
+                        .FirstOrNone();
 
-                        var sig = types.GetAggregate(named.Path);
-                        var fieldOpt = sig
-                            .Members
-                            .Where(x => x.Name == this.memberName)
-                            .FirstOrNone();
+                    // Make sure this field is present
+                    if (fieldOpt.TryGetValue(out var field)) {
+                        var result = new MemberAccessSyntax(
+                            this.Location,
+                            target,
+                            this.memberName,
+                            true);
 
-                        // Make sure this field is present
-                        if (fieldOpt.TryGetValue(out var field)) {
-                            var result = new MemberAccessSyntax(
-                                this.Location,
-                                target,
-                                this.memberName,
-                                true);
+                        types.SetReturnType(result, field.Type);
 
-                            types.SetReturnType(result, field.Type);
-
-                            return result;
-                        }
+                        return result;
                     }
-                }                
+                    
+                }               
             }
 
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);

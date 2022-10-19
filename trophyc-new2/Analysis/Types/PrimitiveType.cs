@@ -27,10 +27,8 @@ namespace Trophy.Analysis.Types {
                 if (other == Int || other == Bool) {
                     return true;
                 }
-                else if (other is NamedType named && types.TryResolveName(named.Path).TryGetValue(out var target)) {
-                    if (target == NameTarget.Aggregate) {
-                        var sig = types.GetAggregate(named.Path);
-
+                else if (other is NamedType named) {
+                    if (types.TryGetAggregate(named.Path).TryGetValue(out var sig)) {
                         return sig.Members.All(x => x.Type.HasDefaultValue(types));
                     }
                 }
