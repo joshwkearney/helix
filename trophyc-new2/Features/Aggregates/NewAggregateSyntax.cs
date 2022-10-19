@@ -39,7 +39,7 @@ namespace Trophy.Features.Aggregates {
                     names[i] = this.names[i]!;
 
                     var index = this.sig.Members
-                        .Select((x, i) => new { Index = i, Value = x.MemberName })
+                        .Select((x, i) => new { Index = i, Value = x.Name })
                         .Where(x => x.Value == this.names[i])
                         .Select(x => x.Index)
                         .First();
@@ -57,7 +57,7 @@ namespace Trophy.Features.Aggregates {
                             + $"arguments for the type '{new NamedType(this.sig.Path)}'");
                 }
 
-                names[i] = sig.Members[missingCounter++].MemberName;
+                names[i] = sig.Members[missingCounter++].Name;
             }
 
             if (sig.Kind == AggregateKind.Struct) {
@@ -86,19 +86,19 @@ namespace Trophy.Features.Aggregates {
                 var values = new[] { 
                     new VoidLiteral(this.Location)
                         .CheckTypes(types)
-                        .UnifyTo(sig.Members[0].MemberType, types) 
+                        .UnifyTo(sig.Members[0].Type, types) 
                 };
 
                 result = new NewAggregateSyntax(
                     this.Location,
                     this.sig,
-                    new[] { sig.Members[0].MemberName },
+                    new[] { sig.Members[0].Name },
                     values,
                     true);
             }
             else {
                 // Make sure the member is defined on this union
-                if (!sig.Members.Where(x => x.MemberName == names[0]).FirstOrNone().TryGetValue(out var mem)) {
+                if (!sig.Members.Where(x => x.Name == names[0]).FirstOrNone().TryGetValue(out var mem)) {
                     throw new TypeCheckingException(
                         this.Location,
                         "Invalid Union Initialization",
@@ -108,9 +108,9 @@ namespace Trophy.Features.Aggregates {
 
                 // Make sure that all the other union members have default values
                 var noDefault = sig.Members
-                    .Where(x => x.MemberName != names[0])
-                    .Where(x => !x.MemberType.HasDefaultValue(types))
-                    .Select(x => x.MemberName)
+                    .Where(x => x.Name != names[0])
+                    .Where(x => !x.Type.HasDefaultValue(types))
+                    .Select(x => x.Name)
                     .FirstOrNone();
 
                 if (noDefault.HasValue) {
@@ -124,7 +124,7 @@ namespace Trophy.Features.Aggregates {
                 var values = new[] { 
                     this.values[0]
                         .CheckTypes(types)
-                        .UnifyTo(mem.MemberType, types) 
+                        .UnifyTo(mem.Type, types) 
                 };
 
                 result = new NewAggregateSyntax(
@@ -159,7 +159,7 @@ namespace Trophy.Features.Aggregates {
 
             var undefinedFields = names
                 .Select(x => x)
-                .Except(sig.Members.Select(x => x.MemberName))
+                .Except(sig.Members.Select(x => x.Name))
                 .ToArray();
 
             // Make sure that all members are defined in the struct
@@ -172,14 +172,14 @@ namespace Trophy.Features.Aggregates {
             }
 
             var absentFields = sig.Members
-                .Select(x => x.MemberName)
+                .Select(x => x.Name)
                 .Except(names)
-                .Select(x => sig.Members.First(y => x == y.MemberName))
+                .Select(x => sig.Members.First(y => x == y.Name))
                 .ToArray();
 
             var requiredAbsentFields = absentFields
-                .Where(x => !x.MemberType.HasDefaultValue(types))
-                .Select(x => x.MemberName)
+                .Where(x => !x.Type.HasDefaultValue(types))
+                .Select(x => x.Name)
                 .ToArray();
 
             // Make sure that all the missing members have a default value
@@ -195,16 +195,16 @@ namespace Trophy.Features.Aggregates {
                 .Zip(this.values)
                 .ToDictionary(x => x.First, x => x.Second);
 
-            var allNames = sig.Members.Select(x => x.MemberName).ToArray();
+            var allNames = sig.Members.Select(x => x.Name).ToArray();
             var allValues = new List<ISyntax>();
 
             // Unify the arguments to the correct type
             foreach (var mem in sig.Members) {
-                if (!presentFields.TryGetValue(mem.MemberName, out var value)) {
+                if (!presentFields.TryGetValue(mem.Name, out var value)) {
                     value = new VoidLiteral(this.Location);
                 }
 
-                value = value.CheckTypes(types).UnifyTo(mem.MemberType, types);
+                value = value.CheckTypes(types).UnifyTo(mem.Type, types);
                 allValues.Add(value);
             }
 

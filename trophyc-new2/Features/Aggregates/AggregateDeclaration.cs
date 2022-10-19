@@ -103,7 +103,7 @@ namespace Trophy.Features.Aggregates {
             var sig = this.signature.ResolveNames(types); 
             var structType = new NamedType(sig.Path);
             var isRecursive = sig.Members
-                .SelectMany(x => x.MemberType.GetContainedValueTypes(types))
+                .SelectMany(x => x.Type.GetContainedValueTypes(types))
                 .Contains(structType);
 
             // Make sure this is not a recursive struct or union
@@ -115,7 +115,7 @@ namespace Trophy.Features.Aggregates {
             if (sig.Kind == AggregateKind.Union) {
                 // For loop for better error messages
                 for (int i = 0; i < sig.Members.Count; i++) {
-                    var pointer = sig.Members[i].MemberType
+                    var pointer = sig.Members[i].Type
                         .GetContainedValueTypes(types)
                         .Where(x => x is PointerType)
                         .FirstOrNone();
@@ -145,8 +145,8 @@ namespace Trophy.Features.Aggregates {
 
             var mems = signature.Members
                 .Select(x => new CParameter() {
-                    Type = writer.ConvertType(x.MemberType),
-                    Name = x.MemberName
+                    Type = writer.ConvertType(x.Type),
+                    Name = x.Name
                 })
                 .ToArray();
 

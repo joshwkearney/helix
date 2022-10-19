@@ -19,15 +19,15 @@ namespace Trophy.Features.Aggregates {
     }
 
     public record AggregateMember {
-        public string MemberName { get; }
+        public string Name { get; }
 
-        public TrophyType MemberType { get; }
+        public TrophyType Type { get; }
 
         public bool IsWritable { get; }
 
         public AggregateMember(string name, TrophyType type, bool isWritable) {
-            this.MemberName = name;
-            this.MemberType = type;
+            this.Name = name;
+            this.Type = type;
             this.IsWritable = isWritable;
         }
     }

@@ -17,7 +17,7 @@
                 var sig = types.GetAggregate(this.Path);
 
                 return sig.Members
-                    .SelectMany(x => x.MemberType.GetContainedValueTypes(types))
+                    .SelectMany(x => x.Type.GetContainedValueTypes(types))
                     .Prepend(this);
             }
 

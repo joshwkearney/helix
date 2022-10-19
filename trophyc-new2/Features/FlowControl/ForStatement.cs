@@ -59,10 +59,10 @@ namespace Trophy.Features.FlowControl {
                 new VariableAccessParseSyntax(this.startIndex.Location, "int"));
 
             var counterName = types.GetVariableName();
-            var counterDecl = new VarParseStatement(this.Location, counterName, start, true);
+            var counterDecl = new VarParseStatement(this.Location, new[] { counterName }, start, true);
 
             var counterAccess = new VariableAccessParseSyntax(this.Location, counterName);
-            var iteratorDecl = new VarParseStatement(this.Location, this.iteratorName, counterAccess, false);
+            var iteratorDecl = new VarParseStatement(this.Location, new[] { this.iteratorName }, counterAccess, false);
 
             var comp = new BinarySyntax(this.Location, counterAccess, end, BinaryOperationKind.LessThan);
 

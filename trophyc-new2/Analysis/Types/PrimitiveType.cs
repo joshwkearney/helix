@@ -31,7 +31,7 @@ namespace Trophy.Analysis.Types {
                     if (target == NameTarget.Aggregate) {
                         var sig = types.GetAggregate(named.Path);
 
-                        return sig.Members.All(x => x.MemberType.HasDefaultValue(types));
+                        return sig.Members.All(x => x.Type.HasDefaultValue(types));
                     }
                 }
             }

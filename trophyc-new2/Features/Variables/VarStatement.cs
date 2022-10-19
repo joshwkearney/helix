@@ -4,6 +4,7 @@ using Trophy.Generation;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Features.Aggregates;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -20,29 +21,39 @@ namespace Trophy.Parsing {
                 isWritable = false;
             }
 
-            var name = this.Advance(TokenKind.Identifier).Value;
+            var names = new List<string>();
 
-            this.Advance(TokenKind.Assignment);
+            while (true) {
+                var name = this.Advance(TokenKind.Identifier).Value;
+                names.Add(name);
+
+                if (this.TryAdvance(TokenKind.Assignment)) {
+                    break;
+                }
+                else { 
+                    this.Advance(TokenKind.Comma);
+                }
+            }
 
             var assign = this.TopExpression();
             var loc = startLok.Span(assign.Location);
 
-            return new VarParseStatement(loc, name, assign, isWritable);
+            return new VarParseStatement(loc, names, assign, isWritable);
         }
     }
 }
 
 namespace Trophy {
     public record VarParseStatement : ISyntax {
-        private readonly string name;
+        private readonly IReadOnlyList<string> names;
         private readonly ISyntax assign;
         private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
-        public VarParseStatement(TokenLocation loc, string name, ISyntax assign, bool isWritable) {
+        public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntax assign, bool isWritable) {
             this.Location = loc;
-            this.name = name;
+            this.names = names;
             this.assign = assign;
             this.isWritable = isWritable;
         }
@@ -58,12 +69,19 @@ namespace Trophy {
             }
 
             var assignType = types.GetReturnType(assign);
-            var path = types.CurrentScope.Append(this.name);
+
+            // If this is a compound assignment, check if we have the right
+            // number of names and then recurse
+            if (this.names.Count > 1) {
+                return this.Destructure(assignType, types);
+            }
+
+            var path = types.CurrentScope.Append(this.names[0]);
             var sig = new VariableSignature(path, assignType, this.isWritable);
 
             // Declare this variable and make sure we're not shadowing another variable
             if (!types.DeclareVariable(sig)) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.name);
+                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
             }
 
             // Set the return type of the new syntax tree
@@ -72,6 +90,57 @@ namespace Trophy {
             //types.SetReturnType(result, new PointerType(assignType, this.isWritable));
 
             return result;
+        }
+
+        private ISyntax Destructure(TrophyType assignType, ITypesRecorder types) {
+            if (assignType is not NamedType named) {
+                throw new TypeCheckingException(
+                    this.Location,
+                    "Invalid Desconstruction",
+                    $"Cannot deconstruct non-struct type '{ assignType }'");
+            }
+
+            var target = types.TryResolveName(named.Path).GetValue();
+
+            if (target != NameTarget.Aggregate) {
+                throw new TypeCheckingException(
+                    this.Location,
+                    "Invalid Desconstruction",
+                    $"Cannot deconstruct non-struct type '{assignType}'");
+            }
+
+            var sig = types.GetAggregate(named.Path);
+
+            if (sig.Members.Count != this.names.Count) {
+                throw new TypeCheckingException(
+                    this.Location,
+                    "Invalid Desconstruction",
+                    "The number of variables provided does not match " 
+                        + $"the number of members on struct type '{named}'");
+            }
+
+            var tempName = types.GetVariableName();
+            var tempStat = new VarParseStatement(
+                this.Location,
+                new[] { tempName },
+                this.assign,
+                false);
+
+            var stats = new List<ISyntax>() { tempStat };
+
+            for (int i = 0; i < sig.Members.Count; i++) {
+                var literal = new VariableAccessParseSyntax(this.Location, tempName);
+                var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name);
+                var assign = new VarParseStatement(
+                    this.Location,
+                    new[] { this.names[i] },
+                    access,
+                    this.isWritable);
+
+                stats.Add(assign);
+            }
+
+            return new CompoundSyntax(this.Location, stats).CheckTypes(types);
         }
 
         public ISyntax ToRValue(ITypesRecorder types) {

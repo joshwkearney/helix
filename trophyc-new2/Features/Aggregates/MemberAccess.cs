@@ -52,7 +52,7 @@ namespace Trophy.Features.Aggregates {
                         var sig = types.GetAggregate(named.Path);
                         var fieldOpt = sig
                             .Members
-                            .Where(x => x.MemberName == this.memberName)
+                            .Where(x => x.Name == this.memberName)
                             .FirstOrNone();
 
                         // Make sure this field is present
@@ -63,7 +63,7 @@ namespace Trophy.Features.Aggregates {
                                 this.memberName,
                                 true);
 
-                            types.SetReturnType(result, field.MemberType);
+                            types.SetReturnType(result, field.Type);
 
                             return result;
                         }
