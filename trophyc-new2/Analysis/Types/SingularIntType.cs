@@ -18,17 +18,17 @@ namespace Trophy.Analysis.Types {
             return new IntLiteral(loc, this.Value);
         }
 
-        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types) {
-            if (base.CanUnifyTo(other, types)) {
+        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types, bool isCast) {
+            if (base.CanUnifyTo(other, types, isCast)) {
                 return true;
             }
 
             return other == PrimitiveType.Int;
         }
 
-        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, ITypesRecorder types) {
-            if (base.CanUnifyTo(other, types)) {
-                return base.UnifyTo(other, syntax, types);
+        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, bool isCast, ITypesRecorder types) {
+            if (base.CanUnifyTo(other, types, isCast)) {
+                return base.UnifyTo(other, syntax, isCast, types);
             }
 
             // Singular ints unifying to ints do not require any syntax changes
@@ -40,7 +40,7 @@ namespace Trophy.Analysis.Types {
                 return true;
             }
 
-            return other.CanUnifyTo(PrimitiveType.Int, types);
+            return other.CanUnifyTo(PrimitiveType.Int, types, false);
         }
 
         public override TrophyType UnifyFrom(TrophyType other, ITypesRecorder types) {

@@ -28,28 +28,48 @@ color                  = black
 contexts [] {
    main : context {
       : pattern {
-         regex \= (struct|union)(\s+[a-zA-Z][a-zA-Z0-9]*)
+         regex \= (?:\b)(struct|union)(\s+[_a-zA-Z][_a-zA-Z0-9]*)
          styles []= .keyword, .typeName;
       }
       
       : pattern {
-         regex \= (as\s+)((?!int|bool|void)[a-zA-Z][a-zA-Z0-9]*)
-         styles []= .keyword, .typeName;
+         regex \= (?:\b)(as|put)(\s+)(int|bool|void)
+         styles []= .keyword, .keyword, .keyword;
       }
       
       : pattern {
-         regex \= (as\s+)((?=int|bool|void))
-         styles []= .keyword, .keyword;
+         regex \= (?:\b)(as|put)(\s+)([_a-zA-Z][_a-zA-Z0-9]*)
+         styles []= .keyword, .keyword, .typeName;
       }
       
       : pattern {
-         regex \= (int|bool|void|var|let|if|then|else|while|do|func|as)
+         regex \= (?:\b)(and\sthen|or\selse|and|or|xor)(?:\b)
+         styles []= .keyword_operator;
+      }
+      
+      : pattern {
+         regex \= (?:\b)(if|then|else|while|do)(?:\b)
+         styles []= .keyword_control;
+      }
+      
+      : pattern {
+         regex \= (\bint|void|true|false\b)
+         styles []= .keyword_constant;
+      }
+      
+      : pattern {
+         regex \= (?:\b)(int|bool|void|var|let|func|as|put|cast|extern)(?:\b)
          styles []= .keyword;
       }
       
       : pattern {
-         regex \= ([a-zA-Z][a-zA-Z0-9]*)(?=\s*\(.*\))
-         styles [] = .functionName;
+         regex \= ([_a-zA-Z][_a-zA-Z0-9]*)(?=\s*\(.*\))
+         styles [] = .function_name;
+      }
+      
+      : pattern {
+         regex \= ([_a-zA-Z][_a-zA-Z0-9]*)
+         styles [] = .variable_name;
       }
       
       : pattern {
@@ -60,8 +80,14 @@ contexts [] {
 }
 
 styles [] {
-   .keyword       : style color = "blue" textmate_scope = "keyword";
-   .functionName  : style color = "brown" textmate_scope = "entity.name.function";
+   .keyword       : style color = "blue" textmate_scope = "keyword.other";
+   .keyword_control : style color = "purple" textmate_scope = "keyword.control.flow.if";
+   .keyword_operator : style color = "blue" textmate_scope = "keyword.other";
+   .keyword_constant : style color = "blue" textmate_scope = "constant.language";
+   
+   .function_name  : style color = "brown" textmate_scope = "variable.function";
+   .variable_name  : style color = "black" textmate_scope = "variable.other";
+   
    .typeName      : style color = "red" textmate_scope = "entity.name.type";
    .comment       : style color = "green" textmate_scope = "comment";
 }

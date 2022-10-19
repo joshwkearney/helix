@@ -23,11 +23,11 @@ namespace Trophy.Analysis {
         public static ISyntax UnifyTo(this ISyntax fromSyntax, TrophyType toType, ITypesRecorder types) {
             var type = types.GetReturnType(fromSyntax);
 
-            if (!type.CanUnifyTo(toType, types)) {
+            if (!type.CanUnifyTo(toType, types, false)) {
                 throw TypeCheckingErrors.UnexpectedType(fromSyntax.Location, toType, type);
             }
 
-            var result = type.UnifyTo(toType, fromSyntax, types).CheckTypes(types);
+            var result = type.UnifyTo(toType, fromSyntax, false, types).CheckTypes(types);
 
             types.SetReturnType(result, toType);
             return result;

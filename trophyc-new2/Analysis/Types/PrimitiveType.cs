@@ -19,7 +19,7 @@ namespace Trophy.Analysis.Types {
             this.kind = kind;
         }
 
-        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types) {
+        public override bool CanUnifyTo(TrophyType other, ITypesRecorder types, bool isCast) {
             if (this == other) {
                 return true;
             }
@@ -39,7 +39,7 @@ namespace Trophy.Analysis.Types {
             return false;
         }
 
-        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, ITypesRecorder types) {
+        public override ISyntax UnifyTo(TrophyType other, ISyntax syntax, bool isCast, ITypesRecorder types) {
             if (this == other) {
                 return syntax;
             }

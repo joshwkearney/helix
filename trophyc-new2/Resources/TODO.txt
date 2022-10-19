@@ -1,0 +1,25 @@
+﻿Struct unpacking
+Fix for loops
+Fix function calls
+Longs
+Arrays
+Character literals
+String literals
+
+Doubles
+Floor division and real division
+
+Better conversions (graph based)
+Casting
+
+Implicit struct conversions
+Anonymous structs and unions
+
+Region memory management
+
+Bytes
+Enums
+Dependent booleans for type constraints
+Generics
+
+Fix syntax highlighting

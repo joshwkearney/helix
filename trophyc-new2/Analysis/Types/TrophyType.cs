@@ -14,9 +14,9 @@ namespace Trophy.Analysis.Types {
             yield return this;
         }
 
-        public virtual bool CanUnifyTo(TrophyType other, ITypesRecorder types) => this == other;
+        public virtual bool CanUnifyTo(TrophyType other, ITypesRecorder types, bool isCast) => this == other;
 
-        public virtual ISyntax UnifyTo(TrophyType other, ISyntax syntax, ITypesRecorder types) {
+        public virtual ISyntax UnifyTo(TrophyType other, ISyntax syntax, bool isCast, ITypesRecorder types) {
             if (this == other) {
                 return syntax;
             }
@@ -26,14 +26,14 @@ namespace Trophy.Analysis.Types {
         }
 
         public virtual bool CanUnifyFrom(TrophyType other, ITypesRecorder types) {
-            return this.CanUnifyTo(other, types) || other.CanUnifyTo(this, types);
+            return this.CanUnifyTo(other, types, false) || other.CanUnifyTo(this, types, false);
         }
 
         public virtual TrophyType UnifyFrom(TrophyType other, ITypesRecorder types) {
-            if (this.CanUnifyTo(other, types)) {
+            if (this.CanUnifyTo(other, types, false)) {
                 return other;
             }
-            else if (other.CanUnifyTo(this, types)) {
+            else if (other.CanUnifyTo(this, types, false)) {
                 return this;
             }
             else {
@@ -42,7 +42,7 @@ namespace Trophy.Analysis.Types {
         }
 
         public bool HasDefaultValue(ITypesRecorder types) {
-            return PrimitiveType.Void.CanUnifyTo(this, types);
+            return PrimitiveType.Void.CanUnifyTo(this, types, false);
         }
 
         private class TypeSyntaxWrapper : ISyntax {

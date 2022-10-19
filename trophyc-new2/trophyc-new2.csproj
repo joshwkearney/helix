@@ -12,7 +12,7 @@
     <None Update="Resources\Program.trophy">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\trophy.h">
+    <None Update="Resources\Trophy.h">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

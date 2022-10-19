@@ -1,6 +1,12 @@
 ﻿extern func externalFunc(let x as int) as int;
 
 func test(let x as int) as int => {
+	let a, b = put Point { 4, 5 };
+
+	//let x = cast 45 as int;
+
+	let p = put Point;
+
 	if x > 3 and then x < 10
 	then 0 
 	else 10;
@@ -9,15 +15,6 @@ func test(let x as int) as int => {
 func other(let x as int) as int => x + 10;
 
 struct Point {
-	let x as Recursive1;
+	let x as int;
 	let y as int;
-	let z as int;
-};
-
-struct Recursive1 {
-	let A as Recursive2;
-};
-
-struct Recursive2 {
-	let B as int;
 };
