@@ -10,7 +10,7 @@ namespace Trophy.Parsing {
     public partial class Parser {
         private ISyntaxTree PutExpression() {
             TokenLocation start;
-            bool isStackAllocated;
+          //  bool isStackAllocated;
 
             //if (this.Peek(TokenKind.NewKeyword)) {
             //    start = this.Advance(TokenKind.NewKeyword).Location;
@@ -18,7 +18,7 @@ namespace Trophy.Parsing {
             //}
             //else {
                 start = this.Advance(TokenKind.PutKeyword).Location;
-                isStackAllocated = true;
+               // isStackAllocated = true;
             //}
 
             var targetType = this.TopExpression();

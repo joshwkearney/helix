@@ -34,4 +34,6 @@ func fib(let x as int) as int => {
 struct Point {
 	let x as int;
 	let y as int;
+
+	func length(let this as Point) as int => this.x*this.x + this.y*this.y;
 };

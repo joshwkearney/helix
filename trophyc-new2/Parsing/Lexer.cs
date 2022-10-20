@@ -1,6 +1,6 @@
 ﻿namespace Trophy.Parsing {
     public class Lexer {
-        private static readonly Dictionary<string, TokenKind> keywords = new Dictionary<string, TokenKind>() {
+        private static readonly Dictionary<string, TokenKind> keywords = new() {
             { "var", TokenKind.VarKeyword }, { "let", TokenKind.LetKeyword }, 
             { "func", TokenKind.FunctionKeyword }, { "extern", TokenKind.ExternKeyword },
             { "int", TokenKind.IntKeyword }, { "void", TokenKind.VoidKeyword },
@@ -14,7 +14,7 @@
             { "xor", TokenKind.XorKeyword }, { "put", TokenKind.PutKeyword }
         };
 
-        private static readonly Dictionary<char, TokenKind> symbols = new Dictionary<char, TokenKind>() {
+        private static readonly Dictionary<char, TokenKind> symbols = new() {
             { '(', TokenKind.OpenParenthesis }, { ')', TokenKind.CloseParenthesis },
             { '{', TokenKind.OpenBrace }, { '}', TokenKind.CloseBrace },
             { '[', TokenKind.OpenBracket }, { ']', TokenKind.CloseBracket },
@@ -31,7 +31,7 @@
 
         private char Current => this.text[this.pos];
 
-        private TokenLocation Location => new TokenLocation(pos, 1, this.line);
+        private TokenLocation Location => new(pos, 1, this.line);
 
         public Lexer(string text) {
             this.text = text;
