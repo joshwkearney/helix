@@ -31,6 +31,8 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.arg, this.target };
+
         public AsParseTree(TokenLocation loc, ISyntaxTree arg, ISyntaxTree target) {
             this.Location = loc;
             this.arg = arg;

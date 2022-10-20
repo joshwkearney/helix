@@ -7,10 +7,9 @@ namespace Trophy.Parsing {
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
-        public Option<TrophyType> AsType(SyntaxFrame types) {
-            throw new InvalidOperationException(
-                "Compiler error: This syntax tree cannot be construed as a type");
-        }
+        public IEnumerable<ISyntaxTree> Children { get; }
+
+        public Option<TrophyType> AsType(SyntaxFrame types) => Option.None;
 
         public ISyntaxTree CheckTypes(SyntaxFrame types);
 
@@ -23,6 +22,21 @@ namespace Trophy.Parsing {
         }
 
         public ICSyntax GenerateCode(ICStatementWriter writer);
+
+        // Mixins
+        public IEnumerable<ISyntaxTree> GetAllChildren() {
+            var stack = new Stack<ISyntaxTree>(this.Children);
+
+            while (stack.Count > 0) {
+                var item = stack.Pop();
+
+                foreach (var child in item.Children) {
+                    stack.Push(child);
+                }
+
+                yield return item;
+            }
+        }
     }
 
     public interface IDeclaration {

@@ -19,6 +19,8 @@ namespace Trophy.Features.Primitives {
     public record VoidLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
         public VoidLiteral(TokenLocation loc) {
             this.Location = loc;
         }

@@ -22,6 +22,8 @@ namespace Trophy.Features.Primitives {
 
         public int Value { get; }
 
+        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
         public IntLiteral(TokenLocation loc, int value) {
             this.Location = loc;
             this.Value = value;

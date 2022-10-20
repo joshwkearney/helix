@@ -25,6 +25,12 @@ func other(let x as int[]) => {
 	x[45] = x.count;
 };
 
+func fib(let x as int) as int => {
+	if x <= 1
+		then x
+		else fib(x - 1) + fib(x - 2);
+};
+
 struct Point {
 	let x as int;
 	let y as int;

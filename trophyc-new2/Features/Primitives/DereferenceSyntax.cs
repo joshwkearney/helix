@@ -11,6 +11,8 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
+
         public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, bool isTypeChecked = false) {
             this.Location = loc;
             this.target = target;

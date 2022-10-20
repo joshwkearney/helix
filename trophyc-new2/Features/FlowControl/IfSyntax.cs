@@ -36,6 +36,8 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
+
         public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue) {
             this.Location = location;
             this.cond = cond;
@@ -89,6 +91,8 @@ namespace Trophy.Features.FlowControl {
         private readonly TrophyType returnType;
 
         public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
 
         public IfSyntax(TokenLocation loc, ISyntaxTree cond,
                          ISyntaxTree iftrue,

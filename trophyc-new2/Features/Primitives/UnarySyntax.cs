@@ -48,6 +48,8 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { arg };
+
         public UnaryParseSyntax(TokenLocation location, UnaryOperatorKind op, ISyntaxTree arg) {
             this.Location = location;
             this.op = op;
@@ -101,6 +103,8 @@ namespace Trophy.Features.Primitives {
         private readonly ISyntaxTree target;
 
         public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
 
         public UnaryNotSyntax(TokenLocation loc, ISyntaxTree target) {
             this.Location = loc;

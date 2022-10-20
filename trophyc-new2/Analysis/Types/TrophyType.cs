@@ -50,6 +50,8 @@ namespace Trophy.Analysis.Types {
 
             public TokenLocation Location { get; }
 
+            public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
             public TypeSyntaxWrapper(TokenLocation loc, TrophyType type) {
                 this.Location = loc;
                 this.type = type;

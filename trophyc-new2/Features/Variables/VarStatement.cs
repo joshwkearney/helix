@@ -51,6 +51,8 @@ namespace Trophy {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.assign };
+
         public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
             this.Location = loc;
             this.names = names;
@@ -159,6 +161,8 @@ namespace Trophy {
         private readonly VariableSignature signature;
 
         public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => new[] { this.assign };
 
         public VarStatement(TokenLocation loc, VariableSignature sig, ISyntaxTree assign) {
             this.Location = loc;

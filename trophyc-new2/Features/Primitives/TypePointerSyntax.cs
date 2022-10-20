@@ -34,6 +34,8 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.inner };
+
         public TypePointerSyntax(TokenLocation loc, ISyntaxTree inner, bool isWritable) {
             this.Location = loc;
             this.inner = inner;

@@ -36,6 +36,8 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.startIndex, this.endIndex, this.body };
+
         public ForStatement(TokenLocation loc, string id, ISyntaxTree start, ISyntaxTree end, ISyntaxTree body) {
             this.Location = loc;
             this.iteratorName = id;

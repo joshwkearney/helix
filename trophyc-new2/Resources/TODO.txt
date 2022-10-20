@@ -1,11 +1,15 @@
 ﻿DONE - Struct unpacking
 DONE - Fix for loops
 DONE - Fix function calls
-Longs
-Arrays
+DONE - Arrays
 DONE - Character literals
-String literals
+DONE - Lines numbers in c comments
 
+Bytes
+Longs
+String literals / Singular strings
+
+Iterable syntax trees
 Parser statement conversion
 Loop state machine conversion
 break, continue, return
@@ -19,8 +23,6 @@ Differentiate bitwise from logical operators
 Doubles
 Floor division and real division
 
-DONE - Lines numbers in c comments
-
 Better conversions (graph based)
 Casting
 
@@ -29,7 +31,6 @@ Anonymous structs and unions
 
 Region memory management
 
-Bytes
 Enums
 Match expression
 Dependent booleans for type constraints
@@ -39,3 +40,5 @@ Generics
 Singular unification
 
 Fix syntax highlighting
+
+interfaces

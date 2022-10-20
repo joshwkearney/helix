@@ -29,6 +29,8 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target, this.assign };
+
         public AssignmentStatement(TokenLocation loc, ISyntaxTree target, 
                                    ISyntaxTree assign, bool isTypeChecked = false) {
             this.Location = loc;

@@ -35,6 +35,8 @@ namespace Trophy.Features.Functions {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => this.args.Prepend(this.target);
+
         public InvokeParseTree(TokenLocation loc, ISyntaxTree target, IReadOnlyList<ISyntaxTree> args) {
             this.Location = loc;
             this.target = target;
@@ -91,6 +93,8 @@ namespace Trophy.Features.Functions {
         private readonly IReadOnlyList<ISyntaxTree> args;
 
         public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => args;
 
         public InvokeSyntax(
             TokenLocation loc,

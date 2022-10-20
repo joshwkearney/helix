@@ -27,6 +27,8 @@ namespace Trophy.Features.FlowControl {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.body };
+
         public WhileStatement(TokenLocation location, ISyntaxTree cond, 
                               ISyntaxTree body, bool isTypeChecked = false) {
             this.Location = location;

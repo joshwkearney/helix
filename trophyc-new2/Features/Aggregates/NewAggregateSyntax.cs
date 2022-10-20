@@ -14,6 +14,8 @@ namespace Trophy.Features.Aggregates {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
         public NewAggregateSyntax(TokenLocation loc, 
             AggregateSignature sig,
             IReadOnlyList<string?> names,

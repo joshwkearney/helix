@@ -69,6 +69,8 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => this.values.Prepend(type);
+
         public PutSyntax(TokenLocation loc, ISyntaxTree type, 
             IReadOnlyList<string?> names, IReadOnlyList<ISyntaxTree> values) {
 

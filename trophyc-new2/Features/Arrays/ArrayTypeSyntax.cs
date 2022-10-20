@@ -16,6 +16,10 @@ namespace Trophy.Features.Arrays {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children {
+            get => new[] { this.inner };
+        }
+
         public ArrayTypeSyntax(TokenLocation loc, ISyntaxTree inner) {
             this.Location = loc;
             this.inner = inner;

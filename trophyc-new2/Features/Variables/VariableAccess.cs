@@ -20,6 +20,8 @@ namespace Trophy {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
         public VariableAccessParseSyntax(TokenLocation location, string name) {
             this.Location = location;
             this.name = name;
@@ -94,6 +96,8 @@ namespace Trophy {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
         public VariableAccessSyntax(TokenLocation loc, IdentifierPath path) {
             this.Location = loc;
             this.variablePath = path;
@@ -126,6 +130,8 @@ namespace Trophy {
         private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
         public LValueVariableAccessSyntax(TokenLocation loc, IdentifierPath path) {
             this.Location = loc;

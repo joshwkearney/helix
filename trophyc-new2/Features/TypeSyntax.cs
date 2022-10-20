@@ -15,6 +15,8 @@ namespace Trophy.Features {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
         public TypeSyntax(TokenLocation loc, TrophyType type) {
             this.Location = loc;
             this.type = type;

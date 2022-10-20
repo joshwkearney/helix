@@ -26,6 +26,8 @@ namespace Trophy.Features.Aggregates {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
+
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
                                   string memberName, bool isTypeChecked = false) {
             this.Location = location;

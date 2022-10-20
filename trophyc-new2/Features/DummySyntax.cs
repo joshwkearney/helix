@@ -12,6 +12,8 @@ namespace Trophy.Features {
     public record DummySyntax : ISyntaxTree {
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
         public DummySyntax(TokenLocation loc) {
             this.Location = loc;
         }

@@ -31,15 +31,17 @@ namespace Trophy.Features.FlowControl {
         private readonly int id;
         private readonly bool isTypeChecked;
 
-        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements, 
-                           bool isTypeChecked = false) {
+        public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => this.statements;
+
+        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements,
+                   bool isTypeChecked = false) {
             this.Location = location;
             this.statements = statements;
             this.id = idCounter++;
             this.isTypeChecked = isTypeChecked;
         }
-
-        public TokenLocation Location { get; }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var newScope = types.CurrentScope.Append("$block" + this.id);

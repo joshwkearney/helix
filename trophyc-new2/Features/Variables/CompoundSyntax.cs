@@ -15,6 +15,8 @@ namespace Trophy.Features.Variables {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => args;
+
         public CompoundSyntax(TokenLocation loc, IReadOnlyList<ISyntaxTree> args) {
             this.Location = loc;
             this.args = args;

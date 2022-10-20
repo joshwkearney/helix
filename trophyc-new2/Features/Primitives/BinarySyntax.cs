@@ -187,6 +187,8 @@ namespace Trophy.Features.Primitives {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.left, this.right };
+
         public BinarySyntax(TokenLocation loc, ISyntaxTree left, ISyntaxTree right, 
                             BinaryOperationKind op, bool isTypeChecked = false) {
             this.Location = loc;

@@ -40,6 +40,8 @@ namespace Trophy.Features.Arrays {
 
         public TokenLocation Location { get; }
 
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target, this.index };
+
         public ArrayIndexSyntax(TokenLocation loc, ISyntaxTree target, 
             ISyntaxTree index, bool isTypeChecked = false) {
 

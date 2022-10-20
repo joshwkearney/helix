@@ -18,6 +18,16 @@ namespace Trophy.Features.Arrays {
 
         public TokenLocation Location => this.target.Location;
 
+        public IEnumerable<ISyntaxTree> Children {
+            get {
+                yield return this.target;
+
+                if (this.offset != null) {
+                    yield return this.offset;
+                }
+            }
+        }
+
         public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target, ISyntaxTree offset) {
             this.arrayType = arrayType;
             this.target = target;
