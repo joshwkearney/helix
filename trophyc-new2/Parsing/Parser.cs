@@ -83,7 +83,8 @@
 
             while (this.Peek(TokenKind.OpenParenthesis) 
                 || this.Peek(TokenKind.Dot) 
-                || this.Peek(TokenKind.Multiply)) {
+                || this.Peek(TokenKind.Multiply)
+                || this.Peek(TokenKind.OpenBracket)) {
                 //|| this.Peek(TokenKind.Caret)) {
 
                 if (this.Peek(TokenKind.OpenParenthesis)) {
@@ -94,6 +95,9 @@
                 }
                 else if (this.Peek(TokenKind.Multiply) || this.Peek(TokenKind.Caret)) {
                     first = this.TypePointer(first);
+                }
+                else if (this.Peek(TokenKind.OpenBracket)) {
+                    first = this.ArrayExpression(first);
                 }
                 else {
                     throw new Exception("Unexpected suffix token");

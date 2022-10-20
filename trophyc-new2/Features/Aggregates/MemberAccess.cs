@@ -38,6 +38,20 @@ namespace Trophy.Features.Aggregates {
             var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
+            // Handle getting the count of an array
+            if (targetType is ArrayType array) {
+                if (this.memberName == "count") {
+                    var result = new MemberAccessSyntax(
+                        this.Location,
+                        target,
+                        "count",
+                        true);
+
+                    types.ReturnTypes[result] = PrimitiveType.Int;
+                    return result;
+                }
+            }
+
             // If this is a named type it could be a struct or union
             if (targetType is NamedType named) {
 

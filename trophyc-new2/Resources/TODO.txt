@@ -6,8 +6,13 @@ Arrays
 DONE - Character literals
 String literals
 
-+=, -=, etc
+Parser statement conversion
+Loop state machine conversion
 break, continue, return
+
+Singular bool constraints
+
++=, -=, etc
 Coalescing
 Differentiate bitwise from logical operators
 

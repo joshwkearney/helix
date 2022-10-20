@@ -48,7 +48,7 @@ namespace Trophy.Features.Variables {
                 throw new Exception("Compiler inconsistency: lvalues must be writable pointers");
             }
 
-            assign = assign.UnifyTo(pointerType.ReferencedType, types);
+            assign = assign.UnifyTo(pointerType.InnerType, types);
 
             var result = new AssignmentStatement(this.Location, target, assign, true);
             types.ReturnTypes[result] = PrimitiveType.Void;

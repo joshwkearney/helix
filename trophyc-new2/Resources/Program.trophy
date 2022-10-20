@@ -1,6 +1,6 @@
 ﻿extern func externalFunc(let x as int) as int;
 
-func test(let x as int) as int  => {
+func test(let x as int[]) as int  => {
 	let z = other(x);
 	let a, b = put Point { 4, 5 };
 
@@ -17,11 +17,13 @@ func test(let x as int) as int  => {
 	};
 
 	if x > 3 and x < 10
-	then 0 
-	else 10;
+		then 0 
+		else 10;
 };
 
-func other(let x as int) as int => x + 10;
+func other(let x as int[]) => {
+	x[45] = x.count;
+};
 
 struct Point {
 	let x as int;

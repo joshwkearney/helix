@@ -67,6 +67,19 @@ namespace Trophy.Generation.Syntax {
         }
     }
 
+    public record CIndex() : ICSyntax {
+        public ICSyntax? Target { get; init; } = null;
+
+        public ICSyntax? Index { get; init; } = null;
+
+        public string WriteToC() {
+            var target = this.Target!.WriteToC();
+            var index = this.Index!.WriteToC();
+
+            return target + "[" + index + "]";
+        }
+    }
+
     public record CNot() : ICSyntax {
         public ICSyntax? Target { get; init; } = null;
 

@@ -22,7 +22,7 @@ namespace Trophy.Features.Primitives {
             var pointerType = target.AssertIsPointer(types);
             var result = new DereferenceSyntax(this.Location, target, true);
 
-            types.ReturnTypes[result] = pointerType.ReferencedType;
+            types.ReturnTypes[result] = pointerType.InnerType;
             return result;
         }
 

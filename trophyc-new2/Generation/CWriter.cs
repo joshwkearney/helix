@@ -1,6 +1,9 @@
 ﻿using System.Text;
+using System.Text.RegularExpressions;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
+using Trophy.Features.Aggregates;
+using Trophy.Generation.CSyntax;
 using Trophy.Generation.Syntax;
 
 namespace Trophy.Generation {
@@ -30,6 +33,9 @@ namespace Trophy.Generation {
         private readonly IDictionary<TrophyType, DeclarationCG> typeDeclarations;
         private readonly Dictionary<IdentifierPath, string> pathNames = new();
         private readonly Dictionary<string, int> nameCounters = new();
+
+        private int arrayCounter = 0;
+        private readonly Dictionary<ArrayType, string> arrayNames = new();
 
         private readonly StringBuilder decl1Sb = new();
         private readonly StringBuilder decl2Sb = new();
@@ -112,7 +118,7 @@ namespace Trophy.Generation {
                 return new CNamedType("_trophy_void");
             }
             else if (type is PointerType type2) {
-                return new CPointerType(ConvertType(type2.ReferencedType));
+                return new CPointerType(ConvertType(type2.InnerType));
             }
             else if (type is NamedType named) {
                 if (this.pathNames.TryGetValue(named.Path, out var cname)) {
@@ -123,13 +129,58 @@ namespace Trophy.Generation {
                     cg(this);
                 }
 
-                this.pathNames[named.Path] = string.Join("$", named.Path.Segments);
+                cname = this.pathNames[named.Path] = string.Join("$", named.Path.Segments);
+                return new CNamedType(cname);
+            }
+            else if (type is ArrayType array) {
+                if (this.arrayNames.TryGetValue(array, out var name)) {
+                    return new CNamedType(name);
+                }
 
-                return new CNamedType(this.pathNames[named.Path]);
+                name = this.arrayNames[array] = this.GenerateArrayType(array);
+                return new CNamedType(name);
             }
             else {
                 throw new Exception();
             }
+        }
+
+        private string GenerateArrayType(ArrayType arrayType) {
+            var inner = this.ConvertType(arrayType.InnerType);
+            var name = inner.WriteToC();
+
+            if (Regex.Match(name, @"[a-zA-Z0-9_$]+").Length == 0) {
+                name = this.arrayCounter.ToString();
+                this.arrayCounter++;
+            }
+
+            name = name + "_array";
+
+            var decl = new CAggregateDeclaration() {
+                Kind = AggregateKind.Struct,
+                Name = name,
+                Members = new[] { 
+                    new CParameter() {
+                        Name = "data",
+                        Type = new CPointerType(inner)
+                    },
+                    new CParameter() {
+                        Name = "count",
+                        Type = this.ConvertType(PrimitiveType.Int)
+                    }
+                }
+            };
+
+            var forwardDecl = new CAggregateDeclaration() {
+                Kind = AggregateKind.Struct,
+                Name = name
+            };
+
+            this.WriteDeclaration1(forwardDecl);
+            this.WriteDeclaration3(decl);
+            this.WriteDeclaration3(new CEmptyLine());
+
+            return name;
         }
 
         public override string ToString() {
@@ -150,7 +201,7 @@ namespace Trophy.Generation {
             }
 
             if (this.decl3Sb.Length > 0) {
-                sb.Append(this.decl3Sb).AppendLine();
+                sb.Append(this.decl3Sb);
             }
 
             if (this.decl4Sb.Length > 0) {

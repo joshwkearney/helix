@@ -2,12 +2,12 @@
 
 namespace Trophy.Analysis.Types {
     public record PointerType : TrophyType {
-        public TrophyType ReferencedType { get; }
+        public TrophyType InnerType { get; }
 
         public bool IsWritable { get; }
 
         public PointerType(TrophyType innerType, bool isWritable) {
-            this.ReferencedType = innerType;
+            this.InnerType = innerType;
             this.IsWritable = isWritable;
         }
 
@@ -26,7 +26,7 @@ namespace Trophy.Analysis.Types {
         public override ISyntaxTree UnifyTo(TrophyType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) => syntax;
 
         public override string ToString() {
-            return this.ReferencedType + (this.IsWritable ? "*" : "^");
+            return this.InnerType + (this.IsWritable ? "*" : "^");
         }
     }
 }
