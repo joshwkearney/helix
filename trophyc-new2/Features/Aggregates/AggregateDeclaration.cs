@@ -50,7 +50,7 @@ namespace Trophy.Parsing {
             var last = this.Advance(TokenKind.Semicolon);
             var loc = start.Location.Span(last.Location);
             var kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union;
-            var sig = new AggregateParseSignature(name, kind, mems);
+            var sig = new AggregateParseSignature(loc, name, kind, mems);
 
             return new AggregateDeclaration(loc, sig, kind);
         }
@@ -76,11 +76,11 @@ namespace Trophy.Features.Aggregates {
 
         public void DeclareNames(SyntaxFrame names) {
             // Make sure this name isn't taken
-            if (names.TryResolvePath(this.signature.Name, out _)) {
+            if (names.TryResolvePath(this.Location.Scope, this.signature.Name, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.signature.Name);
             }
 
-            var path = names.CurrentScope.Append(this.signature.Name);
+            var path = this.Location.Scope.Append(this.signature.Name);
 
             names.Trees[path] = new TypeSyntax(this.Location, new NamedType(path));
             //names = names.WithScope(this.signature.Name);

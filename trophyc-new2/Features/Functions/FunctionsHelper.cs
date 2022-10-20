@@ -19,43 +19,29 @@ namespace Trophy.Features.Functions {
 
         public static void DeclareName(FunctionParseSignature sig, SyntaxFrame types) {
             // Make sure this name isn't taken
-            if (types.TryResolvePath(sig.Name, out _)) {
+            if (types.TryResolvePath(sig.Location.Scope, sig.Name, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(sig.Location, sig.Name);
             }
 
             // Declare this function
-            var path = types.CurrentScope.Append(sig.Name);
+            var path = sig.Location.Scope.Append(sig.Name);
 
             types.Trees[path] = new TypeSyntax(sig.Location, new NamedType(path));
-            //names = names.WithScope(sig.Name);
-
-            // Declare the parameters
-            //foreach (var par in sig.Parameters) {
-            //    if (names.TryResolvePath(par.Name).HasValue) {
-            //        throw TypeCheckingErrors.IdentifierDefined(par.Location, par.Name);
-            //    }
-
-            //    names.SetValue(path, new DummySyntax(par.Location));
-            //}
         }
 
-        public static void DeclareParameters(FunctionSignature sig, SyntaxFrame types) {
-            // Declare this function
-            //paths.DeclareFunction(sig);
-            //paths.DeclareVariable(new VariableSignature(sig.Path, new FunctionType(sig), false));
-
+        public static void DeclareParameters(TokenLocation loc, FunctionSignature sig, SyntaxFrame types) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
                 var type = sig.Parameters[i].Type;
-                var path = types.CurrentScope.Append(parsePar.Name);
+                var path = loc.Scope.Append(parsePar.Name);
 
                 if (parsePar.IsWritable) {
                     type = type.ToMutableType();
                 }
 
                 types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable);
-                types.Trees[path] = new VariableAccessSyntax(default, path);
+                types.Trees[path] = new VariableAccessSyntax(loc, path);
             }
         }
     }

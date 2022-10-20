@@ -46,19 +46,21 @@ namespace Trophy.Features.FlowControl {
         public IEnumerable<ISyntaxTree> Children => new[] { this.body };
 
         public LoopStatement(TokenLocation location, 
-                              ISyntaxTree body, bool isTypeChecked = false) {
+                             ISyntaxTree body, bool isTypeChecked = false) {
+
             this.Location = location;
             this.body = body;
             this.isTypeChecked = isTypeChecked;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            types = types.WithScope("$loop" + counter++);
+            var wasInLoop = types.InLoop;
             types.InLoop = true;
 
             var body = this.body.CheckTypes(types).ToRValue(types);
             var result = new LoopStatement(this.Location, body, true);
 
+            types.InLoop = wasInLoop;
             types.ReturnTypes[result] = PrimitiveType.Void;
             return result;
         }

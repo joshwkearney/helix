@@ -12,8 +12,6 @@ namespace Trophy.Analysis {
     public class SyntaxFrame {
         private int tempCounter = 0;
 
-        public IdentifierPath CurrentScope { get; }
-
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
@@ -31,8 +29,6 @@ namespace Trophy.Analysis {
         public bool InLoop { get; set; }
 
         public SyntaxFrame() {
-            this.CurrentScope = new IdentifierPath();
-
             this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
             this.Aggregates = new Dictionary<IdentifierPath, AggregateSignature>();
@@ -47,9 +43,7 @@ namespace Trophy.Analysis {
             };
         }
 
-        private SyntaxFrame(SyntaxFrame prev, IdentifierPath newScope) {
-            this.CurrentScope = newScope;
-
+        public SyntaxFrame(SyntaxFrame prev) {
             this.Functions = new StackedDictionary<IdentifierPath, FunctionSignature>(prev.Functions);
             this.Variables = new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
             this.Aggregates = new StackedDictionary<IdentifierPath, AggregateSignature>(prev.Aggregates);
@@ -61,23 +55,11 @@ namespace Trophy.Analysis {
             this.InLoop = prev.InLoop;
         }
 
-        public SyntaxFrame WithScope(IdentifierPath newScope) {
-            return new SyntaxFrame(this, newScope);
-        }
-
-        public SyntaxFrame WithScope(string name) {
-            var scope = this.CurrentScope.Append(name);
-
-            return this.WithScope(scope);
-        }
-
         public string GetVariableName() {
             return "$t_" + this.tempCounter++;
         }
 
-        public bool TryResolvePath(string name, out IdentifierPath path) {
-            var scope = this.CurrentScope;
-
+        public bool TryResolvePath(IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
                 path = scope.Append(name);
                 if (this.Trees.ContainsKey(path)) {
@@ -93,8 +75,8 @@ namespace Trophy.Analysis {
             }
         }
 
-        public IdentifierPath ResolvePath(string path) {
-            if (this.TryResolvePath(path, out var value)) {
+        public IdentifierPath ResolvePath(IdentifierPath scope, string path) {
+            if (this.TryResolvePath(scope, path, out var value)) {
                 return value;
             }
 
@@ -102,8 +84,8 @@ namespace Trophy.Analysis {
                 $"Compiler error: The path '{path}' does not contain a value.");
         }
 
-        public bool TryResolveName(string name, out ISyntaxTree value) {
-            if (!this.TryResolvePath(name, out var path)) {
+        public bool TryResolveName(IdentifierPath scope, string name, out ISyntaxTree value) {
+            if (!this.TryResolvePath(scope, name, out var path)) {
                 value = null;
                 return false;
             }
@@ -111,8 +93,8 @@ namespace Trophy.Analysis {
             return this.Trees.TryGetValue(path, out value);
         }
 
-        public ISyntaxTree ResolveName(string name) {
-            return this.Trees[this.ResolvePath(name)];
+        public ISyntaxTree ResolveName(IdentifierPath scope, string name) {
+            return this.Trees[this.ResolvePath(scope, name)];
         }
     }
 }

@@ -95,7 +95,7 @@ namespace Trophy.Features.FlowControl {
             // Declare a variable for this if's return value. The parser will take care of 
             // giving the variable access to other syntax trees
             var sig = new VariableSignature(
-                types.CurrentScope.Append(this.returnVarName),
+                this.Location.Scope.Append(this.returnVarName),
                 types.ReturnTypes[iftrue],
                 true);
 
@@ -130,8 +130,8 @@ namespace Trophy.Features.FlowControl {
         public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
 
         public IfSyntax(TokenLocation loc, ISyntaxTree cond,
-                         ISyntaxTree iftrue,
-                         ISyntaxTree iffalse, VariableSignature returnSig) {
+                        ISyntaxTree iftrue,
+                        ISyntaxTree iffalse, VariableSignature returnSig) {
 
             this.Location = loc;
             this.cond = cond;

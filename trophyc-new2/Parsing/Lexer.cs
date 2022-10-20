@@ -1,4 +1,7 @@
-﻿namespace Trophy.Parsing {
+﻿using System.Data.Common;
+using Trophy.Analysis;
+
+namespace Trophy.Parsing {
     public class Lexer {
         private static readonly Dictionary<string, TokenKind> keywords = new() {
             { "var", TokenKind.VarKeyword }, { "let", TokenKind.LetKeyword }, 
@@ -28,10 +31,11 @@
 
         private int pos = 0;
         private int line = 1;
+        private IdentifierPath scope = new();
 
         private char Current => this.text[this.pos];
 
-        private TokenLocation Location => new(pos, 1, this.line);
+        private TokenLocation Location => new(pos, 1, this.line, this.scope);
 
         public Lexer(string text) {
             this.text = text;
@@ -42,7 +46,7 @@
                 if (text[pos + 1] == '=') {
                     pos++;
 
-                    return new Token(TokenKind.LessThanOrEqualTo, new TokenLocation(pos - 1, 2, this.line), "<=");
+                    return new Token(TokenKind.LessThanOrEqualTo, new TokenLocation(pos - 1, 2, this.line, scope), "<=");
                 }
                 else {
                     return new Token(TokenKind.LessThan, Location, "<");
@@ -58,12 +62,12 @@
                 if (text[pos + 1] == '>') {
                     pos++;
 
-                    return new Token(TokenKind.Yields, new TokenLocation(pos - 1, 2, line), "=>");
+                    return new Token(TokenKind.Yields, new TokenLocation(pos - 1, 2, line, scope), "=>");
                 }
                 else if (text[pos + 1] == '=') {
                     pos++;
 
-                    return new Token(TokenKind.Equals, new TokenLocation(pos - 1, 2, line), "==");
+                    return new Token(TokenKind.Equals, new TokenLocation(pos - 1, 2, line, scope), "==");
                 }
                 else {
                     return new Token(TokenKind.Assignment, Location, "=");
@@ -79,7 +83,7 @@
                 if (text[pos + 1] == '=') {
                     pos++;
 
-                    return new Token(TokenKind.GreaterThanOrEqualTo, new TokenLocation(pos - 1, 2, line), ">=");
+                    return new Token(TokenKind.GreaterThanOrEqualTo, new TokenLocation(pos - 1, 2, line, scope), ">=");
                 }
                 else {
                     return new Token(TokenKind.GreaterThan, Location, ">");
@@ -95,7 +99,7 @@
                 if (text[pos + 1] == '=') {
                     pos++;
 
-                    return new Token(TokenKind.NotEquals, new TokenLocation(pos - 1, 2, line), "!=");
+                    return new Token(TokenKind.NotEquals, new TokenLocation(pos - 1, 2, line, scope), "!=");
                 }
                 else {
                     return new Token(TokenKind.Not, Location, "!");
@@ -117,7 +121,7 @@
 
             pos--;
 
-            var loc = new TokenLocation(start, strNum.Length, line);
+            var loc = new TokenLocation(start, strNum.Length, line, scope);
 
             if (int.TryParse(strNum, out int num)) {
                 return new Token(TokenKind.IntLiteral, loc, strNum);
@@ -138,7 +142,7 @@
 
             pos--;
 
-            var location = new TokenLocation(start, id.Length, line);
+            var location = new TokenLocation(start, id.Length, line, scope);
 
             if (keywords.TryGetValue(id, out var kind)) {
                 return new Token(kind, location, id);
@@ -168,7 +172,7 @@
                 throw ParsingErrors.UnexpectedCharacter(Location, Current);
             }
 
-            return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, line), c.ToString());
+            return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, line, scope), c.ToString());
         }
 
 
@@ -183,7 +187,7 @@
 
                     pos--;
 
-                    var location = new TokenLocation(start, pos - start + 1, line);
+                    var location = new TokenLocation(start, pos - start + 1, line, scope);
                     return new Token(TokenKind.Whitespace, location, "");
                 }
             }
@@ -191,7 +195,7 @@
             return new Token(TokenKind.Divide, Location, "/");            
         }
 
-        private Token GetToken() {
+        private Token GetTokenHelper() {
             if (pos >= text.Length) {
                 return new Token(TokenKind.EOF, new TokenLocation(), "");
             }
@@ -236,20 +240,33 @@
             }
         }
 
-        public IReadOnlyList<Token> GetTokens() {
-            var list = new List<Token>();
+        public Token GetToken(IdentifierPath scope) {
+            this.scope = scope;
 
             while (pos < this.text.Length) {
-                var tok = this.GetToken();
+                var tok = this.GetTokenHelper();
+                pos++;
 
                 if (tok.Kind != TokenKind.Whitespace) {
-                    list.Add(tok);
+                    return tok;
                 }
-
-                pos++;
             }
 
-            return list;
+            return new Token(
+                TokenKind.EOF, 
+                new TokenLocation(pos, 0, line, scope),
+                string.Empty);
+        }
+
+        public Token PeekToken(IdentifierPath scope) {
+            int oldPos = this.pos;
+            int oldLine = this.line;
+            var tok = this.GetToken(scope);
+
+            this.pos = oldPos;
+            this.line = oldLine;
+
+            return tok;
         }
     }
 }

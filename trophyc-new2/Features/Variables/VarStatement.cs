@@ -5,6 +5,7 @@ using Trophy.Features.Variables;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
 using Trophy.Features.Aggregates;
+using Trophy.Features.Primitives;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -40,7 +41,7 @@ namespace Trophy.Parsing {
             var result = new VarParseStatement(loc, names, assign, isWritable);
 
             block.Statements.Add(result);
-            return new VariableAccessParseSyntax(loc, "void");
+            return new VoidLiteral(loc);
         }
     }
 }
@@ -78,7 +79,7 @@ namespace Trophy {
                 return this.Destructure(assignType, types);
             }
 
-            var path = types.CurrentScope.Append(this.names[0]);
+            var path = this.Location.Scope.Append(this.names[0]);
             var sig = new VariableSignature(path, assignType, this.isWritable);
 
             // Declare this variable and make sure we're not shadowing another variable

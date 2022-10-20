@@ -9,14 +9,17 @@ namespace Trophy.Features.Aggregates {
 
         public AggregateKind Kind { get; }
 
-        public AggregateParseSignature(string name, AggregateKind kind, IReadOnlyList<ParseAggregateMember> mems) {
+        public TokenLocation Location { get; }
+
+        public AggregateParseSignature(TokenLocation loc, string name, AggregateKind kind, IReadOnlyList<ParseAggregateMember> mems) {
             this.Name = name;
             this.Members = mems;
             this.Kind = kind;
+            this.Location = loc;
         }
 
         public AggregateSignature ResolveNames(SyntaxFrame types) {
-            var path = types.ResolvePath(this.Name);
+            var path = types.ResolvePath(this.Location.Scope, this.Name);
             var mems = new List<AggregateMember>();
 
             foreach (var mem in this.Members) {

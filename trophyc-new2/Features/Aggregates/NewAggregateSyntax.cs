@@ -16,7 +16,8 @@ namespace Trophy.Features.Aggregates {
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
-        public NewAggregateSyntax(TokenLocation loc, 
+        public NewAggregateSyntax(
+            TokenLocation loc, 
             AggregateSignature sig,
             IReadOnlyList<string?> names,
             IReadOnlyList<ISyntaxTree> values, bool isTypeChecked = false) {

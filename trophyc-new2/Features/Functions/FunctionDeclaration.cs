@@ -59,12 +59,14 @@ namespace Trophy.Parsing {
 
         private IDeclaration FunctionDeclaration() {
             var block = new BlockBuilder();
-            var start = this.tokens[this.pos];
             var sig = this.FunctionSignature();
             var end = this.Advance(TokenKind.Yields);
 
+            this.scope = this.scope.Append(sig.Name);
             var body = this.TopExpression(block);
-            var loc = start.Location.Span(end.Location);
+            this.scope = this.scope.Pop();
+
+            var loc = sig.Location.Span(end.Location);
 
             block.Statements.Add(body);
             body = new BlockSyntax(loc, block.Statements);
@@ -106,7 +108,7 @@ namespace Trophy.Features.Functions {
         }
         
         public IDeclaration CheckTypes(SyntaxFrame types) {
-            var path = types.ResolvePath(this.signature.Name);
+            var path = types.ResolvePath(this.Location.Scope, this.signature.Name);
             var sig = types.Functions[path];
             var body = this.body;
 
@@ -118,10 +120,10 @@ namespace Trophy.Features.Functions {
             }
 
             // Set the scope for type checking the body
-            types = types.WithScope(sig.Path);
+            types = new SyntaxFrame(types);
 
             // Declare parameters
-            FunctionsHelper.DeclareParameters(sig, types);
+            FunctionsHelper.DeclareParameters(this.Location, sig, types);
 
             body = body
                 .CheckTypes(types)

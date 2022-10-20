@@ -4,6 +4,7 @@ using Trophy.Generation;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Features.Primitives;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -16,7 +17,7 @@ namespace Trophy.Parsing {
                 var result = new AssignmentStatement(loc, start, assign);
 
                 block.Statements.Add(result);
-                return new VariableAccessParseSyntax(loc, "void");
+                return new VoidLiteral(loc);
             }
 
             return start;

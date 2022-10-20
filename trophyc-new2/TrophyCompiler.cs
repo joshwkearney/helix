@@ -22,8 +22,7 @@ namespace Trophy {
                 .Replace("\t", "    ");
 
             try {
-                var lexer = new Lexer(input);
-                var parser = new Parser(lexer.GetTokens());
+                var parser = new Parser(input);
                // var names = new NamesRecorder();
                 var types = new SyntaxFrame();
                 var writer = new CWriter(this.header, types.TypeDeclarations);

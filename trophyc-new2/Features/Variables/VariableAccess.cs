@@ -46,7 +46,7 @@ namespace Trophy {
             //}
 
             // If we're pointing at a type then return it
-            if (types.TryResolveName(this.name, out var syntax)) {
+            if (types.TryResolveName(this.Location.Scope, this.name, out var syntax)) {
                 if (syntax.AsType(types).TryGetValue(out var type)) {
                     return type;
                 }
@@ -57,7 +57,7 @@ namespace Trophy {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             // Make sure this name exists
-            if (!types.TryResolvePath(this.name, out var path)) {
+            if (!types.TryResolvePath(this.Location.Scope, this.name, out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
             }
 

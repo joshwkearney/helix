@@ -6,6 +6,14 @@ func test(let x as int[]) as int  => {
 
 	//let x = cast 45 to int;	
 
+	{
+		var xx = 45;
+	};
+
+	{
+		var xx = 450;
+	};
+
 	let x = {
 		var total = 'A';
 

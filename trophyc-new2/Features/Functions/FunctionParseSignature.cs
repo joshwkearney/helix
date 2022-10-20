@@ -19,7 +19,7 @@ namespace Trophy.Features.Functions {
         }
 
         public FunctionSignature ResolveNames(SyntaxFrame types) {
-            var path = types.CurrentScope.Append(this.Name);
+            var path = this.Location.Scope.Append(this.Name);
             var pars = new List<FunctionParameter>();
 
             if (!this.ReturnType.AsType(types).TryGetValue(out var retType)) {

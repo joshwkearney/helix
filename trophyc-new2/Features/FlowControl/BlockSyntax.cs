@@ -4,16 +4,23 @@ using Trophy.Generation;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Features.Primitives;
 
 namespace Trophy.Parsing {
     public partial class Parser {
+        private int blockCounter = 0;
+
         private ISyntaxTree Block(BlockBuilder block) {
             var start = this.Advance(TokenKind.OpenBrace);
             var stats = new List<ISyntaxTree>();
 
+            this.scope = this.scope.Append("$block_" + this.blockCounter++);
+
             while (!this.Peek(TokenKind.CloseBrace)) {
                 stats.Add(this.Statement(block));
             }
+
+            this.scope = this.scope.Pop();
 
             var end = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(end.Location);
@@ -22,7 +29,7 @@ namespace Trophy.Parsing {
                 return stats.Last();
             }
             else {
-                return new VariableAccessParseSyntax(loc, "void");
+                return new VoidLiteral(loc);
             }
         }
     }
@@ -49,9 +56,6 @@ namespace Trophy.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var newScope = types.CurrentScope.Append("$block" + this.id);
-            types = types.WithScope(newScope);
-
             var stats = this.statements.Select(x => x.CheckTypes(types)).ToArray();
             var result = new BlockSyntax(this.Location, stats, true);
             var returnType = stats

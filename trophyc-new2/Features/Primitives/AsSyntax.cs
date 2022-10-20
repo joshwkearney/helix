@@ -10,13 +10,11 @@ namespace Trophy.Parsing {
         private ISyntaxTree AsExpression(BlockBuilder block) {
             var first = this.BinaryExpression(block);
 
-            while (this.Peek(TokenKind.AsKeyword)) {
-                if (this.TryAdvance(TokenKind.AsKeyword)) {
-                    var target = this.TopExpression(block);
-                    var loc = first.Location.Span(this.tokens[this.pos - 1].Location);
+            while (this.TryAdvance(TokenKind.AsKeyword)) {
+                var target = this.TopExpression(block);
+                var loc = first.Location.Span(target.Location);
 
-                    first = new AsParseTree(loc, first, target);
-                }
+                first = new AsParseTree(loc, first, target);
             }
 
             return first;

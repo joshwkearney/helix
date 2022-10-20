@@ -50,7 +50,7 @@ namespace Trophy.Features.Functions {
         }
 
         public IDeclaration CheckTypes(SyntaxFrame types) {
-            var path = types.ResolvePath(this.Signature.Name);
+            var path = types.ResolvePath(this.Location.Scope, this.Signature.Name);
             var sig = types.Functions[path];
 
             return new ExternFunctionDeclaration(this.Location, sig);

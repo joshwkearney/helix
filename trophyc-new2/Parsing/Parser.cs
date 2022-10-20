@@ -1,4 +1,6 @@
-﻿namespace Trophy.Parsing {
+﻿using Trophy.Analysis;
+
+namespace Trophy.Parsing {
     public class BlockBuilder {
         private static int counter = 0;
 
@@ -8,17 +10,17 @@
     }
 
     public partial class Parser {
-        private int pos = 0;
-        private readonly IReadOnlyList<Token> tokens;
+        private IdentifierPath scope = new();
+        private readonly Lexer lexer;
 
-        public Parser(IReadOnlyList<Token> tokens) {
-            this.tokens = tokens;
+        public Parser(string text) {
+            this.lexer = new Lexer(text);
         }
 
         public IReadOnlyList<IDeclaration> Parse() {
             var list = new List<IDeclaration>();
 
-            while (pos < tokens.Count) {
+            while (this.lexer.PeekToken(this.scope).Kind != TokenKind.EOF) {
                 list.Add(this.Declaration());
             }
 
@@ -26,15 +28,7 @@
         }
 
         private bool Peek(TokenKind kind) {
-            return this.Peek(kind, 1);
-        }
-
-        private bool Peek(TokenKind kind, int count) {
-            if (this.pos + count - 1 >= this.tokens.Count) {
-                return false;
-            }
-
-            return this.tokens[this.pos + count - 1].Kind == kind;
+            return this.lexer.PeekToken(this.scope).Kind == kind;
         }
 
         private bool TryAdvance(TokenKind kind) {
@@ -47,11 +41,13 @@
         }
 
         private Token Advance() {
-            if (this.pos >= this.tokens.Count) {
-                throw ParsingErrors.EndOfFile(this.tokens[this.tokens.Count - 1].Location);
+            var tok = this.lexer.GetToken(this.scope);
+
+            if (tok.Kind == TokenKind.EOF) {
+                throw ParsingErrors.EndOfFile(new TokenLocation());
             }
 
-            return this.tokens[this.pos++];
+            return tok;
         }
 
         private Token Advance(TokenKind kind) {
