@@ -10,7 +10,9 @@ func test(let x as int[]) as int  => {
 		var total = 'A';
 
 		for i = 0 to 10 do {
-			total = total + i;
+			total = if total > 5
+				then 1
+				else 10;
 		};
 
 		total;
@@ -18,7 +20,14 @@ func test(let x as int[]) as int  => {
 
 	if x > 3 and x < 10
 		then 0 
-		else 10;
+		else if x < 500 then {
+			for i = 0 to 10 do {
+				//return 5;
+			};
+
+			45;
+		}
+		else 4;
 };
 
 func other(let x as int[]) => {
@@ -35,5 +44,5 @@ struct Point {
 	let x as int;
 	let y as int;
 
-	func length(let this as Point) as int => this.x*this.x + this.y*this.y;
+	// func length(let this as Point) as int => this.x*this.x + this.y*this.y;
 };

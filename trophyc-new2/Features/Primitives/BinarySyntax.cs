@@ -8,20 +8,24 @@ using Trophy.Features.FlowControl;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree OrExpression() {
-            var first = this.XorExpression();
+        private ISyntaxTree OrExpression(BlockBuilder block) {
+            var first = this.XorExpression(block);
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
                 var branching = this.TryAdvance(TokenKind.ElseKeyword);
-                var second = this.XorExpression();
+                var second = this.XorExpression(block);
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    first = new IfParseSyntax(
+                    var testName = block.GetTempName();
+                    var test = new IfParseSyntax(
                         loc,
+                        testName,
                         first,
                         new BoolLiteral(loc, true),
                         second);
+
+                    first = new VariableAccessParseSyntax(loc, testName);
                 }
                 else {
                     first = new BinarySyntax(loc, first, second, BinaryOperationKind.Or);
@@ -31,11 +35,11 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree XorExpression() {
-            var first = this.AndExpression();
+        private ISyntaxTree XorExpression(BlockBuilder block) {
+            var first = this.AndExpression(block);
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
-                var second = this.AndExpression();
+                var second = this.AndExpression(block);
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, BinaryOperationKind.Xor);
@@ -44,20 +48,25 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree AndExpression() {
-            var first = this.ComparisonExpression();
+        private ISyntaxTree AndExpression(BlockBuilder block) {
+            var first = this.ComparisonExpression(block);
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
                 var branching = this.TryAdvance(TokenKind.ThenKeyword);
-                var second = this.ComparisonExpression();
+                var second = this.ComparisonExpression(block);
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    first = new IfParseSyntax(
+                    var testName = block.GetTempName();
+                    var test = new IfParseSyntax(
                         loc,
+                        testName,
                         new UnaryParseSyntax(loc, UnaryOperatorKind.Not, first),
                         new BoolLiteral(loc, false),
                         second);
+
+                    block.Statements.Add(test);
+                    first = new VariableAccessParseSyntax(loc, testName);
                 }
                 else {
                     first = new BinarySyntax(loc, first, second, BinaryOperationKind.And);
@@ -67,8 +76,8 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree ComparisonExpression() {
-            var first = this.AddExpression();
+        private ISyntaxTree ComparisonExpression(BlockBuilder block) {
+            var first = this.AddExpression(block);
             var comparators = new Dictionary<TokenKind, BinaryOperationKind>() {
                 { TokenKind.Equals, BinaryOperationKind.EqualTo }, { TokenKind.NotEquals, BinaryOperationKind.NotEqualTo },
                 { TokenKind.LessThan, BinaryOperationKind.LessThan }, { TokenKind.GreaterThan, BinaryOperationKind.GreaterThan },
@@ -88,7 +97,7 @@ namespace Trophy.Parsing {
                 }
 
                 var op = comparators[this.Advance().Kind];
-                var second = this.AddExpression();
+                var second = this.AddExpression(block);
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, op);
@@ -98,8 +107,8 @@ namespace Trophy.Parsing {
         }
 
 
-        private ISyntaxTree AddExpression() {
-            var first = this.MultiplyExpression();
+        private ISyntaxTree AddExpression(BlockBuilder block) {
+            var first = this.MultiplyExpression(block);
 
             while (true) {
                 if (!this.Peek(TokenKind.Add) && !this.Peek(TokenKind.Subtract)) {
@@ -108,7 +117,7 @@ namespace Trophy.Parsing {
 
                 var tok = this.Advance().Kind;
                 var op = tok == TokenKind.Add ? BinaryOperationKind.Add : BinaryOperationKind.Subtract;
-                var second = this.MultiplyExpression();
+                var second = this.MultiplyExpression(block);
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, op);
@@ -117,8 +126,8 @@ namespace Trophy.Parsing {
             return first;
         }
 
-        private ISyntaxTree MultiplyExpression() {
-            var first = this.PrefixExpression();
+        private ISyntaxTree MultiplyExpression(BlockBuilder block) {
+            var first = this.PrefixExpression(block);
 
             while (true) {
                 if (!this.Peek(TokenKind.Multiply) && !this.Peek(TokenKind.Modulo) && !this.Peek(TokenKind.Divide)) {
@@ -135,7 +144,7 @@ namespace Trophy.Parsing {
                     op = BinaryOperationKind.FloorDivide;
                 }
 
-                var second = this.PrefixExpression();
+                var second = this.PrefixExpression(block);
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, op);

@@ -1,4 +1,12 @@
 ﻿namespace Trophy.Parsing {
+    public class BlockBuilder {
+        private static int counter = 0;
+
+        public List<ISyntaxTree> Statements { get; } = new();
+
+        public string GetTempName() => "$" + counter++;
+    }
+
     public partial class Parser {
         private int pos = 0;
         private readonly IReadOnlyList<Token> tokens;
@@ -72,14 +80,14 @@
         }
 
         /** Expression Parsing **/
-        private ISyntaxTree TopExpression() => this.AsExpression();
+        private ISyntaxTree TopExpression(BlockBuilder block) => this.AsExpression(block);
 
-        private ISyntaxTree BinaryExpression() => this.OrExpression();
+        private ISyntaxTree BinaryExpression(BlockBuilder block) => this.OrExpression(block);
 
-        private ISyntaxTree PrefixExpression() => this.UnaryExpression();        
+        private ISyntaxTree PrefixExpression(BlockBuilder block) => this.UnaryExpression(block);        
 
-        private ISyntaxTree SuffixExpression() {
-            var first = this.Atom();
+        private ISyntaxTree SuffixExpression(BlockBuilder block) {
+            var first = this.Atom(block);
 
             while (this.Peek(TokenKind.OpenParenthesis) 
                 || this.Peek(TokenKind.Dot) 
@@ -88,16 +96,16 @@
                 //|| this.Peek(TokenKind.Caret)) {
 
                 if (this.Peek(TokenKind.OpenParenthesis)) {
-                    first = this.InvokeExpression(first);
+                    first = this.InvokeExpression(first, block);
                 }
                 else if (this.Peek(TokenKind.Dot)) {
-                    first = this.MemberAccess(first);
+                    first = this.MemberAccess(first, block);
                 }
                 else if (this.Peek(TokenKind.Multiply) || this.Peek(TokenKind.Caret)) {
-                    first = this.TypePointer(first);
+                    first = this.TypePointer(first, block);
                 }
                 else if (this.Peek(TokenKind.OpenBracket)) {
-                    first = this.ArrayExpression(first);
+                    first = this.ArrayExpression(first, block);
                 }
                 else {
                     throw new Exception("Unexpected suffix token");
@@ -107,7 +115,7 @@
             return first;
         }        
 
-        private ISyntaxTree Atom() {
+        private ISyntaxTree Atom(BlockBuilder block) {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -115,22 +123,22 @@
                 return this.IntLiteral();
             }
             else if (this.Peek(TokenKind.OpenBrace)) {
-                return this.Block();
+                return this.Block(block);
             }
             else if (this.Peek(TokenKind.VoidKeyword)) {
                 return this.VoidLiteral();
             }
             else if (this.Peek(TokenKind.OpenParenthesis)) {
-                return this.ParenExpression();
+                return this.ParenExpression(block);
             }
             else if (this.Peek(TokenKind.BoolLiteral)) {
                 return this.BoolLiteral();
             }
             else if (this.Peek(TokenKind.IfKeyword)) {
-                return this.IfExpression();
+                return this.IfExpression(block);
             }     
             else if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.LetKeyword)) {
-                return this.VarExpression();
+                return this.VarExpression(block);
             }
             else if (this.Peek(TokenKind.IntKeyword)) {
                 var tok = this.Advance(TokenKind.IntKeyword);
@@ -143,7 +151,7 @@
                 return new VariableAccessParseSyntax(tok.Location, "bool");
             }
             else if (this.Peek(TokenKind.PutKeyword)) {
-                return this.PutExpression();
+                return this.PutExpression(block);
             }
             else {
                 var next = this.Advance();
@@ -152,25 +160,25 @@
             }
         }        
 
-        private ISyntaxTree ParenExpression() {
+        private ISyntaxTree ParenExpression(BlockBuilder block) {
             this.Advance(TokenKind.OpenParenthesis);
-            var result = this.TopExpression();
+            var result = this.TopExpression(block);
             this.Advance(TokenKind.CloseParenthesis);
 
             return result;
         }
 
-        private ISyntaxTree Statement() {
+        private ISyntaxTree Statement(BlockBuilder block) {
             ISyntaxTree result;
 
             if (this.Peek(TokenKind.WhileKeyword)) {
-                result = this.WhileStatement();
+                result = this.WhileStatement(block);
             }
             else if (this.Peek(TokenKind.ForKeyword)) {
-                result = this.ForStatement();
+                result = this.ForStatement(block);
             }
             else {
-                result = this.AssignmentStatement();
+                result = this.AssignmentStatement(block);
             }
 
             this.Advance(TokenKind.Semicolon);

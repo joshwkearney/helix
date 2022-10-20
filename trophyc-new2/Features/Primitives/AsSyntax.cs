@@ -7,12 +7,12 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree AsExpression() {
-            var first = this.BinaryExpression();
+        private ISyntaxTree AsExpression(BlockBuilder block) {
+            var first = this.BinaryExpression(block);
 
             while (this.Peek(TokenKind.AsKeyword)) {
                 if (this.TryAdvance(TokenKind.AsKeyword)) {
-                    var target = this.TopExpression();
+                    var target = this.TopExpression(block);
                     var loc = first.Location.Span(this.tokens[this.pos - 1].Location);
 
                     first = new AsParseTree(loc, first, target);

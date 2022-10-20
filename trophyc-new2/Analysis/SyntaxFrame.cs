@@ -26,6 +26,10 @@ namespace Trophy.Analysis {
 
         public IDictionary<IdentifierPath, ISyntaxTree> Trees { get; }
 
+        public Option<FunctionSignature> CurrentFunction { get; set; }
+
+        public bool InLoop { get; set; }
+
         public SyntaxFrame() {
             this.CurrentScope = new IdentifierPath();
 
@@ -54,6 +58,7 @@ namespace Trophy.Analysis {
             this.ReturnTypes = prev.ReturnTypes;
 
             this.Trees = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.Trees);
+            this.InLoop = prev.InLoop;
         }
 
         public SyntaxFrame WithScope(IdentifierPath newScope) {

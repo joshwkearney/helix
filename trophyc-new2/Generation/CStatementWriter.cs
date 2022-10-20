@@ -51,7 +51,7 @@ namespace Trophy.Generation {
             var stat = new CVariableDeclaration() {
                 Type = type,
                 Name = name,
-                Assignment = expr
+                Assignment = Option.Some(expr)
             };
 
             this.WriteStatement(stat);

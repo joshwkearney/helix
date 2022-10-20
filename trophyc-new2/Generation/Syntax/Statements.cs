@@ -25,21 +25,17 @@ namespace Trophy.Generation.Syntax {
     }
 
     public record CVariableDeclaration() : ICStatement {
-        private readonly Option<ICSyntax> assign = Option.None;
+        public Option<ICSyntax> Assignment { get; init; } = Option.None;
 
         public ICSyntax? Type { get; init; } = null;
 
         public string? Name { get; init; } = null;
 
-        public ICSyntax Assignment {
-            init => this.assign = Option.Some(value);
-        }
-
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
             sb.Append(this.Type!.WriteToC()).Append(' ').Append(this.Name);
 
-            if (this.assign.TryGetValue(out var assign)) {
+            if (this.Assignment.TryGetValue(out var assign)) {
                 sb.Append(" = ").Append(assign.WriteToC());
             }
 
@@ -143,6 +139,13 @@ namespace Trophy.Generation.Syntax {
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
             sb.AppendLine("break;");
+        }
+    }
+
+    public record CContinue() : ICStatement {
+        public void WriteToC(int indentLevel, StringBuilder sb) {
+            CHelper.Indent(indentLevel, sb);
+            sb.AppendLine("continue;");
         }
     }
 

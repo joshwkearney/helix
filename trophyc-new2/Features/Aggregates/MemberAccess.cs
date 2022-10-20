@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree MemberAccess(ISyntaxTree first) {
+        private ISyntaxTree MemberAccess(ISyntaxTree first, BlockBuilder block) {
             this.Advance(TokenKind.Dot);
 
             var tok = this.Advance(TokenKind.Identifier);

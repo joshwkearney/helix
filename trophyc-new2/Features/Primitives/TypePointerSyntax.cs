@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree TypePointer(ISyntaxTree start) {
+        private ISyntaxTree TypePointer(ISyntaxTree start, BlockBuilder block) {
             TokenLocation loc;
             bool isWritable;
 

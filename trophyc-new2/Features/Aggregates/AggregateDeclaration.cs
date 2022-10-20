@@ -39,7 +39,7 @@ namespace Trophy.Parsing {
                 var memName = this.Advance(TokenKind.Identifier);
                 this.Advance(TokenKind.AsKeyword);
 
-                var memType = this.TopExpression();
+                var memType = this.TopExpression(new BlockBuilder());
                 var memLoc = memStart.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);

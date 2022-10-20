@@ -7,14 +7,16 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree AssignmentStatement() {
-            var start = this.TopExpression();
+        private ISyntaxTree AssignmentStatement(BlockBuilder block) {
+            var start = this.TopExpression(block);
 
             if (this.TryAdvance(TokenKind.Assignment)) {
-                var assign = this.TopExpression();
+                var assign = this.TopExpression(block);
                 var loc = start.Location.Span(assign.Location);
+                var result = new AssignmentStatement(loc, start, assign);
 
-                return new AssignmentStatement(loc, start, assign);
+                block.Statements.Add(result);
+                return new VariableAccessParseSyntax(loc, "void");
             }
 
             return start;

@@ -7,18 +7,23 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree Block() {
+        private ISyntaxTree Block(BlockBuilder block) {
             var start = this.Advance(TokenKind.OpenBrace);
             var stats = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                stats.Add(this.Statement());
+                stats.Add(this.Statement(block));
             }
 
             var end = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(end.Location);
 
-            return new BlockSyntax(loc, stats);
+            if (stats.Any()) {
+                return stats.Last();
+            }
+            else {
+                return new VariableAccessParseSyntax(loc, "void");
+            }
         }
     }
 }

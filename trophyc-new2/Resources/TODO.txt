@@ -5,41 +5,50 @@ DONE - Arrays
 DONE - Character literals
 DONE - Lines numbers in c comments
 
-Bytes
-Longs
-String literals / Singular strings
+### The Primitives Update
+	Bytes
+	Longs
+	Doubles
+	Floor division and real division
+	Better conversions (graph based)
+	Casting
+	String literals / Singular strings
+	+=, -=, etc
+	Coalescing
+	Differentiate bitwise from logical operators
 
-Iterable syntax trees
-Parser statement conversion
-Loop state machine conversion
-break, continue, return
+### The Unsafe Update
+	Unsafe blocks
+	Pointer arithmetic
+	Pointer casting
+	Opaque types
+	alloc / free
 
-Singular bool constraints
+### The Imperative Update
+	DONE - Iterable syntax trees
+	Parser tree to imperative conversion
+	Loop state machine conversion
+	break, continue, return
 
-+=, -=, etc
-Coalescing
-Differentiate bitwise from logical operators
+### The Enum Update
+	Pointer member access
+	Methods
+	Enum interface methods
+	Enums
+	Singular bool constraints
+	Match expression
 
-Doubles
-Floor division and real division
+### The Specialization Update
+	Loop unrolling, inlining
+	Generics
+	Singular unification
+	Compile-time expression interpretation
+	Singular arrays / embedding binary data in c
 
-Better conversions (graph based)
-Casting
-
-Implicit struct conversions
-Anonymous structs and unions
-
-Region memory management
-
-Methods
-Enums
-Match expression
-Dependent booleans for type constraints
-
-Loop unrolling, inlining
-Generics
-Singular unification
-
-Fix syntax highlighting
+### The Memory Update
+	Region memory management
 
 interfaces
+Implicit struct conversions
+Anonymous structs and unions
+Fix syntax highlighting

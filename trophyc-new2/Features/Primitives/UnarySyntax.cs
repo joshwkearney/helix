@@ -7,7 +7,7 @@ using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree UnaryExpression() {
+        private ISyntaxTree UnaryExpression(BlockBuilder block) {
             var hasOperator = this.Peek(TokenKind.Subtract)
                 || this.Peek(TokenKind.Add)
                 || this.Peek(TokenKind.Not)
@@ -15,7 +15,7 @@ namespace Trophy.Parsing {
 
             if (hasOperator) {
                 var tokOp = this.Advance();
-                var first = this.SuffixExpression();
+                var first = this.SuffixExpression(block);
                 var loc = tokOp.Location.Span(first.Location);
                 var op = UnaryOperatorKind.Not;
 
@@ -32,7 +32,7 @@ namespace Trophy.Parsing {
                 return new UnaryParseSyntax(loc, op, first);
             }
 
-            return this.SuffixExpression();
+            return this.SuffixExpression(block);
         }
     }
 }

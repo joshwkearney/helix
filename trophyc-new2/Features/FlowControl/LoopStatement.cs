@@ -4,46 +4,62 @@ using Trophy.Generation;
 using Trophy.Features.FlowControl;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Features.Primitives;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree WhileStatement() {
+        private ISyntaxTree WhileStatement(BlockBuilder block) {
+            var newBlock = new BlockBuilder();
             var start = this.Advance(TokenKind.WhileKeyword);
-            var cond = this.TopExpression();
+            var cond = this.TopExpression(newBlock);
+
+            var test = new IfParseSyntax(
+                cond.Location,
+                block.GetTempName(),
+                new UnaryParseSyntax(cond.Location, UnaryOperatorKind.Not, cond),
+                new BreakContinueSyntax(cond.Location, true));
+
+            newBlock.Statements.Add(test);
 
             this.Advance(TokenKind.DoKeyword);
-            var body = this.TopExpression();
-            var loc = start.Location.Span(body.Location);
 
-            return new WhileStatement(loc, cond, body);
+            var body = this.TopExpression(newBlock);
+            var loc = start.Location.Span(body.Location);
+            var loop = new LoopStatement(loc, new BlockSyntax(loc, newBlock.Statements));
+
+            block.Statements.Add(loop);
+
+            return new VoidLiteral(loc);
         }
     }
 }
 
 namespace Trophy.Features.FlowControl {
-    public record WhileStatement : ISyntaxTree {
-        private readonly ISyntaxTree cond, body;
+    public record LoopStatement : ISyntaxTree {
+        private static int counter = 0;
+
+        private readonly ISyntaxTree body;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.body };
+        public IEnumerable<ISyntaxTree> Children => new[] { this.body };
 
-        public WhileStatement(TokenLocation location, ISyntaxTree cond, 
+        public LoopStatement(TokenLocation location, 
                               ISyntaxTree body, bool isTypeChecked = false) {
             this.Location = location;
-            this.cond = cond;
             this.body = body;
             this.isTypeChecked = isTypeChecked;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
+            types = types.WithScope("$loop" + counter++);
+            types.InLoop = true;
+
             var body = this.body.CheckTypes(types).ToRValue(types);
+            var result = new LoopStatement(this.Location, body, true);
 
-            var result = new WhileStatement(this.Location, cond, body, true);
             types.ReturnTypes[result] = PrimitiveType.Void;
-
             return result;
         }
 
@@ -63,22 +79,7 @@ namespace Trophy.Features.FlowControl {
             var loopBody = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, loopBody);
 
-            var terminator = new CIf() {
-                Condition = new CNot() {
-                    Target = this.cond.GenerateCode(writer)
-                },
-                IfTrue = new[] { new CBreak() }
-            };
-
             this.body.GenerateCode(bodyWriter);
-
-            if (loopBody.Any()) {
-                loopBody.Insert(0, new CEmptyLine());
-                loopBody.Insert(0, terminator);
-            }
-            else {
-                bodyWriter.WriteStatement(terminator);
-            }
 
             var loop = new CWhile() {
                 Condition = new CIntLiteral(1),
@@ -86,7 +87,7 @@ namespace Trophy.Features.FlowControl {
             };
 
             writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.cond.Location.Line}: While loop");
+            writer.WriteComment($"Line {this.Location.Line}: While loop");
             writer.WriteStatement(loop);
             writer.WriteEmptyLine();
 

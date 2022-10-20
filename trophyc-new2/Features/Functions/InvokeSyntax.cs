@@ -4,16 +4,17 @@ using Trophy.Generation;
 using Trophy.Features.Functions;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Features.Primitives;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree InvokeExpression(ISyntaxTree first) {
+        private ISyntaxTree InvokeExpression(ISyntaxTree first, BlockBuilder block) {
             this.Advance(TokenKind.OpenParenthesis);
 
             var args = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseParenthesis)) {
-                args.Add(this.TopExpression());
+                args.Add(this.TopExpression(block));
 
                 if (!this.TryAdvance(TokenKind.Comma)) {
                     break;
@@ -23,7 +24,16 @@ namespace Trophy.Parsing {
             var last = this.Advance(TokenKind.CloseParenthesis);
             var loc = first.Location.Span(last.Location);
 
-            return new InvokeParseTree(loc, first, args);
+            var tempName = block.GetTempName();
+            var temp = new VarParseStatement(
+                loc,
+                new[] { tempName },
+                new InvokeParseTree(loc, first, args),
+                false);
+
+            block.Statements.Add(temp);
+
+            return new VariableAccessParseSyntax(loc, tempName);
         }
     }
 }
@@ -115,14 +125,19 @@ namespace Trophy.Features.Functions {
                 .Select(x => x.GenerateCode(writer))
                 .ToArray();
 
-            var invoke = new CInvoke() {
+            var result = new CInvoke() {
                 Target = new CVariableLiteral(writer.GetVariableName(this.sig.Path)),
                 Arguments = args
             };
 
-            var type = writer.ConvertType(this.sig.ReturnType);
+            if (this.sig.ReturnType == PrimitiveType.Void) {
+                writer.WriteStatement(result);
 
-            return writer.WriteImpureExpression(type, invoke);
+                return new CIntLiteral(0);
+            }
+            else {
+                return result;
+            }
         }
     }
 }

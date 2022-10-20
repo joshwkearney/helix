@@ -34,7 +34,7 @@ namespace Trophy.Parsing {
                 var parName = this.Advance(TokenKind.Identifier).Value;
                 this.Advance(TokenKind.AsKeyword);
 
-                var parType = this.TopExpression();
+                var parType = this.TopExpression(null);
                 var parLoc = parStart.Location.Span(parType.Location);
 
                 if (!this.Peek(TokenKind.CloseParenthesis)) {
@@ -48,7 +48,7 @@ namespace Trophy.Parsing {
             var returnType = new VoidLiteral(end.Location) as ISyntaxTree;
 
             if (this.TryAdvance(TokenKind.AsKeyword)) {
-                returnType = this.TopExpression();
+                returnType = this.TopExpression(null);
             }
 
             var loc = start.Location.Span(returnType.Location);
@@ -58,12 +58,16 @@ namespace Trophy.Parsing {
         }
 
         private IDeclaration FunctionDeclaration() {
+            var block = new BlockBuilder();
             var start = this.tokens[this.pos];
             var sig = this.FunctionSignature();
             var end = this.Advance(TokenKind.Yields);
 
-            var body = this.TopExpression();
+            var body = this.TopExpression(block);
             var loc = start.Location.Span(end.Location);
+
+            block.Statements.Add(body);
+            body = new BlockSyntax(loc, block.Statements);
 
             this.Advance(TokenKind.Semicolon);
 

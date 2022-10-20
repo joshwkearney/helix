@@ -1,5 +1,6 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
+using Trophy.Features.Primitives;
 using Trophy.Generation;
 using Trophy.Generation.Syntax;
 using Trophy.Parsing;
@@ -58,6 +59,10 @@ namespace Trophy {
             // Make sure this name exists
             if (!types.TryResolvePath(this.name, out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
+            }
+
+            if (path == new IdentifierPath("void")) {
+                return new VoidLiteral(this.Location).CheckTypes(types);
             }
 
             // Make sure we are accessing a variable

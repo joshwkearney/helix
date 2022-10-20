@@ -8,7 +8,7 @@ using Trophy.Features.Aggregates;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree VarExpression() {
+        private ISyntaxTree VarExpression(BlockBuilder block) {
             TokenLocation startLok;
             bool isWritable;
 
@@ -35,10 +35,12 @@ namespace Trophy.Parsing {
                 }
             }
 
-            var assign = this.TopExpression();
+            var assign = this.TopExpression(block);
             var loc = startLok.Span(assign.Location);
+            var result = new VarParseStatement(loc, names, assign, isWritable);
 
-            return new VarParseStatement(loc, names, assign, isWritable);
+            block.Statements.Add(result);
+            return new VariableAccessParseSyntax(loc, "void");
         }
     }
 }
@@ -157,17 +159,23 @@ namespace Trophy {
     }
 
     public record VarStatement : ISyntaxTree {
-        private readonly ISyntaxTree assign;
+        private readonly Option<ISyntaxTree> assign;
         private readonly VariableSignature signature;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.assign };
+        public IEnumerable<ISyntaxTree> Children => this.assign.ToEnumerable();
 
         public VarStatement(TokenLocation loc, VariableSignature sig, ISyntaxTree assign) {
             this.Location = loc;
             this.signature = sig;
-            this.assign = assign;
+            this.assign = Option.Some(assign);
+        }
+
+        public VarStatement(TokenLocation loc, VariableSignature sig) {
+            this.Location = loc;
+            this.signature = sig;
+            this.assign = Option.None;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
@@ -178,16 +186,11 @@ namespace Trophy {
             var stat = new CVariableDeclaration() {
                 Type = writer.ConvertType(this.signature.Type),
                 Name = writer.GetVariableName(this.signature.Path),
-                Assignment = this.assign.GenerateCode(writer)
+                Assignment = this.assign.Select(x => x.GenerateCode(writer))
             };
 
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.assign.Location.Line}: Variable declaration statement");
             writer.WriteStatement(stat);
-            writer.WriteEmptyLine();
-
             return new CIntLiteral(0);
-            //return CExpression.AddressOf(CExpression.VariableLiteral(name));
         }
     }
 }

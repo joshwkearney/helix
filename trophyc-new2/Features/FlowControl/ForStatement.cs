@@ -6,100 +6,72 @@ using Trophy.Features.Primitives;
 using Trophy.Features.Variables;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using System.Linq.Expressions;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree ForStatement() {
-            var start = this.Advance(TokenKind.ForKeyword);
-            var id = this.Advance(TokenKind.Identifier).Value;
+        private ISyntaxTree ForStatement(BlockBuilder block) {
+            var startTok = this.Advance(TokenKind.ForKeyword);
+            var id = this.Advance(TokenKind.Identifier);
 
             this.Advance(TokenKind.Assignment);
-            var startIndex = this.TopExpression();
+            var startIndex = this.TopExpression(block);
 
             this.Advance(TokenKind.ToKeyword);
-            var endIndex = this.TopExpression();
+            var endIndex = this.TopExpression(block);
+            var doLoc = this.Advance(TokenKind.DoKeyword).Location;
 
-            this.Advance(TokenKind.DoKeyword);
-            var body = this.TopExpression();
-            var loc = start.Location.Span(body.Location);
+            startIndex = new AsParseTree(
+                startIndex.Location,
+                startIndex,
+                new VariableAccessParseSyntax(startIndex.Location, "int"));
 
-            return new ForStatement(loc, id, startIndex, endIndex, body);
-        }
+            endIndex = new AsParseTree(
+                endIndex.Location,
+                endIndex,
+                new VariableAccessParseSyntax(endIndex.Location, "int"));
 
-    }
-}
+            var counterName = block.GetTempName();
+            var counterDecl = new VarParseStatement(startTok.Location, new[] { counterName }, startIndex, true);
+            var counterAccess = new VariableAccessParseSyntax(startTok.Location, counterName);
 
-namespace Trophy.Features.FlowControl {
-    public record ForStatement : ISyntaxTree {
-        private readonly string iteratorName;
-        private readonly ISyntaxTree startIndex, endIndex, body;
-
-        public TokenLocation Location { get; }
-
-        public IEnumerable<ISyntaxTree> Children => new[] { this.startIndex, this.endIndex, this.body };
-
-        public ForStatement(TokenLocation loc, string id, ISyntaxTree start, ISyntaxTree end, ISyntaxTree body) {
-            this.Location = loc;
-            this.iteratorName = id;
-            this.startIndex = start;
-            this.endIndex = end;
-            this.body = body;
-        }
-
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            // Rewrite for syntax to use while loops
-            var start = new AsParseTree(
-                this.startIndex.Location, 
-                this.startIndex, 
-                new VariableAccessParseSyntax(this.startIndex.Location, "int"));
-
-            var end = new AsParseTree(
-                this.endIndex.Location,
-                this.endIndex,
-                new VariableAccessParseSyntax(this.startIndex.Location, "int"));
-
-            var counterName = types.GetVariableName();
-            var counterDecl = new VarParseStatement(this.Location, new[] { counterName }, start, true);
-
-            var counterAccess = new VariableAccessParseSyntax(this.Location, counterName);
-            var iteratorDecl = new VarParseStatement(this.Location, new[] { this.iteratorName }, counterAccess, false);
-
-            var comp = new BinarySyntax(this.Location, counterAccess, end, BinaryOperationKind.LessThan);
-
-            var assign = new AssignmentStatement(
-                this.Location,
+            var counterInc = new AssignmentStatement(
+                startTok.Location,
                 counterAccess,
                 new BinarySyntax(
-                    this.Location,
+                    startTok.Location,
                     counterAccess,
-                    new IntLiteral(this.Location, 1),
+                    new IntLiteral(startTok.Location, 1),
                     BinaryOperationKind.Add));
 
-            var block = new BlockSyntax(this.Location, new ISyntaxTree[] {
-                counterDecl,
-                new WhileStatement(
-                    this.Location,
-                    comp,
-                    new BlockSyntax(this.Location, new ISyntaxTree[] { 
-                        iteratorDecl,
-                        this.body,
-                        assign
-                    }))
-            });
+            block.Statements.Add(counterDecl);
 
-            return block.CheckTypes(types);
-        }
+            var newBlock = new BlockBuilder();
+            var loc = startTok.Location.Span(doLoc);
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
-            throw new InvalidOperationException();
-        }
+            var iteratorDecl = new VarParseStatement(startTok.Location, new[] { id.Value }, counterAccess, true);
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
-            throw new InvalidOperationException();
-        }
+            var test = new IfParseSyntax(
+                loc,
+                block.GetTempName(),
+                new BinarySyntax(
+                    loc,
+                    counterAccess,
+                    endIndex,
+                    BinaryOperationKind.GreaterThanOrEqualTo),
+                new BreakContinueSyntax(loc, true));
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
-            throw new InvalidOperationException();
+            newBlock.Statements.Add(iteratorDecl);
+            newBlock.Statements.Add(test);
+
+            var body = this.TopExpression(newBlock);
+            loc = loc.Span(body.Location);
+            newBlock.Statements.Add(counterInc);
+
+            var loop = new LoopStatement(loc, new BlockSyntax(loc, newBlock.Statements));
+            block.Statements.Add(loop);
+
+            return new VoidLiteral(loc);
         }
-    }
+    }        
 }

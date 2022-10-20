@@ -5,40 +5,64 @@ using Trophy.Features.FlowControl;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Features.Variables;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree IfExpression() {
+        private ISyntaxTree IfExpression(BlockBuilder block) {
             var start = this.Advance(TokenKind.IfKeyword);
-            var cond = this.TopExpression();
+            var cond = this.TopExpression(block);
+            var returnName = block.GetTempName();
+            var loc = start.Location.Span(cond.Location);
 
             this.Advance(TokenKind.ThenKeyword);
-            var affirm = this.TopExpression();
+            var affirmBlock = new BlockBuilder();
+            var affirm = this.TopExpression(affirmBlock);
+
+            affirmBlock.Statements.Add(affirm);
 
             if (this.TryAdvance(TokenKind.ElseKeyword)) {
-                var neg = this.TopExpression();
-                var loc = start.Location.Span(neg.Location);
+                var negBlock = new BlockBuilder();
+                var neg = this.TopExpression(negBlock);
 
-                return new IfParseSyntax(loc, cond, affirm, neg);
+                negBlock.Statements.Add(neg);
+                loc = start.Location.Span(neg.Location);
+
+                var expr = new IfParseSyntax(
+                    loc,
+                    returnName,
+                    cond,
+                    new BlockSyntax(loc, affirmBlock.Statements),
+                    new BlockSyntax(loc, negBlock.Statements));
+
+                block.Statements.Add(expr);
             }
             else {
-                var loc = start.Location.Span(affirm.Location);
+                loc = start.Location.Span(affirm.Location);
+                var expr = new IfParseSyntax(
+                    loc,
+                    returnName,
+                    cond,
+                    new BlockSyntax(loc, affirmBlock.Statements));
 
-                return new IfParseSyntax(loc, cond, affirm);
+                block.Statements.Add(expr);
             }
+
+            return new VariableAccessParseSyntax(loc, returnName);
         }
     }
 }
 
 namespace Trophy.Features.FlowControl {
     public record IfParseSyntax : ISyntaxTree {
+        private readonly string returnVarName;
         private readonly ISyntaxTree cond, iftrue, iffalse;
 
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
 
-        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue) {
+        public IfParseSyntax(TokenLocation location, string returnVar, ISyntaxTree cond, ISyntaxTree iftrue) {
             this.Location = location;
             this.cond = cond;
 
@@ -47,15 +71,17 @@ namespace Trophy.Features.FlowControl {
             });
 
             this.iffalse = new VoidLiteral(location);
+            this.returnVarName = returnVar;
         }
 
-        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue, ISyntaxTree iffalse)
-            : this(location, cond, iftrue) {
+        public IfParseSyntax(TokenLocation location, string returnVar, ISyntaxTree cond, 
+            ISyntaxTree iftrue, ISyntaxTree iffalse) {
 
             this.Location = location;
             this.cond = cond;
             this.iftrue = iftrue;
             this.iffalse = iffalse;
+            this.returnVarName = returnVar;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -66,10 +92,19 @@ namespace Trophy.Features.FlowControl {
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
 
-            var resultType = types.ReturnTypes[iftrue];
-            var result = new IfSyntax(this.Location, cond, iftrue, iffalse, resultType);
+            // Declare a variable for this if's return value. The parser will take care of 
+            // giving the variable access to other syntax trees
+            var sig = new VariableSignature(
+                types.CurrentScope.Append(this.returnVarName),
+                types.ReturnTypes[iftrue],
+                true);
 
-            types.ReturnTypes[result] = resultType;
+            types.Variables[sig.Path] = sig;
+            types.Trees[sig.Path] = new DummySyntax(this.Location);
+
+            var result = new IfSyntax(this.Location, cond, iftrue, iffalse, sig);
+
+            types.ReturnTypes[result] = PrimitiveType.Void;
             return result;
         }
 
@@ -87,8 +122,8 @@ namespace Trophy.Features.FlowControl {
     }
 
     public record IfSyntax : ISyntaxTree {
+        private readonly VariableSignature returnSig;
         private readonly ISyntaxTree cond, iftrue, iffalse;
-        private readonly TrophyType returnType;
 
         public TokenLocation Location { get; }
 
@@ -96,13 +131,13 @@ namespace Trophy.Features.FlowControl {
 
         public IfSyntax(TokenLocation loc, ISyntaxTree cond,
                          ISyntaxTree iftrue,
-                         ISyntaxTree iffalse, TrophyType returnType) {
+                         ISyntaxTree iffalse, VariableSignature returnSig) {
 
             this.Location = loc;
             this.cond = cond;
             this.iftrue = iftrue;
             this.iffalse = iffalse;
-            this.returnType = returnType;
+            this.returnSig = returnSig;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
@@ -119,22 +154,19 @@ namespace Trophy.Features.FlowControl {
             var affirm = this.iftrue.GenerateCode(affirmWriter);
             var neg = this.iffalse.GenerateCode(negWriter);
 
-            var tempName = writer.GetVariableName();
+            var tempName = writer.GetVariableName(this.returnSig.Path);
 
-            affirmWriter.WriteStatement(new CAssignment() { 
-                Left = new CVariableLiteral(tempName),
-                Right = affirm
-            });
+            if (this.returnSig.Type != PrimitiveType.Void) {
+                affirmWriter.WriteStatement(new CAssignment() {
+                    Left = new CVariableLiteral(tempName),
+                    Right = affirm
+                });
 
-            negWriter.WriteStatement(new CAssignment() {
-                Left = new CVariableLiteral(tempName),
-                Right = neg
-            });
-
-            var stat = new CVariableDeclaration() {
-                Type = writer.ConvertType(this.returnType),
-                Name = tempName
-            };
+                negWriter.WriteStatement(new CAssignment() {
+                    Left = new CVariableLiteral(tempName),
+                    Right = neg
+                });
+            }
 
             var expr = new CIf() {
                 Condition = this.cond.GenerateCode(writer),
@@ -144,11 +176,20 @@ namespace Trophy.Features.FlowControl {
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.cond.Location.Line}: If statement");
-            writer.WriteStatement(stat);
+
+            if (this.returnSig.Type != PrimitiveType.Void) {
+                var stat = new CVariableDeclaration() {
+                    Type = writer.ConvertType(this.returnSig.Type),
+                    Name = tempName
+                };
+
+                writer.WriteStatement(stat);
+            }
+
             writer.WriteStatement(expr);
             writer.WriteEmptyLine();
 
-            return new CVariableLiteral(tempName);
+            return new CIntLiteral(0);
         }
     }
 }

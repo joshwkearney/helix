@@ -8,7 +8,7 @@ using Trophy.Features.Aggregates;
 
 namespace Trophy.Parsing {
     public partial class Parser {
-        private ISyntaxTree PutExpression() {
+        private ISyntaxTree PutExpression(BlockBuilder block) {
             TokenLocation start;
           //  bool isStackAllocated;
 
@@ -21,7 +21,7 @@ namespace Trophy.Parsing {
                // isStackAllocated = true;
             //}
 
-            var targetType = this.TopExpression();
+            var targetType = this.TopExpression(block);
             var loc = start.Span(targetType.Location);
 
             if (!this.TryAdvance(TokenKind.OpenBrace)) {
@@ -43,7 +43,7 @@ namespace Trophy.Parsing {
                     this.Advance(TokenKind.Assignment);
                 }
 
-                var value = this.TopExpression();
+                var value = this.TopExpression(block);
 
                 names.Add(name);
                 values.Add(value);
