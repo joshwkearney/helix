@@ -178,7 +178,7 @@ namespace Trophy {
             };
 
             writer.WriteEmptyLine();
-            writer.WriteComment("Variable declaration statement");
+            writer.WriteComment($"Line {this.assign.Location.Line}: Variable declaration statement");
             writer.WriteStatement(stat);
             writer.WriteEmptyLine();
 

@@ -84,7 +84,7 @@ namespace Trophy.Features.FlowControl {
             };
 
             writer.WriteEmptyLine();
-            writer.WriteStatement(new CComment("While loop"));
+            writer.WriteComment($"Line {this.cond.Location.Line}: While loop");
             writer.WriteStatement(loop);
             writer.WriteEmptyLine();
 

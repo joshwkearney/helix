@@ -1,17 +1,22 @@
 ﻿extern func externalFunc(let x as int) as int;
 
-func test(let x as int) as int => {
+func test(let x as int) as int  => {
 	let z = other(x);
-
 	let a, b = put Point { 4, 5 };
 
-	//let x = cast 45 to int;
+	//let x = cast 45 to int;	
 
-	for i = 0 to 10 do {
-		let p = put Point { (i + 8) };
+	let x = {
+		var total = 'A';
+
+		for i = 0 to 10 do {
+			total = total + i;
+		};
+
+		total;
 	};
 
-	if x > 3 and then x < 10
+	if x > 3 and x < 10
 	then 0 
 	else 10;
 };

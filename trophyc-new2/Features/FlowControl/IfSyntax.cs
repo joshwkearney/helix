@@ -139,7 +139,7 @@ namespace Trophy.Features.FlowControl {
             };
 
             writer.WriteEmptyLine();
-            writer.WriteComment("If statement");
+            writer.WriteComment($"Line {this.cond.Location.Line}: If statement");
             writer.WriteStatement(stat);
             writer.WriteStatement(expr);
             writer.WriteEmptyLine();

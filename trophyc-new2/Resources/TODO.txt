@@ -1,15 +1,20 @@
 ﻿DONE - Struct unpacking
 DONE - Fix for loops
-Fix function calls
+DONE - Fix function calls
 Longs
 Arrays
-Character literals
+DONE - Character literals
 String literals
+
++=, -=, etc
+break, continue, return
+Coalescing
+Differentiate bitwise from logical operators
 
 Doubles
 Floor division and real division
 
-Lines numbers in c comments
+DONE - Lines numbers in c comments
 
 Better conversions (graph based)
 Casting
@@ -21,7 +26,11 @@ Region memory management
 
 Bytes
 Enums
+Match expression
 Dependent booleans for type constraints
+
+Loop unrolling, inlining
 Generics
+Singular unification
 
 Fix syntax highlighting

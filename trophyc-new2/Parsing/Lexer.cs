@@ -27,10 +27,11 @@
         private readonly string text;
 
         private int pos = 0;
+        private int line = 1;
 
-        private char current => this.text[this.pos];
+        private char Current => this.text[this.pos];
 
-        private TokenLocation location => new TokenLocation(pos, 1);
+        private TokenLocation Location => new TokenLocation(pos, 1, this.line);
 
         public Lexer(string text) {
             this.text = text;
@@ -41,14 +42,14 @@
                 if (text[pos + 1] == '=') {
                     pos++;
 
-                    return new Token(TokenKind.LessThanOrEqualTo, new TokenLocation(pos - 1, 2), "<=");
+                    return new Token(TokenKind.LessThanOrEqualTo, new TokenLocation(pos - 1, 2, this.line), "<=");
                 }
                 else {
-                    return new Token(TokenKind.LessThan, location, "<");
+                    return new Token(TokenKind.LessThan, Location, "<");
                 }
             }
             else {
-                throw ParsingErrors.EndOfFile(new TokenLocation(pos, 1));
+                throw ParsingErrors.EndOfFile(this.Location);
             }
         }
 
@@ -57,19 +58,19 @@
                 if (text[pos + 1] == '>') {
                     pos++;
 
-                    return new Token(TokenKind.Yields, new TokenLocation(pos - 1, 2), "=>");
+                    return new Token(TokenKind.Yields, new TokenLocation(pos - 1, 2, line), "=>");
                 }
                 else if (text[pos + 1] == '=') {
                     pos++;
 
-                    return new Token(TokenKind.Equals, new TokenLocation(pos - 1, 2), "==");
+                    return new Token(TokenKind.Equals, new TokenLocation(pos - 1, 2, line), "==");
                 }
                 else {
-                    return new Token(TokenKind.Assignment, location, "=");
+                    return new Token(TokenKind.Assignment, Location, "=");
                 }
             }
             else {
-                throw ParsingErrors.EndOfFile(new TokenLocation(pos, 1));
+                throw ParsingErrors.EndOfFile(this.Location);
             }
         }
 
@@ -78,14 +79,14 @@
                 if (text[pos + 1] == '=') {
                     pos++;
 
-                    return new Token(TokenKind.GreaterThanOrEqualTo, new TokenLocation(pos - 1, 2), ">=");
+                    return new Token(TokenKind.GreaterThanOrEqualTo, new TokenLocation(pos - 1, 2, line), ">=");
                 }
                 else {
-                    return new Token(TokenKind.GreaterThan, location, ">");
+                    return new Token(TokenKind.GreaterThan, Location, ">");
                 }
             }
             else {
-                throw ParsingErrors.EndOfFile(new TokenLocation(pos, 1));
+                throw ParsingErrors.EndOfFile(this.Location);
             }
         }
 
@@ -94,14 +95,14 @@
                 if (text[pos + 1] == '=') {
                     pos++;
 
-                    return new Token(TokenKind.NotEquals, new TokenLocation(pos - 1, 2), "!=");
+                    return new Token(TokenKind.NotEquals, new TokenLocation(pos - 1, 2, line), "!=");
                 }
                 else {
-                    return new Token(TokenKind.Not, location, "!");
+                    return new Token(TokenKind.Not, Location, "!");
                 }
             }
             else {
-                throw ParsingErrors.EndOfFile(new TokenLocation(pos, 1));
+                throw ParsingErrors.EndOfFile(this.Location);
             }
         }
 
@@ -109,14 +110,14 @@
             int start = pos;
             string strNum = "";
 
-            while (pos < this.text.Length && char.IsDigit(current)) {
+            while (pos < this.text.Length && char.IsDigit(Current)) {
                 strNum += this.text[pos];
                 pos++;
             }
 
             pos--;
 
-            var loc = new TokenLocation(start, strNum.Length);
+            var loc = new TokenLocation(start, strNum.Length, line);
 
             if (int.TryParse(strNum, out int num)) {
                 return new Token(TokenKind.IntLiteral, loc, strNum);
@@ -130,14 +131,14 @@
             int start = pos;
             string id = "";
 
-            while (pos < this.text.Length && (char.IsLetterOrDigit(current) || current == '_')) {
+            while (pos < this.text.Length && (char.IsLetterOrDigit(Current) || Current == '_')) {
                 id += this.text[pos];
                 pos++;
             }
 
             pos--;
 
-            var location = new TokenLocation(start, id.Length);
+            var location = new TokenLocation(start, id.Length, line);
 
             if (keywords.TryGetValue(id, out var kind)) {
                 return new Token(kind, location, id);
@@ -150,6 +151,27 @@
             }
         }
 
+        private Token GetCharLiteral() {
+            // Advance past the first '
+            int start = pos++;
+
+            // Get the character
+            if (pos >= this.text.Length || !char.IsLetterOrDigit(Current)) {
+                throw ParsingErrors.UnexpectedCharacter(Location, Current);
+            }
+
+            int c = (int)Current;
+
+            // Advance past the second '
+            pos++;
+            if (pos >= this.text.Length || Current != '\'') {
+                throw ParsingErrors.UnexpectedCharacter(Location, Current);
+            }
+
+            return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, line), c.ToString());
+        }
+
+
         private Token GetSlashOrComment() {
             if (pos + 1 < text.Length) {
                 if (text[pos + 1] == '/') {
@@ -161,12 +183,12 @@
 
                     pos--;
 
-                    var location = new TokenLocation(start, pos - start + 1);
+                    var location = new TokenLocation(start, pos - start + 1, line);
                     return new Token(TokenKind.Whitespace, location, "");
                 }
             }
 
-            return new Token(TokenKind.Divide, location, "/");            
+            return new Token(TokenKind.Divide, Location, "/");            
         }
 
         private Token GetToken() {
@@ -174,37 +196,43 @@
                 return new Token(TokenKind.EOF, new TokenLocation(), "");
             }
 
-            if (symbols.TryGetValue(current, out var kind)) {
-                return new Token(kind, location, current.ToString());
+            if (symbols.TryGetValue(Current, out var kind)) {
+                return new Token(kind, Location, Current.ToString());
             }
 
-            
-            if (current == '=') {
+            if (Current == '=') {
                 return this.GetEqualsOrYieldsOrAssignment();
             }
-            else if (current == '<') {
+            else if (Current == '<') {
                 return this.GetLessThanOrArrowOrLessThanOrEqualTo();
             }
-            else if (current == '>') {
+            else if (Current == '>') {
                 return this.GetGreaterThanOrGreaterThanOrEqualTo();
             }
-            else if (current == '!') {
+            else if (Current == '!') {
                 return this.GetNotOrNotEqual();
-            }            
-            else if (char.IsDigit(current)) {
+            }
+            else if (Current == '\'') {
+                return this.GetCharLiteral();
+            }
+            else if (char.IsDigit(Current)) {
                 return this.GetNumber();
             }
-            else if (char.IsLetter(current)) {
+            else if (char.IsLetter(Current)) {
                 return this.GetIdentifier();
             }
-            else if (char.IsWhiteSpace(current)) {
-                return new Token(TokenKind.Whitespace, location, current.ToString());
+            else if (Current == '\n') {
+                line++;
+                return new Token(TokenKind.Whitespace, Location, Current.ToString());
             }
-            else if (current == '/') {
+            else if (char.IsWhiteSpace(Current)) {
+                return new Token(TokenKind.Whitespace, Location, Current.ToString());
+            }
+            else if (Current == '/') {
                 return this.GetSlashOrComment();
             }
             else {
-                throw ParsingErrors.UnexpectedCharacter(location, current);
+                throw ParsingErrors.UnexpectedCharacter(Location, Current);
             }
         }
 

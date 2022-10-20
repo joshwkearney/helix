@@ -73,6 +73,11 @@ contexts [] {
       }
       
       : pattern {
+         regex \= (\'[_a-zA-Z0-9]\')
+         styles [] = .char_literal;
+      }
+      
+      : pattern {
          regex \= (\/\/.*)
          styles []= .comment;
       }
@@ -88,6 +93,7 @@ styles [] {
    .function_name  : style color = "brown" textmate_scope = "variable.function";
    .variable_name  : style color = "black" textmate_scope = "variable.other";
    
+   .char_literal  : style color = "red" textmate_scope = "string.quoted.single";
    .typeName      : style color = "red" textmate_scope = "entity.name.type";
    .comment       : style color = "green" textmate_scope = "comment";
 }
