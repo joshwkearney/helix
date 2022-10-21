@@ -6,14 +6,16 @@ using Trophy.Generation;
 using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
+    public interface IStatement : ISyntaxTree {
+        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow);
+    }
+
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children { get; }
 
         public bool IsPure { get; }
-
-        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) => false;
 
         public Option<TrophyType> AsType(SyntaxFrame types) => Option.None;
 

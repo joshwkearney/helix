@@ -41,7 +41,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record LoopStatement : ISyntaxTree {
+    public record LoopStatement : ISyntaxTree, IStatement {
         private static int counter = 0;
 
         private readonly BlockSyntax body;

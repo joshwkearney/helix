@@ -66,6 +66,9 @@ namespace Trophy {
             this.isWritable = isWritable;
         }
 
+        public VarParseStatement(TokenLocation loc, string name, ISyntaxTree assign, bool isWritable)
+            : this(loc, new[] { name }, assign, isWritable) { }
+
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);

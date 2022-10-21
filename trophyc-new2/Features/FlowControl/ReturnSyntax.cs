@@ -25,7 +25,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record ReturnSyntax : ISyntaxTree {
+    public record ReturnSyntax : ISyntaxTree, IStatement {
         private readonly ISyntaxTree payload;
 
         public TokenLocation Location { get; }

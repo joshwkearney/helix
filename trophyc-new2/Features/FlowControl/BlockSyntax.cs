@@ -36,7 +36,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record BlockSyntax : ISyntaxTree {
+    public record BlockSyntax : ISyntaxTree, IStatement {
         private static int idCounter = 0;
 
         private readonly int id;
@@ -61,9 +61,13 @@ namespace Trophy.Features.FlowControl {
             this.IsPure = this.Statements.All(x => x.IsPure);
         }
 
+        public BlockSyntax(ISyntaxTree statement, bool isTypeChecked = false)
+            : this(statement.Location, new[] { statement }, isTypeChecked) { }
+
         public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
             for (int i = 0; i < this.Statements.Count; i++) {
-                if (this.Statements[i].RewriteNonlocalFlow(types, flow)) {
+                if (this.Statements[i] is IStatement stat) {
+                    stat.RewriteNonlocalFlow(types, flow);
                     continue;
                 }
 

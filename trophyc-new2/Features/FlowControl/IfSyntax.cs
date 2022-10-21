@@ -12,9 +12,8 @@ namespace Trophy.Parsing {
         private ISyntaxTree IfExpression(BlockBuilder block) {
             var start = this.Advance(TokenKind.IfKeyword);
             var cond = this.TopExpression(block);
-            var returnName = block.GetTempName();
             var loc = start.Location.Span(cond.Location);
-            var ifId = this.scope.Append(returnName);
+            var ifId = this.scope.Append(block.GetTempName());
 
             this.Advance(TokenKind.ThenKeyword);
 
@@ -51,29 +50,29 @@ namespace Trophy.Parsing {
             }
 
             return new IfAccessSyntax(loc, ifId);
+        }
 
-            (List<ISyntaxTree> StateMachineSyntax, ISyntaxTree ret) TopBlock() {
-                var builder = new BlockBuilder();
-                var expr = this.TopExpression(builder);
+        (List<ISyntaxTree> StateMachineSyntax, ISyntaxTree ret) TopBlock() {
+            var builder = new BlockBuilder();
+            var expr = this.TopExpression(builder);
 
-                if (builder.Statements.Any()) {
-                    builder.Statements.Add(expr);
+            if (builder.Statements.Any()) {
+                builder.Statements.Add(expr);
 
-                    return (builder.Statements, expr);
-                }
-                else {
-                    return (new(), expr);
-                }
+                return (builder.Statements, expr);
+            }
+            else {
+                return (new(), expr);
             }
         }
     }
 }
 
 namespace Trophy.Features.FlowControl {
-    public record IfParseSyntax : ISyntaxTree {
+    public record IfParseSyntax : ISyntaxTree, IStatement {
         private readonly IdentifierPath returnVar;
         private readonly ISyntaxTree cond;
-        private readonly ISyntaxTree iftrue, iffalse;
+        private readonly IStatement iftrue, iffalse;
 
         public TokenLocation Location { get; }
 
@@ -81,7 +80,7 @@ namespace Trophy.Features.FlowControl {
 
         public bool IsPure { get; }
 
-        public IfParseSyntax(TokenLocation location, IdentifierPath returnVar, ISyntaxTree cond, ISyntaxTree iftrue) {
+        public IfParseSyntax(TokenLocation location, IdentifierPath returnVar, ISyntaxTree cond, IStatement iftrue) {
             this.Location = location;
             this.cond = cond;
 
@@ -96,7 +95,7 @@ namespace Trophy.Features.FlowControl {
         }
 
         public IfParseSyntax(TokenLocation location, IdentifierPath returnVar, ISyntaxTree cond,
-            ISyntaxTree iftrue, ISyntaxTree iffalse) {
+            IStatement iftrue, IStatement iffalse) {
 
             this.Location = location;
             this.cond = cond;

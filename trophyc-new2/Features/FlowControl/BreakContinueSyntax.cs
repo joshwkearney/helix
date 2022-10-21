@@ -40,7 +40,7 @@ namespace Trophy.Parsing {
 }
 
 namespace Trophy.Features.FlowControl {
-    public record BreakContinueSyntax : ISyntaxTree {
+    public record BreakContinueSyntax : ISyntaxTree, IStatement {
         private bool isbreak;
 
         public TokenLocation Location { get; }

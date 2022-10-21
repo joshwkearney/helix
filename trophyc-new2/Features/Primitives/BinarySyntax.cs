@@ -12,29 +12,23 @@ namespace Trophy.Parsing {
             var first = this.XorExpression(block);
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
-                //var branching = this.TryAdvance(TokenKind.ElseKeyword);
+                var branching = this.TryAdvance(TokenKind.ElseKeyword);
                 var second = this.XorExpression(block);
                 var loc = first.Location.Span(second.Location);
 
-                //if (branching) {
-                //    var testName = block.GetTempName();
-                //    var test = new IfParseSyntax(
-                //        loc,
-                //        testName,
-                //        first,
-                //        new BlockSyntax(loc, new[] {
-                //            new BoolLiteral(loc, true)
-                //        }),
-                //        new BlockSyntax(loc, new[] {
-                //            second
-                //        }));
+                if (branching) {
+                    var ifId = this.scope.Append(block.GetTempName());
 
-                //    block.Statements.Add(test);
-                //    first = new VariableAccessParseSyntax(loc, testName);
-                //}
-                //else {
+                    var test = new IfParseSyntax(loc, ifId, first,
+                        new BlockSyntax(new SetIfBranchSyntax(loc, ifId, true, new BoolLiteral(loc, true))),
+                        new BlockSyntax(new SetIfBranchSyntax(loc, ifId, false, second)));
+
+                    block.Statements.Add(test);
+                    first = new IfAccessSyntax(loc, ifId);
+                }
+                else {
                     first = new BinarySyntax(loc, first, second, BinaryOperationKind.Or);
-                //}
+                }
             }
 
             return first;
@@ -57,29 +51,27 @@ namespace Trophy.Parsing {
             var first = this.ComparisonExpression(block);
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
-                //var branching = this.TryAdvance(TokenKind.ThenKeyword);
-                var second = this.ComparisonExpression(block);
-                var loc = first.Location.Span(second.Location);
+                var branching = this.TryAdvance(TokenKind.ThenKeyword);
+                if (branching) {
+                    var (stats, retExpr) = this.TopBlock();
+                    stats.Add(retExpr);
 
-                //if (branching) {
-                //    var testName = block.GetTempName();
-                //    var test = new IfParseSyntax(
-                //        loc,
-                //        testName,
-                //        new UnaryParseSyntax(loc, UnaryOperatorKind.Not, first),
-                //        new BlockSyntax(loc, new[] {
-                //            new BoolLiteral(loc, false)
-                //        }),
-                //        new BlockSyntax(loc, new[] {
-                //            second
-                //        }));
+                    var loc = first.Location.Span(retExpr.Location);
+                    var ifId = this.scope.Append(block.GetTempName());
 
-                //    block.Statements.Add(test);
-                //    first = new VariableAccessParseSyntax(loc, testName);
-                //}
-                //else {
+                    var test = new IfParseSyntax(loc, ifId, first,
+                        new BlockSyntax(new SetIfBranchSyntax(loc, ifId, true, new BlockSyntax(loc, stats))),
+                        new BlockSyntax(new SetIfBranchSyntax(loc, ifId, false, new BoolLiteral(loc, false))));
+
+                    block.Statements.Add(test);
+                    first = new IfAccessSyntax(loc, ifId);
+                }
+                else {
+                    var second = this.ComparisonExpression(block);
+                    var loc = first.Location.Span(second.Location);
+
                     first = new BinarySyntax(loc, first, second, BinaryOperationKind.And);
-                //}
+                }
             }
 
             return first;
