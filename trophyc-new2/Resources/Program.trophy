@@ -1,55 +1,9 @@
 ﻿extern func externalFunc(let x as int) as int;
 
-func test(let x as int[]) as int {
-	let z = other(x);
-	let a, b = put Point { 4, 5 };
-
-	//let x = cast 45 to int;	
-
-	{
-		var xx = 45;
-	};
-
-	{
-		var xx = 450;
-	};
-
-	let x = {
-		var total = 'A';
-
-		for i = 0 to 10 do {
-			total = if total > 5
-				then 1
-				else 10;
+func loops(var x as int) as int => {
+	if x > 100
+		then 50
+		else {
+			break;
 		};
-
-		total;
-	};
-
-	if x > 3 and x < 10 then 0 
-	else if x < 500 then {
-		for i = 0 to 10 do {
-			//return 5;
-		};
-
-		45;
-	}
-	else 4;
-};
-
-func other(let x as int[]) {
-	x[45] = x.count;
-};
-
-func fib(let x as int) as int {
-	if x <= 1
-		then x
-		else fib(x - 1) + fib(x - 2);
-};
-
-struct Point {
-	let x as int;
-	let y as int;
-
-	// func length(let this as Point) as int => this.x*this.x + this.y*this.y;
 };

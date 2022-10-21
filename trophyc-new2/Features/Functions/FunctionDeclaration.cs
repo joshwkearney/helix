@@ -8,6 +8,7 @@ using Trophy.Features.Functions;
 using Trophy.Features.Primitives;
 using Trophy.Parsing;
 using Trophy.Generation.Syntax;
+using Trophy.Features.Variables;
 
 namespace Trophy.Parsing {
     public partial class Parser {
@@ -63,24 +64,21 @@ namespace Trophy.Parsing {
         private IDeclaration FunctionDeclaration() {
             var block = new BlockBuilder();
             var sig = this.FunctionSignature();
-            BlockSyntax body;
 
             this.scope = this.scope.Append(sig.Name);
+            Advance(TokenKind.Yields);
 
-            if (this.TryAdvance(TokenKind.Yields)) {
-                var expr = this.TopExpression(block);
-
-                body = new BlockSyntax(expr.Location, new[] { expr });
-            }
-            else {
-                body = this.TopBlock();
-            }
+            var body = this.TopExpression(block);            
 
             this.Advance(TokenKind.Semicolon);
             this.scope = this.scope.Pop();
             block.Statements.Add(body);
 
-            return new FunctionParseDeclaration(sig.Location.Span(body.Location), sig, body);
+            return new FunctionParseDeclaration(
+                sig.Location.Span(body.Location), 
+                sig,
+                block.Statements,
+                body);
         }
     }
 }
@@ -88,14 +86,18 @@ namespace Trophy.Parsing {
 namespace Trophy.Features.Functions {
     public record FunctionParseDeclaration : IDeclaration {
         private readonly FunctionParseSignature signature;
-        private readonly ISyntaxTree body;
+        private readonly IReadOnlyList<ISyntaxTree> body;
+        private readonly ISyntaxTree retExpr;
 
         public TokenLocation Location { get; }
 
-        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntaxTree body) {
+        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, 
+            IReadOnlyList<ISyntaxTree> body, ISyntaxTree retExpr) {
+
             this.Location = loc;
             this.signature = sig;
             this.body = body;
+            this.retExpr = retExpr;
         }
 
         public void DeclareNames(SyntaxFrame types) {
@@ -117,13 +119,10 @@ namespace Trophy.Features.Functions {
         public IDeclaration CheckTypes(SyntaxFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.signature.Name);
             var sig = types.Functions[path];
-            var body = this.body;
+            var bodyExpr = this.retExpr;
 
-            // If this function returns void, wrap the body so we don't get weird type errors
             if (sig.ReturnType == PrimitiveType.Void) {
-                body = new BlockSyntax(body.Location, new ISyntaxTree[] {
-                    body, new VoidLiteral(body.Location)
-                });
+                bodyExpr = new VoidLiteral(this.Location);
             }
 
             // Set the scope for type checking the body
@@ -132,28 +131,66 @@ namespace Trophy.Features.Functions {
             // Declare parameters
             FunctionsHelper.DeclareParameters(this.Location, sig, types);
 
-            body = body
+            var flow = new FlowRewriter();
+            var rewriteBlock = new BlockSyntax(this.Location, this.body);
+
+            // Reserve a state for returns
+            int returnState = flow.NextState++;
+            flow.BreakState = returnState;
+
+            // Rewrite the flow of this function
+            rewriteBlock.RewriteNonlocalFlow(types, flow);
+
+            // Get a variable name for returns
+            var returnName = types.GetVariableName();
+            var returnPath = sig.Path.Append(returnName);
+            var returnSig = new VariableSignature(returnPath, sig.ReturnType, true);
+
+            // Add the return state
+            flow.ConstantStates.Add(returnState, new ConstantState() {
+                Expression = new VoidLiteral(this.Location),
+                NextState = flow.NextState
+            });
+
+            // Remove extra states that serve no purpose
+            flow.OptimizeStates();
+
+            // Declare our return variable
+            types.Variables[returnPath] = returnSig;
+            types.Trees[returnPath] = new DummySyntax(this.retExpr.Location);
+
+            var body = new StateMachineSyntax(this.retExpr.Location, flow)
+                .CheckTypes(types)
+                .ToRValue(types);
+
+            bodyExpr = bodyExpr
                 .CheckTypes(types)
                 .ToRValue(types)
                 .UnifyTo(sig.ReturnType, types);
 
-            return new FunctionDeclaration(this.Location, sig, body);
+            return new FunctionDeclaration(this.Location, sig, body, bodyExpr, returnPath);
         }
 
-        public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
+        public void GenerateCode(SyntaxFrame types, ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record FunctionDeclaration : IDeclaration {
-        public FunctionSignature Signature { get; }
+        private readonly IdentifierPath returnVar;
+        private readonly ISyntaxTree body;
+        private readonly ISyntaxTree retExpr;
 
-        public ISyntaxTree Body { get; }
+        public FunctionSignature Signature { get; }
 
         public TokenLocation Location { get; }
 
-        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, ISyntaxTree body) {
+        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, 
+            ISyntaxTree body, ISyntaxTree retExpr, IdentifierPath returnVar) {
+
             this.Location = loc;
             this.Signature = sig;
-            this.Body = body;
+            this.body = body;
+            this.retExpr = retExpr;
+            this.returnVar = returnVar;
         }
 
         public void DeclareNames(SyntaxFrame names) {
@@ -168,7 +205,7 @@ namespace Trophy.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public void GenerateCode(ICWriter writer) {
+        public void GenerateCode(SyntaxFrame types, ICWriter writer) {
             writer.ResetTempNames();
 
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
@@ -186,12 +223,26 @@ namespace Trophy.Features.Functions {
             var funcName = writer.GetVariableName(this.Signature.Path);
             var body = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, body);
-            var retExpr = this.Body.GenerateCode(bodyWriter);
+            var returnName = writer.GetVariableName(this.returnVar);
+
+            // Declare our return variable
+            bodyWriter.WriteStatement(new CVariableDeclaration() {
+                Name = returnName,
+                Type = writer.ConvertType(this.Signature.ReturnType)
+            });
+
+            // Generate the body
+            var retExpr = this.body.GenerateCode(types, bodyWriter);
+
+            bodyWriter.WriteStatement(new CAssignment() { 
+                Left = new CVariableLiteral(returnName),
+                Right = this.retExpr.GenerateCode(types, bodyWriter)
+            });
 
             if (this.Signature.ReturnType != PrimitiveType.Void) {
                 bodyWriter.WriteEmptyLine();
                 bodyWriter.WriteStatement(new CReturn() { 
-                    Target = retExpr
+                    Target = new CVariableLiteral(returnName)
                 });
             }
 

@@ -13,17 +13,16 @@ namespace Trophy.Parsing {
             var start = this.Advance(TokenKind.WhileKeyword);
             var cond = this.TopExpression(newBlock);
 
-            var branch = new BlockSyntax(cond.Location, new[] {
-                new BreakContinueSyntax(cond.Location, true)
-            });
-
             var test = new IfParseSyntax(
                 cond.Location,
-                block.GetTempName(),
+                this.scope.Append(block.GetTempName()),
                 new UnaryParseSyntax(cond.Location, UnaryOperatorKind.Not, cond),
-                branch);
+                new BreakContinueSyntax(cond.Location, true));
 
-            newBlock.Statements.Add(test);
+            // False loops will never run and true loops don't need a break test
+            if (cond is not Features.Primitives.BoolLiteral) {
+                newBlock.Statements.Add(test);
+            }
 
             this.Advance(TokenKind.DoKeyword);
 
@@ -42,87 +41,88 @@ namespace Trophy.Features.FlowControl {
     public record LoopStatement : ISyntaxTree {
         private static int counter = 0;
 
-        private readonly ISyntaxTree body;
+        private readonly BlockSyntax body;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.body };
 
-        public LoopStatement(TokenLocation location, 
-                             ISyntaxTree body, bool isTypeChecked = false) {
+        public bool IsPure => false;
+
+        public LoopStatement(TokenLocation location,
+                             BlockSyntax body, bool isTypeChecked = false) {
 
             this.Location = location;
             this.body = body;
             this.isTypeChecked = isTypeChecked;
         }
 
-        public void RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
+        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
+            int oldBreakState = flow.BreakState;
+            int oldContinueState = flow.ContinueState;
+
+            int loopState = flow.NextState++;
+            int breakState = flow.NextState++;
+
+            flow.ContinueState = loopState;
+            flow.BreakState = breakState;
+
+            this.body.RewriteNonlocalFlow(types, flow);
+
+            flow.ConstantStates[loopState] = new ConstantState() {
+                Expression = new VoidLiteral(this.Location),
+                NextState = breakState + 1
+            };
+
+            int end = flow.NextState++;
+            flow.ConstantStates[end] = new ConstantState() {
+                Expression = new VoidLiteral(this.Location),
+                NextState = loopState
+            };
+
+            flow.ConstantStates[breakState] = new ConstantState() {
+                Expression = new VoidLiteral(this.Location),
+                NextState = end + 1
+            };
+
+            flow.BreakState = oldBreakState;
+            flow.ContinueState = oldContinueState;
+
+            return true;
+
+            //int breakState = flow.BreakState;
             //int state = flow.NextState++;
 
-            //int nonlocalAffirm = 0;
-            //var affirmBlock = new List<ISyntaxTree>();
+            //flow.ContinueState = state;
+            //flow.BreakState = flow.NominalFlowState;
 
-            //for (; nonlocalAffirm < this.iftrue.Statements.Count; nonlocalAffirm++) {
-            //    var stat = this.iftrue.Statements[nonlocalAffirm];
+            //var newBody = (BlockSyntax)this.body.RewriteNonlocalFlow(types, flow);
 
-            //    if (stat.HasNonlocalFlow()) {
-            //        break;
-            //    }
-            //    else {
-            //        affirmBlock.Add(stat);
-            //    }
-            //}
+            //var machineState = new StateMachineBlock() {
+            //    Condition = new BoolLiteral(this.Location, true),
+            //    PositiveBlock = newBody,
+            //    NegativeBlock = new BlockSyntax(this.Location, Array.Empty<ISyntaxTree>()),
+            //    PositiveState = state + 1,
+            //    NegativeState = breakState
+            //};
 
-            //for (; nonlocalAffirm < this.iftrue.Statements.Count; nonlocalAffirm++) {
-            //    var stat = this.iftrue.Statements[nonlocalAffirm];
+            //flow.States[state] = (machineState);
 
-
-            //}
-
+            //return new VoidLiteral(this.Location);
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var wasInLoop = types.InLoop;
-            types.InLoop = true;
-
-            var body = this.body.CheckTypes(types).ToRValue(types);
-            var result = new LoopStatement(this.Location, body, true);
-
-            types.InLoop = wasInLoop;
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            return result;
+            throw new InvalidOperationException();
         }
 
         public Option<ISyntaxTree> ToRValue(SyntaxFrame types) {
-            if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
-            }
+            throw new InvalidOperationException();
 
-            return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
-            if (!this.isTypeChecked) {
-                throw new InvalidOperationException();
-            }
-
-            var loopBody = new List<ICStatement>();
-            var bodyWriter = new CStatementWriter(writer, loopBody);
-
-            this.body.GenerateCode(bodyWriter);
-
-            var loop = new CWhile() {
-                Condition = new CIntLiteral(1),
-                Body = loopBody
-            };
-
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.Location.Line}: While loop");
-            writer.WriteStatement(loop);
-            writer.WriteEmptyLine();
-
-            return new CIntLiteral(0);
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            throw new InvalidOperationException();
         }
     }
 }

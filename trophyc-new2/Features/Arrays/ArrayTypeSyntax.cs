@@ -20,6 +20,8 @@ namespace Trophy.Features.Arrays {
             get => new[] { this.inner };
         }
 
+        public bool IsPure => this.inner.IsPure;
+
         public ArrayTypeSyntax(TokenLocation loc, ISyntaxTree inner) {
             this.Location = loc;
             this.inner = inner;
@@ -34,7 +36,7 @@ namespace Trophy.Features.Arrays {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

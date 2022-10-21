@@ -42,6 +42,8 @@ namespace Trophy.Features.Arrays {
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.target, this.index };
 
+        public bool IsPure { get; }
+
         public ArrayIndexSyntax(TokenLocation loc, ISyntaxTree target, 
             ISyntaxTree index, bool isTypeChecked = false) {
 
@@ -49,6 +51,8 @@ namespace Trophy.Features.Arrays {
             this.target = target;
             this.index = index;
             this.isTypeChecked = isTypeChecked;
+
+            this.IsPure = this.target.IsPure && this.index.IsPure;
         }
 
         ISyntaxTree ISyntaxTree.ToRValue(SyntaxFrame types) {
@@ -89,10 +93,10 @@ namespace Trophy.Features.Arrays {
             return result;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CIndex() {
-                Target = this.target.GenerateCode(writer),
-                Index = this.index.GenerateCode(writer)
+                Target = this.target.GenerateCode(types, writer),
+                Index = this.index.GenerateCode(types, writer)
             };
         }
     }

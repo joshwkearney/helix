@@ -31,10 +31,14 @@ namespace Trophy.Features.Primitives {
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.arg, this.target };
 
+        public bool IsPure { get; }
+
         public AsParseTree(TokenLocation loc, ISyntaxTree arg, ISyntaxTree target) {
             this.Location = loc;
             this.arg = arg;
             this.target = target;
+
+            this.IsPure = this.target.IsPure && this.arg.IsPure;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -57,7 +61,7 @@ namespace Trophy.Features.Primitives {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

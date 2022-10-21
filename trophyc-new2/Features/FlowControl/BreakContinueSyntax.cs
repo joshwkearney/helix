@@ -5,9 +5,22 @@ using System.Text;
 using System.Threading.Tasks;
 using Trophy.Analysis;
 using Trophy.Analysis.Types;
+using Trophy.Features.FlowControl;
+using Trophy.Features.Primitives;
 using Trophy.Generation;
 using Trophy.Generation.Syntax;
 using Trophy.Parsing;
+
+namespace Trophy.Parsing {
+    public partial class Parser {
+        public ISyntaxTree BreakStatement(BlockBuilder block) {
+            var start = this.Advance(TokenKind.BreakKeyword);
+
+            block.Statements.Add(new BreakContinueSyntax(start.Location, true));
+            return new VoidLiteral(start.Location);
+        }
+    }
+}
 
 namespace Trophy.Features.FlowControl {
     public record BreakContinueSyntax : ISyntaxTree {
@@ -17,34 +30,30 @@ namespace Trophy.Features.FlowControl {
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
+        public bool IsPure => false;
+
         public BreakContinueSyntax(TokenLocation loc, bool isbreak) {
             this.Location = loc;
             this.isbreak = isbreak;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            if (!types.InLoop) {
-                var kind = this.isbreak ? "Break" : "Continue";
+        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
+            var state = flow.NextState++;
 
-                throw new TypeCheckingException(
-                    this.Location,
-                    "Invalid " + kind + " Statement",
-                    "Break and continue statements are not allowed outside of loops");
-            }
+            flow.ConstantStates[state] = new ConstantState() {
+                Expression = new VoidLiteral(this.Location),
+                NextState = flow.BreakState
+            };
 
-            types.ReturnTypes[this] = PrimitiveType.Void;
-            return this;
+            return true;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
-            if (this.isbreak) {
-                writer.WriteStatement(new CBreak());
-            }
-            else {
-                writer.WriteStatement(new CContinue());
-            }
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+            throw new InvalidOperationException();
+        }
 
-            return new CIntLiteral(0);
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            throw new InvalidOperationException();
         }
     }
 }

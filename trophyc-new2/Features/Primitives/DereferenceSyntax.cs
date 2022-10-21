@@ -13,6 +13,8 @@ namespace Trophy.Features.Primitives {
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.target };
 
+        public bool IsPure => this.target.IsPure;
+
         public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, bool isTypeChecked = false) {
             this.Location = loc;
             this.target = target;
@@ -49,9 +51,9 @@ namespace Trophy.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CPointerDereference() {
-                Target = this.target.GenerateCode(writer)
+                Target = this.target.GenerateCode(types, writer)
             };
         }
     }

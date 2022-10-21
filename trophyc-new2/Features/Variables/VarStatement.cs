@@ -57,6 +57,8 @@ namespace Trophy {
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.assign };
 
+        public bool IsPure => false;
+
         public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
             this.Location = loc;
             this.names = names;
@@ -155,7 +157,7 @@ namespace Trophy {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -167,6 +169,8 @@ namespace Trophy {
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => this.assign.ToEnumerable();
+
+        public bool IsPure => false;
 
         public VarStatement(TokenLocation loc, VariableSignature sig, ISyntaxTree assign) {
             this.Location = loc;
@@ -184,11 +188,11 @@ namespace Trophy {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var stat = new CVariableDeclaration() {
                 Type = writer.ConvertType(this.signature.Type),
                 Name = writer.GetVariableName(this.signature.Path),
-                Assignment = this.assign.Select(x => x.GenerateCode(writer))
+                Assignment = this.assign.Select(x => x.GenerateCode(types, writer))
             };
 
             writer.WriteStatement(stat);

@@ -50,6 +50,8 @@ namespace Trophy.Features.Primitives {
 
         public IEnumerable<ISyntaxTree> Children => new[] { arg };
 
+        public bool IsPure => this.arg.IsPure;
+
         public UnaryParseSyntax(TokenLocation location, UnaryOperatorKind op, ISyntaxTree arg) {
             this.Location = location;
             this.op = op;
@@ -94,7 +96,7 @@ namespace Trophy.Features.Primitives {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -106,6 +108,8 @@ namespace Trophy.Features.Primitives {
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.target };
 
+        public bool IsPure => this.target.IsPure;
+
         public UnaryNotSyntax(TokenLocation loc, ISyntaxTree target) {
             this.Location = loc;
             this.target = target;
@@ -115,9 +119,9 @@ namespace Trophy.Features.Primitives {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CNot() {
-                Target = this.target.GenerateCode(writer)
+                Target = this.target.GenerateCode(types, writer)
             };
         }
     }

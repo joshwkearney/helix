@@ -1,4 +1,5 @@
 ﻿using Trophy.Analysis;
+using Trophy.Features.FlowControl;
 
 namespace Trophy.Parsing {
     public class BlockBuilder {
@@ -175,6 +176,9 @@ namespace Trophy.Parsing {
             }
             else if (this.Peek(TokenKind.OpenBrace)) {
                 result = this.Block(block);
+            }
+            else if (this.Peek(TokenKind.BreakKeyword)) {
+                result = this.BreakStatement(block);
             }
             else {
                 result = this.AssignmentStatement(block);

@@ -17,6 +17,8 @@ namespace Trophy.Features {
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
+        public bool IsPure => true;
+
         public TypeSyntax(TokenLocation loc, TrophyType type) {
             this.Location = loc;
             this.type = type;
@@ -28,7 +30,7 @@ namespace Trophy.Features {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

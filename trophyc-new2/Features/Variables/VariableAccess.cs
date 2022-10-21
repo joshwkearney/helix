@@ -23,6 +23,8 @@ namespace Trophy {
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
+        public bool IsPure => true;
+
         public VariableAccessParseSyntax(TokenLocation location, string name) {
             this.Location = location;
             this.name = name;
@@ -91,7 +93,7 @@ namespace Trophy {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -102,6 +104,8 @@ namespace Trophy {
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+
+        public bool IsPure => true;
 
         public VariableAccessSyntax(TokenLocation loc, IdentifierPath path) {
             this.Location = loc;
@@ -124,7 +128,7 @@ namespace Trophy {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
 
             return new CVariableLiteral(name);
@@ -138,6 +142,8 @@ namespace Trophy {
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
+        public bool IsPure => true;
+
         public LValueVariableAccessSyntax(TokenLocation loc, IdentifierPath path) {
             this.Location = loc;
             this.path = path;
@@ -147,7 +153,7 @@ namespace Trophy {
 
         public ISyntaxTree ToLValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
 
             return new CAddressOf() {

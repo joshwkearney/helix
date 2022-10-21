@@ -47,6 +47,8 @@ namespace Trophy.Features.Functions {
 
         public IEnumerable<ISyntaxTree> Children => this.args.Prepend(this.target);
 
+        public bool IsPure => false;
+
         public InvokeParseTree(TokenLocation loc, ISyntaxTree target, IReadOnlyList<ISyntaxTree> args) {
             this.Location = loc;
             this.target = target;
@@ -93,7 +95,7 @@ namespace Trophy.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -105,6 +107,8 @@ namespace Trophy.Features.Functions {
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => args;
+
+        public bool IsPure => false;
 
         public InvokeSyntax(
             TokenLocation loc,
@@ -120,9 +124,9 @@ namespace Trophy.Features.Functions {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var args = this.args
-                .Select(x => x.GenerateCode(writer))
+                .Select(x => x.GenerateCode(types, writer))
                 .ToArray();
 
             var result = new CInvoke() {

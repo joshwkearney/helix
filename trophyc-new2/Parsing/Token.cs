@@ -16,7 +16,7 @@
         IntKeyword, VoidKeyword, BoolKeyword, AsKeyword, IsKeyword,
 
         IfKeyword, ThenKeyword, ElseKeyword, 
-        WhileKeyword, ForKeyword, DoKeyword, ToKeyword,
+        WhileKeyword, ForKeyword, DoKeyword, ToKeyword, BreakKeyword,
         StructKeyword, UnionKeyword, PutKeyword,
 
         TrueKeyword, FalseKeyword, AndKeyword, OrKeyword, XorKeyword,

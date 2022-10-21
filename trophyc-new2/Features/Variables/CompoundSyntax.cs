@@ -17,9 +17,13 @@ namespace Trophy.Features.Variables {
 
         public IEnumerable<ISyntaxTree> Children => args;
 
+        public bool IsPure { get; }
+
         public CompoundSyntax(TokenLocation loc, IReadOnlyList<ISyntaxTree> args) {
             this.Location = loc;
             this.args = args;
+
+            this.IsPure = args.All(x => x.IsPure);
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -33,9 +37,9 @@ namespace Trophy.Features.Variables {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             foreach (var arg in this.args) {
-                arg.GenerateCode(writer);
+                arg.GenerateCode(types, writer);
             }
 
             return new CIntLiteral(0);

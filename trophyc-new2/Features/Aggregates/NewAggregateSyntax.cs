@@ -16,6 +16,8 @@ namespace Trophy.Features.Aggregates {
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
+        public bool IsPure { get; }
+
         public NewAggregateSyntax(
             TokenLocation loc, 
             AggregateSignature sig,
@@ -27,6 +29,8 @@ namespace Trophy.Features.Aggregates {
             this.names = names;
             this.values = values;
             this.isTypeChecked = isTypeChecked;
+
+            this.IsPure = this.values.All(x => x.IsPure);
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -223,7 +227,7 @@ namespace Trophy.Features.Aggregates {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -236,7 +240,7 @@ namespace Trophy.Features.Aggregates {
             };
 
             var mems = this.values
-                .Select(x => x.GenerateCode(writer))
+                .Select(x => x.GenerateCode(types, writer))
                 .ToArray();
 
             if (!mems.Any()) {

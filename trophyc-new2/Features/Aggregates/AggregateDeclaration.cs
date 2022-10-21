@@ -142,7 +142,7 @@ namespace Trophy.Features.Aggregates {
             return this;
         }
 
-        public void GenerateCode(ICWriter writer) { }
+        public void GenerateCode(SyntaxFrame types, ICWriter writer) { }
 
         private void RealCodeGenerator(AggregateSignature signature, ICWriter writer) {
             var name = writer.GetVariableName(signature.Path);

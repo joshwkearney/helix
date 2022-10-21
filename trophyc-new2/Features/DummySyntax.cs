@@ -14,6 +14,8 @@ namespace Trophy.Features {
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
+        public bool IsPure => true;
+
         public DummySyntax(TokenLocation loc) {
             this.Location = loc;
         }
@@ -22,7 +24,7 @@ namespace Trophy.Features {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

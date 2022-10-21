@@ -24,6 +24,8 @@ namespace Trophy.Features.Primitives {
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
+        public bool IsPure => true;
+
         public BoolLiteral(TokenLocation loc, bool value) {
             this.Location = loc;
             this.Value = value;
@@ -41,7 +43,7 @@ namespace Trophy.Features.Primitives {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value ? 1 : 0);
         }
     }

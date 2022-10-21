@@ -56,7 +56,7 @@ namespace Trophy.Features.Functions {
             return new ExternFunctionDeclaration(this.Location, sig);
         }
 
-        public void GenerateCode(ICWriter writer) => throw new InvalidOperationException();
+        public void GenerateCode(SyntaxFrame types, ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record ExternFunctionDeclaration : IDeclaration {
@@ -79,7 +79,7 @@ namespace Trophy.Features.Functions {
 
         public IDeclaration CheckTypes(SyntaxFrame types) => this;
 
-        public void GenerateCode(ICWriter writer) {
+        public void GenerateCode(SyntaxFrame types, ICWriter writer) {
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
                 : writer.ConvertType(this.Signature.ReturnType);

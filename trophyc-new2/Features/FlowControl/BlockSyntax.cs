@@ -10,13 +10,6 @@ namespace Trophy.Parsing {
     public partial class Parser {
         private int blockCounter = 0;
 
-        private BlockSyntax TopBlock() {
-            var builder = new BlockBuilder();
-            var badBlock = this.Block(builder);
-
-            return new BlockSyntax(badBlock.Location, builder.Statements);
-        }
-
         private ISyntaxTree Block(BlockBuilder block) {
             var start = this.Advance(TokenKind.OpenBrace);
             var stats = new List<ISyntaxTree>();
@@ -55,6 +48,8 @@ namespace Trophy.Features.FlowControl {
 
         public IReadOnlyList<ISyntaxTree> Statements { get; }
 
+        public bool IsPure { get; }
+
         public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements,
                    bool isTypeChecked = false) {
 
@@ -62,6 +57,33 @@ namespace Trophy.Features.FlowControl {
             this.Statements = statements;
             this.id = idCounter++;
             this.isTypeChecked = isTypeChecked;
+
+            this.IsPure = this.Statements.All(x => x.IsPure);
+        }
+
+        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
+            for (int i = 0; i < this.Statements.Count; i++) {
+                if (this.Statements[i].RewriteNonlocalFlow(types, flow)) {
+                    continue;
+                }
+
+                int state = flow.NextState++;
+                var stats = new List<ISyntaxTree>();
+
+                while (i < this.Statements.Count && !this.Statements[i].HasNonlocalFlow()) {
+                    stats.Add(this.Statements[i]);
+                    i++;
+                }
+
+                i--;
+
+                flow.ConstantStates.Add(state, new ConstantState() {
+                    Expression = new BlockSyntax(this.Location, stats),
+                    NextState = flow.NextState
+                });
+            }
+
+            return true;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -85,17 +107,17 @@ namespace Trophy.Features.FlowControl {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
 
             if (this.Statements.Any()) {
                 foreach (var stat in this.Statements.SkipLast(1)) {
-                    stat.GenerateCode(writer);
+                    stat.GenerateCode(types, writer);
                 }
 
-                return this.Statements.Last().GenerateCode(writer);
+                return this.Statements.Last().GenerateCode(types, writer);
             }
             else {
                 return new CIntLiteral(0);

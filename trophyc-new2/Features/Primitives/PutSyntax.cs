@@ -71,6 +71,8 @@ namespace Trophy.Features.Primitives {
 
         public IEnumerable<ISyntaxTree> Children => this.values.Prepend(type);
 
+        public bool IsPure { get; }
+
         public PutSyntax(TokenLocation loc, ISyntaxTree type, 
             IReadOnlyList<string?> names, IReadOnlyList<ISyntaxTree> values) {
 
@@ -78,6 +80,8 @@ namespace Trophy.Features.Primitives {
             this.type = type;
             this.names = names;
             this.values = values;
+
+            this.IsPure = type.IsPure && values.All(x => x.IsPure);
         }
 
         public PutSyntax(TokenLocation loc, ISyntaxTree type) {
@@ -131,7 +135,7 @@ namespace Trophy.Features.Primitives {
                 $"The type '{type}' does not have a default value and cannot be initialized.");
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

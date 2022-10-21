@@ -28,6 +28,8 @@ namespace Trophy.Features.Aggregates {
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.target };
 
+        public bool IsPure => this.target.IsPure;
+
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
                                   string memberName, bool isTypeChecked = false) {
             this.Location = location;
@@ -91,9 +93,9 @@ namespace Trophy.Features.Aggregates {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CMemberAccess() {
-                Target = this.target.GenerateCode(writer),
+                Target = this.target.GenerateCode(types, writer),
                 MemberName = this.memberName
             };
         }

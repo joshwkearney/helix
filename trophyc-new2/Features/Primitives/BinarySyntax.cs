@@ -12,29 +12,29 @@ namespace Trophy.Parsing {
             var first = this.XorExpression(block);
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
-                var branching = this.TryAdvance(TokenKind.ElseKeyword);
+                //var branching = this.TryAdvance(TokenKind.ElseKeyword);
                 var second = this.XorExpression(block);
                 var loc = first.Location.Span(second.Location);
 
-                if (branching) {
-                    var testName = block.GetTempName();
-                    var test = new IfParseSyntax(
-                        loc,
-                        testName,
-                        first,
-                        new BlockSyntax(loc, new[] {
-                            new BoolLiteral(loc, true)
-                        }),
-                        new BlockSyntax(loc, new[] {
-                            second
-                        }));
+                //if (branching) {
+                //    var testName = block.GetTempName();
+                //    var test = new IfParseSyntax(
+                //        loc,
+                //        testName,
+                //        first,
+                //        new BlockSyntax(loc, new[] {
+                //            new BoolLiteral(loc, true)
+                //        }),
+                //        new BlockSyntax(loc, new[] {
+                //            second
+                //        }));
 
-                    block.Statements.Add(test);
-                    first = new VariableAccessParseSyntax(loc, testName);
-                }
-                else {
+                //    block.Statements.Add(test);
+                //    first = new VariableAccessParseSyntax(loc, testName);
+                //}
+                //else {
                     first = new BinarySyntax(loc, first, second, BinaryOperationKind.Or);
-                }
+                //}
             }
 
             return first;
@@ -57,29 +57,29 @@ namespace Trophy.Parsing {
             var first = this.ComparisonExpression(block);
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
-                var branching = this.TryAdvance(TokenKind.ThenKeyword);
+                //var branching = this.TryAdvance(TokenKind.ThenKeyword);
                 var second = this.ComparisonExpression(block);
                 var loc = first.Location.Span(second.Location);
 
-                if (branching) {
-                    var testName = block.GetTempName();
-                    var test = new IfParseSyntax(
-                        loc,
-                        testName,
-                        new UnaryParseSyntax(loc, UnaryOperatorKind.Not, first),
-                        new BlockSyntax(loc, new[] {
-                            new BoolLiteral(loc, false)
-                        }),
-                        new BlockSyntax(loc, new[] {
-                            second
-                        }));
+                //if (branching) {
+                //    var testName = block.GetTempName();
+                //    var test = new IfParseSyntax(
+                //        loc,
+                //        testName,
+                //        new UnaryParseSyntax(loc, UnaryOperatorKind.Not, first),
+                //        new BlockSyntax(loc, new[] {
+                //            new BoolLiteral(loc, false)
+                //        }),
+                //        new BlockSyntax(loc, new[] {
+                //            second
+                //        }));
 
-                    block.Statements.Add(test);
-                    first = new VariableAccessParseSyntax(loc, testName);
-                }
-                else {
+                //    block.Statements.Add(test);
+                //    first = new VariableAccessParseSyntax(loc, testName);
+                //}
+                //else {
                     first = new BinarySyntax(loc, first, second, BinaryOperationKind.And);
-                }
+                //}
             }
 
             return first;
@@ -207,6 +207,8 @@ namespace Trophy.Features.Primitives {
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.left, this.right };
 
+        public bool IsPure { get; }
+
         public BinarySyntax(TokenLocation loc, ISyntaxTree left, ISyntaxTree right, 
                             BinaryOperationKind op, bool isTypeChecked = false) {
             this.Location = loc;
@@ -214,6 +216,8 @@ namespace Trophy.Features.Primitives {
             this.right = right;
             this.op = op;
             this.isTypeChecked = isTypeChecked;
+
+            this.IsPure = this.left.IsPure && this.right.IsPure;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -271,10 +275,10 @@ namespace Trophy.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CBinaryExpression() {
-                Left = this.left.GenerateCode(writer),
-                Right = this.right.GenerateCode(writer),
+                Left = this.left.GenerateCode(types, writer),
+                Right = this.right.GenerateCode(types, writer),
                 Operation = this.op
             };
         }

@@ -24,6 +24,24 @@ namespace Trophy.Generation.Syntax {
         }
     }
 
+    public record CLabel : ICStatement {
+        public string? Value { get; init; } = null;
+
+        public void WriteToC(int indentLevel, StringBuilder sb) {
+            CHelper.Indent(indentLevel, sb);
+            sb.Append(this.Value).AppendLine(": ;");
+        }
+    }
+
+    public record CGoto : ICStatement {
+        public string? Value { get; init; } = null;
+
+        public void WriteToC(int indentLevel, StringBuilder sb) {
+            CHelper.Indent(indentLevel, sb);
+            sb.Append("goto ").Append(this.Value).AppendLine(";");
+        }
+    }
+
     public record CVariableDeclaration() : ICStatement {
         public Option<ICSyntax> Assignment { get; init; } = Option.None;
 

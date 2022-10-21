@@ -9,22 +9,32 @@ using Trophy.Parsing;
 namespace Trophy.Analysis {
     public delegate void DeclarationCG(ICWriter writer);
 
+    public class IfBranches {
+        public ISyntaxTree TrueBranch { get; set; }
+
+        public ISyntaxTree FalseBranch { get; set; }
+
+        public TrophyType ReturnType { get; set; }
+    }
+
     public class SyntaxFrame {
         private int tempCounter = 0;
 
+        // Frame-specific things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
 
         public IDictionary<IdentifierPath, AggregateSignature> Aggregates { get; }
 
+        public IDictionary<IdentifierPath, ISyntaxTree> Trees { get; }
+
+        // Global things
         public IDictionary<TrophyType, DeclarationCG> TypeDeclarations { get; }
 
         public IDictionary<ISyntaxTree, TrophyType> ReturnTypes { get; }
 
-        public IDictionary<IdentifierPath, ISyntaxTree> Trees { get; }
-
-        public Option<FunctionSignature> CurrentFunction { get; set; }
+        public IDictionary<IdentifierPath, IfBranches> IfBranches { get; }
 
         public bool InLoop { get; set; }
 
@@ -41,6 +51,8 @@ namespace Trophy.Analysis {
                 { new IdentifierPath("int"), new TypeSyntax(default, PrimitiveType.Int) },
                 { new IdentifierPath("bool"), new TypeSyntax(default, PrimitiveType.Bool) }
             };
+
+            this.IfBranches = new Dictionary<IdentifierPath, IfBranches>();
         }
 
         public SyntaxFrame(SyntaxFrame prev) {
@@ -53,6 +65,7 @@ namespace Trophy.Analysis {
 
             this.Trees = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.Trees);
             this.InLoop = prev.InLoop;
+            this.IfBranches = prev.IfBranches;
         }
 
         public string GetVariableName() {

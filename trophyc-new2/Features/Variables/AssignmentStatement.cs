@@ -34,6 +34,8 @@ namespace Trophy.Features.Variables {
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.target, this.assign };
 
+        public bool IsPure => false;
+
         public AssignmentStatement(TokenLocation loc, ISyntaxTree target, 
                                    ISyntaxTree assign, bool isTypeChecked = false) {
             this.Location = loc;
@@ -69,12 +71,12 @@ namespace Trophy.Features.Variables {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var stat = new CAssignment() {
                 Left = new CPointerDereference() {
-                    Target = this.target.GenerateCode(writer)
+                    Target = this.target.GenerateCode(types, writer)
                 },
-                Right = this.assign.GenerateCode(writer)
+                Right = this.assign.GenerateCode(types, writer)
             };
 
             writer.WriteStatement(stat);

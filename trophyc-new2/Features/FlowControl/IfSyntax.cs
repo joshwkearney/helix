@@ -14,27 +14,28 @@ namespace Trophy.Parsing {
             var cond = this.TopExpression(block);
             var returnName = block.GetTempName();
             var loc = start.Location.Span(cond.Location);
+            var ifId = this.scope.Append(returnName);
 
             this.Advance(TokenKind.ThenKeyword);
 
-            var affirmBlock = new BlockBuilder();
-            var affirm = this.TopExpression(affirmBlock);
+            var (affirmStats, affirm) = TopBlock();
+            var affirmAssign = new SetIfBranchSyntax(affirm.Location, ifId, true, affirm);
 
-            affirmBlock.Statements.Add(affirm);
+            affirmStats.Add(affirmAssign);
 
             if (this.TryAdvance(TokenKind.ElseKeyword)) {
-                var negBlock = new BlockBuilder();
-                var neg = this.TopExpression(negBlock);
+                var (negStats, neg) = TopBlock();
+                var negAssign = new SetIfBranchSyntax(affirm.Location, ifId, false, neg);
 
-                negBlock.Statements.Add(neg);
+                negStats.Add(negAssign);
                 loc = start.Location.Span(neg.Location);
 
                 var expr = new IfParseSyntax(
                     loc,
-                    returnName,
+                    ifId,
                     cond,
-                    new BlockSyntax(loc, affirmBlock.Statements),
-                    new BlockSyntax(loc, negBlock.Statements));
+                    new BlockSyntax(affirm.Location, affirmStats),
+                    new BlockSyntax(neg.Location, negStats));
 
                 block.Statements.Add(expr);
             }
@@ -42,29 +43,45 @@ namespace Trophy.Parsing {
                 loc = start.Location.Span(affirm.Location);
                 var expr = new IfParseSyntax(
                     loc,
-                    returnName,
+                    ifId,
                     cond,
-                    new BlockSyntax(loc, affirmBlock.Statements));
+                    new BlockSyntax(affirm.Location, affirmStats));
 
                 block.Statements.Add(expr);
             }
 
-            return new VariableAccessParseSyntax(loc, returnName);
+            return new IfAccessSyntax(loc, ifId);
+
+            (List<ISyntaxTree> StateMachineSyntax, ISyntaxTree ret) TopBlock() {
+                var builder = new BlockBuilder();
+                var expr = this.TopExpression(builder);
+
+                if (builder.Statements.Any()) {
+                    builder.Statements.Add(expr);
+
+                    return (builder.Statements, expr);
+                }
+                else {
+                    return (new(), expr);
+                }
+            }
         }
     }
 }
 
 namespace Trophy.Features.FlowControl {
     public record IfParseSyntax : ISyntaxTree {
-        private readonly string returnVar;
+        private readonly IdentifierPath returnVar;
         private readonly ISyntaxTree cond;
-        private readonly BlockSyntax iftrue, iffalse;
+        private readonly ISyntaxTree iftrue, iffalse;
 
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
 
-        public IfParseSyntax(TokenLocation location, string returnVar, ISyntaxTree cond, BlockSyntax iftrue) {
+        public bool IsPure { get; }
+
+        public IfParseSyntax(TokenLocation location, IdentifierPath returnVar, ISyntaxTree cond, ISyntaxTree iftrue) {
             this.Location = location;
             this.cond = cond;
 
@@ -74,71 +91,74 @@ namespace Trophy.Features.FlowControl {
 
             this.iffalse = new BlockSyntax(this.Location, Array.Empty<ISyntaxTree>());
             this.returnVar = returnVar;
+
+            this.IsPure = this.cond.IsPure && this.iftrue.IsPure && this.iffalse.IsPure;
         }
 
-        public IfParseSyntax(TokenLocation location, string returnVar, ISyntaxTree cond,
-            BlockSyntax iftrue, BlockSyntax iffalse) {
+        public IfParseSyntax(TokenLocation location, IdentifierPath returnVar, ISyntaxTree cond,
+            ISyntaxTree iftrue, ISyntaxTree iffalse) {
 
             this.Location = location;
             this.cond = cond;
             this.iftrue = iftrue;
             this.iffalse = iffalse;
             this.returnVar = returnVar;
+
+            this.IsPure = this.cond.IsPure && this.iftrue.IsPure && this.iffalse.IsPure;
         }
 
-        public void RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
-            int state = flow.NextState++;
+        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
+            int ifState = flow.NextState++;
 
-            int nonlocalAffirm = 0;
-            var affirmBlock = new List<ISyntaxTree>();
+            this.iftrue.RewriteNonlocalFlow(types, flow);
+            int afterTrueState = flow.NextState++;
 
-            for(; nonlocalAffirm < this.iftrue.Statements.Count; nonlocalAffirm++) {
-                var stat = this.iftrue.Statements[nonlocalAffirm];
+            this.iffalse.RewriteNonlocalFlow(types, flow);
+            int afterFalseState = flow.NextState++;
 
-                if (stat.HasNonlocalFlow()) {
-                    break;
-                }
-                else {
-                    affirmBlock.Add(stat);
-                }
-            }
+            flow.ConditionalStates[ifState] = new ConditionalState(
+                this.cond,
+                this.returnVar,
+                ifState + 1,
+                afterTrueState + 1
+            );
 
-            for (; nonlocalAffirm < this.iftrue.Statements.Count; nonlocalAffirm++) {
-                var stat = this.iftrue.Statements[nonlocalAffirm];
+            flow.ConstantStates[afterTrueState] = new ConstantState() {
+                Expression = new VoidLiteral(this.Location),
+                NextState = flow.NextState
+            };
 
+            flow.ConstantStates[afterFalseState] = new ConstantState() {
+                Expression = new VoidLiteral(this.Location),
+                NextState = flow.NextState
+            };
 
-            }
-
-         //   var iftrue = this.iftrue.RewriteNonlocalFlow(types, flow);
-          //  var iffalse = this.iffalse.RewriteNonlocalFlow(types, flow);
-
-            
-
-           // return new 
+            return true;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
-            var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
-            var iffalse = this.iffalse.CheckTypes(types).ToRValue(types);
+            //var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
+            //var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
+            //var iffalse = this.iffalse.CheckTypes(types).ToRValue(types);
 
-            iftrue = iftrue.UnifyFrom(iffalse, types);
-            iffalse = iffalse.UnifyFrom(iftrue, types);
+            //iftrue = iftrue.UnifyFrom(iffalse, types);
+            //iffalse = iffalse.UnifyFrom(iftrue, types);
 
-            // Declare a variable for this if's return value. The parser will take care of 
-            // giving the variable access to other syntax trees
-            var sig = new VariableSignature(
-                this.Location.Scope.Append(this.returnVar),
-                types.ReturnTypes[iftrue],
-                true);
+            //// Declare a variable for this if's return value. The parser will take care of 
+            //// giving the variable access to other syntax trees
+            //var sig = new VariableSignature(
+            //    this.Location.Scope.Append(this.returnVar),
+            //    types.ReturnTypes[iftrue],
+            //    true);
 
-            types.Variables[sig.Path] = sig;
-            types.Trees[sig.Path] = new DummySyntax(this.Location);
+            //types.Variables[sig.Path] = sig;
+            //types.Trees[sig.Path] = new DummySyntax(this.Location);
 
-            var result = new IfSyntax(this.Location, cond, iftrue, iffalse, sig);
+            //var result = new IfSyntax(this.Location, cond, iftrue, iffalse, sig);
 
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            return result;
+            //types.ReturnTypes[result] = PrimitiveType.Void;
+            //return result;
+            throw new InvalidOperationException();
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
@@ -149,80 +169,127 @@ namespace Trophy.Features.FlowControl {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
 
-    public record IfSyntax : ISyntaxTree {
-        private readonly VariableSignature returnSig;
-        private readonly ISyntaxTree cond, iftrue, iffalse;
+    public record SetIfBranchSyntax : ISyntaxTree {
+        private readonly IdentifierPath ifId;
+        private readonly ISyntaxTree value;
+        private readonly bool branch;
+        private readonly bool isTypeChecked = false;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
+        public IEnumerable<ISyntaxTree> Children => new[] { this.value };
 
-        public IfSyntax(TokenLocation loc, ISyntaxTree cond,
-                        ISyntaxTree iftrue,
-                        ISyntaxTree iffalse, VariableSignature returnSig) {
+        public bool IsPure => false;
 
+        public SetIfBranchSyntax(TokenLocation loc, IdentifierPath ifId, bool branch, 
+            ISyntaxTree value, bool isTypeChecked = false) {
             this.Location = loc;
-            this.cond = cond;
-            this.iftrue = iftrue;
-            this.iffalse = iffalse;
-            this.returnSig = returnSig;
+            this.ifId = ifId;
+            this.branch = branch;
+            this.value = value;
+            this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
-
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
-
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
-            var affirmList = new List<ICStatement>();
-            var negList = new List<ICStatement>();
-
-            var affirmWriter = new CStatementWriter(writer, affirmList);
-            var negWriter = new CStatementWriter(writer, negList);
-
-            var affirm = this.iftrue.GenerateCode(affirmWriter);
-            var neg = this.iffalse.GenerateCode(negWriter);
-
-            var tempName = writer.GetVariableName(this.returnSig.Path);
-
-            if (this.returnSig.Type != PrimitiveType.Void) {
-                affirmWriter.WriteStatement(new CAssignment() {
-                    Left = new CVariableLiteral(tempName),
-                    Right = affirm
-                });
-
-                negWriter.WriteStatement(new CAssignment() {
-                    Left = new CVariableLiteral(tempName),
-                    Right = neg
-                });
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
             }
 
-            var expr = new CIf() {
-                Condition = this.cond.GenerateCode(writer),
-                IfTrue = affirmList,
-                IfFalse = negList
-            };
+            return this;
+        }
 
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.cond.Location.Line}: If statement");
-
-            if (this.returnSig.Type != PrimitiveType.Void) {
-                var stat = new CVariableDeclaration() {
-                    Type = writer.ConvertType(this.returnSig.Type),
-                    Name = tempName
-                };
-
-                writer.WriteStatement(stat);
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+            if (this.isTypeChecked) {
+                return this;
             }
 
-            writer.WriteStatement(expr);
-            writer.WriteEmptyLine();
+            var value = this.value.CheckTypes(types).ToRValue(types);
+
+            if (this.branch) {
+                types.IfBranches[this.ifId].TrueBranch = value;
+            }
+            else {
+                types.IfBranches[this.ifId].FalseBranch = value;
+            }
+
+            var result = new SetIfBranchSyntax(this.Location, this.ifId, this.branch, null, true);
+            types.ReturnTypes[result] = PrimitiveType.Void;
+
+            return result;
+        }
+
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            if (!this.isTypeChecked) {
+                throw new InvalidOperationException();
+            }
+
+            var assign = this.branch
+                ? types.IfBranches[this.ifId].TrueBranch
+                : types.IfBranches[this.ifId].FalseBranch;
+
+            writer.WriteStatement(new CAssignment() {
+                Left = new CVariableLiteral(writer.GetVariableName(this.ifId)),
+                Right = assign.GenerateCode(types, writer)
+            });
 
             return new CIntLiteral(0);
+        }
+    }
+
+    public record IfAccessSyntax : ISyntaxTree {
+        private readonly IdentifierPath ifid;
+        private readonly bool isTypeChecked;
+
+        public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => Array.Empty<ISyntaxTree>();
+
+        public bool IsPure => true;
+
+        public IfAccessSyntax(TokenLocation loc, IdentifierPath ifid, bool isTypeChecked = false) {
+            this.Location = loc;
+            this.ifid = ifid;
+            this.isTypeChecked = isTypeChecked;
+        }
+
+        public ISyntaxTree ToRValue(SyntaxFrame types) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
+
+            return this;
+        }
+
+        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+            if (this.isTypeChecked) {
+                return this;
+            }
+
+            if (types.IfBranches[this.ifid].ReturnType == null) {
+                var branch1 = types.IfBranches[this.ifid].TrueBranch;
+                var branch2 = types.IfBranches[this.ifid].FalseBranch;
+
+                branch1 = branch1.UnifyFrom(branch2, types);
+                branch2 = branch2.UnifyFrom(branch1, types);
+
+                types.IfBranches[this.ifid].TrueBranch = branch1;
+                types.IfBranches[this.ifid].FalseBranch = branch2;
+                types.IfBranches[this.ifid].ReturnType = types.ReturnTypes[branch1];
+            }
+
+            var result = new IfAccessSyntax(this.Location, this.ifid, true);
+
+            types.ReturnTypes[result] = types.IfBranches[this.ifid].ReturnType;
+            return result;
+        }
+
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            return new CVariableLiteral(writer.GetVariableName(this.ifid));
         }
     }
 }

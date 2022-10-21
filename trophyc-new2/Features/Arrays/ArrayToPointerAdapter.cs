@@ -28,15 +28,21 @@ namespace Trophy.Features.Arrays {
             }
         }
 
+        public bool IsPure { get; }
+
         public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target, ISyntaxTree offset) {
             this.arrayType = arrayType;
             this.target = target;
             this.offset = offset;
+
+            this.IsPure = target.IsPure && offset.IsPure;
         }
 
         public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target) {
             this.arrayType = arrayType;
             this.target = target;
+
+            this.IsPure = target.IsPure;
         }
 
         ISyntaxTree ISyntaxTree.ToRValue(SyntaxFrame types) => this;
@@ -49,16 +55,16 @@ namespace Trophy.Features.Arrays {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             ICSyntax result = new CMemberAccess() {
-                Target = this.target.GenerateCode(writer),
+                Target = this.target.GenerateCode(types, writer),
                 MemberName = "data"
             };
 
             if (this.offset != null) {
                 result = new CBinaryExpression() {
                     Left = result,
-                    Right = this.offset.GenerateCode(writer),
+                    Right = this.offset.GenerateCode(types, writer),
                     Operation = BinaryOperationKind.Add
                 };
             }

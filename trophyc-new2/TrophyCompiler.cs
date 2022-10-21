@@ -40,7 +40,7 @@ namespace Trophy {
                 var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
 
                 foreach (var stat in stats) {
-                    stat.GenerateCode(writer);
+                    stat.GenerateCode(types, writer);
                 }
 
                 return writer.ToString();

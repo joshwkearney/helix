@@ -31,7 +31,7 @@ namespace Trophy.Parsing {
                 endIndex,
                 new VariableAccessParseSyntax(endIndex.Location, "int"));
 
-            var counterName = block.GetTempName();
+            var counterName = id.Value;
             var counterDecl = new VarParseStatement(startTok.Location, new[] { counterName }, startIndex, true);
             var counterAccess = new VariableAccessParseSyntax(startTok.Location, counterName);
 
@@ -49,21 +49,19 @@ namespace Trophy.Parsing {
             var newBlock = new BlockBuilder();
             var loc = startTok.Location.Span(doLoc);
 
-            var iteratorDecl = new VarParseStatement(startTok.Location, new[] { id.Value }, counterAccess, true);
+            //var iteratorDecl = new VarParseStatement(startTok.Location, new[] { id.Value }, counterAccess, true);
 
             var test = new IfParseSyntax(
                 loc,
-                block.GetTempName(),
+                this.scope.Append(block.GetTempName()),
                 new BinarySyntax(
                     loc,
                     counterAccess,
                     endIndex,
                     BinaryOperationKind.GreaterThanOrEqualTo),
-                new BlockSyntax(loc, new[] {
-                    new BreakContinueSyntax(loc, true)
-                }));
+                new BreakContinueSyntax(loc, true));
 
-            newBlock.Statements.Add(iteratorDecl);
+            //newBlock.Statements.Add(iteratorDecl);
             newBlock.Statements.Add(test);
 
             var body = this.TopExpression(newBlock);
