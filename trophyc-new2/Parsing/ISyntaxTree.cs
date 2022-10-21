@@ -1,13 +1,44 @@
 ﻿using Trophy.Analysis;
 using Trophy.Analysis.Types;
+using Trophy.Features.FlowControl;
 using Trophy.Generation;
 using Trophy.Generation.Syntax;
 
 namespace Trophy.Parsing {
+    public class StateMachineBlock {
+        public ISyntaxTree Condition { get; init; }
+
+        public BlockSyntax PositiveBlock { get; init; }
+
+        public BlockSyntax NegativeBlock { get; init; }
+
+        public int PositiveState { get; init; }
+
+        public int NegativeState { get; init; }
+    }
+
+    public class StateMachine {
+
+    }
+
+    public class FlowRewriter {
+        public List<StateMachineBlock> States { get; } = new();
+
+        public int BreakState { get; set; } = 0;
+
+        public int ContinueState { get; set; } = 0;
+
+        public int ReturnState { get; set; } = 0;
+
+        public int NextState { get; set; } = 0;
+    }
+
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children { get; }
+
+        public void RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) { }
 
         public Option<TrophyType> AsType(SyntaxFrame types) => Option.None;
 
@@ -25,17 +56,27 @@ namespace Trophy.Parsing {
 
         // Mixins
         public IEnumerable<ISyntaxTree> GetAllChildren() {
-            var stack = new Stack<ISyntaxTree>(this.Children);
+            var stack = new Queue<ISyntaxTree>(this.Children);
 
             while (stack.Count > 0) {
-                var item = stack.Pop();
+                var item = stack.Dequeue();
 
                 foreach (var child in item.Children) {
-                    stack.Push(child);
+                    stack.Enqueue(child);
                 }
 
                 yield return item;
             }
+        }
+
+        public bool HasNonlocalFlow() {
+            foreach (var child in this.GetAllChildren()) {
+                if (child is BreakContinueSyntax) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 

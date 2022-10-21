@@ -10,6 +10,13 @@ namespace Trophy.Parsing {
     public partial class Parser {
         private int blockCounter = 0;
 
+        private BlockSyntax TopBlock() {
+            var builder = new BlockBuilder();
+            var badBlock = this.Block(builder);
+
+            return new BlockSyntax(badBlock.Location, builder.Statements);
+        }
+
         private ISyntaxTree Block(BlockBuilder block) {
             var start = this.Advance(TokenKind.OpenBrace);
             var stats = new List<ISyntaxTree>();
@@ -39,24 +46,26 @@ namespace Trophy.Features.FlowControl {
     public record BlockSyntax : ISyntaxTree {
         private static int idCounter = 0;
 
-        private readonly IReadOnlyList<ISyntaxTree> statements;
         private readonly int id;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => this.statements;
+        public IEnumerable<ISyntaxTree> Children => this.Statements;
+
+        public IReadOnlyList<ISyntaxTree> Statements { get; }
 
         public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements,
                    bool isTypeChecked = false) {
+
             this.Location = location;
-            this.statements = statements;
+            this.Statements = statements;
             this.id = idCounter++;
             this.isTypeChecked = isTypeChecked;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var stats = this.statements.Select(x => x.CheckTypes(types)).ToArray();
+            var stats = this.Statements.Select(x => x.CheckTypes(types)).ToArray();
             var result = new BlockSyntax(this.Location, stats, true);
             var returnType = stats
                 .LastOrNone()
@@ -81,12 +90,12 @@ namespace Trophy.Features.FlowControl {
                 throw new InvalidOperationException();
             }
 
-            if (this.statements.Any()) {
-                foreach (var stat in this.statements.SkipLast(1)) {
+            if (this.Statements.Any()) {
+                foreach (var stat in this.Statements.SkipLast(1)) {
                     stat.GenerateCode(writer);
                 }
 
-                return this.statements.Last().GenerateCode(writer);
+                return this.Statements.Last().GenerateCode(writer);
             }
             else {
                 return new CIntLiteral(0);

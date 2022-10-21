@@ -59,7 +59,9 @@ namespace Trophy.Parsing {
                     counterAccess,
                     endIndex,
                     BinaryOperationKind.GreaterThanOrEqualTo),
-                new BreakContinueSyntax(loc, true));
+                new BlockSyntax(loc, new[] {
+                    new BreakContinueSyntax(loc, true)
+                }));
 
             newBlock.Statements.Add(iteratorDecl);
             newBlock.Statements.Add(test);

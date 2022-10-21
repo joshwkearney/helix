@@ -22,9 +22,14 @@ namespace Trophy.Parsing {
                         loc,
                         testName,
                         first,
-                        new BoolLiteral(loc, true),
-                        second);
+                        new BlockSyntax(loc, new[] {
+                            new BoolLiteral(loc, true)
+                        }),
+                        new BlockSyntax(loc, new[] {
+                            second
+                        }));
 
+                    block.Statements.Add(test);
                     first = new VariableAccessParseSyntax(loc, testName);
                 }
                 else {
@@ -62,8 +67,12 @@ namespace Trophy.Parsing {
                         loc,
                         testName,
                         new UnaryParseSyntax(loc, UnaryOperatorKind.Not, first),
-                        new BoolLiteral(loc, false),
-                        second);
+                        new BlockSyntax(loc, new[] {
+                            new BoolLiteral(loc, false)
+                        }),
+                        new BlockSyntax(loc, new[] {
+                            second
+                        }));
 
                     block.Statements.Add(test);
                     first = new VariableAccessParseSyntax(loc, testName);

@@ -118,9 +118,6 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.IntLiteral)) {
                 return this.IntLiteral();
             }
-            else if (this.Peek(TokenKind.OpenBrace)) {
-                return this.Block(block);
-            }
             else if (this.Peek(TokenKind.VoidKeyword)) {
                 return this.VoidLiteral();
             }
@@ -135,6 +132,9 @@ namespace Trophy.Parsing {
             }     
             else if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.LetKeyword)) {
                 return this.VarExpression(block);
+            }
+            else if (this.Peek(TokenKind.OpenBrace)) {
+                return this.Block(block);
             }
             else if (this.Peek(TokenKind.IntKeyword)) {
                 var tok = this.Advance(TokenKind.IntKeyword);
@@ -172,6 +172,9 @@ namespace Trophy.Parsing {
             }
             else if (this.Peek(TokenKind.ForKeyword)) {
                 result = this.ForStatement(block);
+            }
+            else if (this.Peek(TokenKind.OpenBrace)) {
+                result = this.Block(block);
             }
             else {
                 result = this.AssignmentStatement(block);

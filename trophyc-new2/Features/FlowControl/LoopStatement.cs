@@ -13,11 +13,15 @@ namespace Trophy.Parsing {
             var start = this.Advance(TokenKind.WhileKeyword);
             var cond = this.TopExpression(newBlock);
 
+            var branch = new BlockSyntax(cond.Location, new[] {
+                new BreakContinueSyntax(cond.Location, true)
+            });
+
             var test = new IfParseSyntax(
                 cond.Location,
                 block.GetTempName(),
                 new UnaryParseSyntax(cond.Location, UnaryOperatorKind.Not, cond),
-                new BreakContinueSyntax(cond.Location, true));
+                branch);
 
             newBlock.Statements.Add(test);
 
@@ -51,6 +55,31 @@ namespace Trophy.Features.FlowControl {
             this.Location = location;
             this.body = body;
             this.isTypeChecked = isTypeChecked;
+        }
+
+        public void RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
+            //int state = flow.NextState++;
+
+            //int nonlocalAffirm = 0;
+            //var affirmBlock = new List<ISyntaxTree>();
+
+            //for (; nonlocalAffirm < this.iftrue.Statements.Count; nonlocalAffirm++) {
+            //    var stat = this.iftrue.Statements[nonlocalAffirm];
+
+            //    if (stat.HasNonlocalFlow()) {
+            //        break;
+            //    }
+            //    else {
+            //        affirmBlock.Add(stat);
+            //    }
+            //}
+
+            //for (; nonlocalAffirm < this.iftrue.Statements.Count; nonlocalAffirm++) {
+            //    var stat = this.iftrue.Statements[nonlocalAffirm];
+
+
+            //}
+
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {

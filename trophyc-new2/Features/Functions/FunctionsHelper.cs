@@ -34,7 +34,7 @@ namespace Trophy.Features.Functions {
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
                 var type = sig.Parameters[i].Type;
-                var path = loc.Scope.Append(parsePar.Name);
+                var path = sig.Path.Append(parsePar.Name);
 
                 if (parsePar.IsWritable) {
                     type = type.ToMutableType();

@@ -1,6 +1,6 @@
 ﻿extern func externalFunc(let x as int) as int;
 
-func test(let x as int[]) as int  => {
+func test(let x as int[]) as int {
 	let z = other(x);
 	let a, b = put Point { 4, 5 };
 
@@ -26,23 +26,22 @@ func test(let x as int[]) as int  => {
 		total;
 	};
 
-	if x > 3 and x < 10
-		then 0 
-		else if x < 500 then {
-			for i = 0 to 10 do {
-				//return 5;
-			};
+	if x > 3 and x < 10 then 0 
+	else if x < 500 then {
+		for i = 0 to 10 do {
+			//return 5;
+		};
 
-			45;
-		}
-		else 4;
+		45;
+	}
+	else 4;
 };
 
-func other(let x as int[]) => {
+func other(let x as int[]) {
 	x[45] = x.count;
 };
 
-func fib(let x as int) as int => {
+func fib(let x as int) as int {
 	if x <= 1
 		then x
 		else fib(x - 1) + fib(x - 2);

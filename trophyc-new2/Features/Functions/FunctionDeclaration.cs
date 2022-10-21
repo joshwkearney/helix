@@ -16,6 +16,7 @@ namespace Trophy.Parsing {
             var funcName = this.Advance(TokenKind.Identifier).Value;
 
             this.Advance(TokenKind.OpenParenthesis);
+            this.scope = this.scope.Append(funcName);
 
             var pars = ImmutableList<ParseFunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
@@ -44,6 +45,8 @@ namespace Trophy.Parsing {
                 pars = pars.Add(new ParseFunctionParameter(parLoc, parName, parType, isWritable));
             }
 
+            this.scope = this.scope.Pop();
+
             var end = this.Advance(TokenKind.CloseParenthesis);
             var returnType = new VoidLiteral(end.Location) as ISyntaxTree;
 
@@ -60,20 +63,24 @@ namespace Trophy.Parsing {
         private IDeclaration FunctionDeclaration() {
             var block = new BlockBuilder();
             var sig = this.FunctionSignature();
-            var end = this.Advance(TokenKind.Yields);
+            BlockSyntax body;
 
             this.scope = this.scope.Append(sig.Name);
-            var body = this.TopExpression(block);
-            this.scope = this.scope.Pop();
 
-            var loc = sig.Location.Span(end.Location);
+            if (this.TryAdvance(TokenKind.Yields)) {
+                var expr = this.TopExpression(block);
 
-            block.Statements.Add(body);
-            body = new BlockSyntax(loc, block.Statements);
+                body = new BlockSyntax(expr.Location, new[] { expr });
+            }
+            else {
+                body = this.TopBlock();
+            }
 
             this.Advance(TokenKind.Semicolon);
+            this.scope = this.scope.Pop();
+            block.Statements.Add(body);
 
-            return new FunctionParseDeclaration(loc, sig, body);
+            return new FunctionParseDeclaration(sig.Location.Span(body.Location), sig, body);
         }
     }
 }

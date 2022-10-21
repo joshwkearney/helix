@@ -37,6 +37,7 @@ namespace Trophy.Parsing {
             }
 
             var assign = this.TopExpression(block);
+
             var loc = startLok.Span(assign.Location);
             var result = new VarParseStatement(loc, names, assign, isWritable);
 

@@ -16,6 +16,7 @@ namespace Trophy.Parsing {
             var loc = start.Location.Span(cond.Location);
 
             this.Advance(TokenKind.ThenKeyword);
+
             var affirmBlock = new BlockBuilder();
             var affirm = this.TopExpression(affirmBlock);
 
@@ -55,14 +56,15 @@ namespace Trophy.Parsing {
 
 namespace Trophy.Features.FlowControl {
     public record IfParseSyntax : ISyntaxTree {
-        private readonly string returnVarName;
-        private readonly ISyntaxTree cond, iftrue, iffalse;
+        private readonly string returnVar;
+        private readonly ISyntaxTree cond;
+        private readonly BlockSyntax iftrue, iffalse;
 
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
 
-        public IfParseSyntax(TokenLocation location, string returnVar, ISyntaxTree cond, ISyntaxTree iftrue) {
+        public IfParseSyntax(TokenLocation location, string returnVar, ISyntaxTree cond, BlockSyntax iftrue) {
             this.Location = location;
             this.cond = cond;
 
@@ -70,18 +72,49 @@ namespace Trophy.Features.FlowControl {
                 iftrue, new VoidLiteral(iftrue.Location)
             });
 
-            this.iffalse = new VoidLiteral(location);
-            this.returnVarName = returnVar;
+            this.iffalse = new BlockSyntax(this.Location, Array.Empty<ISyntaxTree>());
+            this.returnVar = returnVar;
         }
 
-        public IfParseSyntax(TokenLocation location, string returnVar, ISyntaxTree cond, 
-            ISyntaxTree iftrue, ISyntaxTree iffalse) {
+        public IfParseSyntax(TokenLocation location, string returnVar, ISyntaxTree cond,
+            BlockSyntax iftrue, BlockSyntax iffalse) {
 
             this.Location = location;
             this.cond = cond;
             this.iftrue = iftrue;
             this.iffalse = iffalse;
-            this.returnVarName = returnVar;
+            this.returnVar = returnVar;
+        }
+
+        public void RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
+            int state = flow.NextState++;
+
+            int nonlocalAffirm = 0;
+            var affirmBlock = new List<ISyntaxTree>();
+
+            for(; nonlocalAffirm < this.iftrue.Statements.Count; nonlocalAffirm++) {
+                var stat = this.iftrue.Statements[nonlocalAffirm];
+
+                if (stat.HasNonlocalFlow()) {
+                    break;
+                }
+                else {
+                    affirmBlock.Add(stat);
+                }
+            }
+
+            for (; nonlocalAffirm < this.iftrue.Statements.Count; nonlocalAffirm++) {
+                var stat = this.iftrue.Statements[nonlocalAffirm];
+
+
+            }
+
+         //   var iftrue = this.iftrue.RewriteNonlocalFlow(types, flow);
+          //  var iffalse = this.iffalse.RewriteNonlocalFlow(types, flow);
+
+            
+
+           // return new 
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -95,7 +128,7 @@ namespace Trophy.Features.FlowControl {
             // Declare a variable for this if's return value. The parser will take care of 
             // giving the variable access to other syntax trees
             var sig = new VariableSignature(
-                this.Location.Scope.Append(this.returnVarName),
+                this.Location.Scope.Append(this.returnVar),
                 types.ReturnTypes[iftrue],
                 true);
 
