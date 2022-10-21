@@ -15,7 +15,8 @@ namespace Trophy.Parsing {
             { "struct", TokenKind.StructKeyword }, { "union", TokenKind.UnionKeyword },
             { "and", TokenKind.AndKeyword }, { "or", TokenKind.OrKeyword },
             { "xor", TokenKind.XorKeyword }, { "put", TokenKind.PutKeyword },
-            { "break", TokenKind.BreakKeyword }
+            { "break", TokenKind.BreakKeyword }, { "continue", TokenKind.ContinueKeyword },
+            { "return", TokenKind.ReturnKeyword }
         };
 
         private static readonly Dictionary<char, TokenKind> symbols = new() {

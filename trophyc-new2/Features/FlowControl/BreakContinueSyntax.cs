@@ -14,9 +14,26 @@ using Trophy.Parsing;
 namespace Trophy.Parsing {
     public partial class Parser {
         public ISyntaxTree BreakStatement(BlockBuilder block) {
-            var start = this.Advance(TokenKind.BreakKeyword);
+            Token start;
+            bool isBreak;
 
-            block.Statements.Add(new BreakContinueSyntax(start.Location, true));
+            if (this.Peek(TokenKind.BreakKeyword)) {
+                start = this.Advance(TokenKind.BreakKeyword);
+                isBreak = true;
+            }
+            else {
+                start = this.Advance(TokenKind.ContinueKeyword);
+                isBreak = false;
+            }
+
+            if (!this.isInLoop.Peek()) {
+                throw new ParseException(
+                    start.Location, 
+                    "Invalid Statement", 
+                    "Break and continue statements must only appear inside of loops");
+            }
+
+            block.Statements.Add(new BreakContinueSyntax(start.Location, isBreak));
             return new VoidLiteral(start.Location);
         }
     }
@@ -42,7 +59,7 @@ namespace Trophy.Features.FlowControl {
 
             flow.ConstantStates[state] = new ConstantState() {
                 Expression = new VoidLiteral(this.Location),
-                NextState = flow.BreakState
+                NextState = this.isbreak ? flow.BreakState : flow.ContinueState
             };
 
             return true;

@@ -26,7 +26,10 @@ namespace Trophy.Parsing {
 
             this.Advance(TokenKind.DoKeyword);
 
+            this.isInLoop.Push(true);
             var body = this.TopExpression(newBlock);
+            this.isInLoop.Pop();
+
             var loc = start.Location.Span(body.Location);
             var loop = new LoopStatement(loc, new BlockSyntax(loc, newBlock.Statements));
 
@@ -68,19 +71,24 @@ namespace Trophy.Features.FlowControl {
             flow.ContinueState = loopState;
             flow.BreakState = breakState;
 
-            this.body.RewriteNonlocalFlow(types, flow);
-
+            // The main loop state should just jump to the next state
             flow.ConstantStates[loopState] = new ConstantState() {
                 Expression = new VoidLiteral(this.Location),
-                NextState = breakState + 1
+                NextState = flow.NextState
             };
 
+            // Generate states for the loop body
+            this.body.RewriteNonlocalFlow(types, flow);
+
+            // The last state after rewriting the body should go back to the 
+            // beginning of the loop
             int end = flow.NextState++;
             flow.ConstantStates[end] = new ConstantState() {
                 Expression = new VoidLiteral(this.Location),
                 NextState = loopState
             };
 
+            // Wire up the break state to jump out of the loop
             flow.ConstantStates[breakState] = new ConstantState() {
                 Expression = new VoidLiteral(this.Location),
                 NextState = end + 1
@@ -90,26 +98,6 @@ namespace Trophy.Features.FlowControl {
             flow.ContinueState = oldContinueState;
 
             return true;
-
-            //int breakState = flow.BreakState;
-            //int state = flow.NextState++;
-
-            //flow.ContinueState = state;
-            //flow.BreakState = flow.NominalFlowState;
-
-            //var newBody = (BlockSyntax)this.body.RewriteNonlocalFlow(types, flow);
-
-            //var machineState = new StateMachineBlock() {
-            //    Condition = new BoolLiteral(this.Location, true),
-            //    PositiveBlock = newBody,
-            //    NegativeBlock = new BlockSyntax(this.Location, Array.Empty<ISyntaxTree>()),
-            //    PositiveState = state + 1,
-            //    NegativeState = breakState
-            //};
-
-            //flow.States[state] = (machineState);
-
-            //return new VoidLiteral(this.Location);
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {

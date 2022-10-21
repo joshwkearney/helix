@@ -137,27 +137,6 @@ namespace Trophy.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            //var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
-            //var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
-            //var iffalse = this.iffalse.CheckTypes(types).ToRValue(types);
-
-            //iftrue = iftrue.UnifyFrom(iffalse, types);
-            //iffalse = iffalse.UnifyFrom(iftrue, types);
-
-            //// Declare a variable for this if's return value. The parser will take care of 
-            //// giving the variable access to other syntax trees
-            //var sig = new VariableSignature(
-            //    this.Location.Scope.Append(this.returnVar),
-            //    types.ReturnTypes[iftrue],
-            //    true);
-
-            //types.Variables[sig.Path] = sig;
-            //types.Trees[sig.Path] = new DummySyntax(this.Location);
-
-            //var result = new IfSyntax(this.Location, cond, iftrue, iffalse, sig);
-
-            //types.ReturnTypes[result] = PrimitiveType.Void;
-            //return result;
             throw new InvalidOperationException();
         }
 

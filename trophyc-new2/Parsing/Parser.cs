@@ -13,9 +13,11 @@ namespace Trophy.Parsing {
     public partial class Parser {
         private IdentifierPath scope = new();
         private readonly Lexer lexer;
+        private readonly Stack<bool> isInLoop = new Stack<bool>();
 
         public Parser(string text) {
             this.lexer = new Lexer(text);
+            this.isInLoop.Push(false);
         }
 
         public IReadOnlyList<IDeclaration> Parse() {
@@ -177,8 +179,11 @@ namespace Trophy.Parsing {
             else if (this.Peek(TokenKind.OpenBrace)) {
                 result = this.Block(block);
             }
-            else if (this.Peek(TokenKind.BreakKeyword)) {
+            else if (this.Peek(TokenKind.BreakKeyword) || this.Peek(TokenKind.ContinueKeyword)) {
                 result = this.BreakStatement(block);
+            }
+            else if (this.Peek(TokenKind.ReturnKeyword)) {
+                result = this.ReturnStatement(block);
             }
             else {
                 result = this.AssignmentStatement(block);

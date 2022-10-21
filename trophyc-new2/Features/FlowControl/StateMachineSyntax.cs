@@ -80,7 +80,7 @@ namespace Trophy.Features.FlowControl {
                 if (this.constants.TryGetValue(key, out var constant)) {
                     flow.ConstantStates[key] = new ConstantState() {
                         NextState = constant.NextState,
-                        Expression = constant.Expression.CheckTypes(types)
+                        Expression = constant.Expression.CheckTypes(types).ToRValue(types)
                     };
                 }
                 else {
@@ -89,6 +89,7 @@ namespace Trophy.Features.FlowControl {
                     flow.ConditionalStates[key] = new ConditionalState(
                         condition.Condition
                             .CheckTypes(types)
+                            .ToRValue(types)
                             .UnifyTo(PrimitiveType.Bool, types),
                         condition.IfId,
                         condition.PositiveState,
@@ -191,6 +192,8 @@ namespace Trophy.Features.FlowControl {
         public int BreakState { get; set; } = -1;
 
         public int ContinueState { get; set; } = -1;
+
+        public int ReturnState { get; set; } = -1;
 
         public int NextState { get; set; } = 0;
 

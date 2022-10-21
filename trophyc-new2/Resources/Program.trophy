@@ -1,9 +1,21 @@
 ﻿extern func externalFunc(let x as int) as int;
 
 func loops(var x as int) as int => {
-	if x > 100
-		then 50
-		else {
-			break;
+	var h = 0;
+
+	while true do {
+		for i = 0 to 20 do {
+			x = x + i;
 		};
+
+		let z = if x > 100 
+			then 4
+			else {
+				continue;
+			};
+
+		h = h + z;
+	};
+
+	h;
 };

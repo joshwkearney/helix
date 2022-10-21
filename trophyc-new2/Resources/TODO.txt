@@ -27,7 +27,7 @@ DONE - Lines numbers in c comments
 	+=, -=, etc
 	DONE - Iterable syntax trees
 	DONE - Parser tree to imperative conversion
-	Loop state machine conversion
+	DONE - Loop state machine conversion
 	break, continue, return
 
 ### The Enum Update
