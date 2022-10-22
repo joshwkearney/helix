@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Helix.Analysis;
 using Helix.Analysis.Types;
 using Helix.Features.Arrays;
+using Helix.Features.Primitives;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -101,9 +102,15 @@ namespace Helix.Features.Arrays {
         }
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            return new CIndex() {
-                Target = this.target.GenerateCode(types, writer),
-                Index = this.index.GenerateCode(types, writer)
+            return new CPointerDereference() {
+                Target = new CBinaryExpression() {
+                    Operation = BinaryOperationKind.Add,
+                    Left = new CMemberAccess() {
+                        MemberName = "data",
+                        Target = this.target.GenerateCode(types, writer)
+                    },
+                    Right = this.index.GenerateCode(types, writer)
+                }
             };
         }
     }

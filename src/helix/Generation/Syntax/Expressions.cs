@@ -63,20 +63,7 @@ namespace Helix.Generation.Syntax {
                 return target.Substring(1);
             }
 
-            return "*" + target;
-        }
-    }
-
-    public record CIndex() : ICSyntax {
-        public ICSyntax? Target { get; init; } = null;
-
-        public ICSyntax? Index { get; init; } = null;
-
-        public string WriteToC() {
-            var target = this.Target!.WriteToC();
-            var index = this.Index!.WriteToC();
-
-            return target + "[" + index + "]";
+            return "(*" + target + ")";
         }
     }
 
