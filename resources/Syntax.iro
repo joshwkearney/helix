@@ -32,11 +32,7 @@ contexts [] {
          styles []= .keyword, .typeName;
       }
       
-      : pattern {
-         regex \= (?:\b)(as|put)(\s+)(int|bool|void)
-         styles []= .keyword, .keyword, .keyword;
-      }
-      
+
       : pattern {
          regex \= (?:\b)(as|put)(\s+)([_a-zA-Z][_a-zA-Z0-9]*)
          styles []= .keyword, .keyword, .typeName;
