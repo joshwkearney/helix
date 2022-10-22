@@ -1,54 +1,54 @@
-﻿Phase 3 - Toolchain Features =================
+﻿DONE - Struct unpacking
+DONE - Fix for loops
+DONE - Fix function calls
+DONE - Arrays
+DONE - Character literals
+DONE - Lines numbers in c comments
 
-whole-module compilation
-intra-module compilation
-command line interface
-integrate with build system (cmake?)
-integrate with c compiler
-cross-compile to wasm
+### The Primitives Update
+	Bytes
+	Longs
+	Doubles
+	Floor division and real division
+	Better conversions (graph based)
+	Casting
+	String literals / Singular strings
+	Coalescing
+	Differentiate bitwise from logical operators
 
+### The Unsafe Update
+	Unsafe blocks
+	Pointer arithmetic
+	Pointer casting
+	Opaque types
+	alloc / free
 
-Phase 2 - Complex Features =================
+DONE ### The Imperative Update
+	DONE - Assignment operators
+	DONE - Iterable syntax trees
+	DONE - Parser tree to imperative conversion
+	DONE - Loop state machine conversion
+	DONE - break, continue, return
 
-DONE closures
-generics
+### The Enum Update
+	Pointer member access
+	Methods
+	Enum interface methods
+	Enums
+	Singular bool constraints
+	Match expression
+
+### The Specialization Update
+	Loop unrolling, inlining
+	Generics
+	Singular unification
+	Compile-time expression interpretation
+	Singular arrays / embedding binary data in c
+
+### The Memory Update
+	Region memory management
+
 interfaces
-type extensions
-modules
-operator overloading
-dependent int types
-preserve whitespace in pass A
-toString() and auto-formatting of AST
-
-
-Phase 1 - Basic Features =================
-
-DONE literal variable access
-DONE store syntax
-DONE type unification
-DONE     booleans to int
-DONE     void to int, void, bool, and arrays
-DONE     if branches unify
-DONE     store syntax unifies
-DONE     function returns unify
-DONE as syntax
-DONE function invoking
-DONE from ... alloc syntax
-DONE array literals
-DONE array indexing
-DONE literal array indexing
-DONE array slicing
-DONE new regions
-DONE while loops
-DONE structs
-DONE	struct declarations
-DONE	new structs
-DONE	void structs
-DONE unions
-DONE	union declarations
-DONE	new unions
-DONE	void unions
-DONE for loops
-DONE 	make for variables immutable
-DONE ref type (immutable variables)
-DONE immutable arrays
+Implicit struct conversions
+Anonymous structs and unions
+Fix syntax highlighting
