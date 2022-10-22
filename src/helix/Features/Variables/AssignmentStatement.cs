@@ -89,8 +89,23 @@ namespace Helix.Features.Variables {
             types.ReturnTypes[result] = PrimitiveType.Void;
             types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
 
-            // TODO: Add lifetime dependency between captured variables
-            // TODO: Check for untestable lifetime checking
+            // If the rvalue captures any variables that the lvalue doesn't,
+            // either insert a runtime lifetime check if this function is
+            // "pooling", otherwise throw a compile error for an unsafe memory
+            // store.
+
+            var uncaptured = types.CapturedVariables[assign]
+                .Except(types.CapturedVariables[target])
+                .Any();
+
+            // TODO: Insert runtime lifetime check if possible
+
+            if (uncaptured) {
+                throw new TypeCheckingException(
+                    this.Location,
+                    "Unsafe Memory Store",
+                    $"Unable to verify that the assigned value outlives its container.");
+            }
 
             return result;
         }

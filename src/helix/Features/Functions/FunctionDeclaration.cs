@@ -112,7 +112,6 @@ namespace Helix.Features.Functions {
 
         public void DeclareTypes(SyntaxFrame types) {
             var sig = this.signature.ResolveNames(types);
-            var decl = new ExternFunctionDeclaration(this.Location, sig);
 
             // Declare this function
             types.Functions[sig.Path] = sig;
