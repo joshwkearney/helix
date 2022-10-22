@@ -5,6 +5,7 @@ using Helix.Features.Functions;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.Primitives;
+using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -25,11 +26,8 @@ namespace Helix.Parsing {
             var loc = first.Location.Span(last.Location);
 
             var tempName = block.GetTempName();
-            var temp = new VarParseStatement(
-                loc,
-                new[] { tempName },
-                new InvokeParseTree(loc, first, args),
-                false);
+            var tempPath = this.scope.Append(tempName);
+            var temp = new InvokeParseStatement(loc, first, tempPath, args);
 
             block.Statements.Add(temp);
 
@@ -39,9 +37,10 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.Functions {
-    public record InvokeParseTree : ISyntaxTree {
+    public record InvokeParseStatement : ISyntaxTree {
         private readonly ISyntaxTree target;
         private readonly IReadOnlyList<ISyntaxTree> args;
+        private readonly IdentifierPath resultPath;
 
         public TokenLocation Location { get; }
 
@@ -49,14 +48,18 @@ namespace Helix.Features.Functions {
 
         public bool IsPure => false;
 
-        public InvokeParseTree(TokenLocation loc, ISyntaxTree target, IReadOnlyList<ISyntaxTree> args) {
+        public InvokeParseStatement(TokenLocation loc, ISyntaxTree target, 
+            IdentifierPath resultPath,
+            IReadOnlyList<ISyntaxTree> args) {
+
             this.Location = loc;
             this.target = target;
             this.args = args;
+            this.resultPath = resultPath;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var target = this.target.CheckTypes(types);
+            var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
             // Make sure the target is a function
@@ -81,17 +84,11 @@ namespace Helix.Features.Functions {
                 newArgs[i] = this.args[i].CheckTypes(types).UnifyTo(expectedType, types);
             }
 
-            var result = new InvokeSyntax(this.Location, sig, newArgs);
-            types.ReturnTypes[result] = sig.ReturnType;
+            var captured = new List<IdentifierPath>();
 
-            if (sig.ReturnType.IsValueType(types)) {
-                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
-            }
-            else {
-                // If there are any reference types in the result that can be found
-                // in any of the arguments then assume we captured that argument
-                var captured = new List<IdentifierPath>();
-
+            // If there are any reference types in the result that can be found
+            // in any of the arguments then assume we captured that argument
+            if (!sig.ReturnType.IsValueType(types)) {
                 var retRefs = sig.ReturnType
                     .GetContainedTypes(types)
                     .Where(x => !x.IsValueType(types))
@@ -108,9 +105,28 @@ namespace Helix.Features.Functions {
                         captured.AddRange(types.CapturedVariables[arg]);
                     }
                 }
-
-                types.CapturedVariables[result] = captured;
             }
+
+            // TODO: Introduce a new captured variable if the function being called
+            // is "pooling". This is because the new captured variable will have a 
+            // lifetime computed at runtime based on where the function actually allocates
+            // its return value. This new lifetime will be taken from the context struct
+            // passed to the function
+
+            // Declare a variable for the result
+            var resultSig = new VariableSignature(
+                this.resultPath, 
+                sig.ReturnType, 
+                false, 
+                captured);
+
+            types.Variables[this.resultPath] = resultSig;
+            types.SyntaxValues[this.resultPath] = new DummySyntax(this.Location);
+
+            var result = new InvokeStatement(this.Location, sig, this.resultPath, newArgs);
+
+            types.ReturnTypes[result] = PrimitiveType.Void;
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
 
             return result;
         }
@@ -128,9 +144,10 @@ namespace Helix.Features.Functions {
         }
     }
 
-    public record InvokeSyntax : ISyntaxTree {
+    public record InvokeStatement : ISyntaxTree {
         private readonly FunctionSignature sig;
         private readonly IReadOnlyList<ISyntaxTree> args;
+        private readonly IdentifierPath resultPath;
 
         public TokenLocation Location { get; }
 
@@ -138,14 +155,16 @@ namespace Helix.Features.Functions {
 
         public bool IsPure => false;
 
-        public InvokeSyntax(
+        public InvokeStatement(
             TokenLocation loc,
             FunctionSignature sig,
+            IdentifierPath resultPath,
             IReadOnlyList<ISyntaxTree> args) {
 
             this.Location = loc;
             this.sig = sig;
             this.args = args;
+            this.resultPath = resultPath;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
@@ -162,14 +181,15 @@ namespace Helix.Features.Functions {
                 Arguments = args
             };
 
-            if (this.sig.ReturnType == PrimitiveType.Void) {
-                writer.WriteStatement(result);
+            var stat = new CVariableDeclaration() {
+                Name = writer.GetVariableName(this.resultPath),
+                Type = writer.ConvertType(this.sig.ReturnType),
+                Assignment = result
+            };
 
-                return new CIntLiteral(0);
-            }
-            else {
-                return result;
-            }
+            writer.WriteStatement(stat);
+
+            return new CIntLiteral(0);
         }
     }
 }
