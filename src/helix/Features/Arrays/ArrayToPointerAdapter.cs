@@ -56,16 +56,16 @@ namespace Helix.Features.Arrays {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             ICSyntax result = new CMemberAccess() {
-                Target = this.target.GenerateCode(types, writer),
+                Target = this.target.GenerateCode(writer),
                 MemberName = "data"
             };
 
             if (this.offset != null) {
                 result = new CBinaryExpression() {
                     Left = result,
-                    Right = this.offset.GenerateCode(types, writer),
+                    Right = this.offset.GenerateCode(writer),
                     Operation = BinaryOperationKind.Add
                 };
             }

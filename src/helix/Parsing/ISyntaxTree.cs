@@ -6,10 +6,6 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
-    public interface IStatement : ISyntaxTree {
-        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow);
-    }
-
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
@@ -29,7 +25,7 @@ namespace Helix.Parsing {
             throw TypeCheckingErrors.LValueRequired(this.Location);
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer);
+        public ICSyntax GenerateCode(ICStatementWriter writer);
 
         // Mixins
         public IEnumerable<ISyntaxTree> GetAllChildren() {

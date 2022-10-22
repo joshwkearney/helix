@@ -5,6 +5,7 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.FlowControl;
+using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -17,14 +18,11 @@ namespace Helix.Parsing {
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    var ifId = this.scope.Append(block.GetTempName());
-
-                    var test = new IfParseSyntax(loc, ifId, first,
-                        new BlockSyntax(new SetIfBranchSyntax(loc, ifId, true, new BoolLiteral(loc, true))),
-                        new BlockSyntax(new SetIfBranchSyntax(loc, ifId, false, second)));
-
-                    block.Statements.Add(test);
-                    first = new IfAccessSyntax(loc, ifId);
+                    first = new IfParseSyntax(
+                        loc, 
+                        first,
+                        new BoolLiteral(loc, true),
+                        second);
                 }
                 else {
                     first = new BinarySyntax(loc, first, second, BinaryOperationKind.Or);
@@ -52,24 +50,17 @@ namespace Helix.Parsing {
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
                 var branching = this.TryAdvance(TokenKind.ThenKeyword);
+                var second = this.XorExpression(block);
+                var loc = first.Location.Span(second.Location);
+
                 if (branching) {
-                    var (stats, retExpr) = this.TopBlock();
-                    stats.Add(retExpr);
-
-                    var loc = first.Location.Span(retExpr.Location);
-                    var ifId = this.scope.Append(block.GetTempName());
-
-                    var test = new IfParseSyntax(loc, ifId, first,
-                        new BlockSyntax(new SetIfBranchSyntax(loc, ifId, true, new BlockSyntax(loc, stats))),
-                        new BlockSyntax(new SetIfBranchSyntax(loc, ifId, false, new BoolLiteral(loc, false))));
-
-                    block.Statements.Add(test);
-                    first = new IfAccessSyntax(loc, ifId);
+                    first = new IfParseSyntax(
+                        loc,
+                        new UnaryParseSyntax(loc, UnaryOperatorKind.Not, first),
+                        new BoolLiteral(loc, false),
+                        second);
                 }
                 else {
-                    var second = this.ComparisonExpression(block);
-                    var loc = first.Location.Span(second.Location);
-
                     first = new BinarySyntax(loc, first, second, BinaryOperationKind.And);
                 }
             }
@@ -268,10 +259,10 @@ namespace Helix.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CBinaryExpression() {
-                Left = this.left.GenerateCode(types, writer),
-                Right = this.right.GenerateCode(types, writer),
+                Left = this.left.GenerateCode(writer),
+                Right = this.right.GenerateCode(writer),
                 Operation = this.op
             };
         }

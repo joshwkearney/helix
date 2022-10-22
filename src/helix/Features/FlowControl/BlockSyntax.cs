@@ -36,7 +36,7 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.FlowControl {
-    public record BlockSyntax : ISyntaxTree, IStatement {
+    public record BlockSyntax : ISyntaxTree {
         private static int idCounter = 0;
 
         private readonly int id;
@@ -64,32 +64,6 @@ namespace Helix.Features.FlowControl {
         public BlockSyntax(ISyntaxTree statement, bool isTypeChecked = false)
             : this(statement.Location, new[] { statement }, isTypeChecked) { }
 
-        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
-            for (int i = 0; i < this.Statements.Count; i++) {
-                if (this.Statements[i] is IStatement stat) {
-                    stat.RewriteNonlocalFlow(types, flow);
-                    continue;
-                }
-
-                int state = flow.NextState++;
-                var stats = new List<ISyntaxTree>();
-
-                while (i < this.Statements.Count && !this.Statements[i].HasNonlocalFlow()) {
-                    stats.Add(this.Statements[i]);
-                    i++;
-                }
-
-                i--;
-
-                flow.ConstantStates.Add(state, new ConstantState() {
-                    Expression = new BlockSyntax(this.Location, stats),
-                    NextState = flow.NextState
-                });
-            }
-
-            return true;
-        }
-
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var stats = this.Statements.Select(x => x.CheckTypes(types)).ToArray();
             var result = new BlockSyntax(this.Location, stats, true);
@@ -114,17 +88,17 @@ namespace Helix.Features.FlowControl {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
 
             if (this.Statements.Any()) {
                 foreach (var stat in this.Statements.SkipLast(1)) {
-                    stat.GenerateCode(types, writer);
+                    stat.GenerateCode(writer);
                 }
 
-                return this.Statements.Last().GenerateCode(types, writer);
+                return this.Statements.Last().GenerateCode(writer);
             }
             else {
                 return new CIntLiteral(0);

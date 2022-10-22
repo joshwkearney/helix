@@ -15,7 +15,6 @@ namespace Helix.Parsing {
 
             var test = new IfParseSyntax(
                 cond.Location,
-                this.scope.Append(block.GetTempName()),
                 new UnaryParseSyntax(cond.Location, UnaryOperatorKind.Not, cond),
                 new BreakContinueSyntax(cond.Location, true));
 
@@ -43,10 +42,8 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.FlowControl {
-    public record LoopStatement : ISyntaxTree, IStatement {
-        private static int counter = 0;
-
-        private readonly BlockSyntax body;
+    public record LoopStatement : ISyntaxTree {
+        private readonly ISyntaxTree body;
         private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
@@ -56,63 +53,51 @@ namespace Helix.Features.FlowControl {
         public bool IsPure => false;
 
         public LoopStatement(TokenLocation location,
-                             BlockSyntax body, bool isTypeChecked = false) {
+                             ISyntaxTree body, bool isTypeChecked = false) {
 
             this.Location = location;
             this.body = body;
             this.isTypeChecked = isTypeChecked;
         }
 
-        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
-            int oldBreakState = flow.BreakState;
-            int oldContinueState = flow.ContinueState;
+        public Option<ISyntaxTree> ToRValue(SyntaxFrame types) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
 
-            int loopState = flow.NextState++;
-            int breakState = flow.NextState++;
-
-            flow.ContinueState = loopState;
-            flow.BreakState = breakState;
-
-            // The main loop state should just jump to the next state
-            flow.ConstantStates[loopState] = new ConstantState() {
-                Expression = new VoidLiteral(this.Location),
-                NextState = flow.NextState
-            };
-
-            // Generate states for the loop body
-            this.body.RewriteNonlocalFlow(types, flow);
-
-            // The last state after rewriting the body should go back to the 
-            // beginning of the loop
-            int end = flow.NextState++;
-            flow.ConstantStates[end] = new ConstantState() {
-                Expression = new VoidLiteral(this.Location),
-                NextState = loopState
-            };
-
-            // Wire up the break state to jump out of the loop
-            flow.ConstantStates[breakState] = new ConstantState() {
-                Expression = new VoidLiteral(this.Location),
-                NextState = end + 1
-            };
-
-            flow.BreakState = oldBreakState;
-            flow.ContinueState = oldContinueState;
-
-            return true;
+            return this;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            throw new InvalidOperationException();
+            if (this.isTypeChecked) {
+                return this;
+            }
+
+            var body = this.body.CheckTypes(types).ToRValue(types);
+            var result = new LoopStatement(this.Location, body, true);
+
+            types.ReturnTypes[result] = PrimitiveType.Void;
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+
+            return result;
         }
 
-        public Option<ISyntaxTree> ToRValue(SyntaxFrame types) {
-            throw new InvalidOperationException();
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            var bodyStats = new List<ICStatement>();
+            var bodyWriter = new CStatementWriter(writer, bodyStats);
 
-        }
+            this.body.GenerateCode(bodyWriter);
+            
+            var stat = new CWhile() {
+                Condition = new CIntLiteral(1),
+                Body = bodyStats
+            };
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
+            writer.WriteEmptyLine();
+            writer.WriteComment($"Line {this.Location.Line}: While or for loop");
+            writer.WriteStatement(stat);
+
+            return new CIntLiteral(0);
         }
     }
 }

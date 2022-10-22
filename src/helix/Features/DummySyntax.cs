@@ -24,7 +24,7 @@ namespace Helix.Features {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

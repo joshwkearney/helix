@@ -166,7 +166,7 @@ namespace Helix {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -197,11 +197,11 @@ namespace Helix {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             var stat = new CVariableDeclaration() {
                 Type = writer.ConvertType(this.signature.Type),
                 Name = writer.GetVariableName(this.signature.Path),
-                Assignment = this.assign.Select(x => x.GenerateCode(types, writer))
+                Assignment = this.assign.Select(x => x.GenerateCode(writer))
             };
 
             writer.WriteStatement(stat);

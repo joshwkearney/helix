@@ -140,12 +140,12 @@ namespace Helix.Features.Variables {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             var stat = new CAssignment() {
                 Left = new CPointerDereference() {
-                    Target = this.target.GenerateCode(types, writer)
+                    Target = this.target.GenerateCode(writer)
                 },
-                Right = this.assign.GenerateCode(types, writer)
+                Right = this.assign.GenerateCode(writer)
             };
 
             writer.WriteStatement(stat);

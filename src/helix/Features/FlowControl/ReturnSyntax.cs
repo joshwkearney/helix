@@ -18,15 +18,23 @@ namespace Helix.Parsing {
             var start = this.Advance(TokenKind.ReturnKeyword);
             var arg = this.TopExpression(block);
 
-            block.Statements.Add(new ReturnSyntax(start.Location, arg));
+            var stat = new ReturnSyntax(
+                start.Location,
+                arg, 
+                this.funcPath.Peek());
+
+            block.Statements.Add(stat);
+
             return new VoidLiteral(start.Location);
         }
     }
 }
 
 namespace Helix.Features.FlowControl {
-    public record ReturnSyntax : ISyntaxTree, IStatement {
+    public record ReturnSyntax : ISyntaxTree {
         private readonly ISyntaxTree payload;
+        private readonly IdentifierPath func;
+        private readonly bool isTypeChecked = false;
 
         public TokenLocation Location { get; }
 
@@ -34,31 +42,44 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure => false;
 
-        public ReturnSyntax(TokenLocation loc, ISyntaxTree payload) {
+        public ReturnSyntax(TokenLocation loc, ISyntaxTree payload, 
+            IdentifierPath func, bool isTypeChecked = false) {
+
             this.Location = loc;
             this.payload = payload;
+            this.func = func;
+            this.isTypeChecked = isTypeChecked;
         }
 
-        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
-            var state = flow.NextState++;
+        public ISyntaxTree ToRValue(SyntaxFrame frame) {
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
 
-            flow.ConstantStates[state] = new ConstantState() {
-                Expression = new AssignmentStatement(
-                    this.Location,
-                    new VariableAccessParseSyntax(this.Location, "$return"),
-                    this.payload),
-                NextState = flow.ReturnState
-            };
-
-            return true;
+            return this;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            throw new InvalidOperationException();
+            var sig = types.Functions[this.func];
+            var payload = this.payload.CheckTypes(types).ToRValue(types);
+            var result = new ReturnSyntax(this.Location, payload, this.func, true);
+
+            types.ReturnTypes[result] = PrimitiveType.Void;
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+
+            return result;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            if (!this.isTypeChecked) {
+                throw new InvalidOperationException();
+            }
+
+            writer.WriteStatement(new CReturn() {
+                Target = this.payload.GenerateCode(writer)
+            });
+
+            return new CIntLiteral(0);
         }
     }
 }

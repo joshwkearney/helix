@@ -101,7 +101,7 @@ namespace Helix.Features.Primitives {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -124,9 +124,9 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CNot() {
-                Target = this.target.GenerateCode(types, writer)
+                Target = this.target.GenerateCode(writer)
             };
         }
     }

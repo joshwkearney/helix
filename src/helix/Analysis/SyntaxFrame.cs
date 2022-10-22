@@ -9,18 +9,6 @@ using Helix.Parsing;
 namespace Helix.Analysis {
     public delegate void DeclarationCG(ICWriter writer);
 
-    public class IfBranches {
-        public ISyntaxTree TrueBranch { get; set; }
-
-        public ISyntaxTree FalseBranch { get; set; }
-
-        public HelixType ReturnType { get; set; }
-
-        public SyntaxFrame TrueFrame { get; set; }
-
-        public SyntaxFrame FalseFrame { get; set; }
-    }
-
     public class SyntaxFrame {
         private int tempCounter = 0;
 
@@ -28,8 +16,6 @@ namespace Helix.Analysis {
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
 
         public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
-
-        public IDictionary<IdentifierPath, IfBranches> IfBranches { get; }
 
         // Global things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
@@ -46,7 +32,6 @@ namespace Helix.Analysis {
 
         public SyntaxFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            this.IfBranches = new Dictionary<IdentifierPath, IfBranches>();
             this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<IdentifierPath>>();
 
             this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
@@ -66,7 +51,6 @@ namespace Helix.Analysis {
             this.Variables = new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
             this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
 
-            this.IfBranches = prev.IfBranches;
             this.Functions = prev.Functions;
             this.Aggregates = prev.Aggregates;
 

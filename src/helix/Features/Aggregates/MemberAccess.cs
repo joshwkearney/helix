@@ -101,9 +101,9 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CMemberAccess() {
-                Target = this.target.GenerateCode(types, writer),
+                Target = this.target.GenerateCode(writer),
                 MemberName = this.memberName
             };
         }

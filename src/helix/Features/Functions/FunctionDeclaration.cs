@@ -69,11 +69,13 @@ namespace Helix.Parsing {
                 this.Advance(TokenKind.Yields);
             }
 
-            this.scope = this.scope.Append(sig.Name).Append("%body");
+            this.funcPath.Push(this.scope.Append(sig.Name));
+            this.scope = this.scope.Append(sig.Name);
             var body = this.TopExpression(block);            
 
             this.Advance(TokenKind.Semicolon);
             this.scope = this.scope.Pop();
+            this.funcPath.Pop();
             block.Statements.Add(body);
 
             return new FunctionParseDeclaration(
@@ -132,54 +134,19 @@ namespace Helix.Features.Functions {
             // Declare parameters
             FunctionsHelper.DeclareParameters(this.Location, sig, types);
 
-            // Get a variable name for returns
-            var returnName = "$return";
-            var returnPath = sig.Path.Append(returnName);
-            var flow = new FlowRewriter();
-
             // Assign the body return value to our return variable
             // at the end of the state machine
-            var rewriteBlock = new BlockSyntax(
+            var bodyBlock = new BlockSyntax(
                 this.Location, 
-                this.body
-                    .Append(new AssignmentStatement(
-                        this.retExpr.Location,
-                        new VariableAccessParseSyntax(this.retExpr.Location, returnName),
-                        bodyExpr))
-                    .ToList());
-
-            // Reserve a state for returns
-            int returnState = flow.NextState++;
-            flow.ReturnState = returnState;
-
-            // Rewrite the flow of this function
-            rewriteBlock.RewriteNonlocalFlow(types, flow);
-
-            // Add the return state
-            flow.ConstantStates.Add(returnState, new ConstantState() {
-                Expression = new VoidLiteral(this.Location),
-                NextState = flow.NextState
-            });
-
-            // Remove extra states that serve no purpose
-            flow.OptimizeStates();
-
-            // Declare our return variable
-            var returnSig = new VariableSignature(returnPath, sig.ReturnType, true);
-            types.Variables[returnPath] = returnSig;
-            types.SyntaxValues[returnPath] = new DummySyntax(this.retExpr.Location);
+                this.body.Append(bodyExpr).ToArray());
 
             // Check types
-            var body = new StateMachineSyntax(this.retExpr.Location, flow)
+            var body = bodyBlock
                 .CheckTypes(types)
                 .ToRValue(types);
 
-            // Test check the expression that will return form our function 
-            var retTest = new VariableAccessParseSyntax(this.retExpr.Location, returnName)
-                .CheckTypes(types);
-
             // Make sure we're not capturing a stack-allocated variable
-            if (types.CapturedVariables[retTest].Contains(new IdentifierPath("$stack"))) {
+            if (types.CapturedVariables[body].Contains(new IdentifierPath("$stack"))) {
                 throw new TypeCheckingException(
                     this.retExpr.Location,
                     "Dangling Pointer on Return Value",
@@ -202,27 +169,24 @@ namespace Helix.Features.Functions {
             }
 #endif
 
-            return new FunctionDeclaration(this.Location, sig, body, returnPath);
+            return new FunctionDeclaration(this.Location, sig, body);
         }
 
         public void GenerateCode(SyntaxFrame types, ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record FunctionDeclaration : IDeclaration {
-        private readonly IdentifierPath returnVar;
         private readonly ISyntaxTree body;
 
         public FunctionSignature Signature { get; }
 
         public TokenLocation Location { get; }
 
-        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, 
-            ISyntaxTree body, IdentifierPath returnVar) {
+        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, ISyntaxTree body) {
 
             this.Location = loc;
             this.Signature = sig;
             this.body = body;
-            this.returnVar = returnVar;
         }
 
         public void DeclareNames(SyntaxFrame names) {
@@ -255,21 +219,14 @@ namespace Helix.Features.Functions {
             var funcName = writer.GetVariableName(this.Signature.Path);
             var body = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, body);
-            var returnName = writer.GetVariableName(this.returnVar);
-
-            // Declare our return variable
-            bodyWriter.WriteStatement(new CVariableDeclaration() {
-                Name = returnName,
-                Type = writer.ConvertType(this.Signature.ReturnType)
-            });
 
             // Generate the body
-            var retExpr = this.body.GenerateCode(types, bodyWriter);
+            var retExpr = this.body.GenerateCode(bodyWriter);
 
             if (this.Signature.ReturnType != PrimitiveType.Void) {
                 bodyWriter.WriteEmptyLine();
                 bodyWriter.WriteStatement(new CReturn() { 
-                    Target = new CVariableLiteral(returnName)
+                    Target = retExpr
                 });
             }
 

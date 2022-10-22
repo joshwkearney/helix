@@ -236,7 +236,7 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -249,7 +249,7 @@ namespace Helix.Features.Aggregates {
             };
 
             var mems = this.values
-                .Select(x => x.GenerateCode(types, writer))
+                .Select(x => x.GenerateCode(writer))
                 .ToArray();
 
             if (!mems.Any()) {

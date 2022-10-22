@@ -101,15 +101,15 @@ namespace Helix.Features.Arrays {
             return result;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CPointerDereference() {
                 Target = new CBinaryExpression() {
                     Operation = BinaryOperationKind.Add,
                     Left = new CMemberAccess() {
                         MemberName = "data",
-                        Target = this.target.GenerateCode(types, writer)
+                        Target = this.target.GenerateCode(writer)
                     },
-                    Right = this.index.GenerateCode(types, writer)
+                    Right = this.index.GenerateCode(writer)
                 }
             };
         }

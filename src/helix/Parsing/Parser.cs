@@ -13,7 +13,8 @@ namespace Helix.Parsing {
     public partial class Parser {
         private IdentifierPath scope = new();
         private readonly Lexer lexer;
-        private readonly Stack<bool> isInLoop = new Stack<bool>();
+        private readonly Stack<bool> isInLoop = new();
+        private readonly Stack<IdentifierPath> funcPath = new();
 
         public Parser(string text) {
             this.lexer = new Lexer(text);

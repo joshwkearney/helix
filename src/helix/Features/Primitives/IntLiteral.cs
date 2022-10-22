@@ -44,7 +44,7 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CIntLiteral(this.Value);
         }
     }

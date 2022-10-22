@@ -52,7 +52,6 @@ namespace Helix.Parsing {
 
             var test = new IfParseSyntax(
                 loc,
-                this.scope.Append(block.GetTempName()),
                 new BinarySyntax(
                     loc,
                     counterAccess,

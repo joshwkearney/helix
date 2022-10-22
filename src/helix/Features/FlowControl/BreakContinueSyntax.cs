@@ -40,8 +40,8 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.FlowControl {
-    public record BreakContinueSyntax : ISyntaxTree, IStatement {
-        private bool isbreak;
+    public record BreakContinueSyntax : ISyntaxTree {
+        private readonly bool isbreak;
 
         public TokenLocation Location { get; }
 
@@ -49,28 +49,31 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure => false;
 
-        public BreakContinueSyntax(TokenLocation loc, bool isbreak) {
+        public BreakContinueSyntax(TokenLocation loc, bool isbreak, 
+            bool istypeChecked = false) {
+
             this.Location = loc;
             this.isbreak = isbreak;
         }
 
-        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
-            var state = flow.NextState++;
-
-            flow.ConstantStates[state] = new ConstantState() {
-                Expression = new VoidLiteral(this.Location),
-                NextState = this.isbreak ? flow.BreakState : flow.ContinueState
-            };
-
-            return true;
-        }
+        public ISyntaxTree ToRValue() => this;
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            throw new InvalidOperationException();
+            types.ReturnTypes[this] = PrimitiveType.Void;
+            types.CapturedVariables[this] = Array.Empty<IdentifierPath>();
+
+            return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            if (this.isbreak) {
+                writer.WriteStatement(new CBreak());
+            }
+            else {
+                writer.WriteStatement(new CContinue());
+            }
+
+            return new CIntLiteral(0);
         }
     }
 }

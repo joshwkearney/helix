@@ -145,7 +145,7 @@ namespace Helix.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
 
@@ -189,9 +189,9 @@ namespace Helix.Features.Functions {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             var args = this.args
-                .Select(x => x.GenerateCode(types, writer))
+                .Select(x => x.GenerateCode(writer))
                 .ToArray();
 
             var result = new CInvoke() {

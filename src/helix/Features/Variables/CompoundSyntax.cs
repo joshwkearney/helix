@@ -39,9 +39,9 @@ namespace Helix.Features.Variables {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             foreach (var arg in this.args) {
-                arg.GenerateCode(types, writer);
+                arg.GenerateCode(writer);
             }
 
             return new CIntLiteral(0);

@@ -1,10 +1,11 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Types;
-using Helix.Generation;
+﻿using Helix.Analysis.Types;
+using Helix.Analysis;
 using Helix.Features.FlowControl;
 using Helix.Features.Primitives;
-using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Generation;
+using Helix.Parsing;
+using System.Reflection;
 using Helix.Features.Variables;
 
 namespace Helix.Parsing {
@@ -12,73 +13,28 @@ namespace Helix.Parsing {
         private ISyntaxTree IfExpression(BlockBuilder block) {
             var start = this.Advance(TokenKind.IfKeyword);
             var cond = this.TopExpression(block);
-            var loc = start.Location.Span(cond.Location);
-            var ifId = this.scope.Append(block.GetTempName());
 
             this.Advance(TokenKind.ThenKeyword);
-
-            var (affirmStats, affirm) = TopBlock();
-            var affirmAssign = new SetIfBranchSyntax(affirm.Location, ifId, true, affirm);
+            var affirm = this.TopExpression(block);
 
             if (this.TryAdvance(TokenKind.ElseKeyword)) {
-                var (negStats, neg) = TopBlock();
-                var negAssign = new SetIfBranchSyntax(affirm.Location, ifId, false, neg);
+                var neg = this.TopExpression(block);
+                var loc = start.Location.Span(neg.Location);
 
-                affirmStats.Add(affirmAssign);
-                negStats.Add(negAssign);
-                loc = start.Location.Span(neg.Location);
-
-                var expr = new IfParseSyntax(
-                    loc,
-                    ifId,
-                    cond,
-                    new BlockSyntax(affirm.Location, affirmStats),
-                    new BlockSyntax(neg.Location, negStats));
-
-                var access = new IfAccessSyntax(loc, ifId);
-
-                block.Statements.Add(expr);
-
-                // Write out a statement with just the if access so it is ensured
-                // that the if branches are unified in the typechecker
-                block.Statements.Add(access);
-
-                return access;
+                return new IfParseSyntax(loc, cond, affirm, neg);
             }
             else {
-                loc = start.Location.Span(affirm.Location);
-                var expr = new IfParseSyntax(
-                    loc,
-                    ifId,
-                    cond,
-                    new BlockSyntax(affirm.Location, affirmStats));
+                var loc = start.Location.Span(affirm.Location);
 
-                block.Statements.Add(expr);
-                return new VoidLiteral(loc);
-            }
-        }
-
-        (List<ISyntaxTree> StateMachineSyntax, ISyntaxTree ret) TopBlock() {
-            var builder = new BlockBuilder();
-            var expr = this.TopExpression(builder);
-
-            if (builder.Statements.Any()) {
-                builder.Statements.Add(expr);
-
-                return (builder.Statements, expr);
-            }
-            else {
-                return (new(), expr);
+                return new IfParseSyntax(loc, cond, affirm);
             }
         }
     }
 }
 
 namespace Helix.Features.FlowControl {
-    public record IfParseSyntax : ISyntaxTree, IStatement {
-        private readonly IdentifierPath returnVar;
-        private readonly ISyntaxTree cond;
-        private readonly IStatement iftrue, iffalse;
+    public record IfParseSyntax : ISyntaxTree {
+        private readonly ISyntaxTree cond, iftrue, iffalse;
 
         public TokenLocation Location { get; }
 
@@ -86,7 +42,7 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure { get; }
 
-        public IfParseSyntax(TokenLocation location, IdentifierPath returnVar, ISyntaxTree cond, IStatement iftrue) {
+        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue) {
             this.Location = location;
             this.cond = cond;
 
@@ -94,55 +50,42 @@ namespace Helix.Features.FlowControl {
                 iftrue, new VoidLiteral(iftrue.Location)
             });
 
-            this.iffalse = new BlockSyntax(this.Location, Array.Empty<ISyntaxTree>());
-            this.returnVar = returnVar;
-
-            this.IsPure = this.cond.IsPure && this.iftrue.IsPure && this.iffalse.IsPure;
+            this.iffalse = new VoidLiteral(location);
+            this.IsPure = cond.IsPure && iftrue.IsPure;
         }
 
-        public IfParseSyntax(TokenLocation location, IdentifierPath returnVar, ISyntaxTree cond,
-            IStatement iftrue, IStatement iffalse) {
+        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue, ISyntaxTree iffalse)
+            : this(location, cond, iftrue) {
 
             this.Location = location;
             this.cond = cond;
             this.iftrue = iftrue;
             this.iffalse = iffalse;
-            this.returnVar = returnVar;
-
-            this.IsPure = this.cond.IsPure && this.iftrue.IsPure && this.iffalse.IsPure;
-        }
-
-        public bool RewriteNonlocalFlow(SyntaxFrame types, FlowRewriter flow) {
-            int ifState = flow.NextState++;
-
-            this.iftrue.RewriteNonlocalFlow(types, flow);
-            int afterTrueState = flow.NextState++;
-
-            this.iffalse.RewriteNonlocalFlow(types, flow);
-            int afterFalseState = flow.NextState++;
-
-            flow.ConditionalStates[ifState] = new ConditionalState(
-                this.cond,
-                this.returnVar,
-                ifState + 1,
-                afterTrueState + 1
-            );
-
-            flow.ConstantStates[afterTrueState] = new ConstantState() {
-                Expression = new VoidLiteral(this.Location),
-                NextState = flow.NextState
-            };
-
-            flow.ConstantStates[afterFalseState] = new ConstantState() {
-                Expression = new VoidLiteral(this.Location),
-                NextState = flow.NextState
-            };
-
-            return true;
+            this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            throw new InvalidOperationException();
+            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
+            var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
+            var iffalse = this.iffalse.CheckTypes(types).ToRValue(types);
+
+            var iftrueTypes = new SyntaxFrame(types);
+            var iffalseTypes = new SyntaxFrame(types);
+
+            iftrue = iftrue.UnifyFrom(iffalse, iftrueTypes);
+            iffalse = iffalse.UnifyFrom(iftrue, iffalseTypes);
+
+            var resultType = types.ReturnTypes[iftrue];
+            var result = new IfSyntax(this.Location, cond, iftrue, iffalse, resultType);
+
+            types.ReturnTypes[result] = resultType;
+
+            types.CapturedVariables[result] = types
+                .CapturedVariables[iftrue]
+                .Concat(types.CapturedVariables[iffalse])
+                .ToArray();
+
+            return result;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
@@ -153,151 +96,77 @@ namespace Helix.Features.FlowControl {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
 
-    public record SetIfBranchSyntax : ISyntaxTree {
-        private readonly IdentifierPath ifId;
-        private readonly ISyntaxTree? value;
-        private readonly bool branch;
-        private readonly bool isTypeChecked = false;
+    public record IfSyntax : ISyntaxTree {
+        private readonly ISyntaxTree cond, iftrue, iffalse;
+        private readonly HelixType returnType;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children {
-            get {
-                if (this.value != null) {
-                    yield return this.value;
-                }
-            }
-        }
+        public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
 
-        public bool IsPure => false;
+        public bool IsPure { get; }
 
-        public SetIfBranchSyntax(TokenLocation loc, IdentifierPath ifId, bool branch, 
-            ISyntaxTree value, bool isTypeChecked = false) {
+        public IfSyntax(TokenLocation loc, ISyntaxTree cond,
+                         ISyntaxTree iftrue,
+                         ISyntaxTree iffalse, HelixType returnType) {
+
             this.Location = loc;
-            this.ifId = ifId;
-            this.branch = branch;
-            this.value = value;
-            this.isTypeChecked = isTypeChecked;
+            this.cond = cond;
+            this.iftrue = iftrue;
+            this.iffalse = iffalse;
+            this.returnType = returnType;
+            this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
-            if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
-            }
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-            return this;
-        }
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            if (this.isTypeChecked) {
-                return this;
-            }
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            var affirmList = new List<ICStatement>();
+            var negList = new List<ICStatement>();
 
-            types = new SyntaxFrame(types);
-            var value = this.value.CheckTypes(types).ToRValue(types);
+            var affirmWriter = new CStatementWriter(writer, affirmList);
+            var negWriter = new CStatementWriter(writer, negList);
 
-            if (this.branch) {
-                types.IfBranches[this.ifId].TrueBranch = value;
-                types.IfBranches[this.ifId].TrueFrame = types;
-            }
-            else {
-                types.IfBranches[this.ifId].FalseBranch = value;
-                types.IfBranches[this.ifId].FalseFrame = types;
-            }
+            var affirm = this.iftrue.GenerateCode(affirmWriter);
+            var neg = this.iffalse.GenerateCode(negWriter);
 
-            var result = new SetIfBranchSyntax(this.Location, this.ifId, this.branch, null, true);
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            var tempName = writer.GetVariableName();
 
-            return result;
-        }
-
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            if (!this.isTypeChecked) {
-                throw new InvalidOperationException();
-            }
-
-            var assign = this.branch
-                ? types.IfBranches[this.ifId].TrueBranch
-                : types.IfBranches[this.ifId].FalseBranch;
-
-            writer.WriteStatement(new CAssignment() {
-                Left = new CVariableLiteral(writer.GetVariableName(this.ifId)),
-                Right = assign.GenerateCode(types, writer)
+            affirmWriter.WriteStatement(new CAssignment() {
+                Left = new CVariableLiteral(tempName),
+                Right = affirm
             });
 
-            return new CIntLiteral(0);
-        }
-    }
+            negWriter.WriteStatement(new CAssignment() {
+                Left = new CVariableLiteral(tempName),
+                Right = neg
+            });
 
-    public record IfAccessSyntax : ISyntaxTree {
-        private readonly IdentifierPath ifid;
-        private readonly bool isTypeChecked;
+            var stat = new CVariableDeclaration() {
+                Type = writer.ConvertType(this.returnType),
+                Name = tempName
+            };
 
-        public TokenLocation Location { get; }
+            var expr = new CIf() {
+                Condition = this.cond.GenerateCode(writer),
+                IfTrue = affirmList,
+                IfFalse = negList
+            };
 
-        public IEnumerable<ISyntaxTree> Children => Array.Empty<ISyntaxTree>();
+            writer.WriteEmptyLine();
+            writer.WriteComment($"Line {this.cond.Location.Line}: If statement");
+            writer.WriteStatement(stat);
+            writer.WriteStatement(expr);
+            writer.WriteEmptyLine();
 
-        public bool IsPure => false;
-
-        public IfAccessSyntax(TokenLocation loc, IdentifierPath ifid, bool isTypeChecked = false) {
-            this.Location = loc;
-            this.ifid = ifid;
-            this.isTypeChecked = isTypeChecked;
-        }
-
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
-            if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
-            }
-
-            return this;
-        }
-
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            if (this.isTypeChecked) {
-                return this;
-            }
-
-            var branch1 = types.IfBranches[this.ifid].TrueBranch;
-            var branch2 = types.IfBranches[this.ifid].FalseBranch;
-
-            if (types.IfBranches[this.ifid].ReturnType == null) {
-                var frame1 = types.IfBranches[this.ifid].TrueFrame;
-                var frame2 = types.IfBranches[this.ifid].FalseFrame;
-
-                // Unify the branch types
-                branch1 = branch1.UnifyFrom(branch2, types);
-                branch2 = branch2.UnifyFrom(branch1, types);
-
-                // Unify the branch variable signatures that overlap
-                // with our variable signatures to correctly capture
-                // lifetimes that were added to mutable variables
-                //var newSigs = types.IfBranches
-
-                types.IfBranches[this.ifid].TrueBranch = branch1;
-                types.IfBranches[this.ifid].FalseBranch = branch2;
-                types.IfBranches[this.ifid].ReturnType = types.ReturnTypes[branch1];
-            }
-
-            var result = new IfAccessSyntax(this.Location, this.ifid, true);
-
-            types.ReturnTypes[result] = types.IfBranches[this.ifid].ReturnType;
-            types.CapturedVariables[result] = types
-                .CapturedVariables[branch1]
-                .Concat(types.CapturedVariables[branch2])
-                .ToArray();
-
-            return result;
-        }
-
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            return new CVariableLiteral(writer.GetVariableName(this.ifid));
+            return new CVariableLiteral(tempName);
         }
     }
 }

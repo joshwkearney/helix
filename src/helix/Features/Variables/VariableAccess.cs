@@ -82,7 +82,7 @@ namespace Helix {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -124,7 +124,7 @@ namespace Helix {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
 
             return new CVariableLiteral(name);
@@ -153,7 +153,7 @@ namespace Helix {
 
         public ISyntaxTree ToLValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
 
             return new CAddressOf() {

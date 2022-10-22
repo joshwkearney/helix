@@ -59,9 +59,9 @@ namespace Helix.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CPointerDereference() {
-                Target = this.target.GenerateCode(types, writer)
+                Target = this.target.GenerateCode(writer)
             };
         }
     }
