@@ -1,5 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <BaseIntermediateOutputPath>$(solutiondir)\obj\trophyc\</BaseIntermediateOutputPath>
-  </PropertyGroup>
-</Project>
