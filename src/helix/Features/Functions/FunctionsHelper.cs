@@ -42,7 +42,7 @@ namespace Helix.Features.Functions {
 
                 var captured = Array.Empty<IdentifierPath>();
                 if (!type.IsValueType(types)) {
-                    captured = new[] { path };
+                    captured = new[] { sig.Path.Append(parsePar.Name) };
                 }
 
                 types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, captured);

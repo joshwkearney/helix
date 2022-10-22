@@ -87,17 +87,21 @@ namespace Helix.Features.Functions {
             var captured = new List<IdentifierPath>();
 
             // If there are any reference types in the result that can be found
-            // in any of the arguments then assume we captured that argument
+            // in any of the arguments then assume we captured that argument.
+            // Note: Pointer and array types are normalized to writable in case
+            // somebody is casting away their readonly-ness
             if (!sig.ReturnType.IsValueType(types)) {
                 var retRefs = sig.ReturnType
                     .GetContainedTypes(types)
                     .Where(x => !x.IsValueType(types))
+                    .Select(NormalizeTypes)
                     .ToArray();
 
                 foreach (var arg in newArgs) {
                     bool overlap = types.ReturnTypes[arg]
                         .GetContainedTypes(types)
                         .Where(x => !x.IsValueType(types))
+                        .Select(NormalizeTypes)
                         .Intersect(retRefs)
                         .Any();
 
@@ -129,6 +133,8 @@ namespace Helix.Features.Functions {
             types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
 
             return result;
+
+            
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
@@ -141,6 +147,18 @@ namespace Helix.Features.Functions {
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
+        }
+
+        private static HelixType NormalizeTypes(HelixType type) {
+            if (type is PointerType ptr) {
+                return new PointerType(ptr.InnerType, true);
+            }
+            else if (type is ArrayType arr) {
+                return new ArrayType(arr.InnerType);
+            }
+            else {
+                return type;
+            }
         }
     }
 

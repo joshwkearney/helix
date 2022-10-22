@@ -4,6 +4,7 @@ using Helix.Features.Primitives;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using System.Globalization;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -31,22 +32,6 @@ namespace Helix {
         }
 
         public Option<HelixType> AsType(SyntaxFrame types) {
-            // Make sure this name exists
-            //if (!types.TryResolvePath(this.name).TryGetValue(out var path)) {
-            //    throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
-            //}
-
-            //// Return primitive types if possible
-            //if (path == new IdentifierPath("int")) {
-            //    return PrimitiveType.Int;
-            //}
-            //else if (path == new IdentifierPath("bool")) {
-            //    return PrimitiveType.Bool;
-            //}
-            //else if (path == new IdentifierPath("void")) {
-            //    return PrimitiveType.Void;
-            //}
-
             // If we're pointing at a type then return it
             if (types.TryResolveName(this.Location.Scope, this.name, out var syntax)) {
                 if (syntax.AsType(types).TryGetValue(out var type)) {
@@ -126,7 +111,13 @@ namespace Helix {
 
             var result = new LValueVariableAccessSyntax(this.Location, this.variablePath);
             types.ReturnTypes[result] = new PointerType(types.ReturnTypes[this], true);
-            types.CapturedVariables[result] = types.CapturedVariables[this];
+
+            // Every variable lvalue needs to capture the stack, as it is a 
+            // pointer to a stack-allocated value
+            types.CapturedVariables[result] = types
+                .CapturedVariables[this]
+                .Append(new IdentifierPath("$stack"))
+                .ToArray();
 
             return result;
         }
@@ -155,6 +146,10 @@ namespace Helix {
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+
+        // Trying to get an rvlaue from an lvalue is fine, it just means that 
+        // somebody wanted the address of a variable
+        public ISyntaxTree ToRValue(SyntaxFrame type) => this;
 
         public ISyntaxTree ToLValue(SyntaxFrame types) => this;
 

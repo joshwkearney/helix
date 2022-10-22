@@ -46,11 +46,13 @@ DONE ### The Imperative Update
 	Singular arrays / embedding binary data in c
 
 ### The Memory Update
-	panics
-	track lifetime dependencies between syntax trees
+	DONE - Address of operator
+	DONE - Check return values for stack allocations
+	Readonly pointers and arrays
+	Track lifetime dependencies between syntax trees
 	poolof operator
-	implicit context struct for pooling functions
-	insert lifetime checks at runtime
+	Implicit context struct for pooling functions
+	Insert lifetime checks at runtime
 	Region memory management
 
 bounds check arrays

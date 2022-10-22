@@ -104,7 +104,29 @@ namespace Helix.Features.Variables {
                 throw new TypeCheckingException(
                     this.Location,
                     "Unsafe Memory Store",
-                    $"Unable to verify that the assigned value outlives its container.");
+                    $"Unable to verify that the assigned value outlives its container. " + 
+                    "Please declare this function as 'pooling' to check variable " + 
+                    "lifetimes at runtime or wrap this assignment in an unsafe block.");
+            }
+
+            // Modify the variable declaration to include any new captured variables
+            foreach (var cap in types.CapturedVariables[target]) {
+                if (cap == new IdentifierPath("$stack")) {
+                    continue;
+                }
+
+                var sig = types.Variables[cap];
+                var newCaptured = sig.CapturedVariables
+                    .Concat(types.CapturedVariables[assign])
+                    .ToArray();
+
+                var newSig = new VariableSignature(
+                    sig.Path, 
+                    sig.Type, 
+                    sig.IsWritable, 
+                    newCaptured);
+
+                types.Variables[cap] = newSig;
             }
 
             return result;

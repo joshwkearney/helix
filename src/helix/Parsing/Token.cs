@@ -5,7 +5,7 @@
         OpenBracket, CloseBracket,
 
         Comma, Colon, Dot, Semicolon,
-        Star, Plus, Minus, Modulo, Divide, Caret,
+        Star, Plus, Minus, Modulo, Divide, Caret, Ampersand,
 
         Not, Equals, NotEquals, 
         LessThan, GreaterThan, LessThanOrEqualTo, GreaterThanOrEqualTo,

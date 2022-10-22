@@ -11,7 +11,8 @@ namespace Helix.Parsing {
             var hasOperator = this.Peek(TokenKind.Minus)
                 || this.Peek(TokenKind.Plus)
                 || this.Peek(TokenKind.Not)
-                || this.Peek(TokenKind.Star);
+                || this.Peek(TokenKind.Star)
+                || this.Peek(TokenKind.Ampersand);
 
             if (hasOperator) {
                 var tokOp = this.Advance();
@@ -21,6 +22,9 @@ namespace Helix.Parsing {
 
                 if (tokOp.Kind == TokenKind.Star) {
                     return new DereferenceSyntax(loc, first);
+                }
+                else if (tokOp.Kind == TokenKind.Ampersand) {
+                    return new AddressOfSyntax(loc, first);
                 }
                 else if (tokOp.Kind == TokenKind.Plus) {
                     op = UnaryOperatorKind.Plus;

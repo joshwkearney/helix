@@ -35,8 +35,15 @@ namespace Helix.Parsing {
                     new BlockSyntax(affirm.Location, affirmStats),
                     new BlockSyntax(neg.Location, negStats));
 
+                var access = new IfAccessSyntax(loc, ifId);
+
                 block.Statements.Add(expr);
-                return new IfAccessSyntax(loc, ifId);
+
+                // Write out a statement with just the if access so it is ensured
+                // that the if branches are unified in the typechecker
+                block.Statements.Add(access);
+
+                return access;
             }
             else {
                 loc = start.Location.Span(affirm.Location);
@@ -191,13 +198,16 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
+            types = new SyntaxFrame(types);
             var value = this.value.CheckTypes(types).ToRValue(types);
 
             if (this.branch) {
                 types.IfBranches[this.ifId].TrueBranch = value;
+                types.IfBranches[this.ifId].TrueFrame = types;
             }
             else {
                 types.IfBranches[this.ifId].FalseBranch = value;
+                types.IfBranches[this.ifId].FalseFrame = types;
             }
 
             var result = new SetIfBranchSyntax(this.Location, this.ifId, this.branch, null, true);
@@ -233,7 +243,7 @@ namespace Helix.Features.FlowControl {
 
         public IEnumerable<ISyntaxTree> Children => Array.Empty<ISyntaxTree>();
 
-        public bool IsPure => true;
+        public bool IsPure => false;
 
         public IfAccessSyntax(TokenLocation loc, IdentifierPath ifid, bool isTypeChecked = false) {
             this.Location = loc;
@@ -257,9 +267,18 @@ namespace Helix.Features.FlowControl {
             var branch1 = types.IfBranches[this.ifid].TrueBranch;
             var branch2 = types.IfBranches[this.ifid].FalseBranch;
 
-            if (types.IfBranches[this.ifid].ReturnType == null) {               
+            if (types.IfBranches[this.ifid].ReturnType == null) {
+                var frame1 = types.IfBranches[this.ifid].TrueFrame;
+                var frame2 = types.IfBranches[this.ifid].FalseFrame;
+
+                // Unify the branch types
                 branch1 = branch1.UnifyFrom(branch2, types);
                 branch2 = branch2.UnifyFrom(branch1, types);
+
+                // Unify the branch variable signatures that overlap
+                // with our variable signatures to correctly capture
+                // lifetimes that were added to mutable variables
+                //var newSigs = types.IfBranches
 
                 types.IfBranches[this.ifid].TrueBranch = branch1;
                 types.IfBranches[this.ifid].FalseBranch = branch2;

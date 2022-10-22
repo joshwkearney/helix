@@ -69,7 +69,7 @@ namespace Helix.Parsing {
                 this.Advance(TokenKind.Yields);
             }
 
-            this.scope = this.scope.Append(sig.Name);
+            this.scope = this.scope.Append(sig.Name).Append("%body");
             var body = this.TopExpression(block);            
 
             this.Advance(TokenKind.Semicolon);
@@ -135,8 +135,6 @@ namespace Helix.Features.Functions {
             // Get a variable name for returns
             var returnName = "$return";
             var returnPath = sig.Path.Append(returnName);
-            var returnSig = new VariableSignature(returnPath, sig.ReturnType, true);
-
             var flow = new FlowRewriter();
 
             // Assign the body return value to our return variable
@@ -167,12 +165,26 @@ namespace Helix.Features.Functions {
             flow.OptimizeStates();
 
             // Declare our return variable
+            var returnSig = new VariableSignature(returnPath, sig.ReturnType, true);
             types.Variables[returnPath] = returnSig;
             types.SyntaxValues[returnPath] = new DummySyntax(this.retExpr.Location);
 
+            // Check types
             var body = new StateMachineSyntax(this.retExpr.Location, flow)
                 .CheckTypes(types)
                 .ToRValue(types);
+
+            // Test check the expression that will return form our function 
+            var retTest = new VariableAccessParseSyntax(this.retExpr.Location, returnName)
+                .CheckTypes(types);
+
+            // Make sure we're not capturing a stack-allocated variable
+            if (types.CapturedVariables[retTest].Contains(new IdentifierPath("$stack"))) {
+                throw new TypeCheckingException(
+                    this.retExpr.Location,
+                    "Dangling Pointer on Return Value",
+                    "The return value for this function references stack-allocated memory.");
+            }
 
 #if DEBUG
             // Debug check: make sure that every syntax tree has a return type

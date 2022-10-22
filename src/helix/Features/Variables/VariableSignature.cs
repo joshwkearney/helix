@@ -12,12 +12,12 @@ namespace Helix.Features.Variables {
         public IReadOnlyList<IdentifierPath> CapturedVariables { get; }
 
         public VariableSignature(IdentifierPath path, HelixType type, 
-            bool isWritable, IReadOnlyList<IdentifierPath> vars) {
+            bool isWritable, IReadOnlyList<IdentifierPath> capturedVariables) {
 
             Path = path;
             Type = type;
             IsWritable = isWritable;
-            this.CapturedVariables = vars;
+            this.CapturedVariables = capturedVariables;
         }
 
         public VariableSignature(IdentifierPath path, HelixType type, bool isWritable)

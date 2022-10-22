@@ -25,7 +25,7 @@ namespace Helix.Parsing {
             { '[', TokenKind.OpenBracket }, { ']', TokenKind.CloseBracket },
             { ',', TokenKind.Comma }, { '.', TokenKind.Dot },
             { ';', TokenKind.Semicolon },
-            { '^', TokenKind.Caret }
+            { '^', TokenKind.Caret }, { '&', TokenKind.Ampersand }
         };
 
         private readonly string text;

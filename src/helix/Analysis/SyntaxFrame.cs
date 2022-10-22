@@ -15,6 +15,10 @@ namespace Helix.Analysis {
         public ISyntaxTree FalseBranch { get; set; }
 
         public HelixType ReturnType { get; set; }
+
+        public SyntaxFrame TrueFrame { get; set; }
+
+        public SyntaxFrame FalseFrame { get; set; }
     }
 
     public class SyntaxFrame {
@@ -36,6 +40,8 @@ namespace Helix.Analysis {
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
+        // Represents variables captured by individual syntax elements
+        // Used for escape analysis and eventually for closure conversion
         public IDictionary<ISyntaxTree, IReadOnlyList<IdentifierPath>> CapturedVariables { get; }
 
         public SyntaxFrame() {
