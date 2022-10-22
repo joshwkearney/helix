@@ -48,7 +48,7 @@ contexts [] {
       }
       
       : pattern {
-         regex \= (?:\b)(if|then|else|while|do)(?:\b)
+         regex \= (?:\b)(if|then|else|while|do|for|break|continue|return)(?:\b)
          styles []= .keyword_control;
       }
       
@@ -58,7 +58,7 @@ contexts [] {
       }
       
       : pattern {
-         regex \= (?:\b)(int|bool|void|var|let|func|as|put|cast|extern|for|to)(?:\b)
+         regex \= (?:\b)(int|bool|void|var|let|func|as|put|cast|extern|to)(?:\b)
          styles []= .keyword;
       }
       
