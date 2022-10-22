@@ -2,11 +2,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helixc", "src\helix\helix.csproj", "{AB9EA283-17C3-45D2-9537-141204D5028C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix", "src\helix\helix.csproj", "{AB9EA283-17C3-45D2-9537-141204D5028C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resources", "resources", "{57F1B73D-1D27-4C39-9B72-7F8593865AFE}"
 	ProjectSection(SolutionItems) = preProject
 		resources\Helix.h = resources\Helix.h
+		helix.tmLanguage = helix.tmLanguage
 		resources\LineCounter.ps1 = resources\LineCounter.ps1
 		resources\Program.helix = resources\Program.helix
 		resources\Scratch.txt = resources\Scratch.txt

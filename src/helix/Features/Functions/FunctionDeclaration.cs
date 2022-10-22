@@ -65,9 +65,11 @@ namespace Helix.Parsing {
             var block = new BlockBuilder();
             var sig = this.FunctionSignature();
 
-            this.scope = this.scope.Append(sig.Name);
-            Advance(TokenKind.Yields);
+            if (!this.Peek(TokenKind.OpenBrace)) {
+                this.Advance(TokenKind.Yields);
+            }
 
+            this.scope = this.scope.Append(sig.Name);
             var body = this.TopExpression(block);            
 
             this.Advance(TokenKind.Semicolon);

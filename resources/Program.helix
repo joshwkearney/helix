@@ -5,13 +5,7 @@ struct Node {
 	var data as int;
 };
 
-
-
-func append(node as Node*, a as Node*) => {
-	node.next = a; // ERROR: cannot prove that poolof(a) >= poolof(node)
-};
-
-func loops(var x as int, let r as int[]) as int => {
+func loops(var x as int, let r as int[]) as int {
 	// Create structs on the stack
 	let stackAllocation = put Point { x= 45, y= 89 };
 	let anotherOne = put Point { 4, 5 };
@@ -24,8 +18,8 @@ func loops(var x as int, let r as int[]) as int => {
 
 	// While loops and for loops that get converted
 	// into a finite state machine
-	while x % 15 != 8 do {
-		for i = 0 to 15 do {
+	while x % 15 != 8 {
+		for i = 0 to 15 {
 			total += i;
 		};
 
@@ -43,18 +37,20 @@ func loops(var x as int, let r as int[]) as int => {
 	total + fib(total);
 };
 
-func fib(let x as int) as int => {
+func fib(let x as int) as int {
 	// If statements also become a finite state machine :)
 	if x <= 1
 		then x
 		else fib(x - 1) + fib(x - 2);
 };
 
-func test(let x as int*) => {
+func test(let x as int*) {
 	// This compiles even though you can't create your
 	// own pointers yet (oops)
 	*x = 45;
 };
+
+func expression_func() as int -> 45;
 
 struct Point {
 	let x as int;

@@ -24,7 +24,9 @@ namespace Helix.Parsing {
                 newBlock.Statements.Add(test);
             }
 
-            this.Advance(TokenKind.DoKeyword);
+            if (!this.Peek(TokenKind.OpenBrace)) {
+                this.Advance(TokenKind.Yields);
+            }
 
             this.isInLoop.Push(true);
             var body = this.TopExpression(newBlock);

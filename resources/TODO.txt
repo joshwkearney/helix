@@ -46,8 +46,12 @@ DONE ### The Imperative Update
 	Singular arrays / embedding binary data in c
 
 ### The Memory Update
+	poolof operator
+	implicit context struct for pooling functions
+	insert lifetime checks at runtime
 	Region memory management
 
+bounds check arrays
 interfaces
 Implicit struct conversions
 Anonymous structs and unions

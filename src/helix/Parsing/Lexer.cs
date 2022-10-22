@@ -60,12 +60,7 @@ namespace Helix.Parsing {
 
         private Token GetEqualsOrYieldsOrAssignment() {
             if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '>') {
-                    pos++;
-
-                    return new Token(TokenKind.Yields, new TokenLocation(pos - 1, 2, line, scope), "=>");
-                }
-                else if (text[pos + 1] == '=') {
+                if (text[pos + 1] == '=') {
                     pos++;
 
                     return new Token(TokenKind.Equals, new TokenLocation(pos - 1, 2, line, scope), "==");
@@ -224,6 +219,11 @@ namespace Helix.Parsing {
                     return new Token(
                         TokenKind.MinusAssignment,
                         new TokenLocation(pos - 1, 2, line, scope), "-=");
+                }
+                else if (text[pos + 1] == '>') {
+                    pos++;
+
+                    return new Token(TokenKind.Yields, new TokenLocation(pos - 1, 2, line, scope), "->");
                 }
             }
 

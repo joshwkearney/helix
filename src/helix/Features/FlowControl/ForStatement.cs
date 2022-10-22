@@ -19,7 +19,6 @@ namespace Helix.Parsing {
 
             this.Advance(TokenKind.ToKeyword);
             var endIndex = this.TopExpression(block);
-            var doLoc = this.Advance(TokenKind.DoKeyword).Location;
 
             startIndex = new AsParseTree(
                 startIndex.Location,
@@ -47,7 +46,7 @@ namespace Helix.Parsing {
             block.Statements.Add(counterDecl);
 
             var newBlock = new BlockBuilder();
-            var loc = startTok.Location.Span(doLoc);
+            var loc = startTok.Location.Span(endIndex.Location);
 
             //var iteratorDecl = new VarParseStatement(startTok.Location, new[] { id.Value }, counterAccess, true);
 
@@ -63,6 +62,10 @@ namespace Helix.Parsing {
 
             //newBlock.Statements.Add(iteratorDecl);
             newBlock.Statements.Add(test);
+
+            if (!this.Peek(TokenKind.OpenBrace)) {
+                this.Advance(TokenKind.Yields);
+            }
 
             var body = this.TopExpression(newBlock);
             loc = loc.Span(body.Location);
