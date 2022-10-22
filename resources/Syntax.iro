@@ -20,8 +20,8 @@
 ##
 ################################################################
 
-name                   = trophy
-file_extensions []     = trophy;
+name                   = helix
+file_extensions []     = helix;
 background_color       = white
 color                  = black
 
