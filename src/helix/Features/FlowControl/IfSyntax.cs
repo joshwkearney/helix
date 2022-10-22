@@ -153,13 +153,19 @@ namespace Helix.Features.FlowControl {
 
     public record SetIfBranchSyntax : ISyntaxTree {
         private readonly IdentifierPath ifId;
-        private readonly ISyntaxTree value;
+        private readonly ISyntaxTree? value;
         private readonly bool branch;
         private readonly bool isTypeChecked = false;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.value };
+        public IEnumerable<ISyntaxTree> Children {
+            get {
+                if (this.value != null) {
+                    yield return this.value;
+                }
+            }
+        }
 
         public bool IsPure => false;
 

@@ -23,10 +23,8 @@ namespace Helix {
 
             try {
                 var parser = new Parser(input);
-               // var names = new NamesRecorder();
                 var types = new SyntaxFrame();
                 var writer = new CWriter(this.header, types.TypeDeclarations);
-
                 var parseStats = parser.Parse();
 
                 foreach (var stat in parseStats) {

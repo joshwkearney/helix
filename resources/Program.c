@@ -26,6 +26,7 @@ struct Point {
 
 _helix_int loops(_helix_int x_1, _helix_int_array r) {
     _helix_int $return;
+    _helix_int $3;
 
     state1: ;
     Point stackAllocation = { 45U, 89U };
@@ -38,7 +39,7 @@ _helix_int loops(_helix_int x_1, _helix_int_array r) {
 
     state4: ;
     if (!((x_1 % 15U) != 8U)) { 
-        goto state26;
+        goto state33;
     } 
     else {
         goto state9;
@@ -63,27 +64,47 @@ _helix_int loops(_helix_int x_1, _helix_int_array r) {
 
     state19: ;
     if ((x_1 > 100U)) { 
-        goto state26;
+        goto state33;
     } 
     else {
-        goto state4;
+        goto state25;
     }
 
-    state26: ;
-    _helix_int zero = 0U;
-    _helix_int alsoZero = 0U;
-    _helix_int $3 = fib(total);
-    $return = (total + $3);
-    goto state27;
+    state25: ;
+    if ((x_1 < 10U)) { 
+        goto state33;
+    } 
+    else {
+        goto state29;
+    }
 
     state27: ;
+    $3 = 0U;
+    goto state31;
+
+    state29: ;
+    $3 = 10U;
+    goto state31;
+
+    state31: ;
+    _helix_int awfulFlowControl = $3;
+    goto state4;
+
+    state33: ;
+    _helix_int zero = 0U;
+    _helix_int alsoZero = 0U;
+    _helix_int $4 = fib(total);
+    $return = (total + $4);
+    goto state34;
+
+    state34: ;
 
     return $return;
 }
 
 _helix_int fib(_helix_int x_2) {
     _helix_int $return_1;
-    _helix_int $4;
+    _helix_int $5;
 
     state1: ;
     if ((x_2 <= 1U)) { 
@@ -94,17 +115,17 @@ _helix_int fib(_helix_int x_2) {
     }
 
     state2: ;
-    $4 = x_2;
+    $5 = x_2;
     goto state6;
 
     state4: ;
-    _helix_int $5 = fib((x_2 - 1U));
-    _helix_int $6 = fib((x_2 - 2U));
-    $4 = ($5 + $6);
+    _helix_int $6 = fib((x_2 - 1U));
+    _helix_int $7 = fib((x_2 - 2U));
+    $5 = ($6 + $7);
     goto state6;
 
     state6: ;
-    $return_1 = $4;
+    $return_1 = $5;
     goto state7;
 
     state7: ;

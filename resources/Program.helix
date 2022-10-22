@@ -26,6 +26,13 @@ func loops(var x as int, let r as int[]) as int {
 		if x > 100 then {
 			break;
 		};
+
+		let awfulFlowControl = {
+			if x < 10 then {
+				break;
+			}
+			else 10;
+		};
 	};
 
 	// Use either the "void as T" or "put T" idioms

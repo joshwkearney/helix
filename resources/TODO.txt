@@ -17,7 +17,7 @@ DONE - Lines numbers in c comments
 	Differentiate bitwise from logical operators
 
 ### The Unsafe Update
-	Unsafe blocks
+	Unsafe blocks / functions
 	Pointer arithmetic
 	Pointer casting
 	Opaque types
@@ -46,6 +46,8 @@ DONE ### The Imperative Update
 	Singular arrays / embedding binary data in c
 
 ### The Memory Update
+	panics
+	track lifetime dependencies between syntax trees
 	poolof operator
 	implicit context struct for pooling functions
 	insert lifetime checks at runtime

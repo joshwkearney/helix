@@ -175,6 +175,15 @@ namespace Helix.Features.Functions {
                 .CheckTypes(types)
                 .ToRValue(types);
 
+#if DEBUG
+            // Debug check: make sure that every syntax tree has a return type
+            foreach (var expr in body.GetAllChildren()) {
+                if (!types.ReturnTypes.ContainsKey(expr)) {
+                    throw new Exception("Compiler assertion failed: syntax tree does not have a return type");
+                }
+            }
+#endif
+
             return new FunctionDeclaration(this.Location, sig, body, returnPath);
         }
 
