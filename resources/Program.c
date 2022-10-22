@@ -2,38 +2,47 @@
 extern "C" {
 #endif
 
-typedef unsigned int _trophy_bool;
-typedef unsigned int _trophy_void;
-typedef unsigned int _trophy_int;
-_trophy_int externalFunc(_trophy_int x);
-_trophy_int loops(_trophy_int x_1);
+typedef unsigned int _helix_bool;
+typedef unsigned int _helix_void;
+typedef unsigned int _helix_int;
+typedef struct _helix_int_array _helix_int_array;
+typedef struct Point Point;
 
-_trophy_int loops(_trophy_int x_1) {
-    _trophy_int $return;
+_helix_int externalFunc(_helix_int x);
+_helix_int loops(_helix_int x_1, _helix_int_array r);
+
+struct _helix_int_array {
+    _helix_int* data;
+    _helix_int count;
+};
+
+struct Point {
+    _helix_int x;
+    _helix_int y;
+};
+
+_helix_int loops(_helix_int x_1, _helix_int_array r) {
+    _helix_int $return;
 
     state1: ;
-    _trophy_int total = 0U;
-    _trophy_int i = 0U;
+    Point stackAllocation = { 45U, 89U };
+    Point anotherOne = { 4U, 5U };
+    _helix_int total = anotherOne.x;
     goto state4;
 
     state4: ;
-    if ((i >= 15U)) { 
-        goto state11;
+    if (!((x_1 % 15U) != 8U)) { 
+        goto state10;
     } 
     else {
-        goto state9;
+        goto state4;
     }
 
-    state9: ;
-    total = (total + i);
-    i = (i + 1U);
-    goto state4;
+    state10: ;
+    $return = total;
+    goto state11;
 
     state11: ;
-    $return = total;
-    goto state12;
-
-    state12: ;
 
     return $return;
 }

@@ -109,13 +109,13 @@ namespace Helix.Generation {
 
         public ICSyntax ConvertType(HelixType type) {
             if (type == PrimitiveType.Bool || type is SingularBoolType) {
-                return new CNamedType("_trophy_bool");
+                return new CNamedType("_helix_bool");
             }
             else if (type == PrimitiveType.Int || type is SingularIntType) {
-                return new CNamedType("_trophy_int");
+                return new CNamedType("_helix_int");
             }
             else if (type == PrimitiveType.Void) {
-                return new CNamedType("_trophy_void");
+                return new CNamedType("_helix_void");
             }
             else if (type is PointerType type2) {
                 return new CPointerType(ConvertType(type2.InnerType));
