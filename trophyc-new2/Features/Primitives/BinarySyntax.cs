@@ -112,12 +112,12 @@ namespace Trophy.Parsing {
             var first = this.MultiplyExpression(block);
 
             while (true) {
-                if (!this.Peek(TokenKind.Add) && !this.Peek(TokenKind.Subtract)) {
+                if (!this.Peek(TokenKind.Plus) && !this.Peek(TokenKind.Minus)) {
                     break;
                 }
 
                 var tok = this.Advance().Kind;
-                var op = tok == TokenKind.Add ? BinaryOperationKind.Add : BinaryOperationKind.Subtract;
+                var op = tok == TokenKind.Plus ? BinaryOperationKind.Add : BinaryOperationKind.Subtract;
                 var second = this.MultiplyExpression(block);
                 var loc = first.Location.Span(second.Location);
 
@@ -131,14 +131,14 @@ namespace Trophy.Parsing {
             var first = this.PrefixExpression(block);
 
             while (true) {
-                if (!this.Peek(TokenKind.Multiply) && !this.Peek(TokenKind.Modulo) && !this.Peek(TokenKind.Divide)) {
+                if (!this.Peek(TokenKind.Star) && !this.Peek(TokenKind.Modulo) && !this.Peek(TokenKind.Divide)) {
                     break;
                 }
 
                 var tok = this.Advance().Kind;
                 var op = BinaryOperationKind.Modulo;
 
-                if (tok == TokenKind.Multiply) {
+                if (tok == TokenKind.Star) {
                     op = BinaryOperationKind.Multiply;
                 }
                 else if (tok == TokenKind.Divide) {

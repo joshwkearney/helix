@@ -23,12 +23,12 @@ DONE - Lines numbers in c comments
 	Opaque types
 	alloc / free
 
-### The Imperative Update
-	+=, -=, etc
+DONE ### The Imperative Update
+	DONE - Assignment operators
 	DONE - Iterable syntax trees
 	DONE - Parser tree to imperative conversion
 	DONE - Loop state machine conversion
-	break, continue, return
+	DONE - break, continue, return
 
 ### The Enum Update
 	Pointer member access

@@ -24,9 +24,8 @@ namespace Trophy.Parsing {
             { '{', TokenKind.OpenBrace }, { '}', TokenKind.CloseBrace },
             { '[', TokenKind.OpenBracket }, { ']', TokenKind.CloseBracket },
             { ',', TokenKind.Comma }, { '.', TokenKind.Dot },
-            { ';', TokenKind.Semicolon }, { '+', TokenKind.Add },
-            { '-', TokenKind.Subtract }, { '*', TokenKind.Multiply },
-            { '%', TokenKind.Modulo }, { '^', TokenKind.Caret }
+            { ';', TokenKind.Semicolon },
+            { '^', TokenKind.Caret }
         };
 
         private readonly string text;
@@ -177,8 +176,7 @@ namespace Trophy.Parsing {
             return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, line, scope), c.ToString());
         }
 
-
-        private Token GetSlashOrComment() {
+        private Token GetSlashOrCommentOrDivideAssignment() {
             if (pos + 1 < text.Length) {
                 if (text[pos + 1] == '/') {
                     int start = pos;
@@ -192,9 +190,72 @@ namespace Trophy.Parsing {
                     var location = new TokenLocation(start, pos - start + 1, line, scope);
                     return new Token(TokenKind.Whitespace, location, "");
                 }
+                else if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(
+                        TokenKind.DivideAssignment, 
+                        new TokenLocation(pos - 1, 2, line, scope), "/=");
+                }
             }
 
             return new Token(TokenKind.Divide, Location, "/");            
+        }
+
+        private Token GetPlusOrPlusAssignment() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(
+                        TokenKind.PlusAssignment,
+                        new TokenLocation(pos - 1, 2, line, scope), "+=");
+                }
+            }
+
+            return new Token(TokenKind.Plus, Location, "+");
+        }
+
+        private Token GetMinusOrMinusAssignment() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(
+                        TokenKind.MinusAssignment,
+                        new TokenLocation(pos - 1, 2, line, scope), "-=");
+                }
+            }
+
+            return new Token(TokenKind.Minus, Location, "-");
+        }
+
+        private Token GetStarOrStarAssignment() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(
+                        TokenKind.StarAssignment,
+                        new TokenLocation(pos - 1, 2, line, scope), "*=");
+                }
+            }
+
+            return new Token(TokenKind.Star, Location, "*");
+        }
+
+        private Token GetModuloOrModuloAssignment() {
+            if (pos + 1 < text.Length) {
+                if (text[pos + 1] == '=') {
+                    pos++;
+
+                    return new Token(
+                        TokenKind.ModuloAssignment,
+                        new TokenLocation(pos - 1, 2, line, scope), "%=");
+                }
+            }
+
+            return new Token(TokenKind.Modulo, Location, "%");
         }
 
         private Token GetTokenHelper() {
@@ -221,6 +282,21 @@ namespace Trophy.Parsing {
             else if (Current == '\'') {
                 return this.GetCharLiteral();
             }
+            else if (Current == '+') {
+                return this.GetPlusOrPlusAssignment();
+            }
+            else if (Current == '-') {
+                return this.GetMinusOrMinusAssignment();
+            }
+            else if (Current == '*') {
+                return this.GetStarOrStarAssignment();
+            }
+            else if (Current == '/') {
+                return this.GetSlashOrCommentOrDivideAssignment();
+            }
+            else if (Current == '%') {
+                return this.GetModuloOrModuloAssignment();
+            }
             else if (char.IsDigit(Current)) {
                 return this.GetNumber();
             }
@@ -233,10 +309,7 @@ namespace Trophy.Parsing {
             }
             else if (char.IsWhiteSpace(Current)) {
                 return new Token(TokenKind.Whitespace, Location, Current.ToString());
-            }
-            else if (Current == '/') {
-                return this.GetSlashOrComment();
-            }
+            }           
             else {
                 throw ParsingErrors.UnexpectedCharacter(Location, Current);
             }

@@ -8,10 +8,10 @@ using Trophy.Generation.Syntax;
 namespace Trophy.Parsing {
     public partial class Parser {
         private ISyntaxTree UnaryExpression(BlockBuilder block) {
-            var hasOperator = this.Peek(TokenKind.Subtract)
-                || this.Peek(TokenKind.Add)
+            var hasOperator = this.Peek(TokenKind.Minus)
+                || this.Peek(TokenKind.Plus)
                 || this.Peek(TokenKind.Not)
-                || this.Peek(TokenKind.Multiply);
+                || this.Peek(TokenKind.Star);
 
             if (hasOperator) {
                 var tokOp = this.Advance();
@@ -19,13 +19,13 @@ namespace Trophy.Parsing {
                 var loc = tokOp.Location.Span(first.Location);
                 var op = UnaryOperatorKind.Not;
 
-                if (tokOp.Kind == TokenKind.Multiply) {
+                if (tokOp.Kind == TokenKind.Star) {
                     return new DereferenceSyntax(loc, first);
                 }
-                else if (tokOp.Kind == TokenKind.Add) {
+                else if (tokOp.Kind == TokenKind.Plus) {
                     op = UnaryOperatorKind.Plus;
                 }
-                else if (tokOp.Kind == TokenKind.Subtract) {
+                else if (tokOp.Kind == TokenKind.Minus) {
                     op = UnaryOperatorKind.Minus;
                 }
 

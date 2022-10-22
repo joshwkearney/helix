@@ -7,15 +7,11 @@ func loops(var x as int) as int => {
 	//	total = total + i;
 	//};
 
-	while true do {
-		if x > 1500 or else x < 100 then {
-			x = x + 10;
-		};
+	var total = 0;
 
-		if x > 10 then {
-			break;
-		};
+	for i = 0 to x do {
+		total += i;
 	};
 
-	x;
+	total;
 };

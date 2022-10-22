@@ -5,12 +5,13 @@
         OpenBracket, CloseBracket,
 
         Comma, Colon, Dot, Semicolon,
-        Multiply, Add, Subtract, Modulo, Divide, Caret,
+        Star, Plus, Minus, Modulo, Divide, Caret,
 
         Not, Equals, NotEquals, 
         LessThan, GreaterThan, LessThanOrEqualTo, GreaterThanOrEqualTo,
 
-        VarKeyword, LetKeyword, Assignment,
+        VarKeyword, LetKeyword, Assignment, 
+        PlusAssignment, MinusAssignment, StarAssignment, DivideAssignment, ModuloAssignment,
         FunctionKeyword, ExternKeyword, Yields,
 
         IntKeyword, VoidKeyword, BoolKeyword, AsKeyword, IsKeyword,

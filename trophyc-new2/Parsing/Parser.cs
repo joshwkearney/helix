@@ -90,7 +90,7 @@ namespace Trophy.Parsing {
 
             while (this.Peek(TokenKind.OpenParenthesis) 
                 || this.Peek(TokenKind.Dot) 
-                || this.Peek(TokenKind.Multiply)
+                || this.Peek(TokenKind.Star)
                 || this.Peek(TokenKind.OpenBracket)) {
                 //|| this.Peek(TokenKind.Caret)) {
 
@@ -100,7 +100,7 @@ namespace Trophy.Parsing {
                 else if (this.Peek(TokenKind.Dot)) {
                     first = this.MemberAccess(first, block);
                 }
-                else if (this.Peek(TokenKind.Multiply) || this.Peek(TokenKind.Caret)) {
+                else if (this.Peek(TokenKind.Star) || this.Peek(TokenKind.Caret)) {
                     first = this.TypePointer(first, block);
                 }
                 else if (this.Peek(TokenKind.OpenBracket)) {

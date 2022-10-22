@@ -19,8 +19,36 @@ namespace Trophy.Parsing {
                 block.Statements.Add(result);
                 return new VoidLiteral(loc);
             }
+            else {
+                BinaryOperationKind op;
 
-            return start;
+                if (this.TryAdvance(TokenKind.PlusAssignment)) {
+                    op = BinaryOperationKind.Add;
+                }
+                else if (this.TryAdvance(TokenKind.MinusAssignment)) {
+                    op = BinaryOperationKind.Subtract;
+                }
+                else if (this.TryAdvance(TokenKind.StarAssignment)) {
+                    op = BinaryOperationKind.Multiply;
+                }
+                else if (this.TryAdvance(TokenKind.DivideAssignment)) {
+                    op = BinaryOperationKind.FloorDivide;
+                }
+                else if (this.TryAdvance(TokenKind.ModuloAssignment)) {
+                    op = BinaryOperationKind.Modulo;
+                }
+                else {
+                    return start;
+                }
+
+                var second = this.TopExpression(block);
+                var loc = start.Location.Span(second.Location);
+                var assign = new BinarySyntax(loc, start, second, op);
+                var stat = new AssignmentStatement(loc, start, assign);
+
+                block.Statements.Add(stat);
+                return new VoidLiteral(loc);
+            }
         }
     }
 }

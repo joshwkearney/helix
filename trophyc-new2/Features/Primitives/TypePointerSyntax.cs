@@ -11,8 +11,8 @@ namespace Trophy.Parsing {
             TokenLocation loc;
             bool isWritable;
 
-            if (this.Peek(TokenKind.Multiply)) {
-                loc = this.Advance(TokenKind.Multiply).Location;
+            if (this.Peek(TokenKind.Star)) {
+                loc = this.Advance(TokenKind.Star).Location;
                 isWritable = true;
             }
             else {
