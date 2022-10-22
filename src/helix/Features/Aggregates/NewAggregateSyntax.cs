@@ -84,7 +84,7 @@ namespace Helix.Features.Aggregates {
                     "Unions cannot be initialized with more than one member.");
             }
 
-            ISyntaxTree result;
+            NewAggregateSyntax result;
 
             // If there aren't any assigned members then assigned the first one
             if (names.Count == 0) {
@@ -141,6 +141,11 @@ namespace Helix.Features.Aggregates {
             }
 
             types.ReturnTypes[result] = new NamedType(sig.Path);
+
+            types.CapturedVariables[result] = result.values
+                .SelectMany(x => types.CapturedVariables[x])
+                .ToArray();
+
             return result;
         }
 
@@ -215,6 +220,10 @@ namespace Helix.Features.Aggregates {
 
             var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
             types.ReturnTypes[result] = type;
+
+            types.CapturedVariables[result] = result.values
+                .SelectMany(x => types.CapturedVariables[x])
+                .ToArray();
 
             return result;
         }

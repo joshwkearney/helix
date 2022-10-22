@@ -43,7 +43,7 @@ namespace Helix.Features.Functions {
             var decl = new ExternFunctionDeclaration(this.Location, sig);
 
             // Replace the temporary wrapper object with a full declaration
-            types.Trees[sig.Path] = new TypeSyntax(this.Location, new NamedType(sig.Path));
+            types.SyntaxValues[sig.Path] = new TypeSyntax(this.Location, new NamedType(sig.Path));
 
             // Declare this function
             types.Functions[sig.Path] = sig;

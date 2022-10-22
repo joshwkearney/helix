@@ -26,7 +26,7 @@ namespace Helix.Features.Functions {
             // Declare this function
             var path = sig.Location.Scope.Append(sig.Name);
 
-            types.Trees[path] = new TypeSyntax(sig.Location, new NamedType(path));
+            types.SyntaxValues[path] = new TypeSyntax(sig.Location, new NamedType(path));
         }
 
         public static void DeclareParameters(TokenLocation loc, FunctionSignature sig, SyntaxFrame types) {
@@ -41,7 +41,7 @@ namespace Helix.Features.Functions {
                 }
 
                 types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable);
-                types.Trees[path] = new VariableAccessSyntax(loc, path);
+                types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
             }
         }
     }

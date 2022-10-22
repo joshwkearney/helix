@@ -52,6 +52,7 @@ namespace Helix.Features.Aggregates {
                         true);
 
                     types.ReturnTypes[result] = PrimitiveType.Int;
+                    types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
                     return result;
                 }
             }
@@ -75,6 +76,13 @@ namespace Helix.Features.Aggregates {
                             true);
 
                         types.ReturnTypes[result] = field.Type;
+                        
+                        if (field.Type.IsValueType(types)) {
+                            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+                        }
+                        else {
+                            types.CapturedVariables[result] = types.CapturedVariables[target];
+                        }
 
                         return result;
                     }

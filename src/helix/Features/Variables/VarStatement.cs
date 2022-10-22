@@ -85,8 +85,13 @@ namespace Helix {
                 return this.Destructure(assignType, types);
             }
 
+            var captured = (IReadOnlyList<IdentifierPath>)Array.Empty<IdentifierPath>();
+            if (!assignType.IsValueType(types)) {
+                captured = types.CapturedVariables[assign];
+            }
+
             var path = this.Location.Scope.Append(this.names[0]);
-            var sig = new VariableSignature(path, assignType, this.isWritable);
+            var sig = new VariableSignature(path, assignType, this.isWritable, captured);
 
             // Declare this variable and make sure we're not shadowing another variable
             if (types.Variables.ContainsKey(path)) {
@@ -95,12 +100,13 @@ namespace Helix {
 
             // Put this variable's value in the value table
             types.Variables[path] = sig;
-            types.Trees[path] = assign;
+            types.SyntaxValues[path] = assign;
 
             // Set the return type of the new syntax tree
             var result = new VarStatement(this.Location, sig, assign);
+
             types.ReturnTypes[result] = PrimitiveType.Void;
-            //types.SetReturnType(result, new PointerType(assignType, this.isWritable));
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
 
             return result;
         }

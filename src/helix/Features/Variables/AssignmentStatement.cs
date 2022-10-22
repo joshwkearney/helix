@@ -87,6 +87,10 @@ namespace Helix.Features.Variables {
 
             var result = new AssignmentStatement(this.Location, target, assign, true);
             types.ReturnTypes[result] = PrimitiveType.Void;
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+
+            // TODO: Add lifetime dependency between captured variables
+            // TODO: Check for untestable lifetime checking
 
             return result;
         }

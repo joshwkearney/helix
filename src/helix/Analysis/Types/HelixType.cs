@@ -10,7 +10,9 @@ namespace Helix.Analysis.Types {
             return new TypeSyntaxWrapper(loc, this);
         }
 
-        public virtual IEnumerable<HelixType> GetContainedValueTypes(SyntaxFrame types) {
+        public abstract bool IsValueType(SyntaxFrame types);
+
+        public virtual IEnumerable<HelixType> GetContainedTypes(SyntaxFrame frame) {
             yield return this;
         }
 

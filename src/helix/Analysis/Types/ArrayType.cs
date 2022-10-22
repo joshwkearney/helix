@@ -30,5 +30,12 @@ namespace Helix.Analysis.Types {
         public override string ToString() {
             return this.InnerType + "[]";
         }
+
+        public override bool IsValueType(SyntaxFrame types) => false;
+
+        public override IEnumerable<HelixType> GetContainedTypes(SyntaxFrame frame) {
+            yield return this;
+            yield return this.InnerType;
+        }
     }
 }

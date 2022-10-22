@@ -88,8 +88,15 @@ namespace Helix.Features.Arrays {
             }
 
             var result = new ArrayIndexSyntax(this.Location, target, index, true);
-
             types.ReturnTypes[result] = arrayType.InnerType;
+
+            if (arrayType.InnerType.IsValueType(types)) {
+                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            }
+            else {
+                types.CapturedVariables[result] = types.CapturedVariables[target];
+            }
+
             return result;
         }
 

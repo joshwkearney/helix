@@ -27,6 +27,14 @@ namespace Helix.Features.Primitives {
             var result = new DereferenceSyntax(this.Location, target, true);
 
             types.ReturnTypes[result] = pointerType.InnerType;
+
+            if (pointerType.InnerType.IsValueType(types)) {
+                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            }
+            else {
+                types.CapturedVariables[result] = types.CapturedVariables[target];
+            }
+
             return result;
         }
 

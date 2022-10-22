@@ -32,6 +32,8 @@ namespace Helix.Features.Variables {
                 this.args.Select(x => x.CheckTypes(types)).ToArray());
 
             types.ReturnTypes[result] = PrimitiveType.Void;
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+
             return result;
         }
 

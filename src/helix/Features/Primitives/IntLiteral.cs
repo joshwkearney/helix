@@ -37,6 +37,7 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             types.ReturnTypes[this] = new SingularIntType(this.Value);
+            types.CapturedVariables[this] = Array.Empty<IdentifierPath>();
 
             return this;
         }

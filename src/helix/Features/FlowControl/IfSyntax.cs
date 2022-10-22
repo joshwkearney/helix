@@ -202,6 +202,7 @@ namespace Helix.Features.FlowControl {
 
             var result = new SetIfBranchSyntax(this.Location, this.ifId, this.branch, null, true);
             types.ReturnTypes[result] = PrimitiveType.Void;
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
 
             return result;
         }
@@ -253,10 +254,10 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            if (types.IfBranches[this.ifid].ReturnType == null) {
-                var branch1 = types.IfBranches[this.ifid].TrueBranch;
-                var branch2 = types.IfBranches[this.ifid].FalseBranch;
+            var branch1 = types.IfBranches[this.ifid].TrueBranch;
+            var branch2 = types.IfBranches[this.ifid].FalseBranch;
 
+            if (types.IfBranches[this.ifid].ReturnType == null) {               
                 branch1 = branch1.UnifyFrom(branch2, types);
                 branch2 = branch2.UnifyFrom(branch1, types);
 
@@ -268,6 +269,11 @@ namespace Helix.Features.FlowControl {
             var result = new IfAccessSyntax(this.Location, this.ifid, true);
 
             types.ReturnTypes[result] = types.IfBranches[this.ifid].ReturnType;
+            types.CapturedVariables[result] = types
+                .CapturedVariables[branch1]
+                .Concat(types.CapturedVariables[branch2])
+                .ToArray();
+
             return result;
         }
 

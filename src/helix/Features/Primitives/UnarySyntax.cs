@@ -80,6 +80,7 @@ namespace Helix.Features.Primitives {
                     arg);
 
                 types.ReturnTypes[result] = PrimitiveType.Bool;
+                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
 
                 return result;
             }

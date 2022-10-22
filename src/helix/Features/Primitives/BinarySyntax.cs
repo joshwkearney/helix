@@ -255,6 +255,7 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
             types.ReturnTypes[result] = returnType;
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
 
             return result;
         }

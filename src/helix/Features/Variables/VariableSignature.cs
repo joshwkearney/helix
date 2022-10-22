@@ -9,10 +9,18 @@ namespace Helix.Features.Variables {
 
         public IdentifierPath Path { get; }
 
-        public VariableSignature(IdentifierPath path, HelixType type, bool isWritable) {
+        public IReadOnlyList<IdentifierPath> CapturedVariables { get; }
+
+        public VariableSignature(IdentifierPath path, HelixType type, 
+            bool isWritable, IReadOnlyList<IdentifierPath> vars) {
+
             Path = path;
             Type = type;
             IsWritable = isWritable;
+            this.CapturedVariables = vars;
         }
+
+        public VariableSignature(IdentifierPath path, HelixType type, bool isWritable)
+            : this(path, type, isWritable, Array.Empty<IdentifierPath>()) { }
     }
 }

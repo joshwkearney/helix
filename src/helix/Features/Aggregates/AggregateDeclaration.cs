@@ -82,7 +82,7 @@ namespace Helix.Features.Aggregates {
 
             var path = this.Location.Scope.Append(this.signature.Name);
 
-            names.Trees[path] = new TypeSyntax(this.Location, new NamedType(path));
+            names.SyntaxValues[path] = new TypeSyntax(this.Location, new NamedType(path));
             //names = names.WithScope(this.signature.Name);
 
             // Declare the parameters
@@ -107,7 +107,9 @@ namespace Helix.Features.Aggregates {
             var sig = this.signature.ResolveNames(types); 
             var structType = new NamedType(sig.Path);
             var isRecursive = sig.Members
-                .SelectMany(x => x.Type.GetContainedValueTypes(types))
+                .Select(x => x.Type)
+                .Where(x => x.IsValueType(types))
+                .SelectMany(x => x.GetContainedTypes(types))
                 .Contains(structType);
 
             // Make sure this is not a recursive struct or union
@@ -120,7 +122,7 @@ namespace Helix.Features.Aggregates {
                 // For loop for better error messages
                 for (int i = 0; i < sig.Members.Count; i++) {
                     var pointer = sig.Members[i].Type
-                        .GetContainedValueTypes(types)
+                        .GetContainedTypes(types)
                         .Where(x => x is PointerType)
                         .FirstOrNone();
 

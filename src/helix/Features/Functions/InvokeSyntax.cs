@@ -84,6 +84,34 @@ namespace Helix.Features.Functions {
             var result = new InvokeSyntax(this.Location, sig, newArgs);
             types.ReturnTypes[result] = sig.ReturnType;
 
+            if (sig.ReturnType.IsValueType(types)) {
+                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            }
+            else {
+                // If there are any reference types in the result that can be found
+                // in any of the arguments then assume we captured that argument
+                var captured = new List<IdentifierPath>();
+
+                var retRefs = sig.ReturnType
+                    .GetContainedTypes(types)
+                    .Where(x => !x.IsValueType(types))
+                    .ToArray();
+
+                foreach (var arg in newArgs) {
+                    bool overlap = types.ReturnTypes[arg]
+                        .GetContainedTypes(types)
+                        .Where(x => !x.IsValueType(types))
+                        .Intersect(retRefs)
+                        .Any();
+
+                    if (overlap) {
+                        captured.AddRange(types.CapturedVariables[arg]);
+                    }
+                }
+
+                types.CapturedVariables[result] = captured;
+            }
+
             return result;
         }
 

@@ -72,6 +72,8 @@ namespace Helix.Analysis.Types {
             return base.ToSyntax(loc);
         }
 
+        public override bool IsValueType(SyntaxFrame types) => true;
+
         private enum PrimitiveTypeKind {
             Int = 11, 
             Float = 13, 

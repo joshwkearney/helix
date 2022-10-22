@@ -56,5 +56,7 @@ namespace Helix.Analysis.Types {
         }
 
         public override string ToString() => this.Value.ToString();
+
+        public override bool IsValueType(SyntaxFrame types) => true;
     }
 }

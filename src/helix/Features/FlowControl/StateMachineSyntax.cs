@@ -101,6 +101,8 @@ namespace Helix.Features.FlowControl {
             var result = new StateMachineSyntax(this.Location, flow, true);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
+            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+
             return result;
         }
 

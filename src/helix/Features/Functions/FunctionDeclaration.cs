@@ -169,7 +169,7 @@ namespace Helix.Features.Functions {
 
             // Declare our return variable
             types.Variables[returnPath] = returnSig;
-            types.Trees[returnPath] = new DummySyntax(this.retExpr.Location);
+            types.SyntaxValues[returnPath] = new DummySyntax(this.retExpr.Location);
 
             var body = new StateMachineSyntax(this.retExpr.Location, flow)
                 .CheckTypes(types)
@@ -180,6 +180,13 @@ namespace Helix.Features.Functions {
             foreach (var expr in body.GetAllChildren()) {
                 if (!types.ReturnTypes.ContainsKey(expr)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have a return type");
+                }
+            }
+
+            // Debug check: make sure that every syntax tree has captured variables
+            foreach (var expr in body.GetAllChildren()) {
+                if (!types.CapturedVariables.ContainsKey(expr)) {
+                    throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
                 }
             }
 #endif

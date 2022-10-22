@@ -72,6 +72,8 @@ namespace Helix {
                 var result = new VariableAccessSyntax(this.Location, path);
 
                 types.ReturnTypes[result] = varSig.Type;
+                types.CapturedVariables[result] = varSig.CapturedVariables;
+
                 return result;
             }
 
@@ -79,6 +81,8 @@ namespace Helix {
                 var result = new VariableAccessSyntax(this.Location, path);
 
                 types.ReturnTypes[result] = new NamedType(path);
+                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+
                 return result;
             }
 
@@ -122,6 +126,7 @@ namespace Helix {
 
             var result = new LValueVariableAccessSyntax(this.Location, this.variablePath);
             types.ReturnTypes[result] = new PointerType(types.ReturnTypes[this], true);
+            types.CapturedVariables[result] = types.CapturedVariables[this];
 
             return result;
         }

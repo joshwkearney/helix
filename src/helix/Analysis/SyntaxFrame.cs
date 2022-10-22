@@ -21,51 +21,52 @@ namespace Helix.Analysis {
         private int tempCounter = 0;
 
         // Frame-specific things
-        public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
-
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
+
+        public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
+
+        public IDictionary<IdentifierPath, IfBranches> IfBranches { get; }
+
+        // Global things
+        public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
         public IDictionary<IdentifierPath, AggregateSignature> Aggregates { get; }
 
-        public IDictionary<IdentifierPath, ISyntaxTree> Trees { get; }
-
-        // Global things
         public IDictionary<HelixType, DeclarationCG> TypeDeclarations { get; }
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
-        public IDictionary<IdentifierPath, IfBranches> IfBranches { get; }
-
-        public bool InLoop { get; set; }
+        public IDictionary<ISyntaxTree, IReadOnlyList<IdentifierPath>> CapturedVariables { get; }
 
         public SyntaxFrame() {
-            this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            this.Aggregates = new Dictionary<IdentifierPath, AggregateSignature>();
+            this.IfBranches = new Dictionary<IdentifierPath, IfBranches>();
+            this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<IdentifierPath>>();
 
-            this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
-            this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
-
-            this.Trees = new Dictionary<IdentifierPath, ISyntaxTree>() {
+            this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
                 { new IdentifierPath("int"), new TypeSyntax(default, PrimitiveType.Int) },
                 { new IdentifierPath("bool"), new TypeSyntax(default, PrimitiveType.Bool) }
             };
 
-            this.IfBranches = new Dictionary<IdentifierPath, IfBranches>();
+            this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
+            this.Aggregates = new Dictionary<IdentifierPath, AggregateSignature>();
+
+            this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
+            this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
         }
 
         public SyntaxFrame(SyntaxFrame prev) {
-            this.Functions = new StackedDictionary<IdentifierPath, FunctionSignature>(prev.Functions);
             this.Variables = new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
-            this.Aggregates = new StackedDictionary<IdentifierPath, AggregateSignature>(prev.Aggregates);
+            this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
+
+            this.IfBranches = prev.IfBranches;
+            this.Functions = prev.Functions;
+            this.Aggregates = prev.Aggregates;
 
             this.TypeDeclarations = prev.TypeDeclarations;
             this.ReturnTypes = prev.ReturnTypes;
-
-            this.Trees = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.Trees);
-            this.InLoop = prev.InLoop;
-            this.IfBranches = prev.IfBranches;
+            this.CapturedVariables = prev.CapturedVariables;
         }
 
         public string GetVariableName() {
@@ -75,7 +76,7 @@ namespace Helix.Analysis {
         public bool TryResolvePath(IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
                 path = scope.Append(name);
-                if (this.Trees.ContainsKey(path)) {
+                if (this.SyntaxValues.ContainsKey(path)) {
                     return true;
                 }
 
@@ -103,11 +104,11 @@ namespace Helix.Analysis {
                 return false;
             }
 
-            return this.Trees.TryGetValue(path, out value);
+            return this.SyntaxValues.TryGetValue(path, out value);
         }
 
         public ISyntaxTree ResolveName(IdentifierPath scope, string name) {
-            return this.Trees[this.ResolvePath(scope, name)];
+            return this.SyntaxValues[this.ResolvePath(scope, name)];
         }
     }
 }

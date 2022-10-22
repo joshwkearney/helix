@@ -2,7 +2,7 @@
 
 namespace Helix.Analysis {
     public struct IdentifierPath : IEquatable<IdentifierPath> {
-        private readonly Lazy<int> hashCode;
+        private readonly int hashCode;
         private readonly ImmutableList<string> segments;
 
         public ImmutableList<string> Segments {
@@ -13,7 +13,7 @@ namespace Helix.Analysis {
 
         public IdentifierPath(IEnumerable<string> segments) {
             this.segments = segments.ToImmutableList();
-            this.hashCode = new Lazy<int>(() => segments.Aggregate(13, (x, y) => x + 7 * y.GetHashCode()));
+            this.hashCode = segments.Aggregate(13, (x, y) => x + 7 * y.GetHashCode());
         }
 
         public IdentifierPath Append(string segment) {
@@ -62,9 +62,7 @@ namespace Helix.Analysis {
             return false;
         }
 
-        public override int GetHashCode() {
-            return this.hashCode?.Value ?? 0;
-        }
+        public override int GetHashCode() => this.hashCode;
 
         public static bool operator ==(IdentifierPath path1, IdentifierPath path2) {
             return path1.Equals(path2);
