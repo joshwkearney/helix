@@ -146,7 +146,7 @@ namespace Helix.Features.Functions {
                     .Append(new AssignmentStatement(
                         this.retExpr.Location,
                         new VariableAccessParseSyntax(this.retExpr.Location, returnName),
-                        this.retExpr))
+                        bodyExpr))
                     .ToList());
 
             // Reserve a state for returns

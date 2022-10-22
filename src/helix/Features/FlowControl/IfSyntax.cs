@@ -20,12 +20,11 @@ namespace Helix.Parsing {
             var (affirmStats, affirm) = TopBlock();
             var affirmAssign = new SetIfBranchSyntax(affirm.Location, ifId, true, affirm);
 
-            affirmStats.Add(affirmAssign);
-
             if (this.TryAdvance(TokenKind.ElseKeyword)) {
                 var (negStats, neg) = TopBlock();
                 var negAssign = new SetIfBranchSyntax(affirm.Location, ifId, false, neg);
 
+                affirmStats.Add(affirmAssign);
                 negStats.Add(negAssign);
                 loc = start.Location.Span(neg.Location);
 
@@ -37,6 +36,7 @@ namespace Helix.Parsing {
                     new BlockSyntax(neg.Location, negStats));
 
                 block.Statements.Add(expr);
+                return new IfAccessSyntax(loc, ifId);
             }
             else {
                 loc = start.Location.Span(affirm.Location);
@@ -47,9 +47,8 @@ namespace Helix.Parsing {
                     new BlockSyntax(affirm.Location, affirmStats));
 
                 block.Statements.Add(expr);
+                return new VoidLiteral(loc);
             }
-
-            return new IfAccessSyntax(loc, ifId);
         }
 
         (List<ISyntaxTree> StateMachineSyntax, ISyntaxTree ret) TopBlock() {
