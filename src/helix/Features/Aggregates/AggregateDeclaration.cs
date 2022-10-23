@@ -95,17 +95,10 @@ namespace Helix.Features.Aggregates {
 
         public void DeclareTypes(SyntaxFrame types) {
             var sig = this.signature.ResolveNames(types);
+            var structType = new NamedType(sig.Path);
 
             types.Aggregates[sig.Path] = sig;
 
-            //foreach (var mem in this.signature.Members) {
-            //    types.DeclareReserved(sig.Path.Append(mem.MemberName));
-            //}
-        }
-
-        public IDeclaration CheckTypes(SyntaxFrame types) {
-            var sig = this.signature.ResolveNames(types); 
-            var structType = new NamedType(sig.Path);
             var isRecursive = sig.Members
                 .Select(x => x.Type)
                 .Where(x => x.IsValueType(types))
@@ -135,14 +128,12 @@ namespace Helix.Features.Aggregates {
                 }
             }
 
-            var type = new NamedType(sig.Path);
-
             // Register this declaration with the code generator so 
             // types are constructed in order
-            types.TypeDeclarations[type] = writer => this.RealCodeGenerator(sig, writer);
-
-            return this;
+            types.TypeDeclarations[structType] = writer => this.RealCodeGenerator(sig, writer);
         }
+
+        public IDeclaration CheckTypes(SyntaxFrame types) => this;
 
         public void GenerateCode(SyntaxFrame types, ICWriter writer) { }
 
