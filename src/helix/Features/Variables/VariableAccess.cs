@@ -18,7 +18,7 @@ namespace Helix.Parsing {
 
 namespace Helix {
     public record VariableAccessParseSyntax : ISyntaxTree {
-        private readonly string name;
+        public string Name { get; }
 
         public TokenLocation Location { get; }
 
@@ -28,12 +28,12 @@ namespace Helix {
 
         public VariableAccessParseSyntax(TokenLocation location, string name) {
             this.Location = location;
-            this.name = name;
+            this.Name = name;
         }
 
         public Option<HelixType> AsType(SyntaxFrame types) {
             // If we're pointing at a type then return it
-            if (types.TryResolveName(this.Location.Scope, this.name, out var syntax)) {
+            if (types.TryResolveName(this.Location.Scope, this.Name, out var syntax)) {
                 if (syntax.AsType(types).TryGetValue(out var type)) {
                     return type;
                 }
@@ -44,8 +44,8 @@ namespace Helix {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             // Make sure this name exists
-            if (!types.TryResolvePath(this.Location.Scope, this.name, out var path)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
+            if (!types.TryResolvePath(this.Location.Scope, this.Name, out var path)) {
+                throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
             }
 
             if (path == new IdentifierPath("void")) {
@@ -57,7 +57,7 @@ namespace Helix {
                 var result = new VariableAccessSyntax(this.Location, path);
 
                 types.ReturnTypes[result] = varSig.Type;
-                types.Lifetimes[result] = varSig.Lifetime;
+                types.Lifetimes[result] = varSig.Lifetime.AppendOrigin(path);
 
                 return result;
             }
@@ -66,12 +66,12 @@ namespace Helix {
                 var result = new VariableAccessSyntax(this.Location, path);
 
                 types.ReturnTypes[result] = new NamedType(path);
-                types.Lifetimes[result] = new Lifetime(false, new[] { path }, Array.Empty<ISyntaxTree>());
+                types.Lifetimes[result] = new Lifetime();
 
                 return result;
             }
 
-            throw TypeCheckingErrors.VariableUndefined(this.Location, this.name);
+            throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {

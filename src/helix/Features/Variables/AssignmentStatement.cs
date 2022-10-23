@@ -109,13 +109,16 @@ namespace Helix.Features.Variables {
             }
 
             // Modify the variable declaration to include any new captured variables
+            // Note: We are assuming that every captured variable on the left is now
+            // dependent on the assigned lifetime. This is not necessarily the case but
+            // is a conservative assumption.
             foreach (var cap in targetLifetime.Origins) {
                 var sig = types.Variables[cap];
 
                 types.Variables[cap] = new VariableSignature(
-                    sig.Path, 
-                    sig.Type, 
-                    sig.IsWritable, 
+                    sig.Path,
+                    sig.Type,
+                    sig.IsWritable,
                     assignLifetime);
             }
 

@@ -60,6 +60,10 @@ namespace Helix.Features.FlowControl {
             : this(statement.Location, new[] { statement }, isTypeChecked) { }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
+            if (this.isTypeChecked) {
+                return this;
+            }
+
             var stats = this.Statements.Select(x => x.CheckTypes(types)).ToArray();
             var result = new BlockSyntax(this.Location, stats, true);
             var returnType = stats

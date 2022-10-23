@@ -5,6 +5,7 @@ using Helix.Features.FlowControl;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.Primitives;
+using System.Net;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -79,13 +80,54 @@ namespace Helix.Features.FlowControl {
 
             var modifiedVars = bodyTypes.Variables
                 .Select(x => x.Key)
-                .Intersect(types.Variables.Select(x => x.Key));
+                .Intersect(types.Variables.Select(x => x.Key))
+                .ToArray();
 
-            // Merge the lifetime changes from in the loop with the lifetimes outside of it
+            // Loops are a very weird case to lifetime check. The problem is that loop
+            // bodies can run more than once so we can have an assignment later in the
+            // loop affect the lifetime of a variable earlier in the loop. The solution
+            // is to first identify which variables in the loop body are modified using
+            // a new syntax frame, and then for each modified variable, sum its lifetime
+            // through a graph representing the modified variables in the loop. This will
+            // trace the lifetime through the loop modifications until we hit a lifetime
+            // that was not modified by the loop, which will stop the graph search. This
+            // makes sure that the variable lifetimes after the loop represent all the 
+            // posibilities that could have occured inside the loop.
             foreach (var path in modifiedVars) {
-                var oldSig = types.Variables[path];
-                var lifetime = bodyTypes.Variables[path].Lifetime.Merge(oldSig.Lifetime);
+                var found = new HashSet<IdentifierPath>();
+                var search = new Stack<IdentifierPath>(new[] { path });
+                var lifetime = new Lifetime();
 
+                // Search through the modified variables of the loop until we discover all
+                // possible mutations paths, summing the lifetime along the way
+                while (search.Any()) {
+                    var next = search.Pop();
+
+                    // This variable is constant with respect to the loop, so we're done
+                    if (!bodyTypes.Variables.Keys.Contains(next)) {
+                        continue;
+                    }
+
+                    // We have already visited this variable and merged it, so skip it now
+                    // This prevents infinite loops, which can happen
+                    if (found.Contains(next)) {
+                        continue;
+                    }
+
+                    var sig = bodyTypes.Variables[next];
+
+                    lifetime = lifetime.Merge(sig.Lifetime);
+                    found.Add(next);
+
+                    foreach (var origin in sig.Lifetime.Origins) {
+                        search.Push(origin);
+                    }
+                }
+
+                var oldSig = types.Variables[path];
+
+                // Add the newly discovered loop lifetime to the existing variable lifetime,
+                // since loops may not run at all
                 types.Variables[path] = new VariableSignature(
                     path,
                     oldSig.Type,

@@ -34,10 +34,14 @@ namespace Helix.Analysis {
             var targetRoots = GetRootOrigins(this.Origins, types).ToArray();
             var assignRoots = GetRootOrigins(assignValue.Origins, types).ToArray();
 
+            if (!targetRoots.Any()) {
+                return true;
+            }
+
             return !assignRoots.Except(targetRoots).Any();        
         }
 
-        private IEnumerable<IdentifierPath> GetRootOrigins(
+        public static IEnumerable<IdentifierPath> GetRootOrigins(
             IEnumerable<IdentifierPath> paths,
             SyntaxFrame types) {
 

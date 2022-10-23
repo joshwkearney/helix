@@ -133,7 +133,7 @@ namespace Helix.Features.Functions {
             // Make sure we're not capturing a stack-allocated variable
             if (types.Lifetimes[body].IsStackBound) {
                 throw new TypeCheckingException(
-                    this.body.Location,
+                    this.Location,
                     "Dangling Pointer on Return Value",
                     "The return value for this function potentially references stack-allocated memory.");
             }
