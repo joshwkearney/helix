@@ -109,13 +109,13 @@ namespace Helix.Generation {
 
         public ICSyntax ConvertType(HelixType type) {
             if (type == PrimitiveType.Bool || type is SingularBoolType) {
-                return new CNamedType("_helix_bool");
+                return new CNamedType("int");
             }
             else if (type == PrimitiveType.Int || type is SingularIntType) {
-                return new CNamedType("_helix_int");
+                return new CNamedType("int");
             }
             else if (type == PrimitiveType.Void) {
-                return new CNamedType("_helix_void");
+                return new CNamedType("int");
             }
             else if (type is PointerType type2) {
                 return new CPointerType(ConvertType(type2.InnerType));
@@ -123,13 +123,15 @@ namespace Helix.Generation {
             else if (type is NamedType named) {
                 if (this.pathNames.TryGetValue(named.Path, out var cname)) {
                     return new CNamedType(cname);
-                }
-                    
+                }                   
+
+                cname = this.pathNames[named.Path] = string.Join("$", named.Path.Segments);
+
+                // Do this after in case we have a recursive struct (through a pointer)
                 if (this.typeDeclarations.TryGetValue(type, out var cg)) {
                     cg(this);
                 }
 
-                cname = this.pathNames[named.Path] = string.Join("$", named.Path.Segments);
                 return new CNamedType(cname);
             }
             else if (type is ArrayType array) {
