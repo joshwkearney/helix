@@ -7,7 +7,7 @@ using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree UnaryExpression(BlockBuilder block) {
+        private ISyntaxTree UnaryExpression() {
             var hasOperator = this.Peek(TokenKind.Minus)
                 || this.Peek(TokenKind.Plus)
                 || this.Peek(TokenKind.Not)
@@ -16,7 +16,7 @@ namespace Helix.Parsing {
 
             if (hasOperator) {
                 var tokOp = this.Advance();
-                var first = this.SuffixExpression(block);
+                var first = this.SuffixExpression();
                 var loc = tokOp.Location.Span(first.Location);
                 var op = UnaryOperatorKind.Not;
 
@@ -36,7 +36,7 @@ namespace Helix.Parsing {
                 return new UnaryParseSyntax(loc, op, first);
             }
 
-            return this.SuffixExpression(block);
+            return this.SuffixExpression();
         }
     }
 }

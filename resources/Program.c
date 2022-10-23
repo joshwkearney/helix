@@ -35,76 +35,61 @@ _helix_int loops(_helix_int x_1, _helix_int_array r) {
     /* Line 21: While or for loop */
     while (1U) {
         /* Line 21: If statement */
-        _helix_void $C;
         if (!((x_1 % 15U) != 8U)) { 
             break;
-            $C = 0U;
         } 
-        else {
-            $C = 0U;
-        }
 
         _helix_int i = 0U;
 
         /* Line 22: While or for loop */
         while (1U) {
             /* Line 22: If statement */
-            _helix_void $D;
             if ((i >= 15U)) { 
                 break;
-                $D = 0U;
             } 
-            else {
-                $D = 0U;
-            }
 
             total = (total + i);
             i = (i + 1U);
         }
-        break;
-        break;
+
+        /* Line 26: If statement */
+        if ((x_1 > 100U)) { 
+            break;
+        } 
 
         /* Line 31: If statement */
-        _helix_int $E;
+        _helix_int $F;
         if ((x_1 < 10U)) { 
-            $E = 0U;
+            break;
+            $F = 0U;
         } 
         else {
-            $E = 10U;
+            $F = 10U;
         }
 
-        _helix_int awfulFlowControl = $E;
+        _helix_int awfulFlowControl = $F;
     }
+
     _helix_int zero = 0U;
     _helix_int alsoZero = 0U;
-    _helix_int $0 = fib(total);
+    _helix_int $G = fib(total);
 
-    return (total + $0);
+    return (total + $G);
 }
 
 _helix_int fib(_helix_int x_2) {
-    _helix_int $1 = fib((x_2 - 1U));
-    _helix_int $2 = fib((x_2 - 2U));
-
     /* Line 49: If statement */
-    _helix_int $A;
+    _helix_int $C;
     if ((x_2 <= 1U)) { 
-        $A = x_2;
+        $C = x_2;
     } 
     else {
-        $A = ($1 + $2);
+        _helix_int $A = fib((x_2 - 1U));
+        _helix_int $B = fib((x_2 - 2U));
+        $C = ($A + $B);
     }
 
-    /* Line 49: If statement */
-    _helix_int $B;
-    if ((x_2 <= 1U)) { 
-        $B = x_2;
-    } 
-    else {
-        $B = ($1 + $2);
-    }
-
-    return $B;
+    return $C;
 }
 
 void test(_helix_int* x_3) {

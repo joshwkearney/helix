@@ -9,12 +9,12 @@ using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree OrExpression(BlockBuilder block) {
-            var first = this.XorExpression(block);
+        private ISyntaxTree OrExpression() {
+            var first = this.XorExpression();
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
                 var branching = this.TryAdvance(TokenKind.ElseKeyword);
-                var second = this.XorExpression(block);
+                var second = this.XorExpression();
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
@@ -32,11 +32,11 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private ISyntaxTree XorExpression(BlockBuilder block) {
-            var first = this.AndExpression(block);
+        private ISyntaxTree XorExpression() {
+            var first = this.AndExpression();
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
-                var second = this.AndExpression(block);
+                var second = this.AndExpression();
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, BinaryOperationKind.Xor);
@@ -45,12 +45,12 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private ISyntaxTree AndExpression(BlockBuilder block) {
-            var first = this.ComparisonExpression(block);
+        private ISyntaxTree AndExpression() {
+            var first = this.ComparisonExpression();
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
                 var branching = this.TryAdvance(TokenKind.ThenKeyword);
-                var second = this.XorExpression(block);
+                var second = this.XorExpression();
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
@@ -68,8 +68,8 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private ISyntaxTree ComparisonExpression(BlockBuilder block) {
-            var first = this.AddExpression(block);
+        private ISyntaxTree ComparisonExpression() {
+            var first = this.AddExpression();
             var comparators = new Dictionary<TokenKind, BinaryOperationKind>() {
                 { TokenKind.Equals, BinaryOperationKind.EqualTo }, { TokenKind.NotEquals, BinaryOperationKind.NotEqualTo },
                 { TokenKind.LessThan, BinaryOperationKind.LessThan }, { TokenKind.GreaterThan, BinaryOperationKind.GreaterThan },
@@ -89,7 +89,7 @@ namespace Helix.Parsing {
                 }
 
                 var op = comparators[this.Advance().Kind];
-                var second = this.AddExpression(block);
+                var second = this.AddExpression();
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, op);
@@ -99,8 +99,8 @@ namespace Helix.Parsing {
         }
 
 
-        private ISyntaxTree AddExpression(BlockBuilder block) {
-            var first = this.MultiplyExpression(block);
+        private ISyntaxTree AddExpression() {
+            var first = this.MultiplyExpression();
 
             while (true) {
                 if (!this.Peek(TokenKind.Plus) && !this.Peek(TokenKind.Minus)) {
@@ -109,7 +109,7 @@ namespace Helix.Parsing {
 
                 var tok = this.Advance().Kind;
                 var op = tok == TokenKind.Plus ? BinaryOperationKind.Add : BinaryOperationKind.Subtract;
-                var second = this.MultiplyExpression(block);
+                var second = this.MultiplyExpression();
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, op);
@@ -118,8 +118,8 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private ISyntaxTree MultiplyExpression(BlockBuilder block) {
-            var first = this.PrefixExpression(block);
+        private ISyntaxTree MultiplyExpression() {
+            var first = this.PrefixExpression();
 
             while (true) {
                 if (!this.Peek(TokenKind.Star) && !this.Peek(TokenKind.Modulo) && !this.Peek(TokenKind.Divide)) {
@@ -136,7 +136,7 @@ namespace Helix.Parsing {
                     op = BinaryOperationKind.FloorDivide;
                 }
 
-                var second = this.PrefixExpression(block);
+                var second = this.PrefixExpression();
                 var loc = first.Location.Span(second.Location);
 
                 first = new BinarySyntax(loc, first, second, op);

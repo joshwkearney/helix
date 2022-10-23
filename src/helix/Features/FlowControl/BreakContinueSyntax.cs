@@ -13,7 +13,7 @@ using Helix.Parsing;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        public ISyntaxTree BreakStatement(BlockBuilder block) {
+        public ISyntaxTree BreakStatement() {
             Token start;
             bool isBreak;
 
@@ -33,8 +33,7 @@ namespace Helix.Parsing {
                     "Break and continue statements must only appear inside of loops");
             }
 
-            block.Statements.Add(new BreakContinueSyntax(start.Location, isBreak));
-            return new VoidLiteral(start.Location);
+            return new BreakContinueSyntax(start.Location, isBreak);
         }
     }
 }

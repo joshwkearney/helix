@@ -36,7 +36,7 @@ namespace Helix.Parsing {
                 var parName = this.Advance(TokenKind.Identifier).Value;
                 this.Advance(TokenKind.AsKeyword);
 
-                var parType = this.TopExpression(null);
+                var parType = this.TopExpression();
                 var parLoc = parStart.Location.Span(parType.Location);
 
                 if (!this.Peek(TokenKind.CloseParenthesis)) {
@@ -52,7 +52,7 @@ namespace Helix.Parsing {
             var returnType = new VoidLiteral(end.Location) as ISyntaxTree;
 
             if (this.TryAdvance(TokenKind.AsKeyword)) {
-                returnType = this.TopExpression(null);
+                returnType = this.TopExpression();
             }
 
             var loc = start.Location.Span(returnType.Location);
@@ -62,7 +62,6 @@ namespace Helix.Parsing {
         }
 
         private IDeclaration FunctionDeclaration() {
-            var block = new BlockBuilder();
             var sig = this.FunctionSignature();
 
             if (!this.Peek(TokenKind.OpenBrace)) {
@@ -71,17 +70,16 @@ namespace Helix.Parsing {
 
             this.funcPath.Push(this.scope.Append(sig.Name));
             this.scope = this.scope.Append(sig.Name);
-            var body = this.TopExpression(block);            
+            var body = this.TopExpression();            
 
             this.Advance(TokenKind.Semicolon);
             this.scope = this.scope.Pop();
             this.funcPath.Pop();
-            block.Statements.Add(body);
 
             return new FunctionParseDeclaration(
                 sig.Location.Span(body.Location), 
                 sig,
-                block.Statements,
+                body,
                 body);
         }
     }
@@ -90,18 +88,16 @@ namespace Helix.Parsing {
 namespace Helix.Features.Functions {
     public record FunctionParseDeclaration : IDeclaration {
         private readonly FunctionParseSignature signature;
-        private readonly IReadOnlyList<ISyntaxTree> body;
-        private readonly ISyntaxTree retExpr;
+        private readonly ISyntaxTree body;
 
         public TokenLocation Location { get; }
 
         public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, 
-            IReadOnlyList<ISyntaxTree> body, ISyntaxTree retExpr) {
+            ISyntaxTree body, ISyntaxTree retExpr) {
 
             this.Location = loc;
             this.signature = sig;
             this.body = body;
-            this.retExpr = retExpr;
         }
 
         public void DeclareNames(SyntaxFrame types) {
@@ -122,11 +118,6 @@ namespace Helix.Features.Functions {
         public IDeclaration CheckTypes(SyntaxFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.signature.Name);
             var sig = types.Functions[path];
-            var bodyExpr = this.retExpr;
-
-            if (sig.ReturnType == PrimitiveType.Void) {
-                bodyExpr = new VoidLiteral(this.Location);
-            }
 
             // Set the scope for type checking the body
             types = new SyntaxFrame(types);
@@ -134,21 +125,15 @@ namespace Helix.Features.Functions {
             // Declare parameters
             FunctionsHelper.DeclareParameters(this.Location, sig, types);
 
-            // Assign the body return value to our return variable
-            // at the end of the state machine
-            var bodyBlock = new BlockSyntax(
-                this.Location, 
-                this.body.Append(bodyExpr).ToArray());
-
             // Check types
-            var body = bodyBlock
+            var body = this.body
                 .CheckTypes(types)
                 .ToRValue(types);
 
             // Make sure we're not capturing a stack-allocated variable
             if (types.CapturedVariables[body].Contains(new IdentifierPath("$stack"))) {
                 throw new TypeCheckingException(
-                    this.retExpr.Location,
+                    this.body.Location,
                     "Dangling Pointer on Return Value",
                     "The return value for this function references stack-allocated memory.");
             }

@@ -9,13 +9,13 @@ using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree InvokeExpression(ISyntaxTree first, BlockBuilder block) {
+        private ISyntaxTree InvokeExpression(ISyntaxTree first) {
             this.Advance(TokenKind.OpenParenthesis);
 
             var args = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseParenthesis)) {
-                args.Add(this.TopExpression(block));
+                args.Add(this.TopExpression());
 
                 if (!this.TryAdvance(TokenKind.Comma)) {
                     break;
@@ -25,22 +25,15 @@ namespace Helix.Parsing {
             var last = this.Advance(TokenKind.CloseParenthesis);
             var loc = first.Location.Span(last.Location);
 
-            var tempName = block.GetTempName();
-            var tempPath = this.scope.Append(tempName);
-            var temp = new InvokeParseStatement(loc, first, tempPath, args);
-
-            block.Statements.Add(temp);
-
-            return new VariableAccessParseSyntax(loc, tempName);
+            return new InvokeParseSyntax(loc, first, args);
         }
     }
 }
 
 namespace Helix.Features.Functions {
-    public record InvokeParseStatement : ISyntaxTree {
+    public record InvokeParseSyntax : ISyntaxTree {
         private readonly ISyntaxTree target;
         private readonly IReadOnlyList<ISyntaxTree> args;
-        private readonly IdentifierPath resultPath;
 
         public TokenLocation Location { get; }
 
@@ -48,14 +41,12 @@ namespace Helix.Features.Functions {
 
         public bool IsPure => false;
 
-        public InvokeParseStatement(TokenLocation loc, ISyntaxTree target, 
-            IdentifierPath resultPath,
+        public InvokeParseSyntax(TokenLocation loc, ISyntaxTree target, 
             IReadOnlyList<ISyntaxTree> args) {
 
             this.Location = loc;
             this.target = target;
             this.args = args;
-            this.resultPath = resultPath;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -117,24 +108,12 @@ namespace Helix.Features.Functions {
             // its return value. This new lifetime will be taken from the context struct
             // passed to the function
 
-            // Declare a variable for the result
-            var resultSig = new VariableSignature(
-                this.resultPath, 
-                sig.ReturnType, 
-                false, 
-                captured);
+            var result = new InvokeSyntax(this.Location, sig, newArgs);
 
-            types.Variables[this.resultPath] = resultSig;
-            types.SyntaxValues[this.resultPath] = new DummySyntax(this.Location);
+            types.ReturnTypes[result] = sig.ReturnType;
+            types.CapturedVariables[result] = captured;
 
-            var result = new InvokeStatement(this.Location, sig, this.resultPath, newArgs);
-
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
-
-            return result;
-
-            
+            return result;            
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
@@ -162,10 +141,9 @@ namespace Helix.Features.Functions {
         }
     }
 
-    public record InvokeStatement : ISyntaxTree {
+    public record InvokeSyntax : ISyntaxTree {
         private readonly FunctionSignature sig;
         private readonly IReadOnlyList<ISyntaxTree> args;
-        private readonly IdentifierPath resultPath;
 
         public TokenLocation Location { get; }
 
@@ -173,16 +151,14 @@ namespace Helix.Features.Functions {
 
         public bool IsPure => false;
 
-        public InvokeStatement(
+        public InvokeSyntax(
             TokenLocation loc,
             FunctionSignature sig,
-            IdentifierPath resultPath,
             IReadOnlyList<ISyntaxTree> args) {
 
             this.Location = loc;
             this.sig = sig;
             this.args = args;
-            this.resultPath = resultPath;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
@@ -199,15 +175,17 @@ namespace Helix.Features.Functions {
                 Arguments = args
             };
 
+            var name = writer.GetVariableName();
+
             var stat = new CVariableDeclaration() {
-                Name = writer.GetVariableName(this.resultPath),
+                Name = name,
                 Type = writer.ConvertType(this.sig.ReturnType),
                 Assignment = result
             };
 
             writer.WriteStatement(stat);
 
-            return new CIntLiteral(0);
+            return new CVariableLiteral(name);
         }
     }
 }

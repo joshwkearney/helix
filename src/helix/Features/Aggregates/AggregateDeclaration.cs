@@ -39,7 +39,7 @@ namespace Helix.Parsing {
                 var memName = this.Advance(TokenKind.Identifier);
                 this.Advance(TokenKind.AsKeyword);
 
-                var memType = this.TopExpression(new BlockBuilder());
+                var memType = this.TopExpression();
                 var memLoc = memStart.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);

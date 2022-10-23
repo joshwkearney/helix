@@ -9,7 +9,7 @@ using Helix.Features.Primitives;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree VarExpression(BlockBuilder block) {
+        private ISyntaxTree VarExpression() {
             TokenLocation startLok;
             bool isWritable;
 
@@ -36,13 +36,11 @@ namespace Helix.Parsing {
                 }
             }
 
-            var assign = this.TopExpression(block);
-
+            var assign = this.TopExpression();
             var loc = startLok.Span(assign.Location);
             var result = new VarParseStatement(loc, names, assign, isWritable);
 
-            block.Statements.Add(result);
-            return new VoidLiteral(loc);
+            return result;
         }
     }
 }

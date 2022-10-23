@@ -7,11 +7,11 @@ using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree AsExpression(BlockBuilder block) {
-            var first = this.BinaryExpression(block);
+        private ISyntaxTree AsExpression() {
+            var first = this.BinaryExpression();
 
             while (this.TryAdvance(TokenKind.AsKeyword)) {
-                var target = this.TopExpression(block);
+                var target = this.TopExpression();
                 var loc = first.Location.Span(target.Location);
 
                 first = new AsParseTree(loc, first, target);

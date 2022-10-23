@@ -10,14 +10,14 @@ namespace Helix.Parsing {
     public partial class Parser {
         private int blockCounter = 0;
 
-        private ISyntaxTree Block(BlockBuilder block) {
+        private ISyntaxTree Block() {
             var start = this.Advance(TokenKind.OpenBrace);
             var stats = new List<ISyntaxTree>();
 
             this.scope = this.scope.Append("$block_" + this.blockCounter++);
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                stats.Add(this.Statement(block));
+                stats.Add(this.Statement());
             }
 
             this.scope = this.scope.Pop();
@@ -25,12 +25,7 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(end.Location);
 
-            if (stats.Any()) {
-                return stats.Last();
-            }
-            else {
-                return new VoidLiteral(loc);
-            }
+            return new BlockSyntax(loc, stats);
         }
     }
 }

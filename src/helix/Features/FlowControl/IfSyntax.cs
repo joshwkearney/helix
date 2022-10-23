@@ -10,15 +10,15 @@ using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree IfExpression(BlockBuilder block) {
+        private ISyntaxTree IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
-            var cond = this.TopExpression(block);
+            var cond = this.TopExpression();
 
             this.Advance(TokenKind.ThenKeyword);
-            var affirm = this.TopExpression(block);
+            var affirm = this.TopExpression();
 
             if (this.TryAdvance(TokenKind.ElseKeyword)) {
-                var neg = this.TopExpression(block);
+                var neg = this.TopExpression();
                 var loc = start.Location.Span(neg.Location);
 
                 return new IfParseSyntax(loc, cond, affirm, neg);
@@ -77,6 +77,36 @@ namespace Helix.Features.FlowControl {
 
             var resultType = types.ReturnTypes[iftrue];
             var result = new IfSyntax(this.Location, cond, iftrue, iffalse, resultType);
+
+            var modifiedVars = iftrueTypes.Variables
+                .Concat(iffalseTypes.Variables)
+                .GroupBy(x => x.Key)
+                .ToDictionary(x => x.Key, x => x.SelectMany(y => y.Value.CapturedVariables));
+
+            // Unify the branch variable signatures that overlap
+            // with our variable signatures to correctly capture
+            // lifetimes that were added to mutable variables
+            foreach (var (path, cap) in modifiedVars) {
+                var oldSig = types.Variables[path];
+
+                // If this variable is changed in both paths, we can override the current signature
+                if (iftrueTypes.Variables.ContainsKey(path) && iffalseTypes.Variables.ContainsKey(path)) {
+                    types.Variables[path] = new VariableSignature(
+                        path,
+                        oldSig.Type,
+                        oldSig.IsWritable,
+                        cap.ToArray());
+                }
+                else {
+                    // If this variable is changed in only one path, append to the current captured
+                    // variables.
+                    types.Variables[path] = new VariableSignature(
+                        path,
+                        oldSig.Type,
+                        oldSig.IsWritable,
+                        cap.Concat(oldSig.CapturedVariables).ToArray());
+                }
+            }
 
             types.ReturnTypes[result] = resultType;
 
@@ -139,15 +169,17 @@ namespace Helix.Features.FlowControl {
 
             var tempName = writer.GetVariableName();
 
-            affirmWriter.WriteStatement(new CAssignment() {
-                Left = new CVariableLiteral(tempName),
-                Right = affirm
-            });
+            if (this.returnType != PrimitiveType.Void) {
+                affirmWriter.WriteStatement(new CAssignment() {
+                    Left = new CVariableLiteral(tempName),
+                    Right = affirm
+                });
 
-            negWriter.WriteStatement(new CAssignment() {
-                Left = new CVariableLiteral(tempName),
-                Right = neg
-            });
+                negWriter.WriteStatement(new CAssignment() {
+                    Left = new CVariableLiteral(tempName),
+                    Right = neg
+                });
+            }
 
             var stat = new CVariableDeclaration() {
                 Type = writer.ConvertType(this.returnType),
@@ -162,11 +194,20 @@ namespace Helix.Features.FlowControl {
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.cond.Location.Line}: If statement");
-            writer.WriteStatement(stat);
+
+            if (this.returnType != PrimitiveType.Void) {
+                writer.WriteStatement(stat);
+            }
+
             writer.WriteStatement(expr);
             writer.WriteEmptyLine();
 
-            return new CVariableLiteral(tempName);
+            if (this.returnType != PrimitiveType.Void) {
+                return new CVariableLiteral(tempName);
+            }
+            else {
+                return new CIntLiteral(0);
+            }
         }
     }
 }

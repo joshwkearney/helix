@@ -7,7 +7,7 @@ using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree TypePointer(ISyntaxTree start, BlockBuilder block) {
+        private ISyntaxTree TypePointer(ISyntaxTree start) {
             TokenLocation loc;
             bool isWritable;
 

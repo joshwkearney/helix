@@ -10,15 +10,15 @@ using System.Linq.Expressions;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree ForStatement(BlockBuilder block) {
+        private ISyntaxTree ForStatement() {
             var startTok = this.Advance(TokenKind.ForKeyword);
             var id = this.Advance(TokenKind.Identifier);
 
             this.Advance(TokenKind.Assignment);
-            var startIndex = this.TopExpression(block);
+            var startIndex = this.TopExpression();
 
             this.Advance(TokenKind.ToKeyword);
-            var endIndex = this.TopExpression(block);
+            var endIndex = this.TopExpression();
 
             startIndex = new AsParseTree(
                 startIndex.Location,
@@ -43,12 +43,9 @@ namespace Helix.Parsing {
                     new IntLiteral(startTok.Location, 1),
                     BinaryOperationKind.Add));
 
-            block.Statements.Add(counterDecl);
-
-            var newBlock = new BlockBuilder();
+            var totalBlock = new List<ISyntaxTree> { counterDecl };
+            var loopBlock = new List<ISyntaxTree>();
             var loc = startTok.Location.Span(endIndex.Location);
-
-            //var iteratorDecl = new VarParseStatement(startTok.Location, new[] { id.Value }, counterAccess, true);
 
             var test = new IfParseSyntax(
                 loc,
@@ -59,21 +56,22 @@ namespace Helix.Parsing {
                     BinaryOperationKind.GreaterThanOrEqualTo),
                 new BreakContinueSyntax(loc, true));
 
-            //newBlock.Statements.Add(iteratorDecl);
-            newBlock.Statements.Add(test);
+            loopBlock.Add(test);
 
             if (!this.Peek(TokenKind.OpenBrace)) {
                 this.Advance(TokenKind.Yields);
             }
 
-            var body = this.TopExpression(newBlock);
+            var body = this.TopExpression();
             loc = loc.Span(body.Location);
-            newBlock.Statements.Add(counterInc);
 
-            var loop = new LoopStatement(loc, new BlockSyntax(loc, newBlock.Statements));
-            block.Statements.Add(loop);
+            loopBlock.Add(body);
+            loopBlock.Add(counterInc);
 
-            return new VoidLiteral(loc);
+            var loop = new LoopStatement(loc, new BlockSyntax(loc, loopBlock));
+            totalBlock.Add(loop);
+
+            return new BlockSyntax(loc, totalBlock);
         }
     }        
 }

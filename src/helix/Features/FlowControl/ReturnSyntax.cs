@@ -14,18 +14,14 @@ using Helix.Parsing;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        public ISyntaxTree ReturnStatement(BlockBuilder block) {
+        public ISyntaxTree ReturnStatement() {
             var start = this.Advance(TokenKind.ReturnKeyword);
-            var arg = this.TopExpression(block);
+            var arg = this.TopExpression();
 
-            var stat = new ReturnSyntax(
+            return new ReturnSyntax(
                 start.Location,
                 arg, 
                 this.funcPath.Peek());
-
-            block.Statements.Add(stat);
-
-            return new VoidLiteral(start.Location);
         }
     }
 }

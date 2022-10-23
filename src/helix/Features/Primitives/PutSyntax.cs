@@ -8,7 +8,7 @@ using Helix.Features.Aggregates;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree PutExpression(BlockBuilder block) {
+        private ISyntaxTree PutExpression() {
             TokenLocation start;
           //  bool isStackAllocated;
 
@@ -21,7 +21,7 @@ namespace Helix.Parsing {
                // isStackAllocated = true;
             //}
 
-            var targetType = this.TopExpression(block);
+            var targetType = this.TopExpression();
             var loc = start.Span(targetType.Location);
 
             if (!this.TryAdvance(TokenKind.OpenBrace)) {
@@ -43,7 +43,7 @@ namespace Helix.Parsing {
                     this.Advance(TokenKind.Assignment);
                 }
 
-                var value = this.TopExpression(block);
+                var value = this.TopExpression();
 
                 names.Add(name);
                 values.Add(value);

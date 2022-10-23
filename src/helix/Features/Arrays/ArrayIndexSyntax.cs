@@ -13,7 +13,7 @@ using Helix.Parsing;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        public ISyntaxTree ArrayExpression(ISyntaxTree start, BlockBuilder block) {
+        public ISyntaxTree ArrayExpression(ISyntaxTree start) {
             this.Advance(TokenKind.OpenBracket);
 
             if (this.Peek(TokenKind.CloseBracket)) {
@@ -23,7 +23,7 @@ namespace Helix.Parsing {
                 return new ArrayTypeSyntax(loc, start);
             }
             else {
-                var index = this.TopExpression(block);
+                var index = this.TopExpression();
                 var end = this.Advance(TokenKind.CloseBracket);
                 var loc = start.Location.Span(end.Location);
 

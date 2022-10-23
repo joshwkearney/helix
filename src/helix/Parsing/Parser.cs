@@ -2,14 +2,6 @@
 using Helix.Features.FlowControl;
 
 namespace Helix.Parsing {
-    public class BlockBuilder {
-        private static int counter = 0;
-
-        public List<ISyntaxTree> Statements { get; } = new();
-
-        public string GetTempName() => "$" + counter++;
-    }
-
     public partial class Parser {
         private IdentifierPath scope = new();
         private readonly Lexer lexer;
@@ -80,14 +72,14 @@ namespace Helix.Parsing {
         }
 
         /** Expression Parsing **/
-        private ISyntaxTree TopExpression(BlockBuilder block) => this.AsExpression(block);
+        private ISyntaxTree TopExpression() => this.AsExpression();
 
-        private ISyntaxTree BinaryExpression(BlockBuilder block) => this.OrExpression(block);
+        private ISyntaxTree BinaryExpression() => this.OrExpression();
 
-        private ISyntaxTree PrefixExpression(BlockBuilder block) => this.UnaryExpression(block);        
+        private ISyntaxTree PrefixExpression() => this.UnaryExpression();        
 
-        private ISyntaxTree SuffixExpression(BlockBuilder block) {
-            var first = this.Atom(block);
+        private ISyntaxTree SuffixExpression() {
+            var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) 
                 || this.Peek(TokenKind.Dot) 
@@ -96,16 +88,16 @@ namespace Helix.Parsing {
                 //|| this.Peek(TokenKind.Caret)) {
 
                 if (this.Peek(TokenKind.OpenParenthesis)) {
-                    first = this.InvokeExpression(first, block);
+                    first = this.InvokeExpression(first);
                 }
                 else if (this.Peek(TokenKind.Dot)) {
-                    first = this.MemberAccess(first, block);
+                    first = this.MemberAccess(first);
                 }
                 else if (this.Peek(TokenKind.Star) || this.Peek(TokenKind.Caret)) {
-                    first = this.TypePointer(first, block);
+                    first = this.TypePointer(first);
                 }
                 else if (this.Peek(TokenKind.OpenBracket)) {
-                    first = this.ArrayExpression(first, block);
+                    first = this.ArrayExpression(first);
                 }
                 else {
                     throw new Exception("Unexpected suffix token");
@@ -115,7 +107,7 @@ namespace Helix.Parsing {
             return first;
         }        
 
-        private ISyntaxTree Atom(BlockBuilder block) {
+        private ISyntaxTree Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -126,19 +118,19 @@ namespace Helix.Parsing {
                 return this.VoidLiteral();
             }
             else if (this.Peek(TokenKind.OpenParenthesis)) {
-                return this.ParenExpression(block);
+                return this.ParenExpression();
             }
             else if (this.Peek(TokenKind.BoolLiteral)) {
                 return this.BoolLiteral();
             }
             else if (this.Peek(TokenKind.IfKeyword)) {
-                return this.IfExpression(block);
+                return this.IfExpression();
             }     
             else if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.LetKeyword)) {
-                return this.VarExpression(block);
+                return this.VarExpression();
             }
             else if (this.Peek(TokenKind.OpenBrace)) {
-                return this.Block(block);
+                return this.Block();
             }
             else if (this.Peek(TokenKind.IntKeyword)) {
                 var tok = this.Advance(TokenKind.IntKeyword);
@@ -151,7 +143,7 @@ namespace Helix.Parsing {
                 return new VariableAccessParseSyntax(tok.Location, "bool");
             }
             else if (this.Peek(TokenKind.PutKeyword)) {
-                return this.PutExpression(block);
+                return this.PutExpression();
             }
             else {
                 var next = this.Advance();
@@ -160,34 +152,34 @@ namespace Helix.Parsing {
             }
         }        
 
-        private ISyntaxTree ParenExpression(BlockBuilder block) {
+        private ISyntaxTree ParenExpression() {
             this.Advance(TokenKind.OpenParenthesis);
-            var result = this.TopExpression(block);
+            var result = this.TopExpression();
             this.Advance(TokenKind.CloseParenthesis);
 
             return result;
         }
 
-        private ISyntaxTree Statement(BlockBuilder block) {
+        private ISyntaxTree Statement() {
             ISyntaxTree result;
 
             if (this.Peek(TokenKind.WhileKeyword)) {
-                result = this.WhileStatement(block);
+                result = this.WhileStatement();
             }
             else if (this.Peek(TokenKind.ForKeyword)) {
-                result = this.ForStatement(block);
+                result = this.ForStatement();
             }
             else if (this.Peek(TokenKind.OpenBrace)) {
-                result = this.Block(block);
+                result = this.Block();
             }
             else if (this.Peek(TokenKind.BreakKeyword) || this.Peek(TokenKind.ContinueKeyword)) {
-                result = this.BreakStatement(block);
+                result = this.BreakStatement();
             }
             else if (this.Peek(TokenKind.ReturnKeyword)) {
-                result = this.ReturnStatement(block);
+                result = this.ReturnStatement();
             }
             else {
-                result = this.AssignmentStatement(block);
+                result = this.AssignmentStatement();
             }
 
             this.Advance(TokenKind.Semicolon);

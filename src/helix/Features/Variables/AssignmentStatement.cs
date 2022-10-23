@@ -8,16 +8,15 @@ using Helix.Features.Primitives;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree AssignmentStatement(BlockBuilder block) {
-            var start = this.TopExpression(block);
+        private ISyntaxTree AssignmentStatement() {
+            var start = this.TopExpression();
 
             if (this.TryAdvance(TokenKind.Assignment)) {
-                var assign = this.TopExpression(block);
+                var assign = this.TopExpression();
                 var loc = start.Location.Span(assign.Location);
                 var result = new AssignmentStatement(loc, start, assign);
 
-                block.Statements.Add(result);
-                return new VoidLiteral(loc);
+                return result;
             }
             else {
                 BinaryOperationKind op;
@@ -41,13 +40,12 @@ namespace Helix.Parsing {
                     return start;
                 }
 
-                var second = this.TopExpression(block);
+                var second = this.TopExpression();
                 var loc = start.Location.Span(second.Location);
                 var assign = new BinarySyntax(loc, start, second, op);
                 var stat = new AssignmentStatement(loc, start, assign);
 
-                block.Statements.Add(stat);
-                return new VoidLiteral(loc);
+                return stat;
             }
         }
     }

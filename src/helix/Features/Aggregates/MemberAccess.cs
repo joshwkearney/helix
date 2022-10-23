@@ -7,7 +7,7 @@ using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree MemberAccess(ISyntaxTree first, BlockBuilder block) {
+        private ISyntaxTree MemberAccess(ISyntaxTree first) {
             this.Advance(TokenKind.Dot);
 
             var tok = this.Advance(TokenKind.Identifier);

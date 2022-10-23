@@ -8,10 +8,10 @@ using Helix.Features.Primitives;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree WhileStatement(BlockBuilder block) {
-            var newBlock = new BlockBuilder();
+        private ISyntaxTree WhileStatement() {
             var start = this.Advance(TokenKind.WhileKeyword);
-            var cond = this.TopExpression(newBlock);
+            var cond = this.TopExpression();
+            var newBlock = new List<ISyntaxTree>();
 
             var test = new IfParseSyntax(
                 cond.Location,
@@ -20,7 +20,7 @@ namespace Helix.Parsing {
 
             // False loops will never run and true loops don't need a break test
             if (cond is not Features.Primitives.BoolLiteral) {
-                newBlock.Statements.Add(test);
+                newBlock.Add(test);
             }
 
             if (!this.Peek(TokenKind.OpenBrace)) {
@@ -28,15 +28,15 @@ namespace Helix.Parsing {
             }
 
             this.isInLoop.Push(true);
-            var body = this.TopExpression(newBlock);
+            var body = this.TopExpression();
             this.isInLoop.Pop();
 
+            newBlock.Add(body);
+
             var loc = start.Location.Span(body.Location);
-            var loop = new LoopStatement(loc, new BlockSyntax(loc, newBlock.Statements));
+            var loop = new LoopStatement(loc, new BlockSyntax(loc, newBlock));
 
-            block.Statements.Add(loop);
-
-            return new VoidLiteral(loc);
+            return loop;
         }
     }
 }
@@ -96,6 +96,7 @@ namespace Helix.Features.FlowControl {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: While or for loop");
             writer.WriteStatement(stat);
+            writer.WriteEmptyLine();
 
             return new CIntLiteral(0);
         }
