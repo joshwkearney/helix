@@ -57,7 +57,7 @@ namespace Helix {
                 var result = new VariableAccessSyntax(this.Location, path);
 
                 types.ReturnTypes[result] = varSig.Type;
-                types.CapturedVariables[result] = varSig.CapturedVariables;
+                types.CapturedVariables[result] = new[] { path };
 
                 return result;
             }
@@ -110,14 +110,9 @@ namespace Helix {
             }
 
             var result = new LValueVariableAccessSyntax(this.Location, this.variablePath);
-            types.ReturnTypes[result] = new PointerType(types.ReturnTypes[this], true);
 
-            // Every variable lvalue needs to capture the stack, as it is a 
-            // pointer to a stack-allocated value
-            types.CapturedVariables[result] = types
-                .CapturedVariables[this]
-                .Append(new IdentifierPath("$stack"))
-                .ToArray();
+            types.ReturnTypes[result] = new PointerType(types.ReturnTypes[this], true);
+            types.CapturedVariables[result] = types.CapturedVariables[this];
 
             return result;
         }

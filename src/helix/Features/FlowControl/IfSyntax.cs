@@ -80,31 +80,41 @@ namespace Helix.Features.FlowControl {
 
             var modifiedVars = iftrueTypes.Variables
                 .Concat(iffalseTypes.Variables)
-                .GroupBy(x => x.Key)
-                .ToDictionary(x => x.Key, x => x.SelectMany(y => y.Value.CapturedVariables));
+                .Select(x => x.Key);
 
             // Unify the branch variable signatures that overlap
             // with our variable signatures to correctly capture
             // lifetimes that were added to mutable variables
-            foreach (var (path, cap) in modifiedVars) {
+            foreach (var path in modifiedVars) {
                 var oldSig = types.Variables[path];
 
-                // If this variable is changed in both paths, we can override the current signature
+                // If this variable is changed in both paths, we can override the current lifetime
                 if (iftrueTypes.Variables.ContainsKey(path) && iffalseTypes.Variables.ContainsKey(path)) {
+                    var lifetime = iftrueTypes.Variables[path].Lifetime
+                        .Merge(iffalseTypes.Variables[path].Lifetime);
+
                     types.Variables[path] = new VariableSignature(
                         path,
                         oldSig.Type,
                         oldSig.IsWritable,
-                        cap.ToArray());
+                        lifetime);
                 }
                 else {
-                    // If this variable is changed in only one path, append to the current captured
-                    // variables.
+                    // If this variable is changed in only one path, append to the current lifetime
+                    var lifetime = oldSig.Lifetime;
+
+                    if (iftrueTypes.Variables.ContainsKey(path)) {
+                        lifetime = iftrueTypes.Variables[path].Lifetime.Merge(lifetime);
+                    }
+                    else {
+                        lifetime = iffalseTypes.Variables[path].Lifetime.Merge(lifetime);
+                    }
+
                     types.Variables[path] = new VariableSignature(
                         path,
                         oldSig.Type,
                         oldSig.IsWritable,
-                        cap.Concat(oldSig.CapturedVariables).ToArray());
+                        lifetime);
                 }
             }
 

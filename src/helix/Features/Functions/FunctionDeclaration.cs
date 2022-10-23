@@ -135,7 +135,7 @@ namespace Helix.Features.Functions {
                 throw new TypeCheckingException(
                     this.body.Location,
                     "Dangling Pointer on Return Value",
-                    "The return value for this function references stack-allocated memory.");
+                    "The return value for this function potentially references stack-allocated memory.");
             }
 
 #if DEBUG

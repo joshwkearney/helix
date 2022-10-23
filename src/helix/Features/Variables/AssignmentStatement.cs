@@ -87,18 +87,24 @@ namespace Helix.Features.Variables {
             types.ReturnTypes[result] = PrimitiveType.Void;
             types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
 
-            // If the rvalue captures any variables that the lvalue doesn't,
-            // either insert a runtime lifetime check if this function is
-            // "pooling", otherwise throw a compile error for an unsafe memory
-            // store.
+            // Check to see if the assigned value has the same origins
+            // (or more restricted origins) than the target expression.
+            // If the origins are compatible, we can assign with no further
+            // issue. If they are different, then we need to insert a runtime
+            // check. If the lifetimes do not have runtime values, then we
+            // need to throw an error
 
-            var uncaptured = types.CapturedVariables[assign]
-                .Except(types.CapturedVariables[target])
-                .Any();
+            var targetLifetime = types.CapturedVariables[target]
+                .Select(x => types.Variables[x].Lifetime)
+                .Aggregate(new Lifetime(), (x, y) => x.Merge(y));
+
+            var assignLifetime = types.CapturedVariables[assign]
+                .Select(x => types.Variables[x].Lifetime)
+                .Aggregate(new Lifetime(), (x, y) => x.Merge(y));
 
             // TODO: Insert runtime lifetime check if possible
 
-            if (uncaptured) {
+            if (!targetLifetime.HasCompatibleOrigins(assignLifetime)) {
                 throw new TypeCheckingException(
                     this.Location,
                     "Unsafe Memory Store",
@@ -109,22 +115,13 @@ namespace Helix.Features.Variables {
 
             // Modify the variable declaration to include any new captured variables
             foreach (var cap in types.CapturedVariables[target]) {
-                if (cap == new IdentifierPath("$stack")) {
-                    continue;
-                }
-
                 var sig = types.Variables[cap];
-                var newCaptured = sig.CapturedVariables
-                    .Concat(types.CapturedVariables[assign])
-                    .ToArray();
 
-                var newSig = new VariableSignature(
+                types.Variables[cap] = new VariableSignature(
                     sig.Path, 
                     sig.Type, 
                     sig.IsWritable, 
-                    newCaptured);
-
-                types.Variables[cap] = newSig;
+                    assignLifetime);
             }
 
             return result;

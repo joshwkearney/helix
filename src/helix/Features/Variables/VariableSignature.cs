@@ -1,7 +1,35 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Types;
+using Helix.Parsing;
 
 namespace Helix.Features.Variables {
+    public record Lifetime(bool IsStackBound, 
+                           IReadOnlyList<IdentifierPath> Origins, 
+                           IReadOnlyList<ISyntaxTree> Values) {
+
+        public Lifetime() : this(false, Array.Empty<IdentifierPath>(), Array.Empty<ISyntaxTree>()) { }
+
+        public Lifetime Merge(Lifetime other) {
+            var automatic = this.IsStackBound || other.IsStackBound;
+            var origins = this.Origins.Concat(other.Origins).ToArray();
+            var values = this.Values.Concat(other.Values).ToArray();
+
+            return new Lifetime(automatic, origins, values);
+        }
+
+        public Lifetime WithStackBinding(bool isStackBound) {
+            return new Lifetime(isStackBound, this.Origins, this.Values);
+        }
+
+        public bool HasCompatibleOrigins(Lifetime assignValue) {
+            //if (!this.IsStackBound && assignValue.IsStackBound) {
+            //    return false;
+            //}
+
+            return !assignValue.Origins.Except(this.Origins).Any();
+        }
+    }
+
     public record VariableSignature {
         public HelixType Type { get; }
 
@@ -9,18 +37,15 @@ namespace Helix.Features.Variables {
 
         public IdentifierPath Path { get; }
 
-        public IReadOnlyList<IdentifierPath> CapturedVariables { get; }
+        public Lifetime Lifetime { get; }
 
         public VariableSignature(IdentifierPath path, HelixType type, 
-            bool isWritable, IReadOnlyList<IdentifierPath> capturedVariables) {
+            bool isWritable, Lifetime lifetime) {
 
-            Path = path;
-            Type = type;
-            IsWritable = isWritable;
-            this.CapturedVariables = capturedVariables;
+            this.Path = path;
+            this.Type = type;
+            this.IsWritable = isWritable;
+            this.Lifetime = lifetime;
         }
-
-        public VariableSignature(IdentifierPath path, HelixType type, bool isWritable)
-            : this(path, type, isWritable, Array.Empty<IdentifierPath>()) { }
     }
 }

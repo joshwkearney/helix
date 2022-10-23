@@ -40,12 +40,15 @@ namespace Helix.Features.Functions {
                     type = type.ToMutableType();
                 }
 
-                var captured = Array.Empty<IdentifierPath>();
+                var lifetime = new Lifetime();
                 if (!type.IsValueType(types)) {
-                    captured = new[] { sig.Path.Append(parsePar.Name) };
+                    lifetime = new Lifetime(
+                        false, 
+                        new[] { sig.Path.Append(parsePar.Name) }, 
+                        Array.Empty<ISyntaxTree>());
                 }
 
-                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, captured);
+                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, lifetime);
                 types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
             }
         }

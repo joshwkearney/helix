@@ -83,13 +83,12 @@ namespace Helix {
                 return this.Destructure(assignType, types);
             }
 
-            var captured = (IReadOnlyList<IdentifierPath>)Array.Empty<IdentifierPath>();
-            if (!assignType.IsValueType(types)) {
-                captured = types.CapturedVariables[assign];
-            }
+            var lifetime = types.CapturedVariables[assign]
+                .Select(x => types.Variables[x].Lifetime)
+                .Aggregate(new Lifetime(), (x, y) => x.Merge(y));
 
             var path = this.Location.Scope.Append(this.names[0]);
-            var sig = new VariableSignature(path, assignType, this.isWritable, captured);
+            var sig = new VariableSignature(path, assignType, this.isWritable, lifetime);
 
             // Declare this variable and make sure we're not shadowing another variable
             if (types.Variables.ContainsKey(path)) {
