@@ -84,7 +84,7 @@ namespace Helix.Features.Primitives {
                     arg);
 
                 types.ReturnTypes[result] = PrimitiveType.Bool;
-                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+                types.Lifetimes[result] = new Lifetime();
 
                 return result;
             }

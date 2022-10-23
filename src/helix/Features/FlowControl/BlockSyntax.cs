@@ -68,9 +68,7 @@ namespace Helix.Features.FlowControl {
                 .OrElse(() => PrimitiveType.Void);
 
             types.ReturnTypes[result] = returnType;
-            types.CapturedVariables[result] = stats
-                .SelectMany(x => types.CapturedVariables[x])
-                .ToArray();
+            types.Lifetimes[result] = stats.MergeLifetimes(types);
 
             return result;
         }

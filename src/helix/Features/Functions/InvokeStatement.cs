@@ -75,7 +75,7 @@ namespace Helix.Features.Functions {
                 newArgs[i] = this.args[i].CheckTypes(types).UnifyTo(expectedType, types);
             }
 
-            var captured = new List<IdentifierPath>();
+            var captured = new Lifetime();
 
             // If there are any reference types in the result that can be found
             // in any of the arguments then assume we captured that argument.
@@ -97,7 +97,7 @@ namespace Helix.Features.Functions {
                         .Any();
 
                     if (overlap) {
-                        captured.AddRange(types.CapturedVariables[arg]);
+                        captured = types.Lifetimes[arg].Merge(captured);
                     }
                 }
             }
@@ -111,7 +111,7 @@ namespace Helix.Features.Functions {
             var result = new InvokeSyntax(this.Location, sig, newArgs);
 
             types.ReturnTypes[result] = sig.ReturnType;
-            types.CapturedVariables[result] = captured;
+            types.Lifetimes[result] = captured;
 
             return result;            
         }

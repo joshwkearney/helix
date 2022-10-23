@@ -142,9 +142,7 @@ namespace Helix.Features.Aggregates {
 
             types.ReturnTypes[result] = new NamedType(sig.Path);
 
-            types.CapturedVariables[result] = result.values
-                .SelectMany(x => types.CapturedVariables[x])
-                .ToArray();
+            types.Lifetimes[result] = result.values.MergeLifetimes(types);
 
             return result;
         }
@@ -221,9 +219,7 @@ namespace Helix.Features.Aggregates {
             var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
             types.ReturnTypes[result] = type;
 
-            types.CapturedVariables[result] = result.values
-                .SelectMany(x => types.CapturedVariables[x])
-                .ToArray();
+            types.Lifetimes[result] = result.values.MergeLifetimes(types);
 
             return result;
         }

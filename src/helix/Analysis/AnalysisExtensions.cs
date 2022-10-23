@@ -4,6 +4,12 @@ using Helix.Parsing;
 
 namespace Helix.Analysis {
     public static partial class AnalysisExtensions {
+        public static Lifetime MergeLifetimes(this IEnumerable<ISyntaxTree> tree, SyntaxFrame types) {
+            return tree
+                .Select(x => types.Lifetimes[x])
+                .Aggregate(new Lifetime(), (x, y) => x.Merge(y));
+        }
+
         public static PointerType AssertIsPointer(this ISyntaxTree syntax, SyntaxFrame types) {
             var type = types.ReturnTypes[syntax];
 

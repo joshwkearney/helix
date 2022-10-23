@@ -51,7 +51,7 @@ namespace Helix.Features.Arrays {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType, true);
-            types.CapturedVariables[this] = types.CapturedVariables[this.target];
+            types.Lifetimes[this] = types.Lifetimes[this.target];
 
             return this;
         }

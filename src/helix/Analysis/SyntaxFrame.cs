@@ -17,6 +17,10 @@ namespace Helix.Analysis {
 
         public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
 
+        // Represents variables captured by individual syntax elements
+        // Used for escape analysis and eventually for closure conversion
+        public IDictionary<ISyntaxTree, Lifetime> Lifetimes { get; }
+
         // Global things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
@@ -26,13 +30,9 @@ namespace Helix.Analysis {
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
-        // Represents variables captured by individual syntax elements
-        // Used for escape analysis and eventually for closure conversion
-        public IDictionary<ISyntaxTree, IReadOnlyList<IdentifierPath>> CapturedVariables { get; }
-
         public SyntaxFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<IdentifierPath>>();
+            this.Lifetimes = new Dictionary<ISyntaxTree, Lifetime>();
 
             this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
@@ -56,7 +56,7 @@ namespace Helix.Analysis {
 
             this.TypeDeclarations = prev.TypeDeclarations;
             this.ReturnTypes = prev.ReturnTypes;
-            this.CapturedVariables = prev.CapturedVariables;
+            this.Lifetimes = prev.Lifetimes;
         }
 
         public string GetVariableName() {

@@ -131,7 +131,7 @@ namespace Helix.Features.Functions {
                 .ToRValue(types);
 
             // Make sure we're not capturing a stack-allocated variable
-            if (types.CapturedVariables[body].Contains(new IdentifierPath("$stack"))) {
+            if (types.Lifetimes[body].IsStackBound) {
                 throw new TypeCheckingException(
                     this.body.Location,
                     "Dangling Pointer on Return Value",
@@ -148,7 +148,7 @@ namespace Helix.Features.Functions {
 
             // Debug check: make sure that every syntax tree has captured variables
             foreach (var expr in body.GetAllChildren()) {
-                if (!types.CapturedVariables.ContainsKey(expr)) {
+                if (!types.Lifetimes.ContainsKey(expr)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
                 }
             }

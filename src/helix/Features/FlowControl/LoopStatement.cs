@@ -73,11 +73,27 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            var body = this.body.CheckTypes(types).ToRValue(types);
+            var bodyTypes = new SyntaxFrame(types);
+            var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = new LoopStatement(this.Location, body, true);
 
+            var modifiedVars = bodyTypes.Variables
+                .Select(x => x.Key);
+
+            // Merge the lifetime changes from in the loop with the lifetimes outside of it
+            foreach (var path in modifiedVars) {
+                var oldSig = types.Variables[path];
+                var lifetime = bodyTypes.Variables[path].Lifetime.Merge(oldSig.Lifetime);
+
+                types.Variables[path] = new VariableSignature(
+                    path,
+                    oldSig.Type,
+                    oldSig.IsWritable,
+                    lifetime);
+            }
+
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            types.Lifetimes[result] = new Lifetime();
 
             return result;
         }

@@ -85,7 +85,7 @@ namespace Helix.Features.Variables {
 
             var result = new AssignmentStatement(this.Location, target, assign, true);
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            types.Lifetimes[result] = new Lifetime();
 
             // Check to see if the assigned value has the same origins
             // (or more restricted origins) than the target expression.
@@ -94,17 +94,12 @@ namespace Helix.Features.Variables {
             // check. If the lifetimes do not have runtime values, then we
             // need to throw an error
 
-            var targetLifetime = types.CapturedVariables[target]
-                .Select(x => types.Variables[x].Lifetime)
-                .Aggregate(new Lifetime(), (x, y) => x.Merge(y));
-
-            var assignLifetime = types.CapturedVariables[assign]
-                .Select(x => types.Variables[x].Lifetime)
-                .Aggregate(new Lifetime(), (x, y) => x.Merge(y));
+            var targetLifetime = types.Lifetimes[target];
+            var assignLifetime = types.Lifetimes[assign];
 
             // TODO: Insert runtime lifetime check if possible
 
-            if (!targetLifetime.HasCompatibleOrigins(assignLifetime)) {
+            if (!targetLifetime.HasCompatibleOrigins(assignLifetime, types)) {
                 throw new TypeCheckingException(
                     this.Location,
                     "Unsafe Memory Store",
@@ -114,7 +109,7 @@ namespace Helix.Features.Variables {
             }
 
             // Modify the variable declaration to include any new captured variables
-            foreach (var cap in types.CapturedVariables[target]) {
+            foreach (var cap in targetLifetime.Origins) {
                 var sig = types.Variables[cap];
 
                 types.Variables[cap] = new VariableSignature(

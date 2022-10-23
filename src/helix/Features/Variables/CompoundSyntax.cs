@@ -32,7 +32,7 @@ namespace Helix.Features.Variables {
                 this.args.Select(x => x.CheckTypes(types)).ToArray());
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            types.Lifetimes[result] = new Lifetime();
 
             return result;
         }

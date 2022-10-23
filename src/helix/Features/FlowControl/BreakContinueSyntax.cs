@@ -59,7 +59,7 @@ namespace Helix.Features.FlowControl {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
-            types.CapturedVariables[this] = Array.Empty<IdentifierPath>();
+            types.Lifetimes[this] = new Lifetime();
 
             return this;
         }

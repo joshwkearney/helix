@@ -7,6 +7,7 @@ using Helix.Analysis;
 using Helix.Analysis.Types;
 using Helix.Features.Arrays;
 using Helix.Features.Primitives;
+using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -92,10 +93,10 @@ namespace Helix.Features.Arrays {
             types.ReturnTypes[result] = arrayType.InnerType;
 
             if (arrayType.InnerType.IsValueType(types)) {
-                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+                types.Lifetimes[result] = new Lifetime();
             }
             else {
-                types.CapturedVariables[result] = types.CapturedVariables[target];
+                types.Lifetimes[result] = types.Lifetimes[target];
             }
 
             return result;

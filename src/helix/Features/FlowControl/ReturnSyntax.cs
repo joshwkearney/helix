@@ -61,7 +61,7 @@ namespace Helix.Features.FlowControl {
             var result = new ReturnSyntax(this.Location, payload, this.func, true);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            types.Lifetimes[result] = new Lifetime();
 
             return result;
         }

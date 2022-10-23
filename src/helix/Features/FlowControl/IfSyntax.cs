@@ -65,15 +65,15 @@ namespace Helix.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
-            var iftrue = this.iftrue.CheckTypes(types).ToRValue(types);
-            var iffalse = this.iffalse.CheckTypes(types).ToRValue(types);
-
             var iftrueTypes = new SyntaxFrame(types);
             var iffalseTypes = new SyntaxFrame(types);
 
-            iftrue = iftrue.UnifyFrom(iffalse, iftrueTypes);
-            iffalse = iffalse.UnifyFrom(iftrue, iffalseTypes);
+            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
+            var iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
+            var iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
+
+            iftrue = iftrue.UnifyFrom(iffalse, types);
+            iffalse = iffalse.UnifyFrom(iftrue, types);
 
             var resultType = types.ReturnTypes[iftrue];
             var result = new IfSyntax(this.Location, cond, iftrue, iffalse, resultType);
@@ -89,7 +89,7 @@ namespace Helix.Features.FlowControl {
                 var oldSig = types.Variables[path];
 
                 // If this variable is changed in both paths, we can override the current lifetime
-                if (iftrueTypes.Variables.ContainsKey(path) && iffalseTypes.Variables.ContainsKey(path)) {
+                if (iftrueTypes.Variables.Keys.Contains(path) && iffalseTypes.Variables.Keys.Contains(path)) {
                     var lifetime = iftrueTypes.Variables[path].Lifetime
                         .Merge(iffalseTypes.Variables[path].Lifetime);
 
@@ -120,10 +120,8 @@ namespace Helix.Features.FlowControl {
 
             types.ReturnTypes[result] = resultType;
 
-            types.CapturedVariables[result] = types
-                .CapturedVariables[iftrue]
-                .Concat(types.CapturedVariables[iffalse])
-                .ToArray();
+            types.Lifetimes[result] = types.Lifetimes[iftrue]
+                .Merge(types.Lifetimes[iffalse]);
 
             return result;
         }

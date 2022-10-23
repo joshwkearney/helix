@@ -83,11 +83,8 @@ namespace Helix {
                 return this.Destructure(assignType, types);
             }
 
-            var lifetime = types.CapturedVariables[assign]
-                .Select(x => types.Variables[x].Lifetime)
-                .Aggregate(new Lifetime(), (x, y) => x.Merge(y));
-
             var path = this.Location.Scope.Append(this.names[0]);
+            var lifetime = types.Lifetimes[assign];
             var sig = new VariableSignature(path, assignType, this.isWritable, lifetime);
 
             // Declare this variable and make sure we're not shadowing another variable
@@ -103,7 +100,7 @@ namespace Helix {
             var result = new VarStatement(this.Location, sig, assign);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+            types.Lifetimes[result] = new Lifetime();
 
             return result;
         }

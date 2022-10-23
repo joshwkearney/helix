@@ -29,10 +29,10 @@ namespace Helix.Features.Primitives {
             types.ReturnTypes[result] = pointerType.InnerType;
 
             if (pointerType.InnerType.IsValueType(types)) {
-                types.CapturedVariables[result] = Array.Empty<IdentifierPath>();
+                types.Lifetimes[result] = new Lifetime();
             }
             else {
-                types.CapturedVariables[result] = types.CapturedVariables[target];
+                types.Lifetimes[result] = types.Lifetimes[target];
             }
 
             return result;
