@@ -80,7 +80,8 @@ namespace Helix.Features.FlowControl {
 
             var modifiedVars = iftrueTypes.Variables
                 .Concat(iffalseTypes.Variables)
-                .Select(x => x.Key);
+                .Select(x => x.Key)
+                .Intersect(types.Variables.Select(x => x.Key));
 
             // Unify the branch variable signatures that overlap
             // with our variable signatures to correctly capture

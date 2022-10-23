@@ -78,7 +78,8 @@ namespace Helix.Features.FlowControl {
             var result = new LoopStatement(this.Location, body, true);
 
             var modifiedVars = bodyTypes.Variables
-                .Select(x => x.Key);
+                .Select(x => x.Key)
+                .Intersect(types.Variables.Select(x => x.Key));
 
             // Merge the lifetime changes from in the loop with the lifetimes outside of it
             foreach (var path in modifiedVars) {
