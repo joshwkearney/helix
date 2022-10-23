@@ -1,12 +1,70 @@
-﻿
+﻿extern func externalFunc(let x as int) as int;
 
-func loops(let p as int, let z as int*) as int* {
-	var x = 45;
-	var w = z;
+struct Node {
+	var next as Node*;
+	var data as int;
+};
 
-	if p > 100 then {
-		w = &x;
+func loops(var x as int, let r as int[]) as int {
+	// Create structs on the stack
+	let stackAllocation = put Point { x= 45, y= 89 };
+	let anotherOne = put Point { 4, 5 };
+
+	// Unpack structs like this
+	let u, v = anotherOne;
+
+	// Normal style comments
+	var total = anotherOne.x;
+
+	// While loops and for loops that get converted
+	// into a finite state machine
+	while x % 15 != 8 {
+		for i = 0 to 15 {
+			total += i;
+		};
+
+		if x > 100 then {
+			break;
+		};
+
+		let awfulFlowControl = {
+			if x < 10 then {
+				break;
+			}
+			else 10;
+		};
 	};
 
-	w;
+	// Use either the "void as T" or "put T" idioms
+	// to create an empty value
+	let zero = void as int;
+	let alsoZero = put int;
+
+	// You can invoke functions
+	total + fib(total);
+};
+
+func fib(let x as int) as int {
+	// If statements also become a finite state machine :)
+	if x <= 1
+		then x
+		else fib(x - 1) + fib(x - 2);
+};
+
+func test(let x as int*) {
+	// This compiles even though you can't create your
+	// own pointers yet (oops)
+	*x = 45;
+};
+
+func expression_func() as int -> 45;
+
+struct Point {
+	let x as int;
+	let y as int;
+};
+
+union HelixSupportsUnions {
+	let pun as int;
+	let other as int;
 };
