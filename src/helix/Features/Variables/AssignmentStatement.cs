@@ -99,7 +99,7 @@ namespace Helix.Features.Variables {
 
             // TODO: Insert runtime lifetime check if possible
 
-            if (!targetLifetime.HasCompatibleOrigins(assignLifetime, types)) {
+            if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
                 throw new LifetimeException(
                     this.Location,
                     "Unsafe Memory Store",

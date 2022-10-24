@@ -27,7 +27,7 @@ namespace Helix.Analysis {
                 Values);
         }
 
-        public bool HasCompatibleOrigins(Lifetime assignValue, SyntaxFrame types) {
+        public bool HasCompatibleRoots(Lifetime assignValue, SyntaxFrame types) {
             if (!this.IsStackBound && assignValue.IsStackBound) {
                 return false;
             }

@@ -155,7 +155,10 @@ namespace Helix {
 
         // Trying to get an rvlaue from an lvalue is fine, it just means that 
         // somebody wanted the address of a variable
-        public ISyntaxTree ToRValue(SyntaxFrame type) => this;
+        // TODO: Potentially not fine because lvalue and rvalue lifetimes are different
+        public ISyntaxTree ToRValue(SyntaxFrame type) {
+            throw new InvalidOperationException();
+        }
 
         public ISyntaxTree ToLValue(SyntaxFrame types) => this;
 
