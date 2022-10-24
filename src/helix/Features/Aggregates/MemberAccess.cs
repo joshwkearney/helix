@@ -23,6 +23,7 @@ namespace Helix.Features.Aggregates {
         private readonly ISyntaxTree target;
         private readonly string memberName;
         private readonly bool isTypeChecked;
+        private readonly bool isPointerAccess;
 
         public TokenLocation Location { get; }
 
@@ -31,11 +32,13 @@ namespace Helix.Features.Aggregates {
         public bool IsPure => this.target.IsPure;
 
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
-                                  string memberName, bool isTypeChecked = false) {
+                                  string memberName, bool isPointerAccess = false,
+                                  bool isTypeChecked = false) {
             this.Location = location;
             this.target = target;
             this.memberName = memberName;
             this.isTypeChecked = isTypeChecked;
+            this.isPointerAccess = isPointerAccess;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
@@ -57,9 +60,14 @@ namespace Helix.Features.Aggregates {
                 }
             }
 
+            bool isPointerAccess = false;
+            if (targetType is PointerType pointer) {
+                targetType = pointer.InnerType;
+                isPointerAccess = true;
+            }
+
             // If this is a named type it could be a struct or union
             if (targetType is NamedType named) {
-
                 // If this is a struct or union we can access the fields
                 if (types.Aggregates.TryGetValue(named.Path, out var sig)) {
                     var fieldOpt = sig
@@ -73,6 +81,7 @@ namespace Helix.Features.Aggregates {
                             this.Location,
                             target,
                             this.memberName,
+                            isPointerAccess,
                             true);
 
                         types.ReturnTypes[result] = field.Type;
@@ -81,6 +90,9 @@ namespace Helix.Features.Aggregates {
                             types.Lifetimes[result] = new Lifetime();
                         }
                         else {
+                            // TODO: If this is a local struct (so named.Path.Append(this.memberName))
+                            // exists, then only scope this lifetime to the member lifetime and not
+                            // to the target lifetime
                             types.Lifetimes[result] = types.Lifetimes[target];
                         }
 
@@ -95,16 +107,85 @@ namespace Helix.Features.Aggregates {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
+                throw new InvalidOperationException();
             }
 
             return this;
         }
 
+        public ISyntaxTree ToLValue(SyntaxFrame types) {
+            if (!this.isTypeChecked) {
+                throw new InvalidOperationException();
+            }
+
+            var type = types.ReturnTypes[this.target];
+            if (type is PointerType point) {
+                if (!point.IsWritable) {
+                    throw TypeCheckingErrors.WritingToConstVariable(this.Location);
+                }
+
+                type = point.InnerType;
+            }
+
+            if (type is not NamedType named) {
+                throw TypeCheckingErrors.LValueRequired(this.Location);
+            }
+
+            var mem = types.Aggregates[named.Path].Members.First(x => x.Name == this.memberName);
+            if (!mem.IsWritable) {
+                throw TypeCheckingErrors.WritingToConstVariable(this.Location);
+            }
+
+            var result = new LValueMemberAccessSyntax(this.Location, this.target, 
+                                                      this.memberName, this.isPointerAccess);
+
+            // 
+            types.ReturnTypes[result] = new PointerType(mem.Type, true);
+            types.Lifetimes[result] = types.Lifetimes[target]; ;
+
+            return result;
+        }
+
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CMemberAccess() {
                 Target = this.target.GenerateCode(writer),
-                MemberName = this.memberName
+                MemberName = this.memberName,
+                IsPointerAccess = this.isPointerAccess
+            };
+        }
+    }
+
+    public record LValueMemberAccessSyntax : ISyntaxTree {
+        private readonly ISyntaxTree target;
+        private readonly string member;
+        private readonly bool isPointerAccess;
+
+        public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
+
+        public bool IsPure => this.target.IsPure;
+
+        public LValueMemberAccessSyntax(TokenLocation loc, ISyntaxTree target, string member, bool isPointerAccess) {
+            this.Location = loc;
+            this.target = target;
+            this.member = member;
+            this.isPointerAccess = isPointerAccess;
+        }
+
+        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+
+        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+
+        public ISyntaxTree ToLValue(SyntaxFrame types) => this;
+
+        public ICSyntax GenerateCode(ICStatementWriter writer) {
+            return new CAddressOf() {
+                Target = new CMemberAccess() {
+                    Target = this.target.GenerateCode(writer),
+                    MemberName = this.member,
+                    IsPointerAccess = this.isPointerAccess
+                }
             };
         }
     }

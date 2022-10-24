@@ -83,7 +83,7 @@ namespace Helix.Generation.Syntax {
                 return target.Substring(1);
             }
 
-            return "&" + target;
+            return "(&" + target + ")";
         }
     }
 
@@ -114,7 +114,13 @@ namespace Helix.Generation.Syntax {
 
         public string? MemberName { get; init; } = null;
 
-        public string WriteToC() => this.Target!.WriteToC() + "." + this.MemberName!;
+        public bool IsPointerAccess { get; init; } = false;
+
+        public string WriteToC() {
+            var op = this.IsPointerAccess ? "->" : ".";
+
+            return "(" + this.Target!.WriteToC() + op + this.MemberName! + ")";
+        }
     }
 
     public record CCast() : ICSyntax {

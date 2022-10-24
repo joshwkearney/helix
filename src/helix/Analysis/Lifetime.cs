@@ -1,28 +1,29 @@
 ﻿using Helix.Parsing;
+using System.IO;
 
 namespace Helix.Analysis {
     public record Lifetime(bool IsStackBound,
-                           IReadOnlyList<IdentifierPath> Origins,
+                           IReadOnlyList<IdentifierPath> Dependencies,
                            IReadOnlyList<ISyntaxTree> Values) {
 
         public Lifetime() : this(false, Array.Empty<IdentifierPath>(), Array.Empty<ISyntaxTree>()) { }
 
         public Lifetime Merge(Lifetime other) {
             var automatic = IsStackBound || other.IsStackBound;
-            var origins = Origins.Concat(other.Origins).ToArray();
+            var origins = Dependencies.Concat(other.Dependencies).ToArray();
             var values = Values.Concat(other.Values).ToArray();
 
             return new Lifetime(automatic, origins, values);
         }
 
         public Lifetime WithStackBinding(bool isStackBound) {
-            return new Lifetime(isStackBound, Origins, Values);
+            return new Lifetime(isStackBound, Dependencies, Values);
         }
 
         public Lifetime AppendOrigin(IdentifierPath origins) {
             return new Lifetime(
                 IsStackBound,
-                Origins.Append(origins).ToArray(),
+                Dependencies.Append(origins).ToArray(),
                 Values);
         }
 
@@ -31,8 +32,8 @@ namespace Helix.Analysis {
                 return false;
             }
 
-            var targetRoots = GetRootOrigins(this.Origins, types).ToArray();
-            var assignRoots = GetRootOrigins(assignValue.Origins, types).ToArray();
+            var targetRoots = GetRootOrigins(this.Dependencies, types).ToArray();
+            var assignRoots = GetRootOrigins(assignValue.Dependencies, types).ToArray();
 
             if (!targetRoots.Any()) {
                 return true;
@@ -45,21 +46,11 @@ namespace Helix.Analysis {
             IEnumerable<IdentifierPath> paths,
             SyntaxFrame types) {
 
-            var stack = new Stack<IdentifierPath>(paths);
-
-            while (stack.Count > 0) {
-                var path = stack.Pop();
-                var sig = types.Variables[path];
-
-                if (sig.Lifetime.Origins.Count == 1 && sig.Lifetime.Origins[0] == path) {
-                    yield return path;
-                    continue;
-                }
-
-                foreach (var newPath in sig.Lifetime.Origins) {
-                    stack.Push(newPath);
-                }
-            }
+            return paths
+                .Select(x => new { Path = x, Lifetime = types.Variables[x].Lifetime })
+                .Where(x => x.Lifetime.Dependencies.Count == 1)
+                .Where(x => x.Lifetime.Dependencies[0] == x.Path)
+                .Select(x => x.Path);
         }
     }
 }

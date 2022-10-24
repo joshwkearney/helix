@@ -128,11 +128,12 @@ namespace Helix.Features.Functions {
             // Check types
             var body = this.body
                 .CheckTypes(types)
-                .ToRValue(types);
+                .ToRValue(types)
+                .UnifyTo(sig.ReturnType, types);
 
             // Make sure we're not capturing a stack-allocated variable
             if (types.Lifetimes[body].IsStackBound) {
-                throw new TypeCheckingException(
+                throw new LifetimeException(
                     this.Location,
                     "Dangling Pointer on Return Value",
                     "The return value for this function potentially references stack-allocated memory.");

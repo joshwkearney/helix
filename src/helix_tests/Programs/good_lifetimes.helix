@@ -1,0 +1,65 @@
+﻿func loop_test_1(let a as int*) as int* {
+	var b = 10;
+	var c = a;
+	var d = a;
+
+	for i = 0 to 2 {
+		c = d;
+		//d = &b;
+	};
+
+	c;
+};
+
+func loop_test_2(let a as int*) as int* {
+	var b = 10;
+	var c = a;
+	var d = a;
+
+	//for i = 0 to 2 {
+		c = d;
+		d = &b;
+	//};
+
+	c;
+};
+
+func ptr_test_1(let a as int**, let b as int*) {
+	var c = 10;
+	let d = *a;
+
+	*a = d;	
+};
+
+func struct_test_1(let a as TestStruct1) as TestStruct1* {
+	a.x;
+};
+
+func struct_test_2(let a as TestStruct1) as TestStruct1 {
+	*a.x;
+};
+
+func struct_test_3(let a as TestStruct1) as int* {
+	&a.y.x;
+};
+
+func struct_test_4(let a as TestStruct1*) as int* {
+	&a.y.x;
+};
+
+func struct_test_5(let a as TestStruct1*) as int* {
+	var A = put TestStruct1 { x= a };
+	let B = &A;
+
+	&B.x.x.y.y;
+};
+
+struct TestStruct1 {
+	let x as TestStruct1*;
+	let y as TestStruct2;
+};
+
+struct TestStruct2 {
+	var x as int;
+	var y as int;
+};

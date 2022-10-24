@@ -48,7 +48,7 @@ namespace Helix.Features.FlowControl {
         public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements,
                    bool isTypeChecked = false) {
 
-            this.Location = location;
+            this.Location = statements.Select(x => x.Location).Prepend(location).Last();
             this.Statements = statements;
             this.id = idCounter++;
             this.isTypeChecked = isTypeChecked;

@@ -1,0 +1,5 @@
+﻿func ptr_test_1(let a as int**, let b as int*) {
+	var c = 10;
+
+	*a = &c;	
+};

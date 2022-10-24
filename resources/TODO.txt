@@ -49,7 +49,8 @@ DONE ### The Imperative Update
 	DONE - Address of operator
 	DONE - Check return values for stack allocations
 	Readonly pointers and arrays
-	Track lifetime dependencies between syntax trees
+	DONE - Track lifetime dependencies between syntax trees
+	DONE - lvalue member access for structs
 	poolof operator
 	Implicit context struct for pooling functions
 	Insert lifetime checks at runtime

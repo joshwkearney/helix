@@ -119,7 +119,7 @@ namespace Helix.Features.FlowControl {
                     lifetime = lifetime.Merge(sig.Lifetime);
                     found.Add(next);
 
-                    foreach (var origin in sig.Lifetime.Origins) {
+                    foreach (var origin in sig.Lifetime.Dependencies) {
                         search.Push(origin);
                     }
                 }

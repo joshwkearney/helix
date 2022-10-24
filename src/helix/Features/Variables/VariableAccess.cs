@@ -56,8 +56,14 @@ namespace Helix {
             if (types.Variables.TryGetValue(path, out var varSig)) {
                 var result = new VariableAccessSyntax(this.Location, path);
 
+                // The lifetime of the value of a variable is dependent on
+                // what was stored in that variable, and the variable itself.
+                // It is important to capture this variable's current lifetime
+                // plus this variable's path because this variable's value could
+                // change in the future, so we need to get an accurate snapshot 
+                // of the current value
                 types.ReturnTypes[result] = varSig.Type;
-                types.Lifetimes[result] = varSig.Lifetime.AppendOrigin(path);
+                types.Lifetimes[result] = types.Variables[path].Lifetime.AppendOrigin(path);
 
                 return result;
             }
@@ -113,6 +119,8 @@ namespace Helix {
 
             types.ReturnTypes[result] = new PointerType(types.ReturnTypes[this], true);
 
+            // Taking the address of a local variable will always result in
+            // a pointer that is only valid within the current stack frame
             types.Lifetimes[result] = new Lifetime()
                 .AppendOrigin(this.variablePath)
                 .WithStackBinding(true);

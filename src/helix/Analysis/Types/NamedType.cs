@@ -26,8 +26,11 @@
             }
 
             if (types.Aggregates.TryGetValue(this.Path, out var sig)) {
+                // Filter out our own type from the list so we don't stack
+                // overflow. Recursive structs dont' compile so this is ok.
                 return sig.Members
                     .Select(x => x.Type)
+                    .Where(x => x != this)
                     .All(x => x.IsValueType(types));
             }
 

@@ -100,7 +100,7 @@ namespace Helix.Features.Variables {
             // TODO: Insert runtime lifetime check if possible
 
             if (!targetLifetime.HasCompatibleOrigins(assignLifetime, types)) {
-                throw new TypeCheckingException(
+                throw new LifetimeException(
                     this.Location,
                     "Unsafe Memory Store",
                     $"Unable to verify that the assigned value outlives its container. " + 
@@ -112,7 +112,7 @@ namespace Helix.Features.Variables {
             // Note: We are assuming that every captured variable on the left is now
             // dependent on the assigned lifetime. This is not necessarily the case but
             // is a conservative assumption.
-            foreach (var cap in targetLifetime.Origins) {
+            foreach (var cap in targetLifetime.Dependencies) {
                 var sig = types.Variables[cap];
 
                 types.Variables[cap] = new VariableSignature(

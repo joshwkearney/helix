@@ -21,33 +21,26 @@ namespace Helix {
                 .Replace('\r', '\n')
                 .Replace("\t", "    ");
 
-            try {
-                var parser = new Parser(input);
-                var types = new SyntaxFrame();
-                var writer = new CWriter(this.header, types.TypeDeclarations);
-                var parseStats = parser.Parse();
+            var parser = new Parser(input);
+            var types = new SyntaxFrame();
+            var writer = new CWriter(this.header, types.TypeDeclarations);
+            var parseStats = parser.Parse();
 
-                foreach (var stat in parseStats) {
-                    stat.DeclareNames(types);
-                }
-
-                foreach (var stat in parseStats) {
-                    stat.DeclareTypes(types);
-                }
-
-                var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
-
-                foreach (var stat in stats) {
-                    stat.GenerateCode(types, writer);
-                }
-
-                return writer.ToString();
+            foreach (var stat in parseStats) {
+                stat.DeclareNames(types);
             }
-            catch (HelixException ex) {
-                Console.WriteLine(ex.CreateConsoleMessage(input));
 
-                return "";
+            foreach (var stat in parseStats) {
+                stat.DeclareTypes(types);
             }
+
+            var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
+
+            foreach (var stat in stats) {
+                stat.GenerateCode(types, writer);
+            }
+
+            return writer.ToString();            
         }
     }
 }
