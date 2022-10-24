@@ -7,6 +7,7 @@ using Helix.Analysis;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Generation;
+using Helix.Generation.CSyntax;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 
@@ -57,20 +58,34 @@ namespace Helix.Features.Arrays {
         }
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
-            ICSyntax result = new CMemberAccess() {
-                Target = this.target.GenerateCode(writer),
+            var target = this.target.GenerateCode(writer);
+
+            ICSyntax newData = new CMemberAccess() {
+                Target = target,
                 MemberName = "data"
             };
 
             if (this.offset != null) {
-                result = new CBinaryExpression() {
-                    Left = result,
+                newData = new CBinaryExpression() {
+                    Left = newData,
                     Right = this.offset.GenerateCode(writer),
                     Operation = BinaryOperationKind.Add
                 };
             }
 
-            return result;
+            var ptrType = new PointerType(this.arrayType.InnerType, true);
+            var ptrValue = new CCompoundExpression() {
+                Arguments = new[] {
+                    newData,
+                    new CIntLiteral(1),
+                    new CMemberAccess() {
+                        Target = target,
+                        MemberName = "pool"
+                    }
+                }
+            };
+
+            return writer.WriteImpureExpression(writer.ConvertType(ptrType), ptrValue);
         }
     }
 }

@@ -118,7 +118,8 @@ namespace Helix.Generation {
                 return new CNamedType("int");
             }
             else if (type is PointerType type2) {
-                return new CPointerType(ConvertType(type2.InnerType));
+                //return new CPointerType(ConvertType(type2.InnerType));
+                return ConvertType(new ArrayType(type2.InnerType));
             }
             else if (type is NamedType named) {
                 if (this.pathNames.TryGetValue(named.Path, out var cname)) {
@@ -156,7 +157,7 @@ namespace Helix.Generation {
                 this.arrayCounter++;
             }
 
-            name = name + "_array";
+            name = name + "$ptr";
 
             var decl = new CAggregateDeclaration() {
                 Kind = AggregateKind.Struct,
@@ -168,6 +169,10 @@ namespace Helix.Generation {
                     },
                     new CParameter() {
                         Name = "count",
+                        Type = this.ConvertType(PrimitiveType.Int)
+                    },
+                    new CParameter() {
+                        Name = "pool",
                         Type = this.ConvertType(PrimitiveType.Int)
                     }
                 }

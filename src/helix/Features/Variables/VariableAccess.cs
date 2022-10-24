@@ -115,9 +115,10 @@ namespace Helix {
                 throw TypeCheckingErrors.WritingToConstVariable(this.Location);
             }
 
-            var result = new LValueVariableAccessSyntax(this.Location, this.variablePath);
+            var returnType = new PointerType(types.ReturnTypes[this], true);
+            var result = new LValueVariableAccessSyntax(this.Location, this.variablePath, returnType);
 
-            types.ReturnTypes[result] = new PointerType(types.ReturnTypes[this], true);
+            types.ReturnTypes[result] = returnType;
 
             // Taking the address of a local variable will always result in
             // a pointer that is only valid within the current stack frame
@@ -139,6 +140,7 @@ namespace Helix {
 
     public record LValueVariableAccessSyntax : ISyntaxTree {
         private readonly IdentifierPath path;
+        private readonly HelixType returnType;
 
         public TokenLocation Location { get; }
 
@@ -146,9 +148,12 @@ namespace Helix {
 
         public bool IsPure => true;
 
-        public LValueVariableAccessSyntax(TokenLocation loc, IdentifierPath path) {
+        public LValueVariableAccessSyntax(TokenLocation loc, IdentifierPath path, 
+            HelixType returnType) {
+
             this.Location = loc;
             this.path = path;
+            this.returnType = returnType;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
@@ -156,18 +161,24 @@ namespace Helix {
         // Trying to get an rvlaue from an lvalue is fine, it just means that 
         // somebody wanted the address of a variable
         // TODO: Potentially not fine because lvalue and rvalue lifetimes are different
-        public ISyntaxTree ToRValue(SyntaxFrame type) {
-            throw new InvalidOperationException();
-        }
+        public ISyntaxTree ToRValue(SyntaxFrame type) => this;
 
         public ISyntaxTree ToLValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
 
-            return new CAddressOf() {
-                Target = new CVariableLiteral(name)
+            var ptrValue = new CCompoundExpression() {
+                Arguments = new ICSyntax[] {
+                    new CAddressOf() {
+                        Target = new CVariableLiteral(name)
+                    },
+                    new CIntLiteral(1),
+                    new CIntLiteral(int.MaxValue)
+                }
             };
+
+            return writer.WriteImpureExpression(writer.ConvertType(this.returnType), ptrValue);
         }
     }
 }

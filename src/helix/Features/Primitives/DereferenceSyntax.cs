@@ -61,7 +61,10 @@ namespace Helix.Features.Primitives {
 
         public ICSyntax GenerateCode(ICStatementWriter writer) {
             return new CPointerDereference() {
-                Target = this.target.GenerateCode(writer)
+                Target = new CMemberAccess() {
+                    Target = this.target.GenerateCode(writer),
+                    MemberName = "data"
+                }
             };
         }
     }
