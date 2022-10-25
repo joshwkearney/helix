@@ -5,7 +5,7 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Features.Primitives {
-    public record DereferenceSyntax : ISyntaxTree {
+    public record DereferenceSyntax : ISyntaxTree, ILValue {
         private readonly ISyntaxTree target;
         private readonly IdentifierPath tempPath;
         private readonly bool isTypeChecked;
@@ -16,6 +16,8 @@ namespace Helix.Features.Primitives {
         public IEnumerable<ISyntaxTree> Children => new[] { this.target };
 
         public bool IsPure => this.target.IsPure;
+
+        public bool IsLocal => false;
 
         public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, 
             IdentifierPath tempPath, bool isTypeChecked = false, bool islvalue = false) {
@@ -58,7 +60,7 @@ namespace Helix.Features.Primitives {
             }
         }
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }

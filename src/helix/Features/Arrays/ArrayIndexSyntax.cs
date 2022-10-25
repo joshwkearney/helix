@@ -65,11 +65,11 @@ namespace Helix.Features.Arrays {
             return this;
         }
 
-        ISyntaxTree ISyntaxTree.ToLValue(SyntaxFrame types) {
+        ILValue ISyntaxTree.ToLValue(SyntaxFrame types) {
             var arrayType = (ArrayType)types.ReturnTypes[this.target];
             var result = new ArrayToPointerAdapter(arrayType, this.target, this.index);
 
-            return result.CheckTypes(types);
+            return result.CheckTypes(types).ToLValue(types);
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {

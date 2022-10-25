@@ -33,18 +33,27 @@ int$ptr loop_test_1(Pool* _pool, int$ptr$ptr a) {
     int $A = _pool_get_index(_pool);
     int $B = (a.pool);
 
-    int $E = $A;
-    $E = (($E <= $B) ? $E : $B);
-
     /* Line 2: New 'int*' */
-    int* $D = (int*)_pool_malloc(_pool, $E, sizeof(int));
-    int$ptr $F = { $D, 1U, $E };
-    int $G = ($F.pool);
+    int $D = 0U;
+    int$ptr $E = { (&$D), 1U, 32767U };
+    int $F = ($E.pool);
 
     /* Line 2: New variable declaration 'b' */
-    int$ptr b = $F;
+    int$ptr b = $E;
 
-    /* Line 4: Assignment statement */
+    int $I = $A;
+    $I = (($I <= $B) ? $I : $B);
+
+    /* Line 5: New 'int*' */
+    int* $H = (int*)_pool_malloc(_pool, $I, sizeof(int));
+    int$ptr $J = { $H, 1U, $I };
+    int $K = ($J.pool);
+
+    /* Line 5: Assignment statement */
+    b = $J;
+    int $L = ($J.pool);
+
+    /* Line 7: Assignment statement */
     (*(a.data)) = b;
 
     return b;

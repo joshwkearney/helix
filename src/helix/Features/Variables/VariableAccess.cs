@@ -95,7 +95,7 @@ namespace Helix {
         }
     }
 
-    public record VariableAccessSyntax : ISyntaxTree {
+    public record VariableAccessSyntax : ISyntaxTree, ILValue {
         private readonly IdentifierPath variablePath;
 
         public TokenLocation Location { get; }
@@ -104,6 +104,8 @@ namespace Helix {
 
         public bool IsPure => true;
 
+        public bool IsLocal => true;
+
         public VariableAccessSyntax(TokenLocation loc, IdentifierPath path) {
             this.Location = loc;
             this.variablePath = path;
@@ -111,7 +113,7 @@ namespace Helix {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(SyntaxFrame types) {
             // Make sure this variable is writable
             if (!types.Variables[this.variablePath].IsWritable) {
                 throw TypeCheckingErrors.WritingToConstVariable(this.Location);

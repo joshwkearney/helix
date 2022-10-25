@@ -12,7 +12,7 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Features.Arrays {
-    public record ArrayToPointerAdapter : ISyntaxTree {
+    public record ArrayToPointerAdapter : ISyntaxTree, ILValue {
         private readonly ArrayType arrayType;
         private readonly ISyntaxTree target;
         private readonly ISyntaxTree? offset = null;
@@ -31,6 +31,8 @@ namespace Helix.Features.Arrays {
 
         public bool IsPure { get; }
 
+        public bool IsLocal => false;
+
         public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target, ISyntaxTree offset) {
             this.arrayType = arrayType;
             this.target = target;
@@ -48,7 +50,7 @@ namespace Helix.Features.Arrays {
 
         ISyntaxTree ISyntaxTree.ToRValue(SyntaxFrame types) => this;
 
-        ISyntaxTree ISyntaxTree.ToLValue(SyntaxFrame types) => this;
+        ILValue ISyntaxTree.ToLValue(SyntaxFrame types) => this;
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType, true);

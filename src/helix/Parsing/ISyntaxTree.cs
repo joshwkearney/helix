@@ -6,6 +6,10 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
+    public interface ILValue : ISyntaxTree {
+        public bool IsLocal { get; }
+    }
+
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
@@ -21,7 +25,7 @@ namespace Helix.Parsing {
             throw TypeCheckingErrors.RValueRequired(this.Location);
         }
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(SyntaxFrame types) {
             throw TypeCheckingErrors.LValueRequired(this.Location);
         }
 

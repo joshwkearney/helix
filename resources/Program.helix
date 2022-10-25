@@ -1,5 +1,7 @@
 ﻿func loop_test_1(let a as int**) as int* {
-	let b = new int;
+	var b = new int;
+
+	b = new int;
 
 	*a = b;
 	b;

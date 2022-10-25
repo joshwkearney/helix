@@ -76,7 +76,7 @@ namespace Helix.Features.Variables {
                 .ToRValue(types)
                 .UnifyTo(targetType, types);
 
-            // TODO: Fix all of this
+            // TODO: Implement the below comment
             // Check to see if the assigned value has the same origins
             // (or more restricted origins) than the target expression.
             // If the origins are compatible, we can assign with no further
@@ -87,8 +87,7 @@ namespace Helix.Features.Variables {
             var targetLifetimes = types.Lifetimes[target];
             var assignLifetimes = types.Lifetimes[assign];
 
-            // TODO: Insert compile time lifetime check
-            // TODO: Insert runtime lifetime check if possible
+            // TODO: Insert runtime lifetime check if needed
 
             //if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
             //    throw new LifetimeException(
@@ -98,47 +97,53 @@ namespace Helix.Features.Variables {
             //        "Please declare this function as 'pooling' to check variable " + 
             //        "lifetimes at runtime or wrap this assignment in an unsafe block.");
             //}
-
             var newLifetimes = new Dictionary<VariableSignature, bool>();
 
-            var isLocalMutation = targetLifetimes.Count == 1
-                && types.Variables.TryGetValue(targetLifetimes[0].Path, out var localSig)
-                && targetType == localSig.Type;
+            // There are two possible behaviors here depending on if we are writing into
+            // a local variable or writing into a remote
+            // memory location. Both use the assignment syntax but have different side
+            // effects when it comes to lifetimes. Writing into a remote memory location
+            // does not effect any lifetimes, except that the assignment lifetimes are now
+            // dependent on the target lifetimes. However, overriding a local pointer or
+            // array variable replaces the current lifetime for that variable, so we need to
+            // increment the mutation counter and create the new lifetime. 
 
-            // Increment the mutation counter for modified variables so that
+            // Increment the mutation counter for modified local variables so that
             // any new accesses to this variable will be forced to get the new 
             // lifetime.
-            if (isLocalMutation) {
-                foreach (var lifetime in targetLifetimes) {
-                    if (!types.Variables.TryGetValue(lifetime.Path, out var sig)) {
-                        continue;
-                    }
+            if (target.IsLocal) {
+                var lifetime = targetLifetimes[0];
+                var sig = types.Variables[lifetime.Path];
 
-                    var newLifetime = new Lifetime(sig.Path, sig.MutationCount + 1, lifetime.IsRoot);
+                var newLifetime = new Lifetime(sig.Path, sig.MutationCount + 1, lifetime.IsRoot);
 
-                    var newSig = new VariableSignature(
-                        sig.Path,
-                        sig.Type,
-                        sig.IsWritable,
-                        sig.MutationCount + 1,
-                        sig.IsLifetimeRoot);
+                var newSig = new VariableSignature(
+                    sig.Path,
+                    sig.Type,
+                    sig.IsWritable,
+                    sig.MutationCount + 1,
+                    sig.IsLifetimeRoot);
 
-                    // Replace the old variable signature
-                    types.Variables[lifetime.Path] = newSig;
+                // Replace the old variable signature
+                types.Variables[lifetime.Path] = newSig;
 
-                    // We need to generate a variable for this new lifetime in the c
-                    newLifetimes.Add(newSig, lifetime.IsRoot);
+                // We need to generate a variable for this new lifetime in the c
+                newLifetimes.Add(newSig, lifetime.IsRoot);
 
-                    // Add this to the running list of availible lifetimes
-                    types.AvailibleLifetimes.Add(newLifetime);
+                // Add this to the running list of availible lifetimes
+                types.AvailibleLifetimes.Add(newLifetime);
+
+                foreach (var assignTime in assignLifetimes) {
+                    types.AddDependency(assignTime, newLifetime);
                 }
-           }
-
-            // Add a dependency between every variable in the assignment statement and
-            // the old lifetime
-            foreach (var assignTime in assignLifetimes) {
-                foreach (var targetTime in targetLifetimes) {
-                    types.AddDependency(assignTime, targetTime);
+            }
+            else {
+                // Add a dependency between every variable in the assignment statement and
+                // the old lifetime
+                foreach (var assignTime in assignLifetimes) {
+                    foreach (var targetTime in targetLifetimes) {
+                        types.AddDependency(assignTime, targetTime);
+                    }
                 }
             }
 
