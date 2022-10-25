@@ -5,6 +5,8 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using System.Globalization;
+using System.IO;
+using System.Xml.Linq;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -63,7 +65,7 @@ namespace Helix {
                 // change in the future, so we need to get an accurate snapshot 
                 // of the current value
                 types.ReturnTypes[result] = varSig.Type;
-                types.Lifetimes[result] = types.Variables[path].Lifetime.AppendOrigin(path);
+                types.Lifetimes[result] = new[] { new Lifetime(path, varSig.MutationCount, varSig.IsLifetimeRoot) };
 
                 return result;
             }
@@ -72,7 +74,7 @@ namespace Helix {
                 var result = new VariableAccessSyntax(this.Location, path);
 
                 types.ReturnTypes[result] = new NamedType(path);
-                types.Lifetimes[result] = new Lifetime();
+                types.Lifetimes[result] = Array.Empty<Lifetime>();
 
                 return result;
             }
@@ -88,7 +90,7 @@ namespace Helix {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -115,70 +117,15 @@ namespace Helix {
                 throw TypeCheckingErrors.WritingToConstVariable(this.Location);
             }
 
-            var returnType = new PointerType(types.ReturnTypes[this], true);
-            var result = new LValueVariableAccessSyntax(this.Location, this.variablePath, returnType);
-
-            types.ReturnTypes[result] = returnType;
-
-            // Taking the address of a local variable will always result in
-            // a pointer that is only valid within the current stack frame
-            types.Lifetimes[result] = new Lifetime()
-                .AppendOrigin(this.variablePath)
-                .WithStackBinding(true);
-
-            return result;
+            return this;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
 
             return new CVariableLiteral(name);
-        }
-    }
-
-    public record LValueVariableAccessSyntax : ISyntaxTree {
-        private readonly IdentifierPath path;
-        private readonly HelixType returnType;
-
-        public TokenLocation Location { get; }
-
-        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
-
-        public bool IsPure => true;
-
-        public LValueVariableAccessSyntax(TokenLocation loc, IdentifierPath path, 
-            HelixType returnType) {
-
-            this.Location = loc;
-            this.path = path;
-            this.returnType = returnType;
-        }
-
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
-
-        // Trying to get an rvlaue from an lvalue is fine, it just means that 
-        // somebody wanted the address of a variable
-        // TODO: Potentially not fine because lvalue and rvalue lifetimes are different
-        public ISyntaxTree ToRValue(SyntaxFrame type) => this;
-
-        public ISyntaxTree ToLValue(SyntaxFrame types) => this;
-
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
-            var name = writer.GetVariableName(this.path);
-
-            var ptrValue = new CCompoundExpression() {
-                Arguments = new ICSyntax[] {
-                    new CAddressOf() {
-                        Target = new CVariableLiteral(name)
-                    },
-                    new CIntLiteral(1),
-                    new CIntLiteral(int.MaxValue)
-                }
-            };
-
-            return writer.WriteImpureExpression(writer.ConvertType(this.returnType), ptrValue);
         }
     }
 }

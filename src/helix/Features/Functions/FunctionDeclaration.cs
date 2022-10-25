@@ -125,19 +125,29 @@ namespace Helix.Features.Functions {
             // Declare parameters
             FunctionsHelper.DeclareParameters(this.Location, sig, types);
 
+            // Declare a "heap" lifetime used for function returns
+            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0, true);
+            types.AvailibleLifetimes.Add(heapLifetime);
+
             // Check types
             var body = this.body
                 .CheckTypes(types)
                 .ToRValue(types)
                 .UnifyTo(sig.ReturnType, types);
 
-            // Make sure we're not capturing a stack-allocated variable
-            if (types.Lifetimes[body].IsStackBound) {
-                throw new LifetimeException(
-                    this.Location,
-                    "Dangling Pointer on Return Value",
-                    "The return value for this function potentially references stack-allocated memory.");
+            // Add a dependency between every returned lifetime and the heap
+            foreach (var lifetime in types.Lifetimes[body]) {
+                types.AddDependency(lifetime, heapLifetime);
             }
+
+            // TODO: Fix this
+            // Make sure we're not capturing a stack-allocated variable
+            //if (types.Lifetimes[body].IsStackBound) {
+            //    throw new LifetimeException(
+            //        this.Location,
+            //        "Dangling Pointer on Return Value",
+            //        "The return value for this function potentially references stack-allocated memory.");
+            //}
 
 #if DEBUG
             // Debug check: make sure that every syntax tree has a return type
@@ -200,14 +210,34 @@ namespace Helix.Features.Functions {
                     Type = writer.ConvertType(x.Type),
                     Name = writer.GetVariableName(this.Signature.Path.Append(x.Name))
                 })
+                .Prepend(new CParameter() {
+                    Name = "_pool",
+                    Type = new CNamedType("Pool*")
+                })
                 .ToArray();
 
             var funcName = writer.GetVariableName(this.Signature.Path);
             var body = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, body);
 
+            // Register the heap lifetime for the body to use
+            bodyWriter.RegisterLifetime(
+                new Lifetime(new IdentifierPath("$heap"), 0, true), 
+                new CVariableLiteral("_pool_get_index(_pool)"));
+
+            // Register the parameter lifetimes
+            foreach (var par in this.Signature.Parameters) {
+                var path = this.Signature.Path.Append(par.Name);
+                var lifetime = new Lifetime(path, 0, true);
+
+                bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
+                    Target = new CVariableLiteral(writer.GetVariableName(path)),
+                    MemberName = "pool"
+                });
+            }
+
             // Generate the body
-            var retExpr = this.body.GenerateCode(bodyWriter);
+            var retExpr = this.body.GenerateCode(types, bodyWriter);
 
             if (this.Signature.ReturnType != PrimitiveType.Void) {
                 bodyWriter.WriteEmptyLine();

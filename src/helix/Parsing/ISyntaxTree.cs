@@ -25,7 +25,7 @@ namespace Helix.Parsing {
             throw TypeCheckingErrors.LValueRequired(this.Location);
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer);
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer);
 
         // Mixins
         public IEnumerable<ISyntaxTree> GetAllChildren() {

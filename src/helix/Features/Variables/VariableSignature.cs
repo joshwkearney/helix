@@ -9,15 +9,18 @@ namespace Helix.Analysis {
 
         public IdentifierPath Path { get; }
 
-        public Lifetime Lifetime { get; }
+        public int MutationCount { get; }
+
+        public bool IsLifetimeRoot { get; }
 
         public VariableSignature(IdentifierPath path, HelixType type, 
-            bool isWritable, Lifetime lifetime) {
+            bool isWritable, int mutationCount, bool isRoot) {
 
             this.Path = path;
             this.Type = type;
             this.IsWritable = isWritable;
-            this.Lifetime = lifetime;
+            this.MutationCount = mutationCount;
+            this.IsLifetimeRoot = isRoot;
         }
     }
 }

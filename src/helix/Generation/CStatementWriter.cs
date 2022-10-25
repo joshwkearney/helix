@@ -1,5 +1,6 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Types;
+using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
 
 namespace Helix.Generation {
@@ -9,6 +10,12 @@ namespace Helix.Generation {
         public ICStatementWriter WriteEmptyLine();
 
         public ICSyntax WriteImpureExpression(ICSyntax type, ICSyntax expr);
+
+        public void RegisterLifetime(Lifetime lifetime, ICSyntax value);
+
+        public ICSyntax GetLifetime(Lifetime lifetime);
+
+        public ICSyntax GetSmallestLifetime(ValueList<Lifetime> lifetimes);
 
         // Mixins
         public ICStatementWriter WriteComment(string comment) {
@@ -25,6 +32,9 @@ namespace Helix.Generation {
     public class CStatementWriter : ICStatementWriter {
         private readonly ICWriter prev;
         private readonly IList<ICStatement> stats;
+
+        private readonly Dictionary<Lifetime, ICSyntax> lifetimes = new();
+        private readonly Dictionary<ValueList<Lifetime>, ICSyntax> lifetimeCombinations = new();
 
         public CStatementWriter(ICWriter prev, IList<ICStatement> stats) {
             this.prev = prev;
@@ -57,6 +67,63 @@ namespace Helix.Generation {
             this.WriteStatement(stat);
 
             return new CVariableLiteral(name);
+        }
+
+        public void RegisterLifetime(Lifetime lifetime, ICSyntax value) {
+            var expr = this.WriteImpureExpression(new CNamedType("int"), value);
+
+            this.lifetimes[lifetime] = expr;
+        }
+
+        public ICSyntax GetLifetime(Lifetime lifetime) {
+            return this.lifetimes[lifetime];
+        }
+
+        public ICSyntax GetSmallestLifetime(ValueList<Lifetime> lifetimes) {
+            if (this.lifetimeCombinations.TryGetValue(lifetimes, out var value)) {
+                return value;
+            }
+
+            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0, true);
+
+            if (lifetimes.Count == 1) {
+                return this.GetLifetime(lifetimes[0]);
+            }
+
+            var values = lifetimes
+                .Where(x => !x.Equals(heapLifetime))
+                .Select(x => GetLifetime(x))
+                .ToValueList();
+
+            var tempName = this.GetVariableName();
+            var decl = new CVariableDeclaration() {
+                Name = tempName,
+                Type = new CNamedType("int"),
+                Assignment = Option.Some(this.GetLifetime(heapLifetime))
+            };
+
+            this.WriteEmptyLine();
+            this.WriteStatement(decl);
+
+            foreach (var item in values) {
+                this.WriteStatement(new CAssignment() { 
+                    Left = new CVariableLiteral(tempName),
+                    Right = new CTernaryExpression() {
+                        Condition = new CBinaryExpression() {
+                            Left = new CVariableLiteral(tempName),
+                            Right = item,
+                            Operation = BinaryOperationKind.LessThanOrEqualTo
+                        },
+                        PositiveBranch = new CVariableLiteral(tempName),
+                        NegativeBranch = item
+                    }
+                });
+            }
+
+            this.WriteEmptyLine();
+
+            this.lifetimeCombinations[lifetimes] = new CVariableLiteral(tempName);
+            return new CVariableLiteral(tempName);
         }
 
         public string GetVariableName() => this.prev.GetVariableName();

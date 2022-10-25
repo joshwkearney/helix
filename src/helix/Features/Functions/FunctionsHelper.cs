@@ -40,15 +40,14 @@ namespace Helix.Features.Functions {
                     type = type.ToMutableType();
                 }
 
-                var lifetime = new Lifetime();
-                if (!type.IsValueType(types)) {
-                    lifetime = new Lifetime(
-                        false, 
-                        new[] { sig.Path.Append(parsePar.Name) }, 
-                        Array.Empty<ISyntaxTree>());
+                // TODO: Revisit this
+                if (type is PointerType || type is ArrayType) {
+                    var lifetime = new Lifetime(path, 0, true);
+
+                    types.AvailibleLifetimes.Add(lifetime);
                 }
 
-                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, lifetime);
+                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0, true);
                 types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
             }
         }

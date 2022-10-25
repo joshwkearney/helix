@@ -7,7 +7,9 @@ using Helix.Parsing;
 namespace Helix.Features.Primitives {
     public record DereferenceSyntax : ISyntaxTree {
         private readonly ISyntaxTree target;
+        private readonly IdentifierPath tempPath;
         private readonly bool isTypeChecked;
+        private readonly bool isLValue;
 
         public TokenLocation Location { get; }
 
@@ -15,57 +17,127 @@ namespace Helix.Features.Primitives {
 
         public bool IsPure => this.target.IsPure;
 
-        public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, bool isTypeChecked = false) {
+        public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, 
+            IdentifierPath tempPath, bool isTypeChecked = false, bool islvalue = false) {
+
             this.Location = loc;
             this.target = target;
+            this.tempPath = tempPath;
             this.isTypeChecked = isTypeChecked;
+            this.isLValue = islvalue;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var target = this.target.CheckTypes(types);
+            if (this.isTypeChecked) {
+                return this;
+            }
+
+            var target = this.target.CheckTypes(types).ToRValue(types);
             var pointerType = target.AssertIsPointer(types);
-            var result = new DereferenceSyntax(this.Location, target, true);
 
-            types.ReturnTypes[result] = pointerType.InnerType;
+            if (pointerType.InnerType is PointerType || pointerType.InnerType is ArrayType) {
+                // If we dereference a pointer and get another reference type, then we have no
+                // idea where this new pointer came from because it could be aliased with something
+                // else, so we need to emit a new root lifetime.
+                var lifetime = new Lifetime(this.tempPath, 0, true);
+                var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
 
-            if (pointerType.InnerType.IsValueType(types)) {
-                types.Lifetimes[result] = new Lifetime();
+                types.AvailibleLifetimes.Add(lifetime);
+                types.ReturnTypes[result] = pointerType.InnerType;
+                types.Lifetimes[result] = new[] { lifetime };
+
+                return result;
             }
             else {
-                types.Lifetimes[result] = types.Lifetimes[target];
-            }
+                var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
 
-            return result;
+                types.ReturnTypes[result] = pointerType.InnerType;
+                types.Lifetimes[result] = Array.Empty<Lifetime>();
+
+                return result;
+            }
         }
 
         public ISyntaxTree ToLValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.LValueRequired(this.Location);
+                throw new InvalidOperationException();
             }
 
-            var pointerType = this.target.AssertIsPointer(types);
-            if (!pointerType.IsWritable) {
-                throw TypeCheckingErrors.WritingToConstPointer(this.Location);
+            if (this.isLValue) {
+                return this;
             }
 
-            return this.target;
+            var result = new DereferenceSyntax(
+                this.Location, 
+                this.target, 
+                this.tempPath,
+                true, 
+                true);
+
+            types.ReturnTypes[result] = types.ReturnTypes[this];
+            types.Lifetimes[result] = types.Lifetimes[this.target];
+
+            // Since we're going to be an lvalue, we actually need to declare a 
+            // variable signature so that mutations can keep track of which version
+            // of the lifetime another variable references
+            //var sig = new VariableSignature(this.tempPath, types.ReturnTypes[this], true, 0, false);
+
+            //types.Variables[this.tempPath] = sig;
+            //types.SyntaxValues[this.tempPath] = this;
+
+            return result;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
+                throw new InvalidOperationException();
             }
 
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
-            return new CPointerDereference() {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            var target = this.target.GenerateCode(types, writer);
+            var result = new CPointerDereference() {
                 Target = new CMemberAccess() {
-                    Target = this.target.GenerateCode(writer),
+                    Target = target,
                     MemberName = "data"
                 }
             };
-        }
+
+            if (this.isLValue) {
+                return result;
+            }
+
+            var pointerType = (PointerType)types.ReturnTypes[this.target];
+            if (pointerType.InnerType is not PointerType && pointerType.InnerType is not ArrayType) {
+                return result;
+            }
+
+            // If we are dereferencing a pointer or array, we need to put it in a 
+            // temp variable and write out the new lifetime.
+
+            var tempName = writer.GetVariableName(this.tempPath);
+            var tempType = writer.ConvertType(pointerType.InnerType);
+            var lifetime = new Lifetime(this.tempPath, 0, true);
+
+            writer.WriteEmptyLine();
+            writer.WriteComment($"Line {this.Location.Line}: Pointer dereference");
+
+            writer.WriteStatement(new CVariableDeclaration() { 
+                Name = tempName,
+                Type = tempType,
+                Assignment = result
+            });
+
+            writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                Target = target,
+                MemberName = "pool"
+            });
+
+            writer.WriteEmptyLine();
+
+            return new CVariableLiteral(tempName);
+        }        
     }
 }

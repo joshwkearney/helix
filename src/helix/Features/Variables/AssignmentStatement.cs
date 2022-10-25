@@ -14,7 +14,7 @@ namespace Helix.Parsing {
             if (this.TryAdvance(TokenKind.Assignment)) {
                 var assign = this.TopExpression();
                 var loc = start.Location.Span(assign.Location);
-                var result = new AssignmentStatement(loc, start, assign);
+                var result = new AssignmentParseStatement(loc, start, assign);
 
                 return result;
             }
@@ -43,7 +43,7 @@ namespace Helix.Parsing {
                 var second = this.TopExpression();
                 var loc = start.Location.Span(second.Location);
                 var assign = new BinarySyntax(loc, start, second, op);
-                var stat = new AssignmentStatement(loc, start, assign);
+                var stat = new AssignmentParseStatement(loc, start, assign);
 
                 return stat;
             }
@@ -52,9 +52,8 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.Variables {
-    public record AssignmentStatement : ISyntaxTree {
+    public record AssignmentParseStatement : ISyntaxTree {
         private readonly ISyntaxTree target, assign;
-        private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
@@ -62,31 +61,22 @@ namespace Helix.Features.Variables {
 
         public bool IsPure => false;
 
-        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, 
-                                   ISyntaxTree assign, bool isTypeChecked = false) {
+        public AssignmentParseStatement(TokenLocation loc, ISyntaxTree target, ISyntaxTree assign) {
             this.Location = loc;
             this.target = target;
             this.assign = assign;
-            this.isTypeChecked = isTypeChecked;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var assign = this.assign.CheckTypes(types).ToRValue(types);
-
             var targetType = types.ReturnTypes[target];
 
-            // Make sure the target is a variable type
-            if (targetType is not PointerType pointerType || !pointerType.IsWritable) {
-                throw new Exception("Compiler inconsistency: lvalues must be writable pointers");
-            }
+            var assign = this.assign
+                .CheckTypes(types)
+                .ToRValue(types)
+                .UnifyTo(targetType, types);
 
-            assign = assign.UnifyTo(pointerType.InnerType, types);
-
-            var result = new AssignmentStatement(this.Location, target, assign, true);
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new Lifetime();
-
+            // TODO: Fix all of this
             // Check to see if the assigned value has the same origins
             // (or more restricted origins) than the target expression.
             // If the origins are compatible, we can assign with no further
@@ -94,56 +84,128 @@ namespace Helix.Features.Variables {
             // check. If the lifetimes do not have runtime values, then we
             // need to throw an error
 
-            var targetLifetime = types.Lifetimes[target];
-            var assignLifetime = types.Lifetimes[assign];
+            var targetLifetimes = types.Lifetimes[target];
+            var assignLifetimes = types.Lifetimes[assign];
 
+            // TODO: Insert compile time lifetime check
             // TODO: Insert runtime lifetime check if possible
 
-            if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
-                throw new LifetimeException(
-                    this.Location,
-                    "Unsafe Memory Store",
-                    $"Unable to verify that the assigned value outlives its container. " + 
-                    "Please declare this function as 'pooling' to check variable " + 
-                    "lifetimes at runtime or wrap this assignment in an unsafe block.");
+            //if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
+            //    throw new LifetimeException(
+            //        this.Location,
+            //        "Unsafe Memory Store",
+            //        $"Unable to verify that the assigned value outlives its container. " + 
+            //        "Please declare this function as 'pooling' to check variable " + 
+            //        "lifetimes at runtime or wrap this assignment in an unsafe block.");
+            //}
+
+            var newLifetimes = new Dictionary<VariableSignature, bool>();
+
+            var isLocalMutation = targetLifetimes.Count == 1
+                && types.Variables.TryGetValue(targetLifetimes[0].Path, out var localSig)
+                && targetType == localSig.Type;
+
+            // Increment the mutation counter for modified variables so that
+            // any new accesses to this variable will be forced to get the new 
+            // lifetime.
+            if (isLocalMutation) {
+                foreach (var lifetime in targetLifetimes) {
+                    if (!types.Variables.TryGetValue(lifetime.Path, out var sig)) {
+                        continue;
+                    }
+
+                    var newLifetime = new Lifetime(sig.Path, sig.MutationCount + 1, lifetime.IsRoot);
+
+                    var newSig = new VariableSignature(
+                        sig.Path,
+                        sig.Type,
+                        sig.IsWritable,
+                        sig.MutationCount + 1,
+                        sig.IsLifetimeRoot);
+
+                    // Replace the old variable signature
+                    types.Variables[lifetime.Path] = newSig;
+
+                    // We need to generate a variable for this new lifetime in the c
+                    newLifetimes.Add(newSig, lifetime.IsRoot);
+
+                    // Add this to the running list of availible lifetimes
+                    types.AvailibleLifetimes.Add(newLifetime);
+                }
+           }
+
+            // Add a dependency between every variable in the assignment statement and
+            // the old lifetime
+            foreach (var assignTime in assignLifetimes) {
+                foreach (var targetTime in targetLifetimes) {
+                    types.AddDependency(assignTime, targetTime);
+                }
             }
 
-            // Modify the variable declaration to include any new captured variables
-            // Note: We are assuming that every captured variable on the left is now
-            // dependent on the assigned lifetime. This is not necessarily the case but
-            // is a conservative assumption.
-            foreach (var cap in targetLifetime.Dependencies) {
-                var sig = types.Variables[cap];
-
-                types.Variables[cap] = new VariableSignature(
-                    sig.Path,
-                    sig.Type,
-                    sig.IsWritable,
-                    assignLifetime);
-            }
+            var result = new AssignmentStatement(this.Location, target, assign, newLifetimes);
+            types.ReturnTypes[result] = PrimitiveType.Void;
+            types.Lifetimes[result] = Array.Empty<Lifetime>();
 
             return result;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
-            if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
-            }
-
-            return this;
+            throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
-            var stat = new CAssignment() {
-                Left = new CPointerDereference() {
-                    Target = this.target.GenerateCode(writer)
-                },
-                Right = this.assign.GenerateCode(writer)
-            };
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            throw new InvalidOperationException();
+        }
 
-            writer.WriteStatement(stat);
+        public record AssignmentStatement : ISyntaxTree {
+            private readonly ISyntaxTree target, assign;
+            private readonly IReadOnlyDictionary<VariableSignature, bool> newLifetimes;
 
-            return new CIntLiteral(0);
+            public TokenLocation Location { get; }
+
+            public IEnumerable<ISyntaxTree> Children => new[] { this.target, this.assign };
+
+            public bool IsPure => false;
+
+            public AssignmentStatement(TokenLocation loc, ISyntaxTree target,
+                                       ISyntaxTree assign, 
+                                       IReadOnlyDictionary<VariableSignature, bool> newLifetimes) {
+                this.Location = loc;
+                this.target = target;
+                this.assign = assign;
+                this.newLifetimes = newLifetimes;
+            }
+
+            public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+
+            public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+
+            public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+                var target = this.target.GenerateCode(types, writer);
+                var assign = this.assign.GenerateCode(types, writer);
+
+                writer.WriteEmptyLine();
+                writer.WriteComment($"Line {this.Location.Line}: Assignment statement");
+
+                writer.WriteStatement(new CAssignment() {
+                    Left = target,
+                    Right = assign
+                });
+
+                // Write a variable for any new mutation lifetimes this assignment created
+                foreach (var (sig, isRoot) in this.newLifetimes) {
+                    var lifetime = new Lifetime(sig.Path, sig.MutationCount, isRoot);
+
+                    writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                        Target = assign,
+                        MemberName = "pool"
+                    });
+                }
+
+                writer.WriteEmptyLine();
+
+                return new CIntLiteral(0);
+            }
         }
     }
 }

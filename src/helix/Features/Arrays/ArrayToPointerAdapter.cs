@@ -57,8 +57,8 @@ namespace Helix.Features.Arrays {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
-            var target = this.target.GenerateCode(writer);
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            var target = this.target.GenerateCode(types, writer);
 
             ICSyntax newData = new CMemberAccess() {
                 Target = target,
@@ -68,7 +68,7 @@ namespace Helix.Features.Arrays {
             if (this.offset != null) {
                 newData = new CBinaryExpression() {
                     Left = newData,
-                    Right = this.offset.GenerateCode(writer),
+                    Right = this.offset.GenerateCode(types, writer),
                     Operation = BinaryOperationKind.Add
                 };
             }

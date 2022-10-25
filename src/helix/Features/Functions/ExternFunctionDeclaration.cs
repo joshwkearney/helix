@@ -90,6 +90,10 @@ namespace Helix.Features.Functions {
                     Type = writer.ConvertType(x.Type),
                     Name = writer.GetVariableName(this.Signature.Path.Append(x.Name))
                 })
+                .Prepend(new CParameter() {
+                    Name = "_pool",
+                    Type = new CNamedType("Pool*")
+                })
                 .ToArray();
 
             var funcName = writer.GetVariableName(this.Signature.Path);

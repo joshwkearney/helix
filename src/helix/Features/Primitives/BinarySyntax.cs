@@ -246,7 +246,7 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
             types.ReturnTypes[result] = returnType;
-            types.Lifetimes[result] = new Lifetime();
+            types.Lifetimes[result] = Array.Empty<Lifetime>();
 
             return result;
         }
@@ -259,10 +259,10 @@ namespace Helix.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CBinaryExpression() {
-                Left = this.left.GenerateCode(writer),
-                Right = this.right.GenerateCode(writer),
+                Left = this.left.GenerateCode(types, writer),
+                Right = this.right.GenerateCode(types, writer),
                 Operation = this.op
             };
         }

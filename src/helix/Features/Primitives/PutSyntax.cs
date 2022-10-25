@@ -135,7 +135,7 @@ namespace Helix.Features.Primitives {
                 $"The type '{type}' does not have a default value and cannot be initialized.");
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

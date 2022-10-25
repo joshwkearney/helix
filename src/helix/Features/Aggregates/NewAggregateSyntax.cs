@@ -142,7 +142,8 @@ namespace Helix.Features.Aggregates {
 
             types.ReturnTypes[result] = new NamedType(sig.Path);
 
-            types.Lifetimes[result] = result.values.MergeLifetimes(types);
+            // TODO: Handle this
+            types.Lifetimes[result] = Array.Empty<Lifetime>();
 
             return result;
         }
@@ -218,8 +219,7 @@ namespace Helix.Features.Aggregates {
 
             var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
             types.ReturnTypes[result] = type;
-
-            types.Lifetimes[result] = result.values.MergeLifetimes(types);
+            types.Lifetimes[result] = result.values.SelectMany(x => types.Lifetimes[x]).ToArray();
 
             return result;
         }
@@ -232,7 +232,7 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -245,7 +245,7 @@ namespace Helix.Features.Aggregates {
             };
 
             var mems = this.values
-                .Select(x => x.GenerateCode(writer))
+                .Select(x => x.GenerateCode(types, writer))
                 .ToArray();
 
             if (!mems.Any()) {

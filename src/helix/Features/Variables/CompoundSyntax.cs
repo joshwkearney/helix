@@ -32,16 +32,16 @@ namespace Helix.Features.Variables {
                 this.args.Select(x => x.CheckTypes(types)).ToArray());
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new Lifetime();
+            types.Lifetimes[result] = Array.Empty<Lifetime>();
 
             return result;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             foreach (var arg in this.args) {
-                arg.GenerateCode(writer);
+                arg.GenerateCode(types, writer);
             }
 
             return new CIntLiteral(0);

@@ -72,7 +72,7 @@ namespace Helix.Features.FlowControl {
                 .OrElse(() => PrimitiveType.Void);
 
             types.ReturnTypes[result] = returnType;
-            types.Lifetimes[result] = stats.MergeLifetimes(types);
+            types.Lifetimes[result] = stats.SelectMany(x => types.Lifetimes[x]).ToArray();
 
             return result;
         }
@@ -85,17 +85,17 @@ namespace Helix.Features.FlowControl {
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
 
             if (this.Statements.Any()) {
                 foreach (var stat in this.Statements.SkipLast(1)) {
-                    stat.GenerateCode(writer);
+                    stat.GenerateCode(types, writer);
                 }
 
-                return this.Statements.Last().GenerateCode(writer);
+                return this.Statements.Last().GenerateCode(types, writer);
             }
             else {
                 return new CIntLiteral(0);

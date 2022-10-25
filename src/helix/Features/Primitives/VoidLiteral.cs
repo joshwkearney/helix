@@ -31,14 +31,14 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
-            types.Lifetimes[this] = new Lifetime();
+            types.Lifetimes[this] = Array.Empty<Lifetime>();
 
             return this;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CIntLiteral(0);
         }
     }

@@ -49,6 +49,20 @@ namespace Helix.Generation.Syntax {
         }
     }
 
+    public record CTernaryExpression() : ICSyntax {
+        public ICSyntax? Condition { get; init; } = null;
+
+        public ICSyntax? PositiveBranch { get; init; } = null;
+
+        public ICSyntax? NegativeBranch { get; init; } = null;
+
+        public string WriteToC() {            
+            return "(" + this.Condition!.WriteToC() 
+                + " ? " + this.PositiveBranch!.WriteToC() 
+                + " : " + this.NegativeBranch!.WriteToC() + ")";
+        }
+    }
+
     public record CVariableLiteral(string Name) : ICSyntax {
         public string WriteToC() => this.Name;
     }
@@ -59,8 +73,8 @@ namespace Helix.Generation.Syntax {
         public string WriteToC() {
             var target = this.Target!.WriteToC();
 
-            if (target.StartsWith("&")) {
-                return target.Substring(1);
+            if (target.StartsWith("(&")) {
+                return target.Substring(2, target.Length - 3);
             }
 
             return "(*" + target + ")";
@@ -79,8 +93,8 @@ namespace Helix.Generation.Syntax {
         public string WriteToC() {
             var target = this.Target!.WriteToC();
 
-            if (target.StartsWith("*")) {
-                return target.Substring(1);
+            if (target.StartsWith("(*")) {
+                return target.Substring(2, target.Length - 3);
             }
 
             return "(&" + target + ")";

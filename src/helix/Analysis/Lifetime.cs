@@ -2,55 +2,54 @@
 using System.IO;
 
 namespace Helix.Analysis {
-    public record Lifetime(bool IsStackBound,
-                           IReadOnlyList<IdentifierPath> Dependencies,
-                           IReadOnlyList<ISyntaxTree> Values) {
+    public record struct Lifetime(IdentifierPath Path, int MutationCount, bool IsRoot) {
 
-        public Lifetime() : this(false, Array.Empty<IdentifierPath>(), Array.Empty<ISyntaxTree>()) { }
+        public Lifetime() : this(new IdentifierPath(), 0, false) { }
 
-        public Lifetime Merge(Lifetime other) {
-            var automatic = IsStackBound || other.IsStackBound;
-            var origins = Dependencies.Concat(other.Dependencies).ToArray();
-            var values = Values.Concat(other.Values).ToArray();
+        //public Lifetime Merge(Lifetime other) {
+        //    var origins = Dependencies.Concat(other.Dependencies).ToArray();
 
-            return new Lifetime(automatic, origins, values);
-        }
+        //    var deps = this.Dependencies
+                
 
-        public Lifetime WithStackBinding(bool isStackBound) {
-            return new Lifetime(isStackBound, Dependencies, Values);
-        }
+        //    return new Lifetime(automatic, origins, values);
+        //}
 
-        public Lifetime AppendOrigin(IdentifierPath origins) {
-            return new Lifetime(
-                IsStackBound,
-                Dependencies.Append(origins).ToArray(),
-                Values);
-        }
+        //public Lifetime WithStackBinding(bool isStackBound) {
+        //    return new Lifetime(isStackBound, Dependencies, Values);
+        //}
 
-        public bool HasCompatibleRoots(Lifetime assignValue, SyntaxFrame types) {
-            if (!this.IsStackBound && assignValue.IsStackBound) {
-                return false;
-            }
+        //public Lifetime AppendOrigin(IdentifierPath origins) {
+        //    return new Lifetime(
+        //        IsStackBound,
+        //        Dependencies.Append(origins).ToArray(),
+        //        Values);
+        //}
 
-            var targetRoots = GetRootOrigins(this.Dependencies, types).ToArray();
-            var assignRoots = GetRootOrigins(assignValue.Dependencies, types).ToArray();
+        //public bool HasCompatibleRoots(Lifetime assignValue, SyntaxFrame types) {
+        //    if (!this.IsStackBound && assignValue.IsStackBound) {
+        //        return false;
+        //    }
 
-            if (!targetRoots.Any()) {
-                return true;
-            }
+        //    var targetRoots = GetRootOrigins(this.Dependencies, types).ToArray();
+        //    var assignRoots = GetRootOrigins(assignValue.Dependencies, types).ToArray();
 
-            return !assignRoots.Except(targetRoots).Any();        
-        }
+        //    if (!targetRoots.Any()) {
+        //        return true;
+        //    }
 
-        public static IEnumerable<IdentifierPath> GetRootOrigins(
-            IEnumerable<IdentifierPath> paths,
-            SyntaxFrame types) {
+        //    return !assignRoots.Except(targetRoots).Any();        
+        //}
 
-            return paths
-                .Select(x => new { Path = x, Lifetime = types.Variables[x].Lifetime })
-                .Where(x => x.Lifetime.Dependencies.Count == 1)
-                .Where(x => x.Lifetime.Dependencies[0] == x.Path)
-                .Select(x => x.Path);
-        }
+        //public static IEnumerable<IdentifierPath> GetRootOrigins(
+        //    IEnumerable<IdentifierPath> paths,
+        //    SyntaxFrame types) {
+
+        //    return paths
+        //        .Select(x => new { Path = x, Lifetime = types.Variables[x].Lifetime })
+        //        .Where(x => x.Lifetime.Dependencies.Count == 1)
+        //        .Where(x => x.Lifetime.Dependencies[0] == x.Path)
+        //        .Select(x => x.Path);
+        //}
     }
 }

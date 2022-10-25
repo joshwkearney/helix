@@ -36,7 +36,7 @@ namespace Helix.Features.Arrays {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

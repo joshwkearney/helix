@@ -93,7 +93,7 @@ namespace Helix.Features.Arrays {
             types.ReturnTypes[result] = arrayType.InnerType;
 
             if (arrayType.InnerType.IsValueType(types)) {
-                types.Lifetimes[result] = new Lifetime();
+                types.Lifetimes[result] = Array.Empty<Lifetime>();
             }
             else {
                 types.Lifetimes[result] = types.Lifetimes[target];
@@ -102,15 +102,15 @@ namespace Helix.Features.Arrays {
             return result;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CPointerDereference() {
                 Target = new CBinaryExpression() {
                     Operation = BinaryOperationKind.Add,
                     Left = new CMemberAccess() {
                         MemberName = "data",
-                        Target = this.target.GenerateCode(writer)
+                        Target = this.target.GenerateCode(types, writer)
                     },
-                    Right = this.index.GenerateCode(writer)
+                    Right = this.index.GenerateCode(types, writer)
                 }
             };
         }

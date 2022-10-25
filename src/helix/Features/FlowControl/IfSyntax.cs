@@ -83,46 +83,49 @@ namespace Helix.Features.FlowControl {
                 .Select(x => x.Key)
                 .Intersect(types.Variables.Select(x => x.Key));
 
+            // TODO: Fix this
+
             // Unify the branch variable signatures that overlap
             // with our variable signatures to correctly capture
             // lifetimes that were added to mutable variables
-            foreach (var path in modifiedVars) {
-                var oldSig = types.Variables[path];
+            //foreach (var path in modifiedVars) {
+            //    var oldSig = types.Variables[path];
 
-                // If this variable is changed in both paths, we can override the current lifetime
-                if (iftrueTypes.Variables.Keys.Contains(path) && iffalseTypes.Variables.Keys.Contains(path)) {
-                    var lifetime = iftrueTypes.Variables[path].Lifetime
-                        .Merge(iffalseTypes.Variables[path].Lifetime);
+            //    // If this variable is changed in both paths, we can override the current lifetime
+            //    if (iftrueTypes.Variables.Keys.Contains(path) && iffalseTypes.Variables.Keys.Contains(path)) {
+            //        var lifetime = iftrueTypes.Variables[path].Lifetimes
+            //            .Merge(iffalseTypes.Variables[path].Lifetime);
 
-                    types.Variables[path] = new VariableSignature(
-                        path,
-                        oldSig.Type,
-                        oldSig.IsWritable,
-                        lifetime);
-                }
-                else {
-                    // If this variable is changed in only one path, append to the current lifetime
-                    var lifetime = oldSig.Lifetime;
+            //        types.Variables[path] = new VariableSignature(
+            //            path,
+            //            oldSig.Type,
+            //            oldSig.IsWritable,
+            //            lifetime);
+            //    }
+            //    else {
+            //        // If this variable is changed in only one path, append to the current lifetime
+            //        var lifetime = oldSig.Lifetime;
 
-                    if (iftrueTypes.Variables.ContainsKey(path)) {
-                        lifetime = iftrueTypes.Variables[path].Lifetime.Merge(lifetime);
-                    }
-                    else {
-                        lifetime = iffalseTypes.Variables[path].Lifetime.Merge(lifetime);
-                    }
+            //        if (iftrueTypes.Variables.ContainsKey(path)) {
+            //            lifetime = iftrueTypes.Variables[path].Lifetime.Merge(lifetime);
+            //        }
+            //        else {
+            //            lifetime = iffalseTypes.Variables[path].Lifetime.Merge(lifetime);
+            //        }
 
-                    types.Variables[path] = new VariableSignature(
-                        path,
-                        oldSig.Type,
-                        oldSig.IsWritable,
-                        lifetime);
-                }
-            }
+            //        types.Variables[path] = new VariableSignature(
+            //            path,
+            //            oldSig.Type,
+            //            oldSig.IsWritable,
+            //            lifetime);
+            //    }
+            //}
 
             types.ReturnTypes[result] = resultType;
 
             types.Lifetimes[result] = types.Lifetimes[iftrue]
-                .Merge(types.Lifetimes[iffalse]);
+                .Concat(types.Lifetimes[iffalse])
+                .ToArray();
 
             return result;
         }
@@ -135,7 +138,7 @@ namespace Helix.Features.FlowControl {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -166,15 +169,15 @@ namespace Helix.Features.FlowControl {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();
             var negList = new List<ICStatement>();
 
             var affirmWriter = new CStatementWriter(writer, affirmList);
             var negWriter = new CStatementWriter(writer, negList);
 
-            var affirm = this.iftrue.GenerateCode(affirmWriter);
-            var neg = this.iffalse.GenerateCode(negWriter);
+            var affirm = this.iftrue.GenerateCode(types, affirmWriter);
+            var neg = this.iffalse.GenerateCode(types, negWriter);
 
             var tempName = writer.GetVariableName();
 
@@ -196,7 +199,7 @@ namespace Helix.Features.FlowControl {
             };
 
             var expr = new CIf() {
-                Condition = this.cond.GenerateCode(writer),
+                Condition = this.cond.GenerateCode(types, writer),
                 IfTrue = affirmList,
                 IfFalse = negList
             };

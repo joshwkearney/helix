@@ -45,7 +45,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?:\b)(as|put)(\s+)([_a-zA-Z][_a-zA-Z0-9]*)</string>
+            <string>(?:\b)(as|put|new)(\s+)([_a-zA-Z][_a-zA-Z0-9]*)</string>
             <key>captures</key>
             <dict>
               <key>1</key>

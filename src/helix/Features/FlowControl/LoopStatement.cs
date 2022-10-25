@@ -83,6 +83,8 @@ namespace Helix.Features.FlowControl {
                 .Intersect(types.Variables.Select(x => x.Key))
                 .ToArray();
 
+            // TODO: Fix this
+
             // Loops are a very weird case to lifetime check. The problem is that loop
             // bodies can run more than once so we can have an assignment later in the
             // loop affect the lifetime of a variable earlier in the loop. The solution
@@ -93,59 +95,59 @@ namespace Helix.Features.FlowControl {
             // that was not modified by the loop, which will stop the graph search. This
             // makes sure that the variable lifetimes after the loop represent all the 
             // posibilities that could have occured inside the loop.
-            foreach (var path in modifiedVars) {
-                var found = new HashSet<IdentifierPath>();
-                var search = new Stack<IdentifierPath>(new[] { path });
-                var lifetime = new Lifetime();
+            //foreach (var path in modifiedVars) {
+            //    var found = new HashSet<IdentifierPath>();
+            //    var search = new Stack<IdentifierPath>(new[] { path });
+            //    var lifetime = new Lifetime();
 
-                // Search through the modified variables of the loop until we discover all
-                // possible mutations paths, summing the lifetime along the way
-                while (search.Any()) {
-                    var next = search.Pop();
+            //    // Search through the modified variables of the loop until we discover all
+            //    // possible mutations paths, summing the lifetime along the way
+            //    while (search.Any()) {
+            //        var next = search.Pop();
 
-                    // This variable is constant with respect to the loop, so we're done
-                    if (!bodyTypes.Variables.Keys.Contains(next)) {
-                        continue;
-                    }
+            //        // This variable is constant with respect to the loop, so we're done
+            //        if (!bodyTypes.Variables.Keys.Contains(next)) {
+            //            continue;
+            //        }
 
-                    // We have already visited this variable and merged it, so skip it now
-                    // This prevents infinite loops, which can happen
-                    if (found.Contains(next)) {
-                        continue;
-                    }
+            //        // We have already visited this variable and merged it, so skip it now
+            //        // This prevents infinite loops, which can happen
+            //        if (found.Contains(next)) {
+            //            continue;
+            //        }
 
-                    var sig = bodyTypes.Variables[next];
+            //        var sig = bodyTypes.Variables[next];
 
-                    lifetime = lifetime.Merge(sig.Lifetime);
-                    found.Add(next);
+            //        lifetime = lifetime.Concat(sig.Lifetime);
+            //        found.Add(next);
 
-                    foreach (var origin in sig.Lifetime.Dependencies) {
-                        search.Push(origin);
-                    }
-                }
+            //        foreach (var origin in sig.Lifetime.Dependencies) {
+            //            search.Push(origin);
+            //        }
+            //    }
 
-                var oldSig = types.Variables[path];
+            //    var oldSig = types.Variables[path];
 
-                // Add the newly discovered loop lifetime to the existing variable lifetime,
-                // since loops may not run at all
-                types.Variables[path] = new VariableSignature(
-                    path,
-                    oldSig.Type,
-                    oldSig.IsWritable,
-                    lifetime);
-            }
+            //    // Add the newly discovered loop lifetime to the existing variable lifetime,
+            //    // since loops may not run at all
+            //    types.Variables[path] = new VariableSignature(
+            //        path,
+            //        oldSig.Type,
+            //        oldSig.IsWritable,
+            //        lifetime);
+            //}
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new Lifetime();
+            types.Lifetimes[result] = Array.Empty<Lifetime>();
 
             return result;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var bodyStats = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, bodyStats);
 
-            this.body.GenerateCode(bodyWriter);
+            this.body.GenerateCode(types, bodyWriter);
             
             var stat = new CWhile() {
                 Condition = new CIntLiteral(1),

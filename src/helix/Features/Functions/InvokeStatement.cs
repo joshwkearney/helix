@@ -75,7 +75,8 @@ namespace Helix.Features.Functions {
                 newArgs[i] = this.args[i].CheckTypes(types).UnifyTo(expectedType, types);
             }
 
-            var captured = new Lifetime();
+            // TODO: Fix this
+            var captured = Array.Empty<Lifetime>() as IReadOnlyList<Lifetime>;
 
             // If there are any reference types in the result that can be found
             // in any of the arguments then assume we captured that argument.
@@ -97,7 +98,7 @@ namespace Helix.Features.Functions {
                         .Any();
 
                     if (overlap) {
-                        captured = types.Lifetimes[arg].Merge(captured);
+                        captured = types.Lifetimes[arg];
                     }
                 }
             }
@@ -124,7 +125,7 @@ namespace Helix.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
 
@@ -165,9 +166,10 @@ namespace Helix.Features.Functions {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var args = this.args
-                .Select(x => x.GenerateCode(writer))
+                .Select(x => x.GenerateCode(types, writer))
+                .Prepend(new CVariableLiteral("_pool"))
                 .ToArray();
 
             var result = new CInvoke() {

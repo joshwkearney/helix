@@ -7,6 +7,8 @@ using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
+        private int dereferenceCounter;
+
         private ISyntaxTree UnaryExpression() {
             var hasOperator = this.Peek(TokenKind.Minus)
                 || this.Peek(TokenKind.Plus)
@@ -21,7 +23,7 @@ namespace Helix.Parsing {
                 var op = UnaryOperatorKind.Not;
 
                 if (tokOp.Kind == TokenKind.Star) {
-                    return new DereferenceSyntax(loc, first);
+                    return new DereferenceSyntax(loc, first, new IdentifierPath("$deref" + dereferenceCounter++));
                 }
                 else if (tokOp.Kind == TokenKind.Ampersand) {
                     return new AddressOfSyntax(loc, first);
@@ -84,7 +86,7 @@ namespace Helix.Features.Primitives {
                     arg);
 
                 types.ReturnTypes[result] = PrimitiveType.Bool;
-                types.Lifetimes[result] = new Lifetime();
+                types.Lifetimes[result] = Array.Empty<Lifetime>();
 
                 return result;
             }
@@ -101,7 +103,7 @@ namespace Helix.Features.Primitives {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -124,9 +126,9 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CNot() {
-                Target = this.target.GenerateCode(writer)
+                Target = this.target.GenerateCode(types, writer)
             };
         }
     }

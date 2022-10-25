@@ -84,12 +84,19 @@ namespace Helix {
             }
 
             var path = this.Location.Scope.Append(this.names[0]);
-            var lifetime = types.Lifetimes[assign];
-            var sig = new VariableSignature(path, assignType, this.isWritable, lifetime);
+            var sig = new VariableSignature(path, assignType, this.isWritable, 0, false);
 
             // Declare this variable and make sure we're not shadowing another variable
             if (types.Variables.ContainsKey(path)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
+            }
+
+            // Register a dependency between this lifetime and the ones in the assign expression
+            var assignLifetimes = types.Lifetimes[assign];
+            var varLifetime = new Lifetime(path, 0, false);
+
+            foreach (var time in assignLifetimes) {
+                types.AddDependency(time, varLifetime);
             }
 
             // Put this variable's value in the value table
@@ -100,7 +107,7 @@ namespace Helix {
             var result = new VarStatement(this.Location, sig, assign);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new Lifetime();
+            types.Lifetimes[result] = Array.Empty<Lifetime>();
 
             return result;
         }
@@ -160,7 +167,7 @@ namespace Helix {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -191,14 +198,18 @@ namespace Helix {
 
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var stat = new CVariableDeclaration() {
                 Type = writer.ConvertType(this.signature.Type),
                 Name = writer.GetVariableName(this.signature.Path),
-                Assignment = this.assign.Select(x => x.GenerateCode(writer))
+                Assignment = this.assign.Select(x => x.GenerateCode(types, writer))
             };
 
+            writer.WriteEmptyLine();
+            writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.signature.Path.Segments.Last()}'");
             writer.WriteStatement(stat);
+            writer.WriteEmptyLine();
+
             return new CIntLiteral(0);
         }
     }

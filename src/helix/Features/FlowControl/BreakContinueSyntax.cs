@@ -59,12 +59,12 @@ namespace Helix.Features.FlowControl {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
-            types.Lifetimes[this] = new Lifetime();
+            types.Lifetimes[this] = Array.Empty<Lifetime>();
 
             return this;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             if (this.isbreak) {
                 writer.WriteStatement(new CBreak());
             }

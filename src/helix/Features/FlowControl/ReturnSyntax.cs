@@ -61,18 +61,25 @@ namespace Helix.Features.FlowControl {
             var result = new ReturnSyntax(this.Location, payload, this.func, true);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new Lifetime();
+            types.Lifetimes[result] = Array.Empty<Lifetime>();
+
+            // Add a dependency for every lifetime in the result on the heap
+            foreach (var time in types.Lifetimes[result]) {
+                var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0, true);
+
+                types.AddDependency(time, heapLifetime);
+            }
 
             return result;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
 
             writer.WriteStatement(new CReturn() {
-                Target = this.payload.GenerateCode(writer)
+                Target = this.payload.GenerateCode(types, writer)
             });
 
             return new CIntLiteral(0);

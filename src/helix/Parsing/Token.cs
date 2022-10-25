@@ -18,7 +18,7 @@
 
         IfKeyword, ThenKeyword, ElseKeyword, 
         WhileKeyword, ForKeyword, DoKeyword, ToKeyword, BreakKeyword, ContinueKeyword, ReturnKeyword,
-        StructKeyword, UnionKeyword, PutKeyword,
+        StructKeyword, UnionKeyword, PutKeyword, NewKeyword,
 
         TrueKeyword, FalseKeyword, AndKeyword, OrKeyword, XorKeyword,
 

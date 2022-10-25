@@ -55,7 +55,7 @@ namespace Helix.Features.Aggregates {
                         true);
 
                     types.ReturnTypes[result] = PrimitiveType.Int;
-                    types.Lifetimes[result] = new Lifetime();
+                    types.Lifetimes[result] = Array.Empty<Lifetime>();
                     return result;
                 }
             }
@@ -64,6 +64,9 @@ namespace Helix.Features.Aggregates {
             if (targetType is PointerType pointer) {
                 targetType = pointer.InnerType;
                 isPointerAccess = true;
+
+                // Member access through a pointer needs its own lifetime root
+                throw new InvalidOperationException();
             }
 
             // If this is a named type it could be a struct or union
@@ -86,8 +89,9 @@ namespace Helix.Features.Aggregates {
 
                         types.ReturnTypes[result] = field.Type;
                         
+                        // TODO: Handle this for real
                         if (field.Type.IsValueType(types)) {
-                            types.Lifetimes[result] = new Lifetime();
+                            types.Lifetimes[result] = Array.Empty<Lifetime>();
                         }
                         else {
                             // TODO: If this is a local struct (so named.Path.Append(this.memberName))
@@ -146,9 +150,9 @@ namespace Helix.Features.Aggregates {
             return result;
         }
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CMemberAccess() {
-                Target = this.target.GenerateCode(writer),
+                Target = this.target.GenerateCode(types, writer),
                 MemberName = this.memberName,
                 IsPointerAccess = this.isPointerAccess
             };
@@ -179,10 +183,10 @@ namespace Helix.Features.Aggregates {
 
         public ISyntaxTree ToLValue(SyntaxFrame types) => this;
 
-        public ICSyntax GenerateCode(ICStatementWriter writer) {
+        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             return new CAddressOf() {
                 Target = new CMemberAccess() {
-                    Target = this.target.GenerateCode(writer),
+                    Target = this.target.GenerateCode(types, writer),
                     MemberName = this.member,
                     IsPointerAccess = this.isPointerAccess
                 }
