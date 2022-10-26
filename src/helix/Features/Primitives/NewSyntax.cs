@@ -63,7 +63,7 @@ namespace Helix.Features.Primitives {
             }
 
             var pointerType = new PointerType(type, true);
-            var lifetime = new Lifetime(this.tempPath, 0, false);
+            var lifetime = new Lifetime(this.tempPath, 0);
             var result = new NewSyntax(this.Location, pointerType, lifetime, types.LifetimeGraph.AllLifetimes);
 
             types.ReturnTypes[result] = pointerType;

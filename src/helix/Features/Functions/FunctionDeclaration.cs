@@ -124,7 +124,7 @@ namespace Helix.Features.Functions {
             FunctionsHelper.DeclareParameters(this.Location, sig, types);
 
             // Declare a "heap" lifetime used for function returns
-            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0, true);
+            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
 
             // Check types
             var body = this.body;
@@ -229,13 +229,13 @@ namespace Helix.Features.Functions {
 
             // Register the heap lifetime for the body to use
             bodyWriter.RegisterLifetime(
-                new Lifetime(new IdentifierPath("$heap"), 0, true), 
+                new Lifetime(new IdentifierPath("$heap"), 0), 
                 new CVariableLiteral("_pool_get_index(_pool)"));
 
             // Register the parameter lifetimes
             foreach (var par in this.Signature.Parameters) {
                 var path = this.Signature.Path.Append(par.Name);
-                var lifetime = new Lifetime(path, 0, true);
+                var lifetime = new Lifetime(path, 0);
 
                 bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
                     Target = new CVariableLiteral(writer.GetVariableName(path)),

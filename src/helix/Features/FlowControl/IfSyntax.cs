@@ -100,26 +100,22 @@ namespace Helix.Features.FlowControl {
                     var trueSig = iftrueTypes.Variables[path];
                     var falseSig = iffalseTypes.Variables[path];
 
-                    var trueLifetime = new Lifetime(trueSig.Path, trueSig.MutationCount, trueSig.IsLifetimeRoot);
-                    var falseLifetime = new Lifetime(falseSig.Path, falseSig.MutationCount, falseSig.IsLifetimeRoot);
-
                     var mutationCount = 1 + Math.Max(
-                        trueSig.MutationCount,
-                        falseSig.MutationCount);
+                        trueSig.Lifetime.MutationCount,
+                        falseSig.Lifetime.MutationCount);
 
                     var newSig = new VariableSignature(
                         path, 
                         oldSig.Type, 
                         true, 
-                        mutationCount, 
-                        oldSig.IsLifetimeRoot);
+                        mutationCount);
 
-                    var newLifetime = new Lifetime(path, mutationCount, oldSig.IsLifetimeRoot);
+                    var newLifetime = new Lifetime(path, mutationCount);
 
                     newLifetimes.Add(newSig);
 
-                    types.LifetimeGraph.AddBoth(newLifetime, trueLifetime);
-                    types.LifetimeGraph.AddBoth(newLifetime, falseLifetime);
+                    types.LifetimeGraph.AddBoth(newLifetime, trueSig.Lifetime);
+                    types.LifetimeGraph.AddBoth(newLifetime, falseSig.Lifetime);
                 }
                 else {
                     // If this variable is changed in only one path
@@ -127,28 +123,21 @@ namespace Helix.Features.FlowControl {
                     Lifetime oldLifetime;
 
                     if (iftrueTypes.Variables.ContainsKey(path)) {
-                        mutationCount = 1 + iftrueTypes.Variables[path].MutationCount;
-                        oldLifetime = new Lifetime(
-                            path,
-                            iftrueTypes.Variables[path].MutationCount,
-                            iftrueTypes.Variables[path].IsLifetimeRoot);
+                        mutationCount = 1 + iftrueTypes.Variables[path].Lifetime.MutationCount;
+                        oldLifetime = iftrueTypes.Variables[path].Lifetime;
                     }
                     else {
-                        mutationCount = 1 + iffalseTypes.Variables[path].MutationCount;
-                        oldLifetime = new Lifetime(
-                            path,
-                            iffalseTypes.Variables[path].MutationCount,
-                            iffalseTypes.Variables[path].IsLifetimeRoot);
+                        mutationCount = 1 + iffalseTypes.Variables[path].Lifetime.MutationCount;
+                        oldLifetime = iffalseTypes.Variables[path].Lifetime;
                     }
 
                     var newSig = new VariableSignature(
                         path,
                         oldSig.Type,
                         oldSig.IsWritable,
-                        mutationCount,
-                        oldSig.IsLifetimeRoot);
+                        mutationCount);
 
-                    var newLifetime = new Lifetime(path, mutationCount, oldSig.IsLifetimeRoot);
+                    var newLifetime = new Lifetime(path, mutationCount);
 
                     newLifetimes.Add(newSig);
                     types.LifetimeGraph.AddBoth(newLifetime, oldLifetime);
@@ -275,7 +264,7 @@ namespace Helix.Features.FlowControl {
             // Register the lifetime for our return value if we are returning a 
             // pointer or array
             if (this.returnType is PointerType || this.returnType is ArrayType) {
-                var lifetime = new Lifetime(this.tempPath, 0, false);
+                var lifetime = new Lifetime(this.tempPath, 0);
 
                 writer.RegisterLifetime(lifetime, new CMemberAccess() {
                     Target = new CVariableLiteral(tempName),
@@ -285,9 +274,7 @@ namespace Helix.Features.FlowControl {
 
             // Register all the lifetimes that changed within this if statement
             foreach (var sig in this.newLifetimes) {
-                var lifetime = new Lifetime(sig.Path, sig.MutationCount, sig.IsLifetimeRoot);
-
-                writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                writer.RegisterLifetime(sig.Lifetime, new CMemberAccess() {
                     Target = new CVariableLiteral(writer.GetVariableName(sig.Path)),
                     MemberName = "pool"
                 });

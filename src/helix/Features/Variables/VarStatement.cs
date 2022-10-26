@@ -92,8 +92,8 @@ namespace Helix {
 
             // Register a dependency between this lifetime and the ones in the assign expression
             var assignLifetimes = types.Lifetimes[assign];
-            var sig = new VariableSignature(path, assignType, this.isWritable, 0, assignLifetimes.Any(x => x.IsRoot));
-            var varLifetime = new Lifetime(path, 0, assignLifetimes.Any(x => x.IsRoot));
+            var sig = new VariableSignature(path, assignType, this.isWritable, 0);
+            var varLifetime = new Lifetime(path, 0);
 
             foreach (var time in assignLifetimes) {
                 types.LifetimeGraph.AddBoth(varLifetime, time);
@@ -213,12 +213,7 @@ namespace Helix {
 
             // Declare this lifetime if necessary
             if (this.signature.Type is ArrayType || this.signature.Type is PointerType) {
-                var lifetime = new Lifetime(
-                    this.signature.Path, 
-                    this.signature.MutationCount, 
-                    this.signature.IsLifetimeRoot);
-
-                writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                writer.RegisterLifetime(this.signature.Lifetime, new CMemberAccess() {
                     Target = new CVariableLiteral(name),
                     MemberName = "pool"
                 });

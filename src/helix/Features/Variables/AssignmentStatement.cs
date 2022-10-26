@@ -116,14 +116,12 @@ namespace Helix.Features.Variables {
                 var lifetime = targetLifetimes[0];
                 var sig = types.Variables[lifetime.Path];
 
-                var newLifetime = new Lifetime(sig.Path, sig.MutationCount + 1, lifetime.IsRoot);
+                var newLifetime = new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1);
 
                 var newSig = new VariableSignature(
-                    sig.Path,
                     sig.Type,
                     sig.IsWritable,
-                    sig.MutationCount + 1,
-                    sig.IsLifetimeRoot);
+                    newLifetime);
 
                 // Replace the old variable signature
                 types.Variables[lifetime.Path] = newSig;
@@ -197,9 +195,7 @@ namespace Helix.Features.Variables {
 
                 // Write a variable for any new mutation lifetimes this assignment created
                 foreach (var sig in this.newLifetimes) {
-                    var lifetime = new Lifetime(sig.Path, sig.MutationCount, sig.IsLifetimeRoot);
-
-                    writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                    writer.RegisterLifetime(sig.Lifetime, new CMemberAccess() {
                         Target = assign,
                         MemberName = "pool"
                     });

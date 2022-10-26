@@ -2,8 +2,8 @@
 using System.IO;
 
 namespace Helix.Analysis {
-    public record struct Lifetime(IdentifierPath Path, int MutationCount, bool IsRoot) {
+    public record struct Lifetime(IdentifierPath Path, int MutationCount) {
 
-        public Lifetime() : this(new IdentifierPath(), 0, false) { }        
+        public Lifetime() : this(new IdentifierPath(), 0) { }        
     }
 }

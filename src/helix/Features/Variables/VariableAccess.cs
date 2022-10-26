@@ -65,7 +65,7 @@ namespace Helix {
                 // change in the future, so we need to get an accurate snapshot 
                 // of the current value
                 types.ReturnTypes[result] = varSig.Type;
-                types.Lifetimes[result] = new[] { new Lifetime(path, varSig.MutationCount, varSig.IsLifetimeRoot) };
+                types.Lifetimes[result] = new[] { varSig.Lifetime };
 
                 return result;
             }

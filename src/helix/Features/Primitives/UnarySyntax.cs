@@ -7,12 +7,13 @@ using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
+        private int dereferenceCounter = 0;
+
         private ISyntaxTree UnaryExpression() {
             var hasOperator = this.Peek(TokenKind.Minus)
                 || this.Peek(TokenKind.Plus)
                 || this.Peek(TokenKind.Not)
-                || this.Peek(TokenKind.Star)
-                || this.Peek(TokenKind.Ampersand);
+                || this.Peek(TokenKind.Star);
 
             if (hasOperator) {
                 var tokOp = this.Advance();
@@ -20,8 +21,8 @@ namespace Helix.Parsing {
                 var loc = tokOp.Location.Span(first.Location);
                 var op = UnaryOperatorKind.Not;
 
-                if (tokOp.Kind == TokenKind.Ampersand) {
-                    return new AddressOfSyntax(loc, first);
+                if (tokOp.Kind == TokenKind.Star) {
+                    return new DereferenceSyntax(loc, first, new IdentifierPath("$deref_" + dereferenceCounter++));
                 }
                 else if (tokOp.Kind == TokenKind.Plus) {
                     op = UnaryOperatorKind.Plus;

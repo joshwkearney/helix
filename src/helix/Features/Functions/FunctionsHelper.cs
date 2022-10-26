@@ -42,12 +42,12 @@ namespace Helix.Features.Functions {
 
                 // TODO: Revisit this
                 if (type is PointerType || type is ArrayType) {
-                    var lifetime = new Lifetime(path, 0, true);
+                    var lifetime = new Lifetime(path, 0);
 
                     types.LifetimeGraph.AddParent(lifetime, lifetime);
                 }
 
-                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0, true);
+                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0);
                 types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
             }
         }
