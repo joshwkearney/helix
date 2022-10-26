@@ -84,7 +84,6 @@ namespace Helix {
             }
 
             var path = this.Location.Scope.Append(this.names[0]);
-            var sig = new VariableSignature(path, assignType, this.isWritable, 0, false);
 
             // Declare this variable and make sure we're not shadowing another variable
             if (types.Variables.ContainsKey(path)) {
@@ -93,10 +92,11 @@ namespace Helix {
 
             // Register a dependency between this lifetime and the ones in the assign expression
             var assignLifetimes = types.Lifetimes[assign];
-            var varLifetime = new Lifetime(path, 0, false);
+            var sig = new VariableSignature(path, assignType, this.isWritable, 0, assignLifetimes.Any(x => x.IsRoot));
+            var varLifetime = new Lifetime(path, 0, assignLifetimes.Any(x => x.IsRoot));
 
             foreach (var time in assignLifetimes) {
-                types.AddDependency(time, varLifetime);
+                types.LifetimeGraph.AddBoth(varLifetime, time);
             }
 
             // Put this variable's value in the value table
@@ -199,15 +199,31 @@ namespace Helix {
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            var name = writer.GetVariableName(this.signature.Path);
+
             var stat = new CVariableDeclaration() {
                 Type = writer.ConvertType(this.signature.Type),
-                Name = writer.GetVariableName(this.signature.Path),
+                Name = name,
                 Assignment = this.assign.Select(x => x.GenerateCode(types, writer))
             };
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.signature.Path.Segments.Last()}'");
             writer.WriteStatement(stat);
+
+            // Declare this lifetime if necessary
+            if (this.signature.Type is ArrayType || this.signature.Type is PointerType) {
+                var lifetime = new Lifetime(
+                    this.signature.Path, 
+                    this.signature.MutationCount, 
+                    this.signature.IsLifetimeRoot);
+
+                writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                    Target = new CVariableLiteral(name),
+                    MemberName = "pool"
+                });
+            }
+
             writer.WriteEmptyLine();
 
             return new CIntLiteral(0);

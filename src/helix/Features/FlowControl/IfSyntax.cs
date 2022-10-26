@@ -34,7 +34,10 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.FlowControl {
     public record IfParseSyntax : ISyntaxTree {
+        private static int ifTempCounter = 0;
+
         private readonly ISyntaxTree cond, iftrue, iffalse;
+        private readonly IdentifierPath tempPath;
 
         public TokenLocation Location { get; }
 
@@ -42,7 +45,9 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure { get; }
 
-        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue) {
+        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, 
+            ISyntaxTree iftrue) {
+
             this.Location = location;
             this.cond = cond;
 
@@ -52,10 +57,11 @@ namespace Helix.Features.FlowControl {
 
             this.iffalse = new VoidLiteral(location);
             this.IsPure = cond.IsPure && iftrue.IsPure;
+            this.tempPath = new IdentifierPath("$if_temp_" + ifTempCounter++);
         }
 
-        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue, ISyntaxTree iffalse)
-            : this(location, cond, iftrue) {
+        public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue, 
+            ISyntaxTree iffalse) : this(location, cond, iftrue) {
 
             this.Location = location;
             this.cond = cond;
@@ -75,57 +81,103 @@ namespace Helix.Features.FlowControl {
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
 
-            var resultType = types.ReturnTypes[iftrue];
-            var result = new IfSyntax(this.Location, cond, iftrue, iffalse, resultType);
-
             var modifiedVars = iftrueTypes.Variables
                 .Concat(iffalseTypes.Variables)
                 .Select(x => x.Key)
                 .Intersect(types.Variables.Select(x => x.Key));
 
-            // TODO: Fix this
+            var newLifetimes = new List<VariableSignature>();
 
-            // Unify the branch variable signatures that overlap
-            // with our variable signatures to correctly capture
-            // lifetimes that were added to mutable variables
-            //foreach (var path in modifiedVars) {
-            //    var oldSig = types.Variables[path];
+            // For every variable mutated within this if statement, we need to create a new
+            // lifetime for that variable after the if statement so that code that runs after
+            // doesn't use outdated lifetime information. Also, variables can be changed
+            // in different ways so we need to re-unify the branches anyway
+            foreach (var path in modifiedVars) {
+                var oldSig = types.Variables[path];
 
-            //    // If this variable is changed in both paths, we can override the current lifetime
-            //    if (iftrueTypes.Variables.Keys.Contains(path) && iffalseTypes.Variables.Keys.Contains(path)) {
-            //        var lifetime = iftrueTypes.Variables[path].Lifetimes
-            //            .Merge(iffalseTypes.Variables[path].Lifetime);
+                // If this variable is changed in both paths, take the max mutation count and add one
+                if (iftrueTypes.Variables.Keys.Contains(path) && iffalseTypes.Variables.Keys.Contains(path)) {
+                    var trueSig = iftrueTypes.Variables[path];
+                    var falseSig = iffalseTypes.Variables[path];
 
-            //        types.Variables[path] = new VariableSignature(
-            //            path,
-            //            oldSig.Type,
-            //            oldSig.IsWritable,
-            //            lifetime);
-            //    }
-            //    else {
-            //        // If this variable is changed in only one path, append to the current lifetime
-            //        var lifetime = oldSig.Lifetime;
+                    var trueLifetime = new Lifetime(trueSig.Path, trueSig.MutationCount, trueSig.IsLifetimeRoot);
+                    var falseLifetime = new Lifetime(falseSig.Path, falseSig.MutationCount, falseSig.IsLifetimeRoot);
 
-            //        if (iftrueTypes.Variables.ContainsKey(path)) {
-            //            lifetime = iftrueTypes.Variables[path].Lifetime.Merge(lifetime);
-            //        }
-            //        else {
-            //            lifetime = iffalseTypes.Variables[path].Lifetime.Merge(lifetime);
-            //        }
+                    var mutationCount = 1 + Math.Max(
+                        trueSig.MutationCount,
+                        falseSig.MutationCount);
 
-            //        types.Variables[path] = new VariableSignature(
-            //            path,
-            //            oldSig.Type,
-            //            oldSig.IsWritable,
-            //            lifetime);
-            //    }
-            //}
+                    var newSig = new VariableSignature(
+                        path, 
+                        oldSig.Type, 
+                        true, 
+                        mutationCount, 
+                        oldSig.IsLifetimeRoot);
+
+                    var newLifetime = new Lifetime(path, mutationCount, oldSig.IsLifetimeRoot);
+
+                    newLifetimes.Add(newSig);
+
+                    types.LifetimeGraph.AddBoth(newLifetime, trueLifetime);
+                    types.LifetimeGraph.AddBoth(newLifetime, falseLifetime);
+                }
+                else {
+                    // If this variable is changed in only one path
+                    int mutationCount;
+                    Lifetime oldLifetime;
+
+                    if (iftrueTypes.Variables.ContainsKey(path)) {
+                        mutationCount = 1 + iftrueTypes.Variables[path].MutationCount;
+                        oldLifetime = new Lifetime(
+                            path,
+                            iftrueTypes.Variables[path].MutationCount,
+                            iftrueTypes.Variables[path].IsLifetimeRoot);
+                    }
+                    else {
+                        mutationCount = 1 + iffalseTypes.Variables[path].MutationCount;
+                        oldLifetime = new Lifetime(
+                            path,
+                            iffalseTypes.Variables[path].MutationCount,
+                            iffalseTypes.Variables[path].IsLifetimeRoot);
+                    }
+
+                    var newSig = new VariableSignature(
+                        path,
+                        oldSig.Type,
+                        oldSig.IsWritable,
+                        mutationCount,
+                        oldSig.IsLifetimeRoot);
+
+                    var newLifetime = new Lifetime(path, mutationCount, oldSig.IsLifetimeRoot);
+
+                    newLifetimes.Add(newSig);
+                    types.LifetimeGraph.AddBoth(newLifetime, oldLifetime);
+                }
+            }
+
+            var resultType = types.ReturnTypes[iftrue];
+            var result = new IfSyntax(
+                this.Location, 
+                cond, 
+                iftrue, 
+                iffalse, 
+                resultType,
+                this.tempPath,
+                newLifetimes.ToValueList());
 
             types.ReturnTypes[result] = resultType;
 
-            types.Lifetimes[result] = types.Lifetimes[iftrue]
-                .Concat(types.Lifetimes[iffalse])
-                .ToArray();
+            var ifTrueLifetimes = types.Lifetimes[iftrue].ToHashSet();
+            var ifFalseLifetimes = types.Lifetimes[iffalse].ToHashSet();
+
+            if (ifTrueLifetimes.SetEquals(ifFalseLifetimes)) {
+                types.Lifetimes[result] = ifTrueLifetimes.ToValueList();
+            }
+            else {
+                types.Lifetimes[result] = ifTrueLifetimes
+                    .Concat(ifFalseLifetimes)
+                    .ToValueList();
+            }
 
             return result;
         }
@@ -146,6 +198,8 @@ namespace Helix.Features.FlowControl {
     public record IfSyntax : ISyntaxTree {
         private readonly ISyntaxTree cond, iftrue, iffalse;
         private readonly HelixType returnType;
+        private readonly IdentifierPath tempPath;
+        private readonly ValueList<VariableSignature> newLifetimes;
 
         public TokenLocation Location { get; }
 
@@ -154,8 +208,10 @@ namespace Helix.Features.FlowControl {
         public bool IsPure { get; }
 
         public IfSyntax(TokenLocation loc, ISyntaxTree cond,
-                         ISyntaxTree iftrue,
-                         ISyntaxTree iffalse, HelixType returnType) {
+                        ISyntaxTree iftrue,
+                        ISyntaxTree iffalse, HelixType returnType,
+                        IdentifierPath tempPath, 
+                        ValueList<VariableSignature> newLifetimes) {
 
             this.Location = loc;
             this.cond = cond;
@@ -163,6 +219,8 @@ namespace Helix.Features.FlowControl {
             this.iffalse = iffalse;
             this.returnType = returnType;
             this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
+            this.tempPath = tempPath;
+            this.newLifetimes = newLifetimes;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
@@ -193,7 +251,7 @@ namespace Helix.Features.FlowControl {
                 });
             }
 
-            var stat = new CVariableDeclaration() {
+            var tempStat = new CVariableDeclaration() {
                 Type = writer.ConvertType(this.returnType),
                 Name = tempName
             };
@@ -207,11 +265,34 @@ namespace Helix.Features.FlowControl {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.cond.Location.Line}: If statement");
 
+            // Don't bother writing the temp variable if we are returning void
             if (this.returnType != PrimitiveType.Void) {
-                writer.WriteStatement(stat);
+                writer.WriteStatement(tempStat);
             }
 
             writer.WriteStatement(expr);
+
+            // Register the lifetime for our return value if we are returning a 
+            // pointer or array
+            if (this.returnType is PointerType || this.returnType is ArrayType) {
+                var lifetime = new Lifetime(this.tempPath, 0, false);
+
+                writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                    Target = new CVariableLiteral(tempName),
+                    MemberName = "pool"
+                });
+            }
+
+            // Register all the lifetimes that changed within this if statement
+            foreach (var sig in this.newLifetimes) {
+                var lifetime = new Lifetime(sig.Path, sig.MutationCount, sig.IsLifetimeRoot);
+
+                writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                    Target = new CVariableLiteral(writer.GetVariableName(sig.Path)),
+                    MemberName = "pool"
+                });
+            }
+
             writer.WriteEmptyLine();
 
             if (this.returnType != PrimitiveType.Void) {

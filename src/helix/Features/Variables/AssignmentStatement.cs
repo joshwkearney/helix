@@ -97,7 +97,6 @@ namespace Helix.Features.Variables {
             //        "Please declare this function as 'pooling' to check variable " + 
             //        "lifetimes at runtime or wrap this assignment in an unsafe block.");
             //}
-            var newLifetimes = new Dictionary<VariableSignature, bool>();
 
             // There are two possible behaviors here depending on if we are writing into
             // a local variable or writing into a remote
@@ -111,6 +110,8 @@ namespace Helix.Features.Variables {
             // Increment the mutation counter for modified local variables so that
             // any new accesses to this variable will be forced to get the new 
             // lifetime.
+            var newLifetimes = new ValueList<VariableSignature>();
+
             if (target.IsLocal) {
                 var lifetime = targetLifetimes[0];
                 var sig = types.Variables[lifetime.Path];
@@ -128,13 +129,10 @@ namespace Helix.Features.Variables {
                 types.Variables[lifetime.Path] = newSig;
 
                 // We need to generate a variable for this new lifetime in the c
-                newLifetimes.Add(newSig, lifetime.IsRoot);
-
-                // Add this to the running list of availible lifetimes
-                types.AvailibleLifetimes.Add(newLifetime);
+                newLifetimes.Add(newSig);
 
                 foreach (var assignTime in assignLifetimes) {
-                    types.AddDependency(assignTime, newLifetime);
+                    types.LifetimeGraph.AddBoth(newLifetime, assignTime);
                 }
             }
             else {
@@ -142,7 +140,7 @@ namespace Helix.Features.Variables {
                 // the old lifetime
                 foreach (var assignTime in assignLifetimes) {
                     foreach (var targetTime in targetLifetimes) {
-                        types.AddDependency(assignTime, targetTime);
+                        types.LifetimeGraph.AddChild(assignTime, targetTime);
                     }
                 }
             }
@@ -164,7 +162,7 @@ namespace Helix.Features.Variables {
 
         public record AssignmentStatement : ISyntaxTree {
             private readonly ISyntaxTree target, assign;
-            private readonly IReadOnlyDictionary<VariableSignature, bool> newLifetimes;
+            private readonly ValueList<VariableSignature> newLifetimes;
 
             public TokenLocation Location { get; }
 
@@ -173,8 +171,8 @@ namespace Helix.Features.Variables {
             public bool IsPure => false;
 
             public AssignmentStatement(TokenLocation loc, ISyntaxTree target,
-                                       ISyntaxTree assign, 
-                                       IReadOnlyDictionary<VariableSignature, bool> newLifetimes) {
+                                       ISyntaxTree assign,
+                                       ValueList<VariableSignature> newLifetimes) {
                 this.Location = loc;
                 this.target = target;
                 this.assign = assign;
@@ -198,8 +196,8 @@ namespace Helix.Features.Variables {
                 });
 
                 // Write a variable for any new mutation lifetimes this assignment created
-                foreach (var (sig, isRoot) in this.newLifetimes) {
-                    var lifetime = new Lifetime(sig.Path, sig.MutationCount, isRoot);
+                foreach (var sig in this.newLifetimes) {
+                    var lifetime = new Lifetime(sig.Path, sig.MutationCount, sig.IsLifetimeRoot);
 
                     writer.RegisterLifetime(lifetime, new CMemberAccess() {
                         Target = assign,

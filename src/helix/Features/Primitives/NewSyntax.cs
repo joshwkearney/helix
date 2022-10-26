@@ -64,9 +64,8 @@ namespace Helix.Features.Primitives {
 
             var pointerType = new PointerType(type, true);
             var lifetime = new Lifetime(this.tempPath, 0, false);
-            var result = new NewSyntax(this.Location, pointerType, lifetime, types.AvailibleLifetimes.ToArray());
+            var result = new NewSyntax(this.Location, pointerType, lifetime, types.LifetimeGraph.AllLifetimes);
 
-            types.AvailibleLifetimes.Add(lifetime);
             types.ReturnTypes[result] = pointerType;
             types.Lifetimes[result] = new[] { lifetime };
 
@@ -81,7 +80,7 @@ namespace Helix.Features.Primitives {
     public record NewSyntax : ISyntaxTree {
         private readonly PointerType returnType;
         private readonly Lifetime lifetime;
-        private readonly IReadOnlyList<Lifetime> validRoots;
+        private readonly IReadOnlySet<Lifetime> validRoots;
 
         public TokenLocation Location { get; }
 
@@ -89,7 +88,7 @@ namespace Helix.Features.Primitives {
 
         public bool IsPure => true;
 
-        public NewSyntax(TokenLocation loc, PointerType type, Lifetime lifetime, IReadOnlyList<Lifetime> validRoots) {
+        public NewSyntax(TokenLocation loc, PointerType type, Lifetime lifetime, IReadOnlySet<Lifetime> validRoots) {
             this.Location = loc;
             this.returnType = type;
             this.lifetime = lifetime;
@@ -101,7 +100,7 @@ namespace Helix.Features.Primitives {
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            var roots = types.GetLifetimeRoots(this.lifetime);
+            var roots = types.LifetimeGraph.GetChildLifetimes(this.lifetime, this.validRoots).ToValueList();
             if (roots.Any() && !roots.All(x => this.validRoots.Contains(x))) {
                 // TODO: Write error message
                 throw new Exception("Oops");
@@ -113,7 +112,6 @@ namespace Helix.Features.Primitives {
             var tempName = writer.GetVariableName();
             ICSyntax allocLifetime;
             ICSyntax pointerExpr;
-
 
             if (roots.Any()) {
                 // Allocate on the heap

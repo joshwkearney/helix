@@ -76,6 +76,12 @@ namespace Helix.Generation {
         }
 
         public ICSyntax GetLifetime(Lifetime lifetime) {
+            if (this.prev is CStatementWriter statWriter) {
+                if (statWriter.lifetimes.TryGetValue(lifetime, out var value)) {
+                    return value;
+                }
+            }
+
             return this.lifetimes[lifetime];
         }
 

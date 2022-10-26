@@ -10,6 +10,10 @@ using System.Runtime.CompilerServices;
 namespace Helix.Analysis {
     public delegate void DeclarationCG(ICWriter writer);
 
+    public enum LifetimeDependencyKind {
+        RValue, LValue
+    }
+
     public class SyntaxFrame {
         private int tempCounter = 0;
 
@@ -20,8 +24,6 @@ namespace Helix.Analysis {
 
         public IDictionary<ISyntaxTree, IReadOnlyList<Lifetime>> Lifetimes { get; }
 
-        public IList<Lifetime> AvailibleLifetimes { get; }
-
         // Global things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
@@ -31,13 +33,12 @@ namespace Helix.Analysis {
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
-        public IDictionary<Lifetime, IList<Lifetime>> LifetimeDependencies { get; }
+        public LifetimeGraph LifetimeGraph { get; }
 
         public SyntaxFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
             this.Lifetimes = new Dictionary<ISyntaxTree, IReadOnlyList<Lifetime>>();
-            this.AvailibleLifetimes = new List<Lifetime>();
-            this.LifetimeDependencies = new Dictionary<Lifetime, IList<Lifetime>>();
+            this.LifetimeGraph = new();
 
             this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
@@ -55,8 +56,7 @@ namespace Helix.Analysis {
         public SyntaxFrame(SyntaxFrame prev) {
             this.Variables = new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
             this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
-            this.AvailibleLifetimes = prev.AvailibleLifetimes.ToList();
-            this.LifetimeDependencies = prev.LifetimeDependencies;
+            this.LifetimeGraph = prev.LifetimeGraph;
 
             this.Functions = prev.Functions;
             this.Aggregates = prev.Aggregates;
@@ -64,32 +64,6 @@ namespace Helix.Analysis {
             this.TypeDeclarations = prev.TypeDeclarations;
             this.ReturnTypes = prev.ReturnTypes;
             this.Lifetimes = prev.Lifetimes;
-        }
-
-        public void AddDependency(Lifetime first, Lifetime dependency) {
-            if (!this.LifetimeDependencies.TryGetValue(first, out var list)) {
-                this.LifetimeDependencies[first] = list = new List<Lifetime>();
-            }
-
-            list.Add(dependency);
-        }
-
-        public ValueList<Lifetime> GetLifetimeRoots(Lifetime time) {
-            return GetLifetimeRootsHelper(time)
-                .Where(x => x.IsRoot)
-                .Distinct()
-                .ToValueList();
-        }
-
-        private IEnumerable<Lifetime> GetLifetimeRootsHelper(Lifetime time) {
-            if (!this.LifetimeDependencies.TryGetValue(time, out var value)) {
-                yield return time;
-            }
-            else {
-                foreach (var item in value.SelectMany(GetLifetimeRootsHelper).ToArray()) {
-                    yield return item;
-                }
-            }
         }
 
         public string GetVariableName() {

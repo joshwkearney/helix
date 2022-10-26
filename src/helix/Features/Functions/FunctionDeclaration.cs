@@ -79,7 +79,6 @@ namespace Helix.Parsing {
             return new FunctionParseDeclaration(
                 sig.Location.Span(body.Location), 
                 sig,
-                body,
                 body);
         }
     }
@@ -92,8 +91,7 @@ namespace Helix.Features.Functions {
 
         public TokenLocation Location { get; }
 
-        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, 
-            ISyntaxTree body, ISyntaxTree retExpr) {
+        public FunctionParseDeclaration(TokenLocation loc, FunctionParseSignature sig, ISyntaxTree body) {
 
             this.Location = loc;
             this.signature = sig;
@@ -127,17 +125,26 @@ namespace Helix.Features.Functions {
 
             // Declare a "heap" lifetime used for function returns
             var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0, true);
-            types.AvailibleLifetimes.Add(heapLifetime);
 
             // Check types
-            var body = this.body
-                .CheckTypes(types)
+            var body = this.body;
+
+            if (sig.ReturnType == PrimitiveType.Void) {
+                body = new BlockSyntax(this.body.Location, new ISyntaxTree[] { 
+                    this.body,
+                    new VoidLiteral(this.body.Location)
+                });
+            }
+
+            types.LifetimeGraph.AddParent(heapLifetime, heapLifetime);
+
+            body = body.CheckTypes(types)
                 .ToRValue(types)
                 .UnifyTo(sig.ReturnType, types);
 
             // Add a dependency between every returned lifetime and the heap
             foreach (var lifetime in types.Lifetimes[body]) {
-                types.AddDependency(lifetime, heapLifetime);
+                types.LifetimeGraph.AddParent(heapLifetime, lifetime);
             }
 
             // TODO: Fix this

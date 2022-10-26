@@ -2,14 +2,16 @@
 using System.Collections.Immutable;
 
 namespace Helix.Analysis {
-    public struct ValueList<T> : IEquatable<ValueList<T>>, IEnumerable<T>, IReadOnlyList<T> {
+    public class ValueList<T> : IEquatable<ValueList<T>>, IEnumerable<T>, IReadOnlyList<T> {
         private readonly int hashCode;
         private readonly ImmutableList<T> items;
 
-        public ValueList(IEnumerable<T> values) {
-            this.items = values.ToImmutableList();
-            this.hashCode = values.Aggregate(13, (x, y) => x + 7 * y.GetHashCode());
+        public ValueList() {
+            this.items = ImmutableList<T>.Empty;
+            this.hashCode = 0;
         }
+
+        public ValueList(IEnumerable<T> values) : this(values.ToImmutableList()) { }
 
         public ValueList(ImmutableList<T> values) {
             this.items = values;

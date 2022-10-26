@@ -67,7 +67,7 @@ namespace Helix.Features.FlowControl {
             foreach (var time in types.Lifetimes[result]) {
                 var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0, true);
 
-                types.AddDependency(time, heapLifetime);
+                types.LifetimeGraph.AddChild(time, heapLifetime);
             }
 
             return result;

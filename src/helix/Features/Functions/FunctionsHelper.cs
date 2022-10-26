@@ -44,7 +44,7 @@ namespace Helix.Features.Functions {
                 if (type is PointerType || type is ArrayType) {
                     var lifetime = new Lifetime(path, 0, true);
 
-                    types.AvailibleLifetimes.Add(lifetime);
+                    types.LifetimeGraph.AddParent(lifetime, lifetime);
                 }
 
                 types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0, true);

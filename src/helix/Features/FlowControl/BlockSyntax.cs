@@ -72,7 +72,11 @@ namespace Helix.Features.FlowControl {
                 .OrElse(() => PrimitiveType.Void);
 
             types.ReturnTypes[result] = returnType;
-            types.Lifetimes[result] = stats.SelectMany(x => types.Lifetimes[x]).ToArray();
+
+            types.Lifetimes[result] = stats
+                .LastOrNone()
+                .Select(x => types.Lifetimes[x])
+                .OrElse(() => Array.Empty<Lifetime>());
 
             return result;
         }

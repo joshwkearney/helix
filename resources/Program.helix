@@ -1,9 +1,13 @@
-﻿func loop_test_1(let a as int**) as int* {
-	var b = new int;
+﻿func loop_test_1(let a as int**, let b as int**) as void {
+	let c = new int;
 
-	b = new int;
+	let target = if 10 < 100
+		then a
+		else b;
 
-	*a = b;
-	b;
+	*target = c;
+	//target;
 };
+
+
 
