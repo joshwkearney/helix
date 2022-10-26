@@ -40,11 +40,11 @@ namespace Helix.Features.Functions {
                     type = type.ToMutableType();
                 }
 
-                // TODO: Revisit this
+                // Declare this parameter as a root by making an end cycle in the graph
                 if (type is PointerType || type is ArrayType) {
                     var lifetime = new Lifetime(path, 0);
 
-                    types.LifetimeGraph.AddParent(lifetime, lifetime);
+                    types.LifetimeGraph.AddRoot(lifetime);
                 }
 
                 types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0);

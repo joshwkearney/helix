@@ -136,7 +136,7 @@ namespace Helix.Features.Functions {
                 });
             }
 
-            types.LifetimeGraph.AddParent(heapLifetime, heapLifetime);
+            types.LifetimeGraph.AddRoot(heapLifetime);
 
             body = body.CheckTypes(types)
                 .ToRValue(types)
@@ -144,17 +144,8 @@ namespace Helix.Features.Functions {
 
             // Add a dependency between every returned lifetime and the heap
             foreach (var lifetime in types.Lifetimes[body]) {
-                types.LifetimeGraph.AddParent(heapLifetime, lifetime);
+                types.LifetimeGraph.AddPrecursor(heapLifetime, lifetime);
             }
-
-            // TODO: Fix this
-            // Make sure we're not capturing a stack-allocated variable
-            //if (types.Lifetimes[body].IsStackBound) {
-            //    throw new LifetimeException(
-            //        this.Location,
-            //        "Dangling Pointer on Return Value",
-            //        "The return value for this function potentially references stack-allocated memory.");
-            //}
 
 #if DEBUG
             // Debug check: make sure that every syntax tree has a return type

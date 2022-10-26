@@ -44,7 +44,7 @@ namespace Helix.Features.Primitives {
                 var lifetime = new Lifetime(this.tempPath, 0);
                 var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
 
-                types.LifetimeGraph.AddParent(lifetime, lifetime);
+                types.LifetimeGraph.AddPrecursor(lifetime, lifetime);
                 types.ReturnTypes[result] = pointerType.InnerType;
                 types.Lifetimes[result] = new[] { lifetime };
 

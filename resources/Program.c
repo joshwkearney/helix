@@ -34,34 +34,30 @@ void loop_test_1(Pool* _pool, int$ptr$ptr a, int$ptr$ptr b) {
     int $B = (a.pool);
     int $C = (b.pool);
 
-    int $F = $A;
-    $F = (($F <= $C) ? $F : $C);
-    $F = (($F <= $B) ? $F : $B);
-
-    /* Line 2: New 'int*' */
-    int* $E = (int*)_pool_malloc(_pool, $F, sizeof(int));
-    int$ptr $G = { $E, 1U, $F };
-    int $H = ($G.pool);
-
-    /* Line 2: New variable declaration 'c' */
-    int$ptr c = $G;
-    int $I = (c.pool);
-
-    /* Line 4: If statement */
-    int$ptr$ptr $J;
+    /* Line 2: If statement */
+    int$ptr$ptr $D;
     if ((10U < 100U)) { 
-        $J = a;
+        $D = a;
     } 
     else {
-        $J = b;
+        $D = b;
     }
-    int $K = ($J.pool);
+    int $E = ($D.pool);
 
-    /* Line 4: New variable declaration 'target' */
-    int$ptr$ptr target = $J;
-    int $L = (target.pool);
+    /* Line 2: New variable declaration 'target' */
+    int$ptr$ptr target = $D;
+    int $F = (target.pool);
 
-    /* Line 8: Assignment statement */
+    /* Line 6: New 'int*' */
+    int* $H = (int*)_pool_malloc(_pool, $F, sizeof(int));
+    int$ptr $I = { $H, 1U, $F };
+    int $J = ($I.pool);
+
+    /* Line 6: New variable declaration 'c' */
+    int$ptr c = $I;
+    int $K = (c.pool);
+
+    /* Line 7: Assignment statement */
     (*(target.data)) = c;
 
 }

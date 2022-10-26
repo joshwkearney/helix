@@ -100,7 +100,7 @@ namespace Helix.Features.Primitives {
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            var roots = types.LifetimeGraph.GetChildLifetimes(this.lifetime, this.validRoots).ToValueList();
+            var roots = types.LifetimeGraph.GetDerivedLifetimes(this.lifetime, this.validRoots).ToValueList();
             if (roots.Any() && !roots.All(x => this.validRoots.Contains(x))) {
                 // TODO: Write error message
                 throw new Exception("Oops");

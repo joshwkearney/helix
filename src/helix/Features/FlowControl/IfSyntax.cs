@@ -110,24 +110,24 @@ namespace Helix.Features.FlowControl {
                         true, 
                         mutationCount);
 
-                    var newLifetime = new Lifetime(path, mutationCount);
-
                     newLifetimes.Add(newSig);
 
-                    types.LifetimeGraph.AddBoth(newLifetime, trueSig.Lifetime);
-                    types.LifetimeGraph.AddBoth(newLifetime, falseSig.Lifetime);
+                    // Make sure that the new lifetime is dependent on both if branches
+                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, trueSig.Lifetime);
+                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, falseSig.Lifetime);
+
+                    // Make sure that the branch lifetimes are dependent on the new lifetime
+                    types.LifetimeGraph.AddDerived(trueSig.Lifetime, newSig.Lifetime);
+                    types.LifetimeGraph.AddDerived(falseSig.Lifetime, newSig.Lifetime);
                 }
                 else {
                     // If this variable is changed in only one path
-                    int mutationCount;
                     Lifetime oldLifetime;
 
                     if (iftrueTypes.Variables.ContainsKey(path)) {
-                        mutationCount = 1 + iftrueTypes.Variables[path].Lifetime.MutationCount;
                         oldLifetime = iftrueTypes.Variables[path].Lifetime;
                     }
                     else {
-                        mutationCount = 1 + iffalseTypes.Variables[path].Lifetime.MutationCount;
                         oldLifetime = iffalseTypes.Variables[path].Lifetime;
                     }
 
@@ -135,12 +135,12 @@ namespace Helix.Features.FlowControl {
                         path,
                         oldSig.Type,
                         oldSig.IsWritable,
-                        mutationCount);
-
-                    var newLifetime = new Lifetime(path, mutationCount);
+                        oldLifetime.MutationCount + 1);
 
                     newLifetimes.Add(newSig);
-                    types.LifetimeGraph.AddBoth(newLifetime, oldLifetime);
+
+                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldLifetime);
+                    types.LifetimeGraph.AddDerived(oldLifetime, newSig.Lifetime);
                 }
             }
 

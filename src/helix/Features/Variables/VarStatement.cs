@@ -95,8 +95,11 @@ namespace Helix {
             var sig = new VariableSignature(path, assignType, this.isWritable, 0);
             var varLifetime = new Lifetime(path, 0);
 
+            // Make sure that this variable acts as a passthrough for the lifetimes that are
+            // in the assignment expression
             foreach (var time in assignLifetimes) {
-                types.LifetimeGraph.AddBoth(varLifetime, time);
+                types.LifetimeGraph.AddPrecursor(varLifetime, time);
+                types.LifetimeGraph.AddDerived(time, varLifetime);
             }
 
             // Put this variable's value in the value table

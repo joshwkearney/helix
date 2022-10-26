@@ -10,7 +10,7 @@ namespace Helix.Analysis {
 
         public IReadOnlySet<Lifetime> AllLifetimes => this.allLifetimes;
 
-        public void AddParent(Lifetime childLifetime, Lifetime parentLifetime) {
+        public void AddPrecursor(Lifetime childLifetime, Lifetime parentLifetime) {
             this.allLifetimes = this.allLifetimes.Add(childLifetime).Add(parentLifetime);
 
             if (!this.parentLifetimes.TryGetValue(childLifetime, out var parentList)) {
@@ -20,7 +20,7 @@ namespace Helix.Analysis {
             parentList.Add(parentLifetime);
         }
 
-        public void AddChild(Lifetime parentLifetime, Lifetime childLifetime) {
+        public void AddDerived(Lifetime parentLifetime, Lifetime childLifetime) {
             this.allLifetimes = this.allLifetimes.Add(childLifetime).Add(parentLifetime);
 
             if (!this.childLifetimes.TryGetValue(parentLifetime, out var childList)) {
@@ -30,12 +30,12 @@ namespace Helix.Analysis {
             childList.Add(childLifetime);
         }
 
-        public void AddBoth(Lifetime childLifetime, Lifetime parentLifetime) {
-            this.AddParent(childLifetime, parentLifetime);
-            this.AddChild(parentLifetime, childLifetime);
+        public void AddRoot(Lifetime root) {
+            this.AddDerived(root, root);
+            this.AddPrecursor(root, root);
         }
 
-        public IReadOnlySet<Lifetime> GetChildLifetimes(Lifetime time, IReadOnlySet<Lifetime> roots) {
+        public IReadOnlySet<Lifetime> GetDerivedLifetimes(Lifetime time, IReadOnlySet<Lifetime> roots) {
             var visited = new HashSet<Lifetime>();
             var stack = new Stack<Lifetime>(new[] { time });
             var children = new HashSet<Lifetime>();
@@ -67,7 +67,7 @@ namespace Helix.Analysis {
                     // may be derived from lifetimes that are in our root set, so we can 
                     // flip the search direction and try to express this lifetime's parents
                     // in terms of our roots.
-                    var parents = GetParentLifetimes(item, roots);
+                    var parents = GetPrecursorLifetimes(item, roots);
 
                     if (parents.All(roots.Contains)) {
                         // Success! Item has been expressed in terms of our roots, so we can
@@ -87,7 +87,7 @@ namespace Helix.Analysis {
             return children;
         }
 
-        public IReadOnlySet<Lifetime> GetParentLifetimes(Lifetime time, IReadOnlySet<Lifetime> roots) {
+        public IReadOnlySet<Lifetime> GetPrecursorLifetimes(Lifetime time, IReadOnlySet<Lifetime> roots) {
             var visited = new HashSet<Lifetime>();
             var stack = new Stack<Lifetime>(new[] { time });
             var parents = new HashSet<Lifetime>();

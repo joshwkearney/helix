@@ -87,8 +87,6 @@ namespace Helix.Features.Variables {
             var targetLifetimes = types.Lifetimes[target];
             var assignLifetimes = types.Lifetimes[assign];
 
-            // TODO: Insert runtime lifetime check if needed
-
             //if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
             //    throw new LifetimeException(
             //        this.Location,
@@ -129,16 +127,24 @@ namespace Helix.Features.Variables {
                 // We need to generate a variable for this new lifetime in the c
                 newLifetimes.Add(newSig);
 
+                // Register the new variable lifetime with the graph. Both AddDerived and 
+                // AddPrecursor are used because the new lifetime is being created as an
+                // alias for the assigned lifetimes, and the assigned lifetimes will be
+                // dependent on whatever the new lifetime is dependent on.
                 foreach (var assignTime in assignLifetimes) {
-                    types.LifetimeGraph.AddBoth(newLifetime, assignTime);
+                    types.LifetimeGraph.AddPrecursor(newLifetime, assignTime);
+                    types.LifetimeGraph.AddDerived(assignTime, newLifetime);
                 }
             }
             else {
                 // Add a dependency between every variable in the assignment statement and
-                // the old lifetime
+                // the old lifetime. We are using AddDerived only because the target lifetime
+                // will exist whether or not we write into it, since this is a dereferenced write.
+                // That means that for the purposes of lifetime analysis, the target lifetime is
+                // independent of the assigned lifetimes.
                 foreach (var assignTime in assignLifetimes) {
                     foreach (var targetTime in targetLifetimes) {
-                        types.LifetimeGraph.AddChild(assignTime, targetTime);
+                        types.LifetimeGraph.AddDerived(assignTime, targetTime);
                     }
                 }
             }
