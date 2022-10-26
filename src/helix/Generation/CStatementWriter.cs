@@ -105,13 +105,13 @@ namespace Helix.Generation {
             var decl = new CVariableDeclaration() {
                 Name = tempName,
                 Type = new CNamedType("int"),
-                Assignment = Option.Some(this.GetLifetime(heapLifetime))
+                Assignment = Option.Some(values.First())
             };
 
             this.WriteEmptyLine();
             this.WriteStatement(decl);
 
-            foreach (var item in values) {
+            foreach (var item in values.Skip(1)) {
                 this.WriteStatement(new CAssignment() { 
                     Left = new CVariableLiteral(tempName),
                     Right = new CTernaryExpression() {
