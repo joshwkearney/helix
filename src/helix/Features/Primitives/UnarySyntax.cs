@@ -4,8 +4,10 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Analysis.Lifetimes;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
         private int dereferenceCounter = 0;
 
@@ -17,7 +19,7 @@ namespace Helix.Parsing {
 
             if (hasOperator) {
                 var tokOp = this.Advance();
-                var first = this.SuffixExpression();
+                var first = this.UnaryExpression();
                 var loc = tokOp.Location.Span(first.Location);
                 var op = UnaryOperatorKind.Not;
 
@@ -39,7 +41,8 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Primitives {
+namespace Helix.Features.Primitives
+{
     public enum UnaryOperatorKind {
         Not, Plus, Minus
     }
