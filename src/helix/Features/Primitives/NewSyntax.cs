@@ -153,7 +153,7 @@ namespace Helix.Features.Primitives {
                     Target = new CVariableLiteral(tempName)
                 };
 
-                allocLifetime = new CIntLiteral(short.MaxValue);
+                allocLifetime = writer.GetLifetime(new Lifetime(new IdentifierPath("$heap"), 0, true));
             }
 
             var fatPointerName = writer.GetVariableName();
