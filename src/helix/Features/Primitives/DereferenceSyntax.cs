@@ -42,7 +42,7 @@ namespace Helix.Features.Primitives {
                 // If we dereference a pointer and get another reference type, then we have no
                 // idea where this new pointer came from because it could be aliased with something
                 // else, so we need to emit a new root lifetime.
-                var lifetime = new Lifetime(this.tempPath, 0);
+                var lifetime = new Lifetime(this.tempPath, 0, true);
                 var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
 
                 types.LifetimeGraph.AddRoot(lifetime);
@@ -117,12 +117,13 @@ namespace Helix.Features.Primitives {
                 return result;
             }
 
+            // TODO: Put this in if statement?
             // If we are dereferencing a pointer or array, we need to put it in a 
             // temp variable and write out the new lifetime.
 
             var tempName = writer.GetVariableName(this.tempPath);
             var tempType = writer.ConvertType(pointerType.InnerType);
-            var lifetime = new Lifetime(this.tempPath, 0);
+            var lifetime = new Lifetime(this.tempPath, 0, true);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Pointer dereference");

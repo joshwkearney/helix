@@ -4,23 +4,21 @@ using Helix.Analysis.Types;
 
 namespace Helix.Analysis {
     public record struct VariableSignature {
-        private readonly int mutationCount;
-
         public HelixType Type { get; }
 
         public bool IsWritable { get; }
 
         public IdentifierPath Path { get; }
 
-        public Lifetime Lifetime => new Lifetime(this.Path, this.mutationCount);
+        public Lifetime Lifetime { get; }
 
         public VariableSignature(IdentifierPath path, HelixType type, 
-            bool isWritable, int mutationCount) {
+            bool isWritable, int mutationCount, bool isRoot) {
 
             this.Path = path;
             this.Type = type;
             this.IsWritable = isWritable;
-            this.mutationCount = mutationCount;
+            this.Lifetime = new Lifetime(this.Path, mutationCount, isRoot);
         }
 
         public VariableSignature(HelixType type,
@@ -29,7 +27,7 @@ namespace Helix.Analysis {
             this.Path = lifetime.Path;
             this.Type = type;
             this.IsWritable = isWritable;
-            this.mutationCount = lifetime.MutationCount;
+            this.Lifetime = lifetime;
         }
     }
 }

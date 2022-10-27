@@ -109,7 +109,8 @@ namespace Helix.Features.FlowControl {
                         path, 
                         oldSig.Type, 
                         true, 
-                        mutationCount);
+                        mutationCount,
+                        oldSig.Lifetime.IsRoot);
 
                     newLifetimes.Add(newSig);
 
@@ -136,7 +137,8 @@ namespace Helix.Features.FlowControl {
                         path,
                         oldSig.Type,
                         oldSig.IsWritable,
-                        oldLifetime.MutationCount + 1);
+                        oldLifetime.MutationCount + 1,
+                        oldSig.Lifetime.IsRoot);
 
                     newLifetimes.Add(newSig);
 
@@ -265,7 +267,7 @@ namespace Helix.Features.FlowControl {
             // Register the lifetime for our return value if we are returning a 
             // pointer or array
             if (this.returnType is PointerType || this.returnType is ArrayType) {
-                var lifetime = new Lifetime(this.tempPath, 0);
+                var lifetime = new Lifetime(this.tempPath, 0, true);
 
                 writer.RegisterLifetime(lifetime, new CMemberAccess() {
                     Target = new CVariableLiteral(tempName),

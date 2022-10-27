@@ -64,7 +64,7 @@ namespace Helix.Features.Primitives {
             }
 
             var pointerType = new PointerType(type, true);
-            var lifetime = new Lifetime(this.tempPath, 0);
+            var lifetime = new Lifetime(this.tempPath, 0, false);
             var result = new NewSyntax(this.Location, pointerType, lifetime, types.LifetimeGraph.AllLifetimes);
 
             types.ReturnTypes[result] = pointerType;
@@ -101,7 +101,11 @@ namespace Helix.Features.Primitives {
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            var roots = types.LifetimeGraph.GetDerivedLifetimes(this.lifetime, this.validRoots).ToValueList();
+            var roots = types.LifetimeGraph
+                .GetDerivedLifetimes(this.lifetime, this.validRoots)
+                .Where(x => x.IsRoot)
+                .ToValueList();
+
             if (roots.Any() && !roots.All(x => this.validRoots.Contains(x))) {
                 throw new LifetimeException(
                     this.Location,

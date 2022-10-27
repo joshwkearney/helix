@@ -43,12 +43,12 @@ namespace Helix.Features.Functions {
 
                 // Declare this parameter as a root by making an end cycle in the graph
                 if (type is PointerType || type is ArrayType) {
-                    var lifetime = new Lifetime(path, 0);
+                    var lifetime = new Lifetime(path, 0, true);
 
                     types.LifetimeGraph.AddRoot(lifetime);
                 }
 
-                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0);
+                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0, true);
                 types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
             }
         }

@@ -93,8 +93,8 @@ namespace Helix {
 
             // Register a dependency between this lifetime and the ones in the assign expression
             var assignLifetimes = types.Lifetimes[assign];
-            var sig = new VariableSignature(path, assignType, this.isWritable, 0);
-            var varLifetime = new Lifetime(path, 0);
+            var sig = new VariableSignature(path, assignType, this.isWritable, 0, false);
+            var varLifetime = new Lifetime(path, 0, false);
 
             // Make sure that this variable acts as a passthrough for the lifetimes that are
             // in the assignment expression
