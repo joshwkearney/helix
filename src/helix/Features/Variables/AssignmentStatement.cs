@@ -115,7 +115,10 @@ namespace Helix.Features.Variables {
                 var lifetime = targetLifetimes[0];
                 var sig = types.Variables[lifetime.Path];
 
-                var newLifetime = new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1, sig.Lifetime.IsRoot);
+                var newLifetime = new Lifetime(
+                    sig.Path, 
+                    sig.Lifetime.MutationCount + 1, 
+                    sig.Lifetime.IsRoot);
 
                 var newSig = new VariableSignature(
                     sig.Type,
