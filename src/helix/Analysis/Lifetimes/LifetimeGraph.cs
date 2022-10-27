@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 
-namespace Helix.Analysis {
+namespace Helix.Analysis.Lifetimes {
     public class LifetimeGraph {
         private ImmutableHashSet<Lifetime> allLifetimes = ImmutableHashSet.Create<Lifetime>();
         private readonly Dictionary<Lifetime, List<Lifetime>> parentLifetimes = new();
@@ -56,6 +56,10 @@ namespace Helix.Analysis {
                     children.Add(item);
                 }
                 else if (this.childLifetimes.TryGetValue(item, out var list)) {
+                    if (list.Contains(item)) {
+                        children.Add(item);
+                    }
+
                     // Transitively search the children of our children
                     foreach (var child in list) {
                         stack.Push(child);

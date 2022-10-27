@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Generation.Syntax;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Helix.Analysis;
+using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.FlowControl;
 using Helix.Features.Primitives;

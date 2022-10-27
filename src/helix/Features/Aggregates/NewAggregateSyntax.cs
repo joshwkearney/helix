@@ -4,6 +4,7 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Features.Primitives;
+using Helix.Analysis.Lifetimes;
 
 namespace Helix.Features.Aggregates {
     public class NewAggregateSyntax : ISyntaxTree {

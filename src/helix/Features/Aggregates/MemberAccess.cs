@@ -4,6 +4,7 @@ using Helix.Generation;
 using Helix.Features.Aggregates;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Analysis.Lifetimes;
 
 namespace Helix.Parsing {
     public partial class Parser {

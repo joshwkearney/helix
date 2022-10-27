@@ -1,4 +1,5 @@
-﻿using Helix.Analysis.Types;
+﻿using Helix.Analysis.Lifetimes;
+using Helix.Analysis.Types;
 using Helix.Features;
 using Helix.Features.Aggregates;
 using Helix.Features.Functions;

@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Generation;
@@ -102,8 +103,14 @@ namespace Helix.Features.Primitives {
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
             var roots = types.LifetimeGraph.GetDerivedLifetimes(this.lifetime, this.validRoots).ToValueList();
             if (roots.Any() && !roots.All(x => this.validRoots.Contains(x))) {
-                // TODO: Write error message
-                throw new Exception("Oops");
+                throw new LifetimeException(
+                    this.Location,
+                    "Lifetime Inference Failed",
+                    "The lifetime of this new object allocation has failed because it is " +
+                    "dependent on a value that does not exist at this point in the program and " + 
+                    "must be calculated at runtime. Are you assigning this allocation to a pointer " + 
+                    "that has not been dereferenced?. Please try moving the allocation " + 
+                    "closer to the site of its use.");
             }
 
             var innerType = writer.ConvertType(this.returnType.InnerType);

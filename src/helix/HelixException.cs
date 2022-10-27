@@ -30,7 +30,7 @@ namespace Helix {
 
             // Print preamble
             var message = this.Title + "\n";
-            message += this.Message + "\n";
+            message += this.Message + "\n\n";
             message += $"at 'program.txt' line {line} pos {start}\n";
             message += "\n";
 

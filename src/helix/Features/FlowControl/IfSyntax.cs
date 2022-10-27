@@ -7,6 +7,7 @@ using Helix.Generation;
 using Helix.Parsing;
 using System.Reflection;
 using Helix.Features.Variables;
+using Helix.Analysis.Lifetimes;
 
 namespace Helix.Parsing {
     public partial class Parser {
