@@ -43,7 +43,7 @@ void lifetime_test_2(Pool* _pool, int$ptr$ptr a, int$ptr$ptr b) {
         $if_temp_0 = b;
     }
 
-    /* Line 4: Saving lifetime '$if_temp_0' */
+    /* Line 4: Saving lifetime 'lifetime_test_2/$block_0/$if_temp_0' */
     int $D = ($if_temp_0.pool);
 
     /* Line 4: New variable declaration 'target' */

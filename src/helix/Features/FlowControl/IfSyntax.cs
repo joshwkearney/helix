@@ -59,7 +59,7 @@ namespace Helix.Features.FlowControl {
 
             this.iffalse = new VoidLiteral(location);
             this.IsPure = cond.IsPure && iftrue.IsPure;
-            this.tempPath = new IdentifierPath("$if_temp_" + ifTempCounter++);
+            this.tempPath = location.Scope.Append("$if_temp_" + ifTempCounter++);
         }
 
         public IfParseSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue, 
