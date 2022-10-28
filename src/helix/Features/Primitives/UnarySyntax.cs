@@ -6,16 +6,12 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Lifetimes;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
-        private int dereferenceCounter = 0;
-
         private ISyntaxTree UnaryExpression() {
             var hasOperator = this.Peek(TokenKind.Minus)
                 || this.Peek(TokenKind.Plus)
-                || this.Peek(TokenKind.Not)
-                || this.Peek(TokenKind.Star);
+                || this.Peek(TokenKind.Not);
 
             if (hasOperator) {
                 var tokOp = this.Advance();
@@ -23,14 +19,14 @@ namespace Helix.Parsing
                 var loc = tokOp.Location.Span(first.Location);
                 var op = UnaryOperatorKind.Not;
 
-                if (tokOp.Kind == TokenKind.Star) {
-                    return new DereferenceSyntax(loc, first, new IdentifierPath("$deref_" + dereferenceCounter++));
-                }
-                else if (tokOp.Kind == TokenKind.Plus) {
+                if (tokOp.Kind == TokenKind.Plus) {
                     op = UnaryOperatorKind.Plus;
                 }
                 else if (tokOp.Kind == TokenKind.Minus) {
                     op = UnaryOperatorKind.Minus;
+                }
+                else {
+                    throw new Exception("Unexpected unary operator");
                 }
 
                 return new UnaryParseSyntax(loc, op, first);
@@ -41,8 +37,7 @@ namespace Helix.Parsing
     }
 }
 
-namespace Helix.Features.Primitives
-{
+namespace Helix.Features.Primitives {
     public enum UnaryOperatorKind {
         Not, Plus, Minus
     }
@@ -67,8 +62,8 @@ namespace Helix.Features.Primitives
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
                 var left = new IntLiteral(this.Location, 0);
 
-                var op = this.op == UnaryOperatorKind.Plus 
-                    ? BinaryOperationKind.Add 
+                var op = this.op == UnaryOperatorKind.Plus
+                    ? BinaryOperationKind.Add
                     : BinaryOperationKind.Subtract;
 
                 var result = new BinarySyntax(this.Location, left, this.arg, op);
@@ -81,7 +76,7 @@ namespace Helix.Features.Primitives
                     .UnifyTo(PrimitiveType.Bool, types);
 
                 var result = new UnaryNotSyntax(
-                    this.Location, 
+                    this.Location,
                     arg);
 
                 types.ReturnTypes[result] = PrimitiveType.Bool;

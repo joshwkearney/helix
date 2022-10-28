@@ -1,5 +1,6 @@
 ﻿using Helix.Analysis;
 using Helix.Features.FlowControl;
+using Helix.Features.Primitives;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -83,9 +84,8 @@ namespace Helix.Parsing {
 
             while (this.Peek(TokenKind.OpenParenthesis) 
                 || this.Peek(TokenKind.Dot) 
-                || this.Peek(TokenKind.Star)
-                || this.Peek(TokenKind.OpenBracket)) {
-                //|| this.Peek(TokenKind.Caret)) {
+                || this.Peek(TokenKind.OpenBracket)
+                || this.Peek(TokenKind.Star)) {
 
                 if (this.Peek(TokenKind.OpenParenthesis)) {
                     first = this.InvokeExpression(first);
@@ -93,11 +93,11 @@ namespace Helix.Parsing {
                 else if (this.Peek(TokenKind.Dot)) {
                     first = this.MemberAccess(first);
                 }
-                else if (this.Peek(TokenKind.Star) || this.Peek(TokenKind.Caret)) {
-                    first = this.TypePointer(first);
-                }
                 else if (this.Peek(TokenKind.OpenBracket)) {
                     first = this.ArrayExpression(first);
+                }
+                else if (this.Peek(TokenKind.Star)) {
+                    first = this.DereferenceExpression(first);
                 }
                 else {
                     throw new Exception("Unexpected suffix token");

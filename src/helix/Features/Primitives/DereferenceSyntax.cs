@@ -1,9 +1,23 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
+using Helix.Features.Primitives;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+
+namespace Helix.Parsing {
+    public partial class Parser {
+        private int dereferenceCounter = 0;
+
+        public ISyntaxTree DereferenceExpression(ISyntaxTree first) {
+            var op = this.Advance(TokenKind.Star);
+            var loc = first.Location.Span(op.Location);
+
+            return new DereferenceSyntax(loc, first, new IdentifierPath("$deref_" + dereferenceCounter++));
+        }
+    }
+}
 
 namespace Helix.Features.Primitives {
     public record DereferenceSyntax : ISyntaxTree, ILValue {
@@ -28,6 +42,12 @@ namespace Helix.Features.Primitives {
             this.tempPath = tempPath;
             this.isTypeChecked = isTypeChecked;
             this.isLValue = islvalue;
+        }
+
+        public Option<HelixType> AsType(SyntaxFrame types) {
+            return this.target.AsType(types)
+                .Select(x => new PointerType(x, true))
+                .Select(x => (HelixType)x);
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
