@@ -80,14 +80,6 @@ namespace Helix.Features.Primitives {
             types.ReturnTypes[result] = types.ReturnTypes[this];
             types.Lifetimes[result] = types.Lifetimes[this.target];
 
-            // Since we're going to be an lvalue, we actually need to declare a 
-            // variable signature so that mutations can keep track of which version
-            // of the lifetime another variable references
-            //var sig = new VariableSignature(this.tempPath, types.ReturnTypes[this], true, 0, false);
-
-            //types.Variables[this.tempPath] = sig;
-            //types.SyntaxValues[this.tempPath] = this;
-
             return result;
         }
 
@@ -117,7 +109,6 @@ namespace Helix.Features.Primitives {
                 return result;
             }
 
-            // TODO: Put this in if statement?
             // If we are dereferencing a pointer or array, we need to put it in a 
             // temp variable and write out the new lifetime.
 

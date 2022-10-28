@@ -61,14 +61,15 @@ namespace Helix.Features.Aggregates {
                 }
             }
 
-            bool isPointerAccess = false;
-            if (targetType is PointerType pointer) {
-                targetType = pointer.InnerType;
-                isPointerAccess = true;
+            // TODO: Scrap or reimplement this
+            //bool isPointerAccess = false;
+            //if (targetType is PointerType pointer) {
+            //    targetType = pointer.InnerType;
+            //    isPointerAccess = true;
 
-                // Member access through a pointer needs its own lifetime root
-                throw new InvalidOperationException();
-            }
+            //    // Member access through a pointer needs its own lifetime root
+            //    throw new InvalidOperationException();
+            //}
 
             // If this is a named type it could be a struct or union
             if (targetType is NamedType named) {
@@ -102,8 +103,7 @@ namespace Helix.Features.Aggregates {
                         }
 
                         return result;
-                    }
-                    
+                    }                    
                 }               
             }
 

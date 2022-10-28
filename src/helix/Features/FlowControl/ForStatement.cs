@@ -34,7 +34,7 @@ namespace Helix.Parsing {
             var counterDecl = new VarParseStatement(startTok.Location, new[] { counterName }, startIndex, true);
             var counterAccess = new VariableAccessParseSyntax(startTok.Location, counterName);
 
-            var counterInc = new AssignmentParseStatement(
+            var counterInc = new AssignmentStatement(
                 startTok.Location,
                 counterAccess,
                 new BinarySyntax(

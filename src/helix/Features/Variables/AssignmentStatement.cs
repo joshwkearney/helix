@@ -1,11 +1,13 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Types;
-using Helix.Generation;
-using Helix.Features.Variables;
-using Helix.Parsing;
-using Helix.Generation.Syntax;
-using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
+using Helix.Analysis.Types;
+using Helix.Features.FlowControl;
+using Helix.Features.Memory;
+using Helix.Features.Primitives;
+using Helix.Features.Variables;
+using Helix.Generation;
+using Helix.Generation.Syntax;
+using Helix.Parsing;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -15,7 +17,7 @@ namespace Helix.Parsing {
             if (this.TryAdvance(TokenKind.Assignment)) {
                 var assign = this.TopExpression();
                 var loc = start.Location.Span(assign.Location);
-                var result = new AssignmentParseStatement(loc, start, assign);
+                var result = new AssignmentStatement(loc, start, assign);
 
                 return result;
             }
@@ -44,7 +46,7 @@ namespace Helix.Parsing {
                 var second = this.TopExpression();
                 var loc = start.Location.Span(second.Location);
                 var assign = new BinarySyntax(loc, start, second, op);
-                var stat = new AssignmentParseStatement(loc, start, assign);
+                var stat = new AssignmentStatement(loc, start, assign);
 
                 return stat;
             }
@@ -53,8 +55,9 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.Variables {
-    public record AssignmentParseStatement : ISyntaxTree {
+    public record AssignmentStatement : ISyntaxTree {
         private readonly ISyntaxTree target, assign;
+        private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
@@ -62,13 +65,20 @@ namespace Helix.Features.Variables {
 
         public bool IsPure => false;
 
-        public AssignmentParseStatement(TokenLocation loc, ISyntaxTree target, ISyntaxTree assign) {
+        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, 
+            ISyntaxTree assign, bool isTypeChecked = false) {
+
             this.Location = loc;
             this.target = target;
             this.assign = assign;
+            this.isTypeChecked = isTypeChecked;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
+            if (this.isTypeChecked) {
+                return this;
+            }
+
             var target = this.target.CheckTypes(types).ToLValue(types);
             var targetType = types.ReturnTypes[target];
 
@@ -109,16 +119,16 @@ namespace Helix.Features.Variables {
             // Increment the mutation counter for modified local variables so that
             // any new accesses to this variable will be forced to get the new 
             // lifetime.
-            var newLifetimes = new ValueList<VariableSignature>();
+            var lifetimeBindings = new List<ISyntaxTree>();
 
             if (target.IsLocal) {
-                var lifetime = targetLifetimes[0];
-                var sig = types.Variables[lifetime.Path];
+                var oldLifetime = targetLifetimes[0];
+                var sig = types.Variables[oldLifetime.Path];
 
                 var newLifetime = new Lifetime(
                     sig.Path, 
                     sig.Lifetime.MutationCount + 1, 
-                    sig.Lifetime.IsRoot);
+                    assignLifetimes.Any(x => x.IsRoot));
 
                 var newSig = new VariableSignature(
                     sig.Type,
@@ -126,10 +136,15 @@ namespace Helix.Features.Variables {
                     newLifetime);
 
                 // Replace the old variable signature
-                types.Variables[lifetime.Path] = newSig;
+                types.Variables[oldLifetime.Path] = newSig;
 
                 // We need to generate a variable for this new lifetime in the c
-                newLifetimes.Add(newSig);
+                var binding = new BindLifetimeSyntax(
+                    this.Location,
+                    newLifetime, 
+                    newSig.Path);
+
+                lifetimeBindings.Add(binding);
 
                 // Register the new variable lifetime with the graph. Both AddDerived and 
                 // AddPrecursor are used because the new lifetime is being created as an
@@ -153,68 +168,41 @@ namespace Helix.Features.Variables {
                 }
             }
 
-            var result = new AssignmentStatement(this.Location, target, assign, newLifetimes);
+            var result = (ISyntaxTree)new AssignmentStatement(this.Location, target, assign, true);
             types.ReturnTypes[result] = PrimitiveType.Void;
             types.Lifetimes[result] = Array.Empty<Lifetime>();
+
+            // Prepend is significant because we want the assignment to generate before the new
+            // lifetime binding
+            result = new BlockSyntax(this.Location, lifetimeBindings.Prepend(result).ToArray());
+            result = result.CheckTypes(types);
 
             return result;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
-            throw new InvalidOperationException();
+            if (!this.isTypeChecked) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
+
+            return this;
         }
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
-        }
+            var target = this.target.GenerateCode(types, writer);
+            var assign = this.assign.GenerateCode(types, writer);
 
-        public record AssignmentStatement : ISyntaxTree {
-            private readonly ISyntaxTree target, assign;
-            private readonly ValueList<VariableSignature> newLifetimes;
+            writer.WriteEmptyLine();
+            writer.WriteComment($"Line {this.Location.Line}: Assignment statement");
 
-            public TokenLocation Location { get; }
+            writer.WriteStatement(new CAssignment() {
+                Left = target,
+                Right = assign
+            });
 
-            public IEnumerable<ISyntaxTree> Children => new[] { this.target, this.assign };
+            writer.WriteEmptyLine();
 
-            public bool IsPure => false;
-
-            public AssignmentStatement(TokenLocation loc, ISyntaxTree target,
-                                       ISyntaxTree assign,
-                                       ValueList<VariableSignature> newLifetimes) {
-                this.Location = loc;
-                this.target = target;
-                this.assign = assign;
-                this.newLifetimes = newLifetimes;
-            }
-
-            public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
-
-            public ISyntaxTree ToRValue(SyntaxFrame types) => this;
-
-            public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-                var target = this.target.GenerateCode(types, writer);
-                var assign = this.assign.GenerateCode(types, writer);
-
-                writer.WriteEmptyLine();
-                writer.WriteComment($"Line {this.Location.Line}: Assignment statement");
-
-                writer.WriteStatement(new CAssignment() {
-                    Left = target,
-                    Right = assign
-                });
-
-                // Write a variable for any new mutation lifetimes this assignment created
-                foreach (var sig in this.newLifetimes) {
-                    writer.RegisterLifetime(sig.Lifetime, new CMemberAccess() {
-                        Target = assign,
-                        MemberName = "pool"
-                    });
-                }
-
-                writer.WriteEmptyLine();
-
-                return new CIntLiteral(0);
-            }
+            return new CIntLiteral(0);
         }
     }
 }

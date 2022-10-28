@@ -8,6 +8,7 @@ using Helix.Parsing;
 using System.Reflection;
 using Helix.Features.Variables;
 using Helix.Analysis.Lifetimes;
+using Helix.Features.Memory;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -147,38 +148,49 @@ namespace Helix.Features.FlowControl {
                 }
             }
 
+            // Make sure to bind all the new lifetimes we have discovered
+            var bindings = newLifetimes.Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path));
+            var resultLifetime = new Lifetime();
             var resultType = types.ReturnTypes[iftrue];
+
+            // If we are returning a reference type then we need to calculate a new lifetime
+            // This is required because the lifetimes that were used inside of the if body
+            // may not be availible outside of it, so we need to reuinify around a new lifetime
+            if (resultType is PointerType || resultType is ArrayType) {
+                var bodyLifetimes = types.Lifetimes[iftrue].Concat(types.Lifetimes[iffalse]);
+                var isRoot = bodyLifetimes.Any(x => x.IsRoot);
+
+                resultLifetime = new Lifetime(this.tempPath, 0, isRoot);
+
+                // Make sure that our new lifetime is derived from the body lifetimes, and that
+                // the body lifetimes are precursors to our lifetime for the purposes of lifetime
+                // analysis
+                foreach (var lifetime in bodyLifetimes) {
+                    types.LifetimeGraph.AddDerived(lifetime, resultLifetime);
+                    types.LifetimeGraph.AddPrecursor(resultLifetime, lifetime);
+                }
+
+                // Add this new lifetime to the list of bindings we calculated earlier
+                bindings = bindings.Prepend(new BindLifetimeSyntax(this.Location, resultLifetime, this.tempPath));
+            }
+
             var result = new IfSyntax(
-                this.Location, 
-                cond, 
-                iftrue, 
-                iffalse, 
+                this.Location,
+                cond,
+                iftrue,
+                iffalse,
                 resultType,
                 this.tempPath,
-                newLifetimes.ToValueList());
+                bindings);
 
             types.ReturnTypes[result] = resultType;
+            types.Lifetimes[result] = new[] { resultLifetime };
 
-            var ifTrueLifetimes = types.Lifetimes[iftrue].ToHashSet();
-            var ifFalseLifetimes = types.Lifetimes[iffalse].ToHashSet();
-
-            if (ifTrueLifetimes.SetEquals(ifFalseLifetimes)) {
-                types.Lifetimes[result] = ifTrueLifetimes.ToValueList();
-            }
-            else {
-                types.Lifetimes[result] = ifTrueLifetimes
-                    .Concat(ifFalseLifetimes)
-                    .ToValueList();
-            }
 
             return result;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
@@ -191,7 +203,7 @@ namespace Helix.Features.FlowControl {
         private readonly ISyntaxTree cond, iftrue, iffalse;
         private readonly HelixType returnType;
         private readonly IdentifierPath tempPath;
-        private readonly ValueList<VariableSignature> newLifetimes;
+        private readonly IEnumerable<ISyntaxTree> bindings;
 
         public TokenLocation Location { get; }
 
@@ -202,8 +214,8 @@ namespace Helix.Features.FlowControl {
         public IfSyntax(TokenLocation loc, ISyntaxTree cond,
                         ISyntaxTree iftrue,
                         ISyntaxTree iffalse, HelixType returnType,
-                        IdentifierPath tempPath, 
-                        ValueList<VariableSignature> newLifetimes) {
+                        IdentifierPath tempPath,
+                        IEnumerable<ISyntaxTree> bindings) {
 
             this.Location = loc;
             this.cond = cond;
@@ -212,7 +224,7 @@ namespace Helix.Features.FlowControl {
             this.returnType = returnType;
             this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
             this.tempPath = tempPath;
-            this.newLifetimes = newLifetimes;
+            this.bindings = bindings;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
@@ -229,7 +241,7 @@ namespace Helix.Features.FlowControl {
             var affirm = this.iftrue.GenerateCode(types, affirmWriter);
             var neg = this.iffalse.GenerateCode(types, negWriter);
 
-            var tempName = writer.GetVariableName();
+            var tempName = writer.GetVariableName(this.tempPath);
 
             if (this.returnType != PrimitiveType.Void) {
                 affirmWriter.WriteStatement(new CAssignment() {
@@ -264,23 +276,10 @@ namespace Helix.Features.FlowControl {
 
             writer.WriteStatement(expr);
 
-            // Register the lifetime for our return value if we are returning a 
-            // pointer or array
-            if (this.returnType is PointerType || this.returnType is ArrayType) {
-                var lifetime = new Lifetime(this.tempPath, 0, true);
-
-                writer.RegisterLifetime(lifetime, new CMemberAccess() {
-                    Target = new CVariableLiteral(tempName),
-                    MemberName = "pool"
-                });
-            }
-
-            // Register all the lifetimes that changed within this if statement
-            foreach (var sig in this.newLifetimes) {
-                writer.RegisterLifetime(sig.Lifetime, new CMemberAccess() {
-                    Target = new CVariableLiteral(writer.GetVariableName(sig.Path)),
-                    MemberName = "pool"
-                });
+            // Register all the lifetimes that changed within this if statement, including
+            // the binding that register our return lifetime
+            foreach (var binding in this.bindings) {
+                binding.GenerateCode(types, writer);
             }
 
             writer.WriteEmptyLine();

@@ -7,6 +7,8 @@ using Helix.Generation.Syntax;
 using Helix.Features.Aggregates;
 using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
+using Helix.Features.FlowControl;
+using Helix.Features.Memory;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -86,12 +88,12 @@ namespace Helix {
 
             var path = this.Location.Scope.Append(this.names[0]);
 
-            // Declare this variable and make sure we're not shadowing another variable
+            // Make sure we're not shadowing another variable
             if (types.Variables.ContainsKey(path)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
             }
 
-            // Register a dependency between this lifetime and the ones in the assign expression
+            // Calculate a signature and lifetime for this variable
             var assignLifetimes = types.Lifetimes[assign];
             var varLifetime = new Lifetime(path, 0, assignLifetimes.Any(x => x.IsRoot));
             var sig = new VariableSignature(assignType, this.isWritable, varLifetime);
@@ -108,12 +110,21 @@ namespace Helix {
             types.SyntaxValues[path] = assign;
 
             // Set the return type of the new syntax tree
-            var result = new VarStatement(this.Location, sig, assign);
+            var result = (ISyntaxTree)new VarStatement(this.Location, sig, assign);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
             types.Lifetimes[result] = Array.Empty<Lifetime>();
 
-            return result;
+            // Be sure to bind our new lifetime to this variable
+            result = new BlockSyntax(result.Location, new[] { 
+                result,
+                new BindLifetimeSyntax(
+                    this.Location,
+                    varLifetime, 
+                    sig.Path)
+            });
+
+            return result.CheckTypes(types);
         }
 
         private ISyntaxTree Destructure(HelixType assignType, SyntaxFrame types) {
@@ -214,15 +225,6 @@ namespace Helix {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.signature.Path.Segments.Last()}'");
             writer.WriteStatement(stat);
-
-            // Declare this lifetime if necessary
-            if (this.signature.Type is ArrayType || this.signature.Type is PointerType) {
-                writer.RegisterLifetime(this.signature.Lifetime, new CMemberAccess() {
-                    Target = new CVariableLiteral(name),
-                    MemberName = "pool"
-                });
-            }
-
             writer.WriteEmptyLine();
 
             return new CIntLiteral(0);
