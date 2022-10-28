@@ -139,7 +139,7 @@ namespace Helix.Features.FlowControl {
             //}
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = Array.Empty<Lifetime>();
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
 
             return result;
         }

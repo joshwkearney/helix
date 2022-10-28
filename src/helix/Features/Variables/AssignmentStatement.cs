@@ -170,7 +170,7 @@ namespace Helix.Features.Variables {
 
             var result = (ISyntaxTree)new AssignmentStatement(this.Location, target, assign, true);
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = Array.Empty<Lifetime>();
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
 
             // Prepend is significant because we want the assignment to generate before the new
             // lifetime binding

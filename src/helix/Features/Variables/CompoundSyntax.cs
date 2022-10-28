@@ -33,7 +33,7 @@ namespace Helix.Features.Variables {
                 this.args.Select(x => x.CheckTypes(types)).ToArray());
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = Array.Empty<Lifetime>();
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
 
             return result;
         }

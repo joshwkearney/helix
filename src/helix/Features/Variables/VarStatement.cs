@@ -86,34 +86,37 @@ namespace Helix {
                 return this.Destructure(assignType, types);
             }
 
-            var path = this.Location.Scope.Append(this.names[0]);
-
-            // Make sure we're not shadowing another variable
-            if (types.Variables.ContainsKey(path)) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
-            }
-
             // Calculate a signature and lifetime for this variable
-            var assignLifetimes = types.Lifetimes[assign];
-            var varLifetime = new Lifetime(path, 0, assignLifetimes.Any(x => x.IsRoot));
-            var sig = new VariableSignature(assignType, this.isWritable, varLifetime);
+            var assignBundle = types.Lifetimes[assign];            
 
-            // Make sure that this variable acts as a passthrough for the lifetimes that are
-            // in the assignment expression
-            foreach (var time in assignLifetimes) {
-                types.LifetimeGraph.AddPrecursor(varLifetime, time);
-                types.LifetimeGraph.AddDerived(time, varLifetime);
-            }
+            foreach (var (compPath, assignLifetimes) in assignBundle.ComponentLifetimes) {
+                var path = this.Location.Scope.Append(this.names[0]).Append(compPath);
 
-            // Put this variable's value in the value table
-            types.Variables[path] = sig;
-            types.SyntaxValues[path] = assign;
+                // Make sure we're not shadowing another variable
+                if (types.Variables.ContainsKey(path)) {
+                    throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
+                }
+
+                var varLifetime = new Lifetime(path.Append(compPath), 0, assignLifetimes.Any(x => x.IsRoot));
+                var sig = new VariableSignature(assignType, this.isWritable, varLifetime);
+
+                // Make sure that this variable acts as a passthrough for the lifetimes that are
+                // in the assignment expression
+                foreach (var time in assignLifetimes) {
+                    types.LifetimeGraph.AddPrecursor(varLifetime, time);
+                    types.LifetimeGraph.AddDerived(time, varLifetime);
+                }
+
+                // Put this variable's value in the value table
+                types.Variables[path] = sig;
+                types.SyntaxValues[path] = assign;
+            }            
 
             // Set the return type of the new syntax tree
             var result = (ISyntaxTree)new VarStatement(this.Location, sig, assign);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = Array.Empty<Lifetime>();
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
 
             // Be sure to bind our new lifetime to this variable
             result = new BlockSyntax(result.Location, new[] { 

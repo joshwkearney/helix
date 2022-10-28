@@ -80,7 +80,7 @@ namespace Helix.Features.Primitives {
                     arg);
 
                 types.ReturnTypes[result] = PrimitiveType.Bool;
-                types.Lifetimes[result] = Array.Empty<Lifetime>();
+                types.Lifetimes[result] = new ScalarLifetimeBundle();
 
                 return result;
             }

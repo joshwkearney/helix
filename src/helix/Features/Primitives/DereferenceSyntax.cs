@@ -67,7 +67,7 @@ namespace Helix.Features.Primitives {
 
                 types.LifetimeGraph.AddRoot(lifetime);
                 types.ReturnTypes[result] = pointerType.InnerType;
-                types.Lifetimes[result] = new[] { lifetime };
+                types.Lifetimes[result] = new ScalarLifetimeBundle(lifetime);
 
                 return result;
             }
@@ -75,7 +75,7 @@ namespace Helix.Features.Primitives {
                 var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
 
                 types.ReturnTypes[result] = pointerType.InnerType;
-                types.Lifetimes[result] = Array.Empty<Lifetime>();
+                types.Lifetimes[result] = new ScalarLifetimeBundle();
 
                 return result;
             }

@@ -23,7 +23,7 @@ namespace Helix.Analysis {
 
         public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
 
-        public IDictionary<ISyntaxTree, IReadOnlyList<Lifetime>> Lifetimes { get; }
+        public IDictionary<ISyntaxTree, ILifetimeBundle> Lifetimes { get; }
 
         // Global things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
@@ -38,7 +38,7 @@ namespace Helix.Analysis {
 
         public SyntaxFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            this.Lifetimes = new Dictionary<ISyntaxTree, IReadOnlyList<Lifetime>>();
+            this.Lifetimes = new Dictionary<ISyntaxTree, ILifetimeBundle>();
             this.LifetimeGraph = new();
 
             this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {

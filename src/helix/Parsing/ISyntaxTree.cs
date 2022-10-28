@@ -45,16 +45,6 @@ namespace Helix.Parsing {
                 yield return item;
             }
         }
-
-        public bool HasNonlocalFlow() {
-            foreach (var child in this.GetAllChildren()) {
-                if (child is BreakContinueSyntax) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 
     public interface IDeclaration {

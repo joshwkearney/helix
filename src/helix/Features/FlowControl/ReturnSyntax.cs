@@ -62,7 +62,7 @@ namespace Helix.Features.FlowControl {
             var result = new ReturnSyntax(this.Location, payload, this.func, true);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = Array.Empty<Lifetime>();
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
 
             // Add a dependency for every lifetime in the result on the heap
             foreach (var time in types.Lifetimes[result]) {

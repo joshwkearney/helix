@@ -247,7 +247,7 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
             types.ReturnTypes[result] = returnType;
-            types.Lifetimes[result] = Array.Empty<Lifetime>();
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
 
             return result;
         }

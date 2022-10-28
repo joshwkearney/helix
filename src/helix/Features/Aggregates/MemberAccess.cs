@@ -56,7 +56,7 @@ namespace Helix.Features.Aggregates {
                         true);
 
                     types.ReturnTypes[result] = PrimitiveType.Int;
-                    types.Lifetimes[result] = Array.Empty<Lifetime>();
+                    types.Lifetimes[result] = new ScalarLifetimeBundle();
                     return result;
                 }
             }
@@ -93,7 +93,7 @@ namespace Helix.Features.Aggregates {
                         
                         // TODO: Handle this for real
                         if (field.Type.IsValueType(types)) {
-                            types.Lifetimes[result] = Array.Empty<Lifetime>();
+                            types.Lifetimes[result] = new ScalarLifetimeBundle();
                         }
                         else {
                             // TODO: If this is a local struct (so named.Path.Append(this.memberName))

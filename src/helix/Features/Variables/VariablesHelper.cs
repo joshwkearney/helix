@@ -10,7 +10,11 @@ using System.Threading.Tasks;
 
 namespace Helix.Features.Variables {
     public static class VariablesHelper {
-        public static IEnumerable<VariableSignature> GetSubSignatures(
+        public static IEnumerable<IdentifierPath> GetMemberPaths(HelixType type, SyntaxFrame types) {
+            return GetMemberPathsHelper(new IdentifierPath(), type, types);
+        }
+
+        private static IEnumerable<IdentifierPath> GetMemberPathsHelper(
             IdentifierPath basePath, 
             HelixType type, 
             SyntaxFrame types) {
@@ -29,11 +33,10 @@ namespace Helix.Features.Variables {
 
             foreach (var mem in agSig.Members) {
                 var path = basePath.Append(mem.Name);
-                var memSig = new VariableSignature(path, mem.Type, mem.IsWritable, 0, false);
 
-                yield return memSig;
+                yield return path;
 
-                foreach (var subs in GetSubSignatures(path, mem.Type, types)) {
+                foreach (var subs in GetMemberPathsHelper(path, mem.Type, types)) {
                     yield return subs;
                 }
             }

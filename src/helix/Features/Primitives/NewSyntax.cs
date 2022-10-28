@@ -68,7 +68,7 @@ namespace Helix.Features.Primitives {
             var result = new NewSyntax(this.Location, pointerType, lifetime, types.LifetimeGraph.AllLifetimes);
 
             types.ReturnTypes[result] = pointerType;
-            types.Lifetimes[result] = new[] { lifetime };
+            types.Lifetimes[result] = new ScalarLifetimeBundle(lifetime);
 
             return result;
         }

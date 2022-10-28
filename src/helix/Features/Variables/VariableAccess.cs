@@ -66,7 +66,7 @@ namespace Helix {
                 // change in the future, so we need to get an accurate snapshot 
                 // of the current value
                 types.ReturnTypes[result] = varSig.Type;
-                types.Lifetimes[result] = new[] { varSig.Lifetime };
+                types.Lifetimes[result] = new ScalarLifetimeBundle(varSig.Lifetime);
 
                 return result;
             }
@@ -75,7 +75,7 @@ namespace Helix {
                 var result = new VariableAccessSyntax(this.Location, path);
 
                 types.ReturnTypes[result] = new NamedType(path);
-                types.Lifetimes[result] = Array.Empty<Lifetime>();
+                types.Lifetimes[result] = new ScalarLifetimeBundle();
 
                 return result;
             }

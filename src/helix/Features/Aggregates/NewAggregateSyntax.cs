@@ -144,7 +144,7 @@ namespace Helix.Features.Aggregates {
             types.ReturnTypes[result] = new NamedType(sig.Path);
 
             // TODO: Handle this
-            types.Lifetimes[result] = Array.Empty<Lifetime>();
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
 
             return result;
         }

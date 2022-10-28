@@ -157,7 +157,7 @@ namespace Helix.Features.FlowControl {
             // This is required because the lifetimes that were used inside of the if body
             // may not be availible outside of it, so we need to reuinify around a new lifetime
             if (resultType is PointerType || resultType is ArrayType) {
-                var bodyLifetimes = types.Lifetimes[iftrue].Concat(types.Lifetimes[iffalse]);
+                var bodyLifetimes = types.Lifetimes[iftrue].Merge(types.Lifetimes[iffalse]);
                 var isRoot = bodyLifetimes.Any(x => x.IsRoot);
 
                 resultLifetime = new Lifetime(this.tempPath, 0, isRoot);
@@ -184,7 +184,7 @@ namespace Helix.Features.FlowControl {
                 bindings);
 
             types.ReturnTypes[result] = resultType;
-            types.Lifetimes[result] = new[] { resultLifetime };
+            types.Lifetimes[result] = new ScalarLifetimeBundle(resultLifetime);
 
 
             return result;

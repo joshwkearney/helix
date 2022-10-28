@@ -94,7 +94,7 @@ namespace Helix.Features.Arrays {
             types.ReturnTypes[result] = arrayType.InnerType;
 
             if (arrayType.InnerType.IsValueType(types)) {
-                types.Lifetimes[result] = Array.Empty<Lifetime>();
+                types.Lifetimes[result] = new ScalarLifetimeBundle();
             }
             else {
                 types.Lifetimes[result] = types.Lifetimes[target];

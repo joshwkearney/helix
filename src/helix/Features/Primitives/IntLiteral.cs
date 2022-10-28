@@ -38,7 +38,7 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             types.ReturnTypes[this] = new SingularIntType(this.Value);
-            types.Lifetimes[this] = Array.Empty<Lifetime>();
+            types.Lifetimes[this] = new ScalarLifetimeBundle();
 
             return this;
         }
