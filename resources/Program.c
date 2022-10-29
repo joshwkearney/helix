@@ -53,25 +53,22 @@ Point lifetime_test_2(Pool* _pool, int a, int$ptr b, int$ptr c) {
     int $N = (d.y.pool);
 
     /* Line 4: If statement */
+    int$ptr $if_temp_0;
     if ((a < 100U)) { 
-        /* Line 5: Assignment statement */
-        (d.x) = b;
-
-        /* Line 5: Saving lifetime 'lifetime_test_2/$block_0/d/x' */
-        int $O = (x.pool);
-
+        $if_temp_0 = b;
     } 
     else {
-        /* Line 8: Assignment statement */
-        (d.x) = c;
-
-        /* Line 8: Saving lifetime 'lifetime_test_2/$block_0/d/x' */
-        int $P = (x.pool);
-
+        $if_temp_0 = c;
     }
 
+    /* Line 4: Saving lifetime 'lifetime_test_2/$block_0/$if_temp_0' */
+    int $O = ($if_temp_0.pool);
+
+    /* Line 4: Assignment statement */
+    (d.x) = $if_temp_0;
+
     /* Line 4: Saving lifetime 'lifetime_test_2/$block_0/d/x' */
-    int $Q = (x.pool);
+    int $P = (x.pool);
 
     return d;
 }

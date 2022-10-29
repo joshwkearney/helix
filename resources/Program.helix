@@ -11,6 +11,10 @@
 	d;
 };
 
+func lifetime_test_3(let c as Point*) {
+	c*.x* = 45;
+};
+
 struct Point {
 	var x as int*;
 	var y as int*;
