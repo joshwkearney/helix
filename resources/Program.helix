@@ -1,12 +1,14 @@
-﻿func lifetime_test_2(let a as int**, let b as int**) {
-	let p = put Point { x= a*, y= b* };
+﻿func lifetime_test_2(let a as int, let b as int*, let c as int*) as Point {
+	let d = put Point { x= new int, y= new int };
+	
+	if a < 100 then {
+		d.x = b;
+	}
+	else {
+		d.x = c;
+	};
 
-	//let target = if 10 < 100
-	//	then a
-	//	else b;
-
-	//let c = new int;
-	//target* = c;
+	d;
 };
 
 struct Point {

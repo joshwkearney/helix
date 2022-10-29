@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 
 namespace Helix.Analysis {
-    public struct IdentifierPath : IEquatable<IdentifierPath> {
+    public class IdentifierPath : IEquatable<IdentifierPath> {
         private readonly int hashCode;
         private readonly ImmutableList<string> segments;
 
@@ -15,6 +15,8 @@ namespace Helix.Analysis {
             this.segments = segments.ToImmutableList();
             this.hashCode = segments.Aggregate(13, (x, y) => x + 7 * y.GetHashCode());
         }
+
+        public IdentifierPath() : this(Array.Empty<string>()) { }
 
         public IdentifierPath Append(string segment) {
             return new IdentifierPath(this.Segments.Add(segment));
@@ -47,10 +49,18 @@ namespace Helix.Analysis {
         }
 
         public override string ToString() {
+            if (this.segments == null) {
+                return "";
+            }
+
             return string.Join("/", this.segments);
         }
 
         public string ToCName() {
+            if (this.segments == null) {
+                return "";
+            }
+
             return string.Join('$', this.segments);
         }
 

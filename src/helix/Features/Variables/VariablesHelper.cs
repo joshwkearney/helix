@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Aggregates;
 using System;
@@ -10,14 +11,29 @@ using System.Threading.Tasks;
 
 namespace Helix.Features.Variables {
     public static class VariablesHelper {
-        public static IEnumerable<IdentifierPath> GetMemberPaths(HelixType type, SyntaxFrame types) {
+        public static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPaths(HelixType type, SyntaxFrame types) {
             return GetMemberPathsHelper(new IdentifierPath(), type, types);
         }
 
-        private static IEnumerable<IdentifierPath> GetMemberPathsHelper(
+        public static ILifetimeBundle GetVariableLifetimes(IdentifierPath varPath, HelixType type, SyntaxFrame types) {
+            var lifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+
+            // Go through all this variable's members and set the lifetime bundle correctly
+            foreach (var (compPath, _) in GetMemberPaths(type, types)) {
+                var memPath = varPath.Append(compPath);
+
+                lifetimes[compPath] = new[] { types.Variables[memPath].Lifetime };
+            }
+
+            return new StructLifetimeBundle(lifetimes);
+        }
+
+        private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPathsHelper(
             IdentifierPath basePath, 
             HelixType type, 
             SyntaxFrame types) {
+
+            yield return (basePath, type);
 
             if (type is not NamedType named) {
                 yield break;
@@ -33,8 +49,6 @@ namespace Helix.Features.Variables {
 
             foreach (var mem in agSig.Members) {
                 var path = basePath.Append(mem.Name);
-
-                yield return path;
 
                 foreach (var subs in GetMemberPathsHelper(path, mem.Type, types)) {
                     yield return subs;

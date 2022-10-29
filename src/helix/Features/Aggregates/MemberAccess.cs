@@ -5,6 +5,7 @@ using Helix.Features.Aggregates;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Lifetimes;
+using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -32,9 +33,12 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure => this.target.IsPure;
 
+        public bool IsLocal => true;
+
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
                                   string memberName, bool isPointerAccess = false,
                                   bool isTypeChecked = false) {
+
             this.Location = location;
             this.target = target;
             this.memberName = memberName;
@@ -61,16 +65,6 @@ namespace Helix.Features.Aggregates {
                 }
             }
 
-            // TODO: Scrap or reimplement this
-            //bool isPointerAccess = false;
-            //if (targetType is PointerType pointer) {
-            //    targetType = pointer.InnerType;
-            //    isPointerAccess = true;
-
-            //    // Member access through a pointer needs its own lifetime root
-            //    throw new InvalidOperationException();
-            //}
-
             // If this is a named type it could be a struct or union
             if (targetType is NamedType named) {
                 // If this is a struct or union we can access the fields
@@ -96,10 +90,15 @@ namespace Helix.Features.Aggregates {
                             types.Lifetimes[result] = new ScalarLifetimeBundle();
                         }
                         else {
-                            // TODO: If this is a local struct (so named.Path.Append(this.memberName))
-                            // exists, then only scope this lifetime to the member lifetime and not
-                            // to the target lifetime
-                            types.Lifetimes[result] = types.Lifetimes[target];
+                            var relPath = new IdentifierPath(this.memberName);
+                            var targetLifetimes = types.Lifetimes[target].ComponentLifetimes[relPath];
+                            var absPaths = targetLifetimes.Select(x => x.Path).ToValueList();
+
+                            var bundle = absPaths
+                                .Select(x => VariablesHelper.GetVariableLifetimes(x, field.Type, types))
+                                .Aggregate((x, y) => x.Merge(y));
+
+                            types.Lifetimes[result] = bundle;
                         }
 
                         return result;
@@ -118,35 +117,32 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(SyntaxFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
 
-            var type = types.ReturnTypes[this.target];
-            if (type is PointerType point) {
-                if (!point.IsWritable) {
-                    throw TypeCheckingErrors.WritingToConstVariable(this.Location);
-                }
-
-                type = point.InnerType;
-            }
-
-            if (type is not NamedType named) {
-                throw TypeCheckingErrors.LValueRequired(this.Location);
-            }
-
+            // Make sure this is a named type
+            var named = (NamedType)types.ReturnTypes[this.target];
             var mem = types.Aggregates[named.Path].Members.First(x => x.Name == this.memberName);
+
             if (!mem.IsWritable) {
                 throw TypeCheckingErrors.WritingToConstVariable(this.Location);
             }
 
+            var relPath = new IdentifierPath(this.memberName);
+            var targetLifetimes = types.Lifetimes[target].ComponentLifetimes[relPath];
+            var absPaths = targetLifetimes.Select(x => x.Path).ToValueList();
+
+            var bundle = absPaths
+                .Select(x => VariablesHelper.GetVariableLifetimes(x, mem.Type, types))
+                .Aggregate((x, y) => x.Merge(y));
+
             var result = new LValueMemberAccessSyntax(this.Location, this.target, 
                                                       this.memberName, this.isPointerAccess);
 
-            // 
-            types.ReturnTypes[result] = new PointerType(mem.Type, true);
-            types.Lifetimes[result] = types.Lifetimes[target]; ;
+            types.ReturnTypes[result] = mem.Type;
+            types.Lifetimes[result] = bundle;
 
             return result;
         }
@@ -160,7 +156,7 @@ namespace Helix.Features.Aggregates {
         }
     }
 
-    public record LValueMemberAccessSyntax : ISyntaxTree {
+    public record LValueMemberAccessSyntax : ISyntaxTree, ILValue {
         private readonly ISyntaxTree target;
         private readonly string member;
         private readonly bool isPointerAccess;
@@ -170,6 +166,8 @@ namespace Helix.Features.Aggregates {
         public IEnumerable<ISyntaxTree> Children => new[] { this.target };
 
         public bool IsPure => this.target.IsPure;
+
+        public bool IsLocal => true;
 
         public LValueMemberAccessSyntax(TokenLocation loc, ISyntaxTree target, string member, bool isPointerAccess) {
             this.Location = loc;
@@ -185,12 +183,10 @@ namespace Helix.Features.Aggregates {
         public ISyntaxTree ToLValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            return new CAddressOf() {
-                Target = new CMemberAccess() {
-                    Target = this.target.GenerateCode(types, writer),
-                    MemberName = this.member,
-                    IsPointerAccess = this.isPointerAccess
-                }
+            return new CMemberAccess() {
+                Target = this.target.GenerateCode(types, writer),
+                MemberName = this.member,
+                IsPointerAccess = this.isPointerAccess
             };
         }
     }

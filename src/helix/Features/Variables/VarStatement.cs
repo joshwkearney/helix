@@ -87,45 +87,50 @@ namespace Helix {
             }
 
             // Calculate a signature and lifetime for this variable
-            var assignBundle = types.Lifetimes[assign];            
+            var assignBundle = types.Lifetimes[assign];
+            var basePath = this.Location.Scope.Append(this.names[0]);
+            var bindings = new List<ISyntaxTree>();
 
-            foreach (var (compPath, assignLifetimes) in assignBundle.ComponentLifetimes) {
-                var path = this.Location.Scope.Append(this.names[0]).Append(compPath);
+            // Go through all the variables and sub variables and set up the lifetimes 
+            // correctly
+            foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, types)) {
+                var path = basePath.Append(compPath);
+                var isRoot = assignBundle.ComponentLifetimes[compPath].Any(x => x.IsRoot);
 
                 // Make sure we're not shadowing another variable
                 if (types.Variables.ContainsKey(path)) {
                     throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
                 }
 
-                var varLifetime = new Lifetime(path.Append(compPath), 0, assignLifetimes.Any(x => x.IsRoot));
-                var sig = new VariableSignature(assignType, this.isWritable, varLifetime);
+                var varLifetime = new Lifetime(path, 0, isRoot);
+                var sig = new VariableSignature(compType, this.isWritable, varLifetime);
 
                 // Make sure that this variable acts as a passthrough for the lifetimes that are
                 // in the assignment expression
-                foreach (var time in assignLifetimes) {
-                    types.LifetimeGraph.AddPrecursor(varLifetime, time);
-                    types.LifetimeGraph.AddDerived(time, varLifetime);
+                foreach (var assignLifetime in assignBundle.ComponentLifetimes[compPath]) {
+                    types.LifetimeGraph.AddPrecursor(varLifetime, assignLifetime);
+                    types.LifetimeGraph.AddDerived(assignLifetime, varLifetime);
                 }
 
                 // Put this variable's value in the value table
                 types.Variables[path] = sig;
                 types.SyntaxValues[path] = assign;
+
+                // TODO: Comment this
+                // TODO: Change to type method
+                if (sig.Type is PointerType || sig.Type is ArrayType) {
+                    bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, basePath, compPath));
+                }
             }            
 
             // Set the return type of the new syntax tree
-            var result = (ISyntaxTree)new VarStatement(this.Location, sig, assign);
+            var result = (ISyntaxTree)new VarStatement(this.Location, basePath, assignType, assign);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
             types.Lifetimes[result] = new ScalarLifetimeBundle();
 
             // Be sure to bind our new lifetime to this variable
-            result = new BlockSyntax(result.Location, new[] { 
-                result,
-                new BindLifetimeSyntax(
-                    this.Location,
-                    varLifetime, 
-                    sig.Path)
-            });
+            result = new BlockSyntax(result.Location, bindings.Prepend(result).ToArray());
 
             return result.CheckTypes(types);
         }
@@ -192,7 +197,8 @@ namespace Helix {
 
     public record VarStatement : ISyntaxTree {
         private readonly Option<ISyntaxTree> assign;
-        private readonly VariableSignature signature;
+        private readonly IdentifierPath path;
+        private readonly HelixType returnType;
 
         public TokenLocation Location { get; }
 
@@ -200,16 +206,18 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        public VarStatement(TokenLocation loc, VariableSignature sig, ISyntaxTree assign) {
+        public VarStatement(TokenLocation loc, IdentifierPath path, HelixType returnType, ISyntaxTree assign) {
             this.Location = loc;
-            this.signature = sig;
+            this.path = path;
             this.assign = Option.Some(assign);
+            this.returnType = returnType;
         }
 
-        public VarStatement(TokenLocation loc, VariableSignature sig) {
+        public VarStatement(TokenLocation loc, IdentifierPath path, HelixType returnType) {
             this.Location = loc;
-            this.signature = sig;
+            this.path = path;
             this.assign = Option.None;
+            this.returnType = returnType;
         }
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
@@ -217,16 +225,16 @@ namespace Helix {
         public ISyntaxTree ToRValue(SyntaxFrame types) => this;
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            var name = writer.GetVariableName(this.signature.Path);
+            var name = writer.GetVariableName(this.path);
 
             var stat = new CVariableDeclaration() {
-                Type = writer.ConvertType(this.signature.Type),
+                Type = writer.ConvertType(returnType),
                 Name = name,
                 Assignment = this.assign.Select(x => x.GenerateCode(types, writer))
             };
 
             writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.signature.Path.Segments.Last()}'");
+            writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
             writer.WriteStatement(stat);
             writer.WriteEmptyLine();
 

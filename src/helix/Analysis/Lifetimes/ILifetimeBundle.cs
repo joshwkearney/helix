@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,19 +16,13 @@ namespace Helix.Analysis.Lifetimes {
         public IEnumerable<Lifetime> AllLifetimes => this.ComponentLifetimes.SelectMany(x => x.Value);
 
         public ILifetimeBundle Merge(ILifetimeBundle other) {
-            var lifetimes = this.ComponentLifetimes
+            var dict = this.ComponentLifetimes
                 .Concat(other.ComponentLifetimes)
-                .ToDictionary(x => x.Key, x => x.Value);
+                .SelectMany(x => x.Value.Select(y => new { Key = x.Key, Value = y }))
+                .GroupBy(x => x.Key)
+                .ToDictionary(x => x.Key, x => (IReadOnlyList<Lifetime>)x.ToValueList());
 
-            return new LifetimeBundleWrapper(lifetimes);
-        }
-
-        private class LifetimeBundleWrapper : ILifetimeBundle {
-            public IReadOnlyDictionary<IdentifierPath, IReadOnlyList<Lifetime>> ComponentLifetimes { get; }
-
-            public LifetimeBundleWrapper(IReadOnlyDictionary<IdentifierPath, IReadOnlyList<Lifetime>> lifetimes) {
-                this.ComponentLifetimes = lifetimes;
-            }
+            return new StructLifetimeBundle(dict);
         }
     }
 
@@ -40,8 +35,24 @@ namespace Helix.Analysis.Lifetimes {
             };
         }
 
-        public ScalarLifetimeBundle(Lifetime lifetime) : this(new[] { lifetime }) { }
+        public ScalarLifetimeBundle(Lifetime lifetime) {
+            this.ComponentLifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>() {
+                { new IdentifierPath(), new[] { lifetime } }
+            };
+        }
 
-        public ScalarLifetimeBundle() : this(Array.Empty<Lifetime>()) { }
+        public ScalarLifetimeBundle() : this(new Lifetime()) {
+            this.ComponentLifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>() {
+                { new IdentifierPath(), Array.Empty<Lifetime>() }
+            };
+        }
+    }
+
+    public class StructLifetimeBundle : ILifetimeBundle {
+        public IReadOnlyDictionary<IdentifierPath, IReadOnlyList<Lifetime>> ComponentLifetimes { get; }
+
+        public StructLifetimeBundle(IReadOnlyDictionary<IdentifierPath, IReadOnlyList<Lifetime>> lifetimes) {
+            this.ComponentLifetimes = lifetimes;
+        }
     }
 }

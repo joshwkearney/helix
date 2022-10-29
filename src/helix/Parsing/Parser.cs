@@ -1,6 +1,7 @@
 ﻿using Helix.Analysis;
 using Helix.Features.FlowControl;
 using Helix.Features.Primitives;
+using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {

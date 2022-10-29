@@ -208,6 +208,9 @@ namespace Helix.Features.Aggregates {
             var allNames = sig.Members.Select(x => x.Name).ToArray();
             var allValues = new List<ISyntaxTree>();
 
+            // Structs themselves do not have lifetimes
+            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+
             // Unify the arguments to the correct type
             foreach (var mem in sig.Members) {
                 if (!presentFields.TryGetValue(mem.Name, out var value)) {
@@ -216,11 +219,38 @@ namespace Helix.Features.Aggregates {
 
                 value = value.CheckTypes(types).UnifyTo(mem.Type, types);
                 allValues.Add(value);
+
+                foreach (var (relPath, lifetimes) in types.Lifetimes[value].ComponentLifetimes) {
+                    var memPath = new IdentifierPath(mem.Name).Append(relPath);
+
+                    // Add this member to the lifetime dict
+                    bundleDict[memPath] = lifetimes;
+                }
             }
+
+            var isRoot = bundleDict.SelectMany(x => x.Value).Any(x => x.IsRoot);
+            bundleDict[new IdentifierPath()] = Array.Empty<Lifetime>(); //bundleDict.SelectMany(x => x.Value).ToValueList();
+
+            // TODO: Fix this
+            // Add a dependency between this member and the member above it
+            //foreach (var (relPath, lifetimes) in bundleDict) {
+            //    if (relPath == new IdentifierPath()) {
+            //        continue;
+            //    }
+
+            //    var parentLifetimes = bundleDict[relPath.Pop()];
+
+            //    foreach (var parentLifetime in parentLifetimes) {
+            //        foreach (var lifetime in lifetimes) {
+            //            types.LifetimeGraph.AddDerived(parentLifetime, lifetime);
+            //            types.LifetimeGraph.AddPrecursor(lifetime, parentLifetime);
+            //        }
+            //    }
+            //}
 
             var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
             types.ReturnTypes[result] = type;
-            types.Lifetimes[result] = result.values.SelectMany(x => types.Lifetimes[x]).ToArray();
+            types.Lifetimes[result] = new StructLifetimeBundle(bundleDict);
 
             return result;
         }

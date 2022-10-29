@@ -2,6 +2,7 @@
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
+using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -19,7 +20,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix {
+namespace Helix.Features.Variables {
     public record VariableAccessParseSyntax : ISyntaxTree {
         public string Name { get; }
 
@@ -66,7 +67,7 @@ namespace Helix {
                 // change in the future, so we need to get an accurate snapshot 
                 // of the current value
                 types.ReturnTypes[result] = varSig.Type;
-                types.Lifetimes[result] = new ScalarLifetimeBundle(varSig.Lifetime);
+                types.Lifetimes[result] = VariablesHelper.GetVariableLifetimes(varSig.Path, varSig.Type, types);
 
                 return result;
             }

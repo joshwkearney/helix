@@ -95,8 +95,8 @@ namespace Helix.Features.Variables {
             // check. If the lifetimes do not have runtime values, then we
             // need to throw an error
 
-            var targetLifetimes = types.Lifetimes[target];
-            var assignLifetimes = types.Lifetimes[assign];
+            var targetBundle = types.Lifetimes[target];
+            var assignBundle = types.Lifetimes[assign];
 
             //if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
             //    throw new LifetimeException(
@@ -112,48 +112,62 @@ namespace Helix.Features.Variables {
             // memory location. Both use the assignment syntax but have different side
             // effects when it comes to lifetimes. Writing into a remote memory location
             // does not effect any lifetimes, except that the assignment lifetimes are now
-            // dependent on the target lifetimes. However, overriding a local pointer or
+            // must outlive the target lifetimes. However, overriding a local pointer or
             // array variable replaces the current lifetime for that variable, so we need to
             // increment the mutation counter and create the new lifetime. 
 
-            // Increment the mutation counter for modified local variables so that
-            // any new accesses to this variable will be forced to get the new 
-            // lifetime.
             var lifetimeBindings = new List<ISyntaxTree>();
 
             if (target.IsLocal) {
-                var oldLifetime = targetLifetimes[0];
-                var sig = types.Variables[oldLifetime.Path];
+                // Because structs are basically just bags of locals, we could actually be
+                // setting multiple variables with this one assignment if we are assigning
+                // a struct type. Therefore, loop through all the possible variables and
+                // members and set them correctly
+                foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(targetType, types)) {
+                    if (assignBundle.ComponentLifetimes[relPath].Count != 1) {
+                        throw new Exception("Compiler bug: invalid state");
+                    }
 
-                var newLifetime = new Lifetime(
-                    sig.Path, 
-                    sig.Lifetime.MutationCount + 1, 
-                    assignLifetimes.Any(x => x.IsRoot));
+                    if (targetBundle.ComponentLifetimes[relPath].Count != 1) {
+                        throw new Exception("Compiler bug: invalid state");
+                    }
 
-                var newSig = new VariableSignature(
-                    sig.Type,
-                    sig.IsWritable,
-                    newLifetime);
+                    // Increment the mutation counter for modified local variables so that
+                    // any new accesses to this variable will be forced to get the new 
+                    // lifetime.
+                    var assignLifetime = assignBundle.ComponentLifetimes[relPath][0];
+                    var oldLifetime = targetBundle.ComponentLifetimes[relPath][0];
+                    var sig = types.Variables[oldLifetime.Path];
 
-                // Replace the old variable signature
-                types.Variables[oldLifetime.Path] = newSig;
+                    var newLifetime = new Lifetime(
+                        sig.Path,
+                        sig.Lifetime.MutationCount + 1,
+                        assignLifetime.IsRoot);
 
-                // We need to generate a variable for this new lifetime in the c
-                var binding = new BindLifetimeSyntax(
-                    this.Location,
-                    newLifetime, 
-                    newSig.Path);
+                    var newSig = new VariableSignature(
+                        sig.Type,
+                        sig.IsWritable,
+                        newLifetime);
 
-                lifetimeBindings.Add(binding);
+                    // Replace the old variable signature
+                    types.Variables[oldLifetime.Path] = newSig;
 
-                // Register the new variable lifetime with the graph. Both AddDerived and 
-                // AddPrecursor are used because the new lifetime is being created as an
-                // alias for the assigned lifetimes, and the assigned lifetimes will be
-                // dependent on whatever the new lifetime is dependent on.
-                foreach (var assignTime in assignLifetimes) {
-                    types.LifetimeGraph.AddPrecursor(newLifetime, assignTime);
-                    types.LifetimeGraph.AddDerived(assignTime, newLifetime);
-                }
+                    // We need to generate a variable for this new lifetime in the c
+                    var binding = new BindLifetimeSyntax(
+                        this.Location,
+                        newLifetime,
+                        newSig.Path, 
+                        relPath);
+
+                    lifetimeBindings.Add(binding);
+
+                    // Register the new variable lifetime with the graph. Both AddDerived and 
+                    // AddPrecursor are used because the new lifetime is being created as an
+                    // alias for the assigned lifetimes, and the assigned lifetimes will be
+                    // dependent on whatever the new lifetime is dependent on.
+                    types.LifetimeGraph.AddPrecursor(newLifetime, assignLifetime);
+                    types.LifetimeGraph.AddDerived(assignLifetime, newLifetime);
+                }               
             }
             else {
                 // Add a dependency between every variable in the assignment statement and
@@ -161,8 +175,8 @@ namespace Helix.Features.Variables {
                 // will exist whether or not we write into it, since this is a dereferenced write.
                 // That means that for the purposes of lifetime analysis, the target lifetime is
                 // independent of the assigned lifetimes.
-                foreach (var assignTime in assignLifetimes) {
-                    foreach (var targetTime in targetLifetimes) {
+                foreach (var assignTime in assignBundle.AllLifetimes) {
+                    foreach (var targetTime in targetBundle.AllLifetimes) {
                         types.LifetimeGraph.AddDerived(assignTime, targetTime);
                     }
                 }

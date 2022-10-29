@@ -111,17 +111,20 @@ namespace Helix.Features.FlowControl {
                         oldSig.Type, 
                         true, 
                         mutationCount,
-                        oldSig.Lifetime.IsRoot);
+                        oldSig.Lifetime.IsRoot || trueSig.Lifetime.IsRoot || falseSig.Lifetime.IsRoot);
 
                     newLifetimes.Add(newSig);
 
+                    types.Variables[path] = newSig;
+
+                    // TODO: Add this back??
                     // Make sure that the new lifetime is dependent on both if branches
-                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, trueSig.Lifetime);
-                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, falseSig.Lifetime);
+                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, trueSig.Lifetime);
+                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, falseSig.Lifetime);
 
                     // Make sure that the branch lifetimes are dependent on the new lifetime
-                    types.LifetimeGraph.AddDerived(trueSig.Lifetime, newSig.Lifetime);
-                    types.LifetimeGraph.AddDerived(falseSig.Lifetime, newSig.Lifetime);
+                    //types.LifetimeGraph.AddDerived(trueSig.Lifetime, newSig.Lifetime);
+                    //types.LifetimeGraph.AddDerived(falseSig.Lifetime, newSig.Lifetime);
                 }
                 else {
                     // If this variable is changed in only one path
@@ -145,33 +148,43 @@ namespace Helix.Features.FlowControl {
 
                     types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldLifetime);
                     types.LifetimeGraph.AddDerived(oldLifetime, newSig.Lifetime);
+
+                    types.Variables[path] = newSig;
                 }
             }
 
             // Make sure to bind all the new lifetimes we have discovered
-            var bindings = newLifetimes.Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path));
-            var resultLifetime = new Lifetime();
+            var bindings = newLifetimes.Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path, new IdentifierPath()));
+            var lifetimeBundle = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
             var resultType = types.ReturnTypes[iftrue];
 
             // If we are returning a reference type then we need to calculate a new lifetime
             // This is required because the lifetimes that were used inside of the if body
             // may not be availible outside of it, so we need to reuinify around a new lifetime
-            if (resultType is PointerType || resultType is ArrayType) {
-                var bodyLifetimes = types.Lifetimes[iftrue].Merge(types.Lifetimes[iffalse]);
-                var isRoot = bodyLifetimes.Any(x => x.IsRoot);
+            foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(resultType, types)) {
+                var bodyLifetimes = types.Lifetimes[iftrue].ComponentLifetimes[relPath]
+                    .Concat(types.Lifetimes[iffalse].ComponentLifetimes[relPath])
+                    .ToValueList();
 
-                resultLifetime = new Lifetime(this.tempPath, 0, isRoot);
+                var isRoot = bodyLifetimes.Any(x => x.IsRoot);
+                var path = this.tempPath.Append(relPath);
+                var resultLifetime = new Lifetime(path, 0, isRoot);
+
+                lifetimeBundle.Add(relPath, new[] { resultLifetime });
 
                 // Make sure that our new lifetime is derived from the body lifetimes, and that
                 // the body lifetimes are precursors to our lifetime for the purposes of lifetime
                 // analysis
-                foreach (var lifetime in bodyLifetimes) {
-                    types.LifetimeGraph.AddDerived(lifetime, resultLifetime);
-                    types.LifetimeGraph.AddPrecursor(resultLifetime, lifetime);
+                foreach (var bodyLifetime in bodyLifetimes) {
+                    types.LifetimeGraph.AddDerived(bodyLifetime, resultLifetime);
+                    types.LifetimeGraph.AddPrecursor(resultLifetime, bodyLifetime);
                 }
 
                 // Add this new lifetime to the list of bindings we calculated earlier
-                bindings = bindings.Prepend(new BindLifetimeSyntax(this.Location, resultLifetime, this.tempPath));
+                // TODO: Fix this
+                if (type is PointerType || type is ArrayType) {
+                    bindings = bindings.Prepend(new BindLifetimeSyntax(this.Location, resultLifetime, this.tempPath, relPath));
+                }
             }
 
             var result = new IfSyntax(
@@ -184,8 +197,7 @@ namespace Helix.Features.FlowControl {
                 bindings);
 
             types.ReturnTypes[result] = resultType;
-            types.Lifetimes[result] = new ScalarLifetimeBundle(resultLifetime);
-
+            types.Lifetimes[result] = new StructLifetimeBundle(lifetimeBundle);
 
             return result;
         }

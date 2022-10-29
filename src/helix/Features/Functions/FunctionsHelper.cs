@@ -35,21 +35,21 @@ namespace Helix.Features.Functions {
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
                 var type = sig.Parameters[i].Type;
-                var path = sig.Path.Append(parsePar.Name);
 
                 if (parsePar.IsWritable) {
                     type = type.ToMutableType();
                 }
 
                 // Declare this parameter as a root by making an end cycle in the graph
-                if (type is PointerType || type is ArrayType) {
+                foreach (var (relPath, memType) in VariablesHelper.GetMemberPaths(type, types)) {
+                    var path = sig.Path.Append(parsePar.Name).Append(relPath);
                     var lifetime = new Lifetime(path, 0, true);
 
                     types.LifetimeGraph.AddRoot(lifetime);
-                }
 
-                types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0, true);
-                types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
+                    types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0, true);
+                    types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
+                }
             }
         }
     }

@@ -144,8 +144,8 @@ namespace Helix.Features.Functions {
                 .UnifyTo(sig.ReturnType, types);
 
             // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in types.Lifetimes[body]) {
-                types.LifetimeGraph.AddPrecursor(heapLifetime, lifetime);
+            foreach (var lifetime in types.Lifetimes[body].AllLifetimes) {
+                types.LifetimeGraph.AddDerived(lifetime, heapLifetime);
             }
 
 #if DEBUG
@@ -226,13 +226,26 @@ namespace Helix.Features.Functions {
 
             // Register the parameter lifetimes
             foreach (var par in this.Signature.Parameters) {
-                var path = this.Signature.Path.Append(par.Name);
-                var lifetime = new Lifetime(path, 0, true);
+                foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(par.Type, types)) {
+                    // TODO: Change this
+                    if (type is not PointerType && type is not ArrayType) {
+                        continue;
+                    }
 
-                bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
-                    Target = new CVariableLiteral(writer.GetVariableName(path)),
-                    MemberName = "pool"
-                });
+                    var path = this.Signature.Path.Append(par.Name);
+                    var lifetime = new Lifetime(path, 0, true);
+
+                    // TODO: Fix hack
+                    var hack = writer.GetVariableName(path);
+                    if (relPath != new IdentifierPath()) {
+                        hack += "." + String.Join('.', relPath.Segments);
+                    }
+
+                    bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
+                        Target = new CVariableLiteral(hack),
+                        MemberName = "pool"
+                    });
+                }
             }
 
             // Generate the body
