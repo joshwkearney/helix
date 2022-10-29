@@ -7,7 +7,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resources", "resources", "{57F1B73D-1D27-4C39-9B72-7F8593865AFE}"
 	ProjectSection(SolutionItems) = preProject
 		resources\Helix.h = resources\Helix.h
-		helix.tmLanguage = helix.tmLanguage
+		resources\helix.tmLanguage = resources\helix.tmLanguage
 		resources\LineCounter.ps1 = resources\LineCounter.ps1
 		resources\Program.helix = resources\Program.helix
 		resources\Scratch.txt = resources\Scratch.txt
@@ -15,7 +15,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resources", "resources", "{
 		resources\TODO.txt = resources\TODO.txt
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "src\helix_tests", "src\helix_tests\helix_tests.csproj", "{0BB628A2-75E0-4766-9695-D03F5DE5F781}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix_tests", "src\helix_tests\helix_tests.csproj", "{0BB628A2-75E0-4766-9695-D03F5DE5F781}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{A97E3005-2574-430E-B402-D4FEE170F209}"
+	ProjectSection(SolutionItems) = preProject
+		docs\Memory Management.md = docs\Memory Management.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

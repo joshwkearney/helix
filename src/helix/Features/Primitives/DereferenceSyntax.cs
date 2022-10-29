@@ -2,6 +2,7 @@
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
+using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -14,7 +15,7 @@ namespace Helix.Parsing {
             var op = this.Advance(TokenKind.Star);
             var loc = first.Location.Span(op.Location);
 
-            return new DereferenceSyntax(loc, first, new IdentifierPath("$deref_" + dereferenceCounter++));
+            return new DereferenceSyntax(loc, first, this.scope.Append("$deref_" + dereferenceCounter++));
         }
     }
 }
@@ -57,28 +58,25 @@ namespace Helix.Features.Primitives {
 
             var target = this.target.CheckTypes(types).ToRValue(types);
             var pointerType = target.AssertIsPointer(types);
+            var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
+            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
-            if (pointerType.InnerType is PointerType || pointerType.InnerType is ArrayType) {
-                // If we dereference a pointer and get another reference type, then we have no
-                // idea where this new pointer came from because it could be aliased with something
-                // else, so we need to emit a new root lifetime.
-                var lifetime = new Lifetime(this.tempPath, 0, true);
-                var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
+            foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, types)) {
+                if (type is PointerType || type is ArrayType) {
+                    var lifetime = new Lifetime(this.tempPath.Append(compPath), 0, true);
 
-                types.LifetimeGraph.AddRoot(lifetime);
-                types.ReturnTypes[result] = pointerType.InnerType;
-                types.Lifetimes[result] = new ScalarLifetimeBundle(lifetime);
-
-                return result;
+                    bundleDict[compPath] = new[] { lifetime };
+                    types.LifetimeGraph.AddRoot(lifetime);
+                }
+                else {
+                    bundleDict[compPath] = Array.Empty<Lifetime>();
+                }
             }
-            else {
-                var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
 
-                types.ReturnTypes[result] = pointerType.InnerType;
-                types.Lifetimes[result] = new ScalarLifetimeBundle();
+            types.ReturnTypes[result] = pointerType.InnerType;
+            types.Lifetimes[result] = new StructLifetimeBundle(bundleDict);
 
-                return result;
-            }
+            return result;
         }
 
         public ILValue ToLValue(SyntaxFrame types) {
@@ -98,7 +96,7 @@ namespace Helix.Features.Primitives {
                 true);
 
             types.ReturnTypes[result] = types.ReturnTypes[this];
-            types.Lifetimes[result] = types.Lifetimes[this.target];
+            types.Lifetimes[result] = types.Lifetimes[this];
 
             return result;
         }
@@ -120,6 +118,40 @@ namespace Helix.Features.Primitives {
                 }
             };
 
+            var returnType = types.ReturnTypes[this];
+
+            writer.WriteEmptyLine();
+
+            foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(returnType, types)) {
+                if (type is not PointerType && type is not ArrayType) {
+                    continue;
+                }
+
+                var lifetime = new Lifetime(this.tempPath.Append(relPath), 0, true);
+
+                writer.WriteComment($"Line {this.Location.Line}: Saving lifetime '{lifetime.Path}'");
+
+                var hack = new CMemberAccess() {
+                    Target = target,
+                    MemberName = "data"
+                };
+
+                foreach (var segment in relPath.Segments) {
+                    hack = new CMemberAccess() {
+                        Target = hack,
+                        MemberName = segment,
+                        IsPointerAccess = true
+                    };
+                }
+
+                writer.RegisterLifetime(lifetime, new CMemberAccess() {
+                    Target = hack,
+                    MemberName = "pool"
+                });
+
+                writer.WriteEmptyLine();
+            }
+
             if (this.isLValue) {
                 return result;
             }
@@ -134,7 +166,6 @@ namespace Helix.Features.Primitives {
 
             var tempName = writer.GetVariableName(this.tempPath);
             var tempType = writer.ConvertType(pointerType.InnerType);
-            var lifetime = new Lifetime(this.tempPath, 0, true);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Pointer dereference");
@@ -143,11 +174,6 @@ namespace Helix.Features.Primitives {
                 Name = tempName,
                 Type = tempType,
                 Assignment = result
-            });
-
-            writer.RegisterLifetime(lifetime, new CMemberAccess() {
-                Target = target,
-                MemberName = "pool"
             });
 
             writer.WriteEmptyLine();

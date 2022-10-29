@@ -82,24 +82,17 @@ namespace Helix.Features.Aggregates {
                             this.memberName,
                             isPointerAccess,
                             true);
+                        
+                        var relPath = new IdentifierPath(this.memberName);
+                        var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
+                        var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+
+                        foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(field.Type, types)) {
+                            bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
+                        }
 
                         types.ReturnTypes[result] = field.Type;
-                        
-                        // TODO: Handle this for real
-                        if (field.Type.IsValueType(types)) {
-                            types.Lifetimes[result] = new ScalarLifetimeBundle();
-                        }
-                        else {
-                            var relPath = new IdentifierPath(this.memberName);
-                            var targetLifetimes = types.Lifetimes[target].ComponentLifetimes[relPath];
-                            var absPaths = targetLifetimes.Select(x => x.Path).ToValueList();
-
-                            var bundle = absPaths
-                                .Select(x => VariablesHelper.GetVariableLifetimes(x, field.Type, types))
-                                .Aggregate((x, y) => x.Merge(y));
-
-                            types.Lifetimes[result] = bundle;
-                        }
+                        types.Lifetimes[result] = new StructLifetimeBundle(bundleDict);
 
                         return result;
                     }                    
@@ -123,6 +116,7 @@ namespace Helix.Features.Aggregates {
             }
 
             // Make sure this is a named type
+            var target = this.target.ToLValue(types);
             var named = (NamedType)types.ReturnTypes[this.target];
             var mem = types.Aggregates[named.Path].Members.First(x => x.Name == this.memberName);
 
@@ -131,18 +125,21 @@ namespace Helix.Features.Aggregates {
             }
 
             var relPath = new IdentifierPath(this.memberName);
-            var targetLifetimes = types.Lifetimes[target].ComponentLifetimes[relPath];
-            var absPaths = targetLifetimes.Select(x => x.Path).ToValueList();
+            var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
+            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
-            var bundle = absPaths
-                .Select(x => VariablesHelper.GetVariableLifetimes(x, mem.Type, types))
-                .Aggregate((x, y) => x.Merge(y));
+            foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(mem.Type, types)) {
+                bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
+            }
 
-            var result = new LValueMemberAccessSyntax(this.Location, this.target, 
-                                                      this.memberName, this.isPointerAccess);
+            var result = new LValueMemberAccessSyntax(
+                this.Location, 
+                target, 
+                this.memberName, 
+                this.isPointerAccess);
 
             types.ReturnTypes[result] = mem.Type;
-            types.Lifetimes[result] = bundle;
+            types.Lifetimes[result] = new StructLifetimeBundle(bundleDict);
 
             return result;
         }
@@ -157,7 +154,7 @@ namespace Helix.Features.Aggregates {
     }
 
     public record LValueMemberAccessSyntax : ISyntaxTree, ILValue {
-        private readonly ISyntaxTree target;
+        private readonly ILValue target;
         private readonly string member;
         private readonly bool isPointerAccess;
 
@@ -167,9 +164,9 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure => this.target.IsPure;
 
-        public bool IsLocal => true;
+        public bool IsLocal => this.target.IsLocal;
 
-        public LValueMemberAccessSyntax(TokenLocation loc, ISyntaxTree target, string member, bool isPointerAccess) {
+        public LValueMemberAccessSyntax(TokenLocation loc, ILValue target, string member, bool isPointerAccess) {
             this.Location = loc;
             this.target = target;
             this.member = member;
