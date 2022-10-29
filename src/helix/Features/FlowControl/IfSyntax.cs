@@ -117,14 +117,13 @@ namespace Helix.Features.FlowControl {
 
                     types.Variables[path] = newSig;
 
-                    // TODO: Add this back??
                     // Make sure that the new lifetime is dependent on both if branches
-                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, trueSig.Lifetime);
-                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, falseSig.Lifetime);
+                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, trueSig.Lifetime);
+                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, falseSig.Lifetime);
 
                     // Make sure that the branch lifetimes are dependent on the new lifetime
-                    //types.LifetimeGraph.AddDerived(trueSig.Lifetime, newSig.Lifetime);
-                    //types.LifetimeGraph.AddDerived(falseSig.Lifetime, newSig.Lifetime);
+                    types.LifetimeGraph.AddDerived(trueSig.Lifetime, newSig.Lifetime);
+                    types.LifetimeGraph.AddDerived(falseSig.Lifetime, newSig.Lifetime);
                 }
                 else {
                     // If this variable is changed in only one path
@@ -142,19 +141,27 @@ namespace Helix.Features.FlowControl {
                         oldSig.Type,
                         oldSig.IsWritable,
                         oldLifetime.MutationCount + 1,
-                        oldSig.Lifetime.IsRoot);
+                        oldSig.Lifetime.IsRoot || oldLifetime.IsRoot);
 
                     newLifetimes.Add(newSig);
 
+                    // Make sure the new lifetime is dependent on the if branch
                     types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldLifetime);
                     types.LifetimeGraph.AddDerived(oldLifetime, newSig.Lifetime);
+
+                    // Make sure the new lifetime is dependent on the old lifetime
+                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldSig.Lifetime);
+                    types.LifetimeGraph.AddDerived(oldSig.Lifetime, newSig.Lifetime);
 
                     types.Variables[path] = newSig;
                 }
             }
 
+            // TODO: Fix this not giving the component path at all
             // Make sure to bind all the new lifetimes we have discovered
-            var bindings = newLifetimes.Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path, new IdentifierPath()));
+            var bindings = newLifetimes
+                .Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path, new IdentifierPath()));
+
             var lifetimeBundle = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
             var resultType = types.ReturnTypes[iftrue];
 
