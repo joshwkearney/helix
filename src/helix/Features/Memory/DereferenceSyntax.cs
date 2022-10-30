@@ -1,6 +1,7 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
+using Helix.Features.Memory;
 using Helix.Features.Primitives;
 using Helix.Features.Variables;
 using Helix.Generation;
@@ -20,7 +21,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Primitives {
+namespace Helix.Features.Memory {
     public record DereferenceSyntax : ISyntaxTree, ILValue {
         private readonly ISyntaxTree target;
         private readonly IdentifierPath tempPath;
@@ -59,6 +60,14 @@ namespace Helix.Features.Primitives {
             var target = this.target.CheckTypes(types).ToRValue(types);
             var pointerType = target.AssertIsPointer(types);
             var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
+
+            types.ReturnTypes[result] = pointerType.InnerType;
+            types.Lifetimes[result] = this.CalculateLifetimes(pointerType, types);
+
+            return result;
+        }
+
+        public ILifetimeBundle CalculateLifetimes(PointerType pointerType, SyntaxFrame types) {
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
             foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, types)) {
@@ -73,10 +82,7 @@ namespace Helix.Features.Primitives {
                 }
             }
 
-            types.ReturnTypes[result] = pointerType.InnerType;
-            types.Lifetimes[result] = new StructLifetimeBundle(bundleDict);
-
-            return result;
+            return new StructLifetimeBundle(bundleDict);
         }
 
         public ILValue ToLValue(SyntaxFrame types) {

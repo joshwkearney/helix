@@ -1,6 +1,7 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
+using Helix.Features.Memory;
 using Helix.Features.Primitives;
 using Helix.Generation;
 using Helix.Generation.Syntax;
@@ -39,7 +40,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Primitives {
+namespace Helix.Features.Memory {
     public record NewParseSyntax : ISyntaxTree {
         private readonly ISyntaxTree type;
         private readonly IdentifierPath tempPath;

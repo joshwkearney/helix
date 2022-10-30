@@ -86,6 +86,21 @@ namespace Helix {
                 return this.Destructure(assignType, types);
             }
 
+            // Set the return type of the new syntax tree
+            var basePath = this.Location.Scope.Append(this.names[0]);
+            var result = (ISyntaxTree)new VarStatement(this.Location, basePath, assignType, assign);
+            var bindings = this.CalculateLifetimes(assign, assignType, types);
+
+            types.ReturnTypes[result] = PrimitiveType.Void;
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
+
+            // Be sure to bind our new lifetime to this variable
+            result = new BlockSyntax(result.Location, bindings.Prepend(result).ToArray());
+
+            return result.CheckTypes(types);
+        }
+
+        private IEnumerable<ISyntaxTree> CalculateLifetimes(ISyntaxTree assign, HelixType assignType, SyntaxFrame types) {
             // Calculate a signature and lifetime for this variable
             var assignBundle = types.Lifetimes[assign];
             var basePath = this.Location.Scope.Append(this.names[0]);
@@ -121,18 +136,9 @@ namespace Helix {
                 if (sig.Type is PointerType || sig.Type is ArrayType) {
                     bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, basePath, compPath));
                 }
-            }            
+            }
 
-            // Set the return type of the new syntax tree
-            var result = (ISyntaxTree)new VarStatement(this.Location, basePath, assignType, assign);
-
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new ScalarLifetimeBundle();
-
-            // Be sure to bind our new lifetime to this variable
-            result = new BlockSyntax(result.Location, bindings.Prepend(result).ToArray());
-
-            return result.CheckTypes(types);
+            return bindings;
         }
 
         private ISyntaxTree Destructure(HelixType assignType, SyntaxFrame types) {

@@ -208,9 +208,6 @@ namespace Helix.Features.Aggregates {
             var allNames = sig.Members.Select(x => x.Name).ToArray();
             var allValues = new List<ISyntaxTree>();
 
-            // Structs themselves do not have lifetimes
-            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
-
             // Unify the arguments to the correct type
             foreach (var mem in sig.Members) {
                 if (!presentFields.TryGetValue(mem.Name, out var value)) {
@@ -219,40 +216,41 @@ namespace Helix.Features.Aggregates {
 
                 value = value.CheckTypes(types).UnifyTo(mem.Type, types);
                 allValues.Add(value);
+            }
 
+            var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
+
+            types.ReturnTypes[result] = type;
+            types.Lifetimes[result] = CalculateLifetimes(allNames, allValues, types);
+
+            return result;
+        }
+
+        private static ILifetimeBundle CalculateLifetimes(
+            IReadOnlyList<string> memNames, 
+            IReadOnlyList<ISyntaxTree> memValues, 
+            SyntaxFrame types) {
+
+            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+
+            // Add each member to the lifetime bundle
+            for (int i = 0; i < memNames.Count; i++) {
+                var name = memNames[i];
+                var value = memValues[i];
+
+                // Go through each member of this field
                 foreach (var (relPath, lifetimes) in types.Lifetimes[value].ComponentLifetimes) {
-                    var memPath = new IdentifierPath(mem.Name).Append(relPath);
+                    var memPath = new IdentifierPath(name).Append(relPath);
 
                     // Add this member to the lifetime dict
                     bundleDict[memPath] = lifetimes;
                 }
             }
 
-            var isRoot = bundleDict.SelectMany(x => x.Value).Any(x => x.IsRoot);
-            bundleDict[new IdentifierPath()] = Array.Empty<Lifetime>(); //bundleDict.SelectMany(x => x.Value).ToValueList();
+            // Structs themselves do not have lifetimes
+            bundleDict[new IdentifierPath()] = Array.Empty<Lifetime>();
 
-            // TODO: Fix this
-            // Add a dependency between this member and the member above it
-            //foreach (var (relPath, lifetimes) in bundleDict) {
-            //    if (relPath == new IdentifierPath()) {
-            //        continue;
-            //    }
-
-            //    var parentLifetimes = bundleDict[relPath.Pop()];
-
-            //    foreach (var parentLifetime in parentLifetimes) {
-            //        foreach (var lifetime in lifetimes) {
-            //            types.LifetimeGraph.AddDerived(parentLifetime, lifetime);
-            //            types.LifetimeGraph.AddPrecursor(lifetime, parentLifetime);
-            //        }
-            //    }
-            //}
-
-            var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
-            types.ReturnTypes[result] = type;
-            types.Lifetimes[result] = new StructLifetimeBundle(bundleDict);
-
-            return result;
+            return new StructLifetimeBundle(bundleDict);
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {

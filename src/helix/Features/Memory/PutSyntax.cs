@@ -5,6 +5,7 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Features.Aggregates;
+using Helix.Features.Memory;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -61,7 +62,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Primitives {
+namespace Helix.Features.Memory {
     public class PutSyntax : ISyntaxTree {
         private readonly ISyntaxTree type;
         private readonly IReadOnlyList<string?> names;

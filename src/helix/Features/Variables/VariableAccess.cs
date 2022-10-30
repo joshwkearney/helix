@@ -60,14 +60,8 @@ namespace Helix.Features.Variables {
             if (types.Variables.TryGetValue(path, out var varSig)) {
                 var result = new VariableAccessSyntax(this.Location, path);
 
-                // The lifetime of the value of a variable is dependent on
-                // what was stored in that variable, and the variable itself.
-                // It is important to capture this variable's current lifetime
-                // plus this variable's path because this variable's value could
-                // change in the future, so we need to get an accurate snapshot 
-                // of the current value
                 types.ReturnTypes[result] = varSig.Type;
-                types.Lifetimes[result] = VariablesHelper.GetVariableLifetimes(varSig.Path, varSig.Type, types);
+                types.Lifetimes[result] = this.CalculteLifetimes(varSig, types);
 
                 return result;
             }
@@ -84,11 +78,24 @@ namespace Helix.Features.Variables {
             throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
         }
 
+        public ILifetimeBundle CalculteLifetimes(VariableSignature sig, SyntaxFrame types) {
+            var lifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+
+            // Go through all this variable's members and set the lifetime bundle correctly
+            foreach (var (compPath, _) in VariablesHelper.GetMemberPaths(sig.Type, types)) {
+                var memPath = sig.Path.Append(compPath);
+
+                lifetimes[compPath] = new[] { types.Variables[memPath].Lifetime };
+            }
+
+            return new StructLifetimeBundle(lifetimes);
+        }
+
         public ISyntaxTree ToRValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(SyntaxFrame types) {
             throw new InvalidOperationException();
         }
 

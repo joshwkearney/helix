@@ -83,6 +83,74 @@ namespace Helix.Features.FlowControl {
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
 
+            var newLifetimes = this.CalculateModifiedVariables(iftrueTypes, iffalseTypes, types);            
+
+            // TODO: Fix this not giving the component path at all
+            // Make sure to bind all the new lifetimes we have discovered
+            var bindings = newLifetimes
+                .Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path, new IdentifierPath()))
+                .Select(x => (ISyntaxTree)x)
+                .ToList();
+
+            var lifetimeBundle = this.CalculateLifetimes(bindings, types);
+            var resultType = types.ReturnTypes[iftrue];
+
+            var result = new IfSyntax(
+                this.Location,
+                cond,
+                iftrue,
+                iffalse,
+                resultType,
+                this.tempPath,
+                bindings);
+
+            types.ReturnTypes[result] = resultType;
+            types.Lifetimes[result] = lifetimeBundle;
+
+            return result;
+        }
+
+        private ILifetimeBundle CalculateLifetimes(List<ISyntaxTree> bindings, SyntaxFrame types) {
+            var lifetimeBundle = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+            var resultType = types.ReturnTypes[iftrue];
+
+            // If we are returning a reference type then we need to calculate a new lifetime
+            // This is required because the lifetimes that were used inside of the if body
+            // may not be availible outside of it, so we need to reuinify around a new lifetime
+            foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(resultType, types)) {
+                var bodyLifetimes = types.Lifetimes[iftrue].ComponentLifetimes[relPath]
+                    .Concat(types.Lifetimes[iffalse].ComponentLifetimes[relPath])
+                    .ToValueList();
+
+                var isRoot = bodyLifetimes.Any(x => x.IsRoot);
+                var path = this.tempPath.Append(relPath);
+                var resultLifetime = new Lifetime(path, 0, isRoot);
+
+                lifetimeBundle.Add(relPath, new[] { resultLifetime });
+
+                // Make sure that our new lifetime is derived from the body lifetimes, and that
+                // the body lifetimes are precursors to our lifetime for the purposes of lifetime
+                // analysis
+                foreach (var bodyLifetime in bodyLifetimes) {
+                    types.LifetimeGraph.AddDerived(bodyLifetime, resultLifetime);
+                    types.LifetimeGraph.AddPrecursor(resultLifetime, bodyLifetime);
+                }
+
+                // Add this new lifetime to the list of bindings we calculated earlier
+                // TODO: Fix this
+                if (type is PointerType || type is ArrayType) {
+                    bindings.Add(new BindLifetimeSyntax(this.Location, resultLifetime, this.tempPath, relPath));
+                }
+            }
+
+            return new StructLifetimeBundle(lifetimeBundle);
+        }
+
+        private IReadOnlyList<VariableSignature> CalculateModifiedVariables(
+            SyntaxFrame iftrueTypes,
+            SyntaxFrame iffalseTypes, 
+            SyntaxFrame types) {
+
             var modifiedVars = iftrueTypes.Variables
                 .Concat(iffalseTypes.Variables)
                 .Select(x => x.Key)
@@ -107,9 +175,9 @@ namespace Helix.Features.FlowControl {
                         falseSig.Lifetime.MutationCount);
 
                     var newSig = new VariableSignature(
-                        path, 
-                        oldSig.Type, 
-                        true, 
+                        path,
+                        oldSig.Type,
+                        true,
                         mutationCount,
                         oldSig.Lifetime.IsRoot || trueSig.Lifetime.IsRoot || falseSig.Lifetime.IsRoot);
 
@@ -157,56 +225,7 @@ namespace Helix.Features.FlowControl {
                 }
             }
 
-            // TODO: Fix this not giving the component path at all
-            // Make sure to bind all the new lifetimes we have discovered
-            var bindings = newLifetimes
-                .Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path, new IdentifierPath()));
-
-            var lifetimeBundle = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
-            var resultType = types.ReturnTypes[iftrue];
-
-            // If we are returning a reference type then we need to calculate a new lifetime
-            // This is required because the lifetimes that were used inside of the if body
-            // may not be availible outside of it, so we need to reuinify around a new lifetime
-            foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(resultType, types)) {
-                var bodyLifetimes = types.Lifetimes[iftrue].ComponentLifetimes[relPath]
-                    .Concat(types.Lifetimes[iffalse].ComponentLifetimes[relPath])
-                    .ToValueList();
-
-                var isRoot = bodyLifetimes.Any(x => x.IsRoot);
-                var path = this.tempPath.Append(relPath);
-                var resultLifetime = new Lifetime(path, 0, isRoot);
-
-                lifetimeBundle.Add(relPath, new[] { resultLifetime });
-
-                // Make sure that our new lifetime is derived from the body lifetimes, and that
-                // the body lifetimes are precursors to our lifetime for the purposes of lifetime
-                // analysis
-                foreach (var bodyLifetime in bodyLifetimes) {
-                    types.LifetimeGraph.AddDerived(bodyLifetime, resultLifetime);
-                    types.LifetimeGraph.AddPrecursor(resultLifetime, bodyLifetime);
-                }
-
-                // Add this new lifetime to the list of bindings we calculated earlier
-                // TODO: Fix this
-                if (type is PointerType || type is ArrayType) {
-                    bindings = bindings.Prepend(new BindLifetimeSyntax(this.Location, resultLifetime, this.tempPath, relPath));
-                }
-            }
-
-            var result = new IfSyntax(
-                this.Location,
-                cond,
-                iftrue,
-                iffalse,
-                resultType,
-                this.tempPath,
-                bindings);
-
-            types.ReturnTypes[result] = resultType;
-            types.Lifetimes[result] = new StructLifetimeBundle(lifetimeBundle);
-
-            return result;
+            return newLifetimes;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {

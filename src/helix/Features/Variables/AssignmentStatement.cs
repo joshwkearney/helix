@@ -85,7 +85,24 @@ namespace Helix.Features.Variables {
             var assign = this.assign
                 .CheckTypes(types)
                 .ToRValue(types)
-                .UnifyTo(targetType, types);
+                .UnifyTo(targetType, types);            
+
+            var result = (ISyntaxTree)new AssignmentStatement(this.Location, target, assign, true);
+            var bindings = this.CalculateLifetimes(target, assign, types);
+
+            types.ReturnTypes[result] = PrimitiveType.Void;
+            types.Lifetimes[result] = new ScalarLifetimeBundle();
+
+            // Prepend is significant because we want the assignment to generate before the new
+            // lifetime binding
+            result = new BlockSyntax(this.Location, bindings.Prepend(result).ToArray());
+            result = result.CheckTypes(types);
+
+            return result;
+        }
+
+        private IEnumerable<ISyntaxTree> CalculateLifetimes(ILValue target, ISyntaxTree assign, SyntaxFrame types) {
+            var targetType = types.ReturnTypes[target];
 
             // TODO: Implement the below comment
             // Check to see if the assigned value has the same origins
@@ -156,7 +173,7 @@ namespace Helix.Features.Variables {
                     var binding = new BindLifetimeSyntax(
                         this.Location,
                         newLifetime,
-                        newSig.Path, 
+                        newSig.Path,
                         relPath);
 
                     lifetimeBindings.Add(binding);
@@ -167,7 +184,7 @@ namespace Helix.Features.Variables {
                     // dependent on whatever the new lifetime is dependent on.
                     types.LifetimeGraph.AddPrecursor(newLifetime, assignLifetime);
                     types.LifetimeGraph.AddDerived(assignLifetime, newLifetime);
-                }               
+                }
             }
             else {
                 // Add a dependency between every variable in the assignment statement and
@@ -182,16 +199,7 @@ namespace Helix.Features.Variables {
                 }
             }
 
-            var result = (ISyntaxTree)new AssignmentStatement(this.Location, target, assign, true);
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new ScalarLifetimeBundle();
-
-            // Prepend is significant because we want the assignment to generate before the new
-            // lifetime binding
-            result = new BlockSyntax(this.Location, lifetimeBindings.Prepend(result).ToArray());
-            result = result.CheckTypes(types);
-
-            return result;
+            return lifetimeBindings;
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {

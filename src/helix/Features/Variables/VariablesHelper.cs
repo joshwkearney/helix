@@ -15,19 +15,6 @@ namespace Helix.Features.Variables {
             return GetMemberPathsHelper(new IdentifierPath(), type, types);
         }
 
-        public static ILifetimeBundle GetVariableLifetimes(IdentifierPath varPath, HelixType type, SyntaxFrame types) {
-            var lifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
-
-            // Go through all this variable's members and set the lifetime bundle correctly
-            foreach (var (compPath, _) in GetMemberPaths(type, types)) {
-                var memPath = varPath.Append(compPath);
-
-                lifetimes[compPath] = new[] { types.Variables[memPath].Lifetime };
-            }
-
-            return new StructLifetimeBundle(lifetimes);
-        }
-
         private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPathsHelper(
             IdentifierPath basePath, 
             HelixType type, 

@@ -21,7 +21,7 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.Aggregates {
-    public record MemberAccessSyntax : ISyntaxTree {
+    public record MemberAccessSyntax : ISyntaxTree, ILValue {
         private readonly ISyntaxTree target;
         private readonly string memberName;
         private readonly bool isTypeChecked;
@@ -33,7 +33,15 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure => this.target.IsPure;
 
-        public bool IsLocal => true;
+        public bool IsLocal {
+            get {
+                if (this.target is ILValue lvalue) {
+                    return lvalue.IsLocal;
+                }
+
+                return false;
+            }
+        }
 
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
                                   string memberName, bool isPointerAccess = false,
@@ -81,18 +89,10 @@ namespace Helix.Features.Aggregates {
                             target,
                             this.memberName,
                             isPointerAccess,
-                            true);
-                        
-                        var relPath = new IdentifierPath(this.memberName);
-                        var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
-                        var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
-
-                        foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(field.Type, types)) {
-                            bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
-                        }
+                            true);                       
 
                         types.ReturnTypes[result] = field.Type;
-                        types.Lifetimes[result] = new StructLifetimeBundle(bundleDict);
+                        types.Lifetimes[result] = this.CalculateLifetimes(target, field.Type, types);
 
                         return result;
                     }                    
@@ -100,6 +100,18 @@ namespace Helix.Features.Aggregates {
             }
 
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
+        }
+
+        private ILifetimeBundle CalculateLifetimes(ISyntaxTree target, HelixType memberType, SyntaxFrame types) {
+            var relPath = new IdentifierPath(this.memberName);
+            var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
+            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+
+            foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(memberType, types)) {
+                bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
+            }
+
+            return new StructLifetimeBundle(bundleDict);
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {
@@ -117,74 +129,30 @@ namespace Helix.Features.Aggregates {
 
             // Make sure this is a named type
             var target = this.target.ToLValue(types);
-            var named = (NamedType)types.ReturnTypes[this.target];
-            var mem = types.Aggregates[named.Path].Members.First(x => x.Name == this.memberName);
 
-            if (!mem.IsWritable) {
-                throw TypeCheckingErrors.WritingToConstVariable(this.Location);
-            }
-
-            var relPath = new IdentifierPath(this.memberName);
-            var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
-            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
-
-            foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(mem.Type, types)) {
-                bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
-            }
-
-            var result = new LValueMemberAccessSyntax(
+            var result = new MemberAccessSyntax(
                 this.Location, 
                 target, 
                 this.memberName, 
-                this.isPointerAccess);
+                this.isPointerAccess,
+                true);
 
-            types.ReturnTypes[result] = mem.Type;
-            types.Lifetimes[result] = new StructLifetimeBundle(bundleDict);
+            types.ReturnTypes[result] = types.ReturnTypes[this];
+            types.Lifetimes[result] = types.Lifetimes[this];
 
             return result;
         }
 
         public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+            if (!this.isTypeChecked) {
+                throw new InvalidOperationException();
+            }
+
             return new CMemberAccess() {
                 Target = this.target.GenerateCode(types, writer),
                 MemberName = this.memberName,
                 IsPointerAccess = this.isPointerAccess
             };
         }
-    }
-
-    public record LValueMemberAccessSyntax : ISyntaxTree, ILValue {
-        private readonly ILValue target;
-        private readonly string member;
-        private readonly bool isPointerAccess;
-
-        public TokenLocation Location { get; }
-
-        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
-
-        public bool IsPure => this.target.IsPure;
-
-        public bool IsLocal => this.target.IsLocal;
-
-        public LValueMemberAccessSyntax(TokenLocation loc, ILValue target, string member, bool isPointerAccess) {
-            this.Location = loc;
-            this.target = target;
-            this.member = member;
-            this.isPointerAccess = isPointerAccess;
-        }
-
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
-
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
-
-        public ISyntaxTree ToLValue(SyntaxFrame types) => this;
-
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
-            return new CMemberAccess() {
-                Target = this.target.GenerateCode(types, writer),
-                MemberName = this.member,
-                IsPointerAccess = this.isPointerAccess
-            };
-        }
-    }
+    }    
 }
