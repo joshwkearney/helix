@@ -93,7 +93,6 @@ namespace Helix.Features.Arrays {
             var result = new ArrayIndexSyntax(this.Location, target, index, true);
             types.ReturnTypes[result] = arrayType.InnerType;
 
-            // TODO: Update this
             if (arrayType.InnerType.IsRemote(types)) {
                 types.Lifetimes[result] = types.Lifetimes[target];
             }

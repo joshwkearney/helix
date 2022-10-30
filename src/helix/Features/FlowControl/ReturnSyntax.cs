@@ -66,7 +66,7 @@ namespace Helix.Features.FlowControl {
 
             // Add a dependency for every lifetime in the result on the heap
             foreach (var time in types.Lifetimes[result].AllLifetimes) {
-                var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0, true);
+                var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
 
                 types.LifetimeGraph.AddDependency(time, heapLifetime);
             }

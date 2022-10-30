@@ -126,9 +126,8 @@ namespace Helix.Features.FlowControl {
                     .Concat(types.Lifetimes[iffalse].ComponentLifetimes[relPath])
                     .ToValueList();
 
-                var isRoot = bodyLifetimes.Any(x => x.IsRoot);
                 var path = this.tempPath.Append(relPath);
-                var resultLifetime = new Lifetime(path, 0, isRoot);
+                var resultLifetime = new Lifetime(path, 0);
 
                 lifetimeBundle.Add(relPath, new[] { resultLifetime });
 
@@ -136,9 +135,6 @@ namespace Helix.Features.FlowControl {
                 // the body lifetimes are precursors to our lifetime for the purposes of lifetime
                 // analysis
                 foreach (var bodyLifetime in bodyLifetimes) {
-                    // TODO: Cleanup
-                    //types.LifetimeGraph.AddDerived(bodyLifetime, resultLifetime);
-                    //types.LifetimeGraph.AddPrecursor(resultLifetime, bodyLifetime);
                     types.LifetimeGraph.AddAlias(resultLifetime, bodyLifetime);
                 }
 
@@ -183,23 +179,15 @@ namespace Helix.Features.FlowControl {
                         path,
                         oldSig.Type,
                         true,
-                        mutationCount,
-                        oldSig.Lifetime.IsRoot || trueSig.Lifetime.IsRoot || falseSig.Lifetime.IsRoot);
+                        mutationCount);
 
                     newLifetimes.Add(newSig);
 
                     types.Variables[path] = newSig;
 
                     // Make sure that the new lifetime is dependent on both if branches
-                    // TODO: Cleanup
                     types.LifetimeGraph.AddAlias(newSig.Lifetime, trueSig.Lifetime);
                     types.LifetimeGraph.AddAlias(newSig.Lifetime, falseSig.Lifetime);
-                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, trueSig.Lifetime);
-                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, falseSig.Lifetime);
-
-                    // Make sure that the branch lifetimes are dependent on the new lifetime
-                    //types.LifetimeGraph.AddDerived(trueSig.Lifetime, newSig.Lifetime);
-                    //types.LifetimeGraph.AddDerived(falseSig.Lifetime, newSig.Lifetime);
                 }
                 else {
                     // If this variable is changed in only one path
@@ -216,8 +204,7 @@ namespace Helix.Features.FlowControl {
                         path,
                         oldSig.Type,
                         oldSig.IsWritable,
-                        oldLifetime.MutationCount + 1,
-                        oldSig.Lifetime.IsRoot || oldLifetime.IsRoot);
+                        oldLifetime.MutationCount + 1);
 
                     newLifetimes.Add(newSig);
 

@@ -7,7 +7,7 @@ namespace Helix.Analysis.Lifetimes {
     // whose mutation will have effects that escape the current function scope. Parameters,
     // the implicit heap, and newly dereferenced reference types are all root lifetimes,
     // along with any locals that depend on root lifetimes.
-    public record struct Lifetime(IdentifierPath Path, int MutationCount, bool IsRoot) {
-        public Lifetime() : this(new IdentifierPath(), 0, false) { }        
+    public record struct Lifetime(IdentifierPath Path, int MutationCount) {
+        public Lifetime() : this(new IdentifierPath(), 0) { }        
     }
 }

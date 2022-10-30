@@ -158,8 +158,7 @@ namespace Helix.Features.Variables {
 
                     var newLifetime = new Lifetime(
                         sig.Path,
-                        sig.Lifetime.MutationCount + 1,
-                        assignLifetime.IsRoot);
+                        sig.Lifetime.MutationCount + 1);
 
                     var newSig = new VariableSignature(
                         sig.Type,
@@ -181,10 +180,7 @@ namespace Helix.Features.Variables {
                     // AddPrecursor are used because the new lifetime is being created as an
                     // alias for the assigned lifetimes, and the assigned lifetimes will be
                     // dependent on whatever the new lifetime is dependent on.
-                    // TODO: Cleanup
                     types.LifetimeGraph.AddAlias(newLifetime, assignLifetime);
-                    //types.LifetimeGraph.AddPrecursor(newLifetime, assignLifetime);
-                    //types.LifetimeGraph.AddDerived(assignLifetime, newLifetime);
                 }
             }
             else {
@@ -195,9 +191,7 @@ namespace Helix.Features.Variables {
                 // independent of the assigned lifetimes.
                 foreach (var assignTime in assignBundle.AllLifetimes) {
                     foreach (var targetTime in targetBundle.AllLifetimes) {
-                        // TODO: Cleanup
                         types.LifetimeGraph.AddDependency(assignTime, targetTime);
-                        //types.LifetimeGraph.AddDerived(assignTime, targetTime);
                     }
                 }
             }

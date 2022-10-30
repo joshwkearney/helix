@@ -16,7 +16,7 @@ typedef struct int$ptr int$ptr;
 typedef struct int$ptr$ptr int$ptr$ptr;
 typedef struct Point Point;
 
-void lifetime_test_3(Pool* _pool, int$ptr$ptr a, int$ptr$ptr b, Point c);
+int$ptr lifetime_test_3(Pool* _pool, int$ptr$ptr a, int$ptr$ptr b, Point c);
 
 struct int$ptr {
     int* data;
@@ -35,29 +35,32 @@ struct Point {
     int$ptr y;
 };
 
-void lifetime_test_3(Pool* _pool, int$ptr$ptr a, int$ptr$ptr b, Point c) {
+int$ptr lifetime_test_3(Pool* _pool, int$ptr$ptr a, int$ptr$ptr b, Point c) {
     int $A = _pool_get_index(_pool);
     int $B = (a.pool);
     int $C = (b.pool);
     int $D = (c.x.pool);
     int $E = (c.y.pool);
 
+    int $H = $C;
+    $H = (($H <= $A) ? $H : $A);
+
     /* Line 4: New 'int*' */
-    int* $G = (int*)_pool_malloc(_pool, $C, sizeof(int));
-    int$ptr $H = (int$ptr){ $G, 1U, $C };
-    int $I = ($H.pool);
+    int* $G = (int*)_pool_malloc(_pool, $H, sizeof(int));
+    int$ptr $I = (int$ptr){ $G, 1U, $H };
+    int $J = ($I.pool);
 
     /* Line 4: New variable declaration 'some' */
-    int$ptr some = $H;
+    int$ptr some = $I;
 
     /* Line 4: Saving lifetime 'lifetime_test_3/$block_0/some' */
-    int $J = (some.pool);
+    int $K = (some.pool);
 
     /* Line 5: New variable declaration 'target' */
     int$ptr$ptr target = a;
 
     /* Line 5: Saving lifetime 'lifetime_test_3/$block_0/target' */
-    int $K = (target.pool);
+    int $L = (target.pool);
 
     /* Line 7: If statement */
     if ((10U < 100U)) { 
@@ -65,7 +68,7 @@ void lifetime_test_3(Pool* _pool, int$ptr$ptr a, int$ptr$ptr b, Point c) {
         target = b;
 
         /* Line 8: Saving lifetime 'lifetime_test_3/$block_0/target' */
-        int $L = (target.pool);
+        int $M = (target.pool);
 
     } 
     else {
@@ -73,19 +76,20 @@ void lifetime_test_3(Pool* _pool, int$ptr$ptr a, int$ptr$ptr b, Point c) {
         target = b;
 
         /* Line 11: Saving lifetime 'lifetime_test_3/$block_0/target' */
-        int $M = (target.pool);
+        int $N = (target.pool);
 
     }
 
     /* Line 7: Saving lifetime 'lifetime_test_3/$block_0/target' */
-    int $N = (target.pool);
+    int $O = (target.pool);
 
-    /* Line 14: Saving lifetime 'lifetime_test_3/$block_0/$deref_4' */
-    int $O = ((target.data).pool);
+    /* Line 14: Saving lifetime 'lifetime_test_3/$block_0/$deref_5' */
+    int $P = ((target.data).pool);
 
     /* Line 14: Assignment statement */
     (*(target.data)) = some;
 
+    return some;
 }
 
 #if __cplusplus

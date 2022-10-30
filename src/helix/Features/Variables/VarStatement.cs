@@ -110,23 +110,19 @@ namespace Helix {
             // correctly
             foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, types)) {
                 var path = basePath.Append(compPath);
-                var isRoot = assignBundle.ComponentLifetimes[compPath].Any(x => x.IsRoot);
 
                 // Make sure we're not shadowing another variable
                 if (types.Variables.ContainsKey(path)) {
                     throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
                 }
 
-                var varLifetime = new Lifetime(path, 0, isRoot);
+                var varLifetime = new Lifetime(path, 0);
                 var sig = new VariableSignature(compType, this.isWritable, varLifetime);
 
                 // Make sure that this variable acts as a passthrough for the lifetimes that are
                 // in the assignment expression
                 foreach (var assignLifetime in assignBundle.ComponentLifetimes[compPath]) {
-                    // TODO: Cleanup
                     types.LifetimeGraph.AddAlias(varLifetime, assignLifetime);
-                    //types.LifetimeGraph.AddPrecursor(varLifetime, assignLifetime);
-                    //types.LifetimeGraph.AddDerived(assignLifetime, varLifetime);
                 }
 
                 // Put this variable's value in the value table

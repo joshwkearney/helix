@@ -77,7 +77,7 @@ namespace Helix.Features.Memory {
 
             foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, types)) {
                 if (type.IsRemote(types)) {
-                    var lifetime = new Lifetime(this.tempPath.Append(compPath), 0, true);
+                    var lifetime = new Lifetime(this.tempPath.Append(compPath), 0);
 
                     bundleDict[compPath] = new[] { lifetime };
                     types.LifetimeGraph.AddRoot(lifetime);
@@ -142,7 +142,7 @@ namespace Helix.Features.Memory {
             foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.tempPath, relPath);
 
-                var lifetime = new Lifetime(this.tempPath.Append(relPath), 0, true);
+                var lifetime = new Lifetime(this.tempPath.Append(relPath), 0);
 
                 writer.WriteComment($"Line {this.Location.Line}: Saving lifetime '{lifetime.Path}'");
 

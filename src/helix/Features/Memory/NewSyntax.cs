@@ -66,7 +66,7 @@ namespace Helix.Features.Memory {
             }
 
             var pointerType = new PointerType(type, true);
-            var lifetime = new Lifetime(this.tempPath, 0, false);
+            var lifetime = new Lifetime(this.tempPath, 0);
             var result = new NewSyntax(this.Location, pointerType, lifetime, types.LifetimeGraph.AllLifetimes);
 
             types.ReturnTypes[result] = pointerType;
@@ -159,7 +159,7 @@ namespace Helix.Features.Memory {
                     Target = new CVariableLiteral(tempName)
                 };
 
-                allocLifetime = writer.GetLifetime(new Lifetime(new IdentifierPath("$heap"), 0, true));
+                allocLifetime = writer.GetLifetime(new Lifetime(new IdentifierPath("$heap"), 0));
             }
 
             var fatPointerName = writer.GetVariableName();
