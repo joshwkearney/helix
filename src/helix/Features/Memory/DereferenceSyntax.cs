@@ -62,12 +62,17 @@ namespace Helix.Features.Memory {
             var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
 
             types.ReturnTypes[result] = pointerType.InnerType;
-            types.Lifetimes[result] = this.CalculateLifetimes(pointerType, types);
+            types.Lifetimes[result] = this.CalculateLifetimes(pointerType, target, types);
 
             return result;
         }
 
-        public LifetimeBundle CalculateLifetimes(PointerType pointerType, EvalFrame types) {
+        public LifetimeBundle CalculateLifetimes(PointerType pointerType, ISyntaxTree target, EvalFrame types) {
+            // If we are dereferencing a 
+            if (pointerType.InnerType.IsRemote(types)) {
+                return types.Lifetimes[target];
+            }
+
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
             foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, types)) {
@@ -133,7 +138,7 @@ namespace Helix.Features.Memory {
 
             writer.WriteEmptyLine();
 
-            // TODO: Fix this
+
             foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.tempPath, relPath);
 

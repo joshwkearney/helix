@@ -1,16 +1,17 @@
 ﻿
 
-func lifetime_test_3(let a as Point, let b as Point) as Point {
-	var some = a;
+func lifetime_test_3(let a as int**, let b as int**) as void {
+	var some = new int;
+	var target = a;
 
 	if 10 < 100 then {
-		some = put Point { x= new int, y= new int };
+		target = b;
 	}
 	else {
-		some = b;
+		target = b;
 	};
 
-	some;
+	target* = some;
 };
 
 struct Point {

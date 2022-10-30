@@ -136,8 +136,10 @@ namespace Helix.Features.FlowControl {
                 // the body lifetimes are precursors to our lifetime for the purposes of lifetime
                 // analysis
                 foreach (var bodyLifetime in bodyLifetimes) {
-                    types.LifetimeGraph.AddDerived(bodyLifetime, resultLifetime);
-                    types.LifetimeGraph.AddPrecursor(resultLifetime, bodyLifetime);
+                    // TODO: Cleanup
+                    //types.LifetimeGraph.AddDerived(bodyLifetime, resultLifetime);
+                    //types.LifetimeGraph.AddPrecursor(resultLifetime, bodyLifetime);
+                    types.LifetimeGraph.AddAlias(resultLifetime, bodyLifetime);
                 }
 
                 // Add this new lifetime to the list of bindings we calculated earlier
@@ -189,12 +191,15 @@ namespace Helix.Features.FlowControl {
                     types.Variables[path] = newSig;
 
                     // Make sure that the new lifetime is dependent on both if branches
-                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, trueSig.Lifetime);
-                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, falseSig.Lifetime);
+                    // TODO: Cleanup
+                    types.LifetimeGraph.AddAlias(newSig.Lifetime, trueSig.Lifetime);
+                    types.LifetimeGraph.AddAlias(newSig.Lifetime, falseSig.Lifetime);
+                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, trueSig.Lifetime);
+                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, falseSig.Lifetime);
 
                     // Make sure that the branch lifetimes are dependent on the new lifetime
-                    types.LifetimeGraph.AddDerived(trueSig.Lifetime, newSig.Lifetime);
-                    types.LifetimeGraph.AddDerived(falseSig.Lifetime, newSig.Lifetime);
+                    //types.LifetimeGraph.AddDerived(trueSig.Lifetime, newSig.Lifetime);
+                    //types.LifetimeGraph.AddDerived(falseSig.Lifetime, newSig.Lifetime);
                 }
                 else {
                     // If this variable is changed in only one path
@@ -217,12 +222,15 @@ namespace Helix.Features.FlowControl {
                     newLifetimes.Add(newSig);
 
                     // Make sure the new lifetime is dependent on the if branch
-                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldLifetime);
-                    types.LifetimeGraph.AddDerived(oldLifetime, newSig.Lifetime);
+                    types.LifetimeGraph.AddAlias(newSig.Lifetime, oldLifetime);
+                    types.LifetimeGraph.AddAlias(newSig.Lifetime, oldSig.Lifetime);
 
-                    // Make sure the new lifetime is dependent on the old lifetime
-                    types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldSig.Lifetime);
-                    types.LifetimeGraph.AddDerived(oldSig.Lifetime, newSig.Lifetime);
+                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldLifetime);
+                    //types.LifetimeGraph.AddDerived(oldLifetime, newSig.Lifetime);
+
+                    //// Make sure the new lifetime is dependent on the old lifetime
+                    //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldSig.Lifetime);
+                    //types.LifetimeGraph.AddDerived(oldSig.Lifetime, newSig.Lifetime);
 
                     types.Variables[path] = newSig;
                 }

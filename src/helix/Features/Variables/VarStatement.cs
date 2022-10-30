@@ -123,8 +123,10 @@ namespace Helix {
                 // Make sure that this variable acts as a passthrough for the lifetimes that are
                 // in the assignment expression
                 foreach (var assignLifetime in assignBundle.ComponentLifetimes[compPath]) {
-                    types.LifetimeGraph.AddPrecursor(varLifetime, assignLifetime);
-                    types.LifetimeGraph.AddDerived(assignLifetime, varLifetime);
+                    // TODO: Cleanup
+                    types.LifetimeGraph.AddAlias(varLifetime, assignLifetime);
+                    //types.LifetimeGraph.AddPrecursor(varLifetime, assignLifetime);
+                    //types.LifetimeGraph.AddDerived(assignLifetime, varLifetime);
                 }
 
                 // Put this variable's value in the value table

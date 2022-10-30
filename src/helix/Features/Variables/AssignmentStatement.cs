@@ -181,8 +181,10 @@ namespace Helix.Features.Variables {
                     // AddPrecursor are used because the new lifetime is being created as an
                     // alias for the assigned lifetimes, and the assigned lifetimes will be
                     // dependent on whatever the new lifetime is dependent on.
-                    types.LifetimeGraph.AddPrecursor(newLifetime, assignLifetime);
-                    types.LifetimeGraph.AddDerived(assignLifetime, newLifetime);
+                    // TODO: Cleanup
+                    types.LifetimeGraph.AddAlias(newLifetime, assignLifetime);
+                    //types.LifetimeGraph.AddPrecursor(newLifetime, assignLifetime);
+                    //types.LifetimeGraph.AddDerived(assignLifetime, newLifetime);
                 }
             }
             else {
@@ -193,7 +195,9 @@ namespace Helix.Features.Variables {
                 // independent of the assigned lifetimes.
                 foreach (var assignTime in assignBundle.AllLifetimes) {
                     foreach (var targetTime in targetBundle.AllLifetimes) {
-                        types.LifetimeGraph.AddDerived(assignTime, targetTime);
+                        // TODO: Cleanup
+                        types.LifetimeGraph.AddDependency(assignTime, targetTime);
+                        //types.LifetimeGraph.AddDerived(assignTime, targetTime);
                     }
                 }
             }

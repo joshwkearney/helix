@@ -145,7 +145,7 @@ namespace Helix.Features.Functions {
 
             // Add a dependency between every returned lifetime and the heap
             foreach (var lifetime in types.Lifetimes[body].AllLifetimes) {
-                types.LifetimeGraph.AddDerived(lifetime, heapLifetime);
+                types.LifetimeGraph.AddDependency(lifetime, heapLifetime);
             }
 
 #if DEBUG
