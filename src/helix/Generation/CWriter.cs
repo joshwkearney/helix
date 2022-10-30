@@ -160,7 +160,6 @@ namespace Helix.Generation {
             name = name + "$ptr";
 
             var decl = new CAggregateDeclaration() {
-                Kind = AggregateKind.Struct,
                 Name = name,
                 Members = new[] { 
                     new CParameter() {
@@ -179,7 +178,6 @@ namespace Helix.Generation {
             };
 
             var forwardDecl = new CAggregateDeclaration() {
-                Kind = AggregateKind.Struct,
                 Name = name
             };
 

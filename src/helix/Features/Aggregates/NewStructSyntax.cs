@@ -7,9 +7,9 @@ using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
 
 namespace Helix.Features.Aggregates {
-    public class NewAggregateSyntax : ISyntaxTree {
+    public class NewStructSyntax : ISyntaxTree {
         private readonly bool isTypeChecked;
-        private readonly AggregateSignature sig;
+        private readonly StructSignature sig;
         private readonly IReadOnlyList<string?> names;
         private readonly IReadOnlyList<ISyntaxTree> values;
 
@@ -19,9 +19,9 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure { get; }
 
-        public NewAggregateSyntax(
+        public NewStructSyntax(
             TokenLocation loc, 
-            AggregateSignature sig,
+            StructSignature sig,
             IReadOnlyList<string?> names,
             IReadOnlyList<ISyntaxTree> values, bool isTypeChecked = false) {
 
@@ -66,91 +66,6 @@ namespace Helix.Features.Aggregates {
                 names[i] = sig.Members[missingCounter++].Name;
             }
 
-            if (sig.Kind == AggregateKind.Struct) {
-                return this.CheckStructTypes(names!, types);
-            }
-            else if (sig.Kind == AggregateKind.Union) {
-                return this.CheckUnionTypes(names!, types);
-            }
-            else {
-                throw new InvalidOperationException();
-            }
-        }
-
-        private ISyntaxTree CheckUnionTypes(IReadOnlyList<string> names, SyntaxFrame types) {
-            if (names.Count > 1) {
-                throw new TypeCheckingException(
-                    this.Location, 
-                    "Invalid Union Initialization",
-                    "Unions cannot be initialized with more than one member.");
-            }
-
-            NewAggregateSyntax result;
-
-            // If there aren't any assigned members then assigned the first one
-            if (names.Count == 0) {
-                var values = new[] { 
-                    new VoidLiteral(this.Location)
-                        .CheckTypes(types)
-                        .UnifyTo(sig.Members[0].Type, types) 
-                };
-
-                result = new NewAggregateSyntax(
-                    this.Location,
-                    this.sig,
-                    new[] { sig.Members[0].Name },
-                    values,
-                    true);
-            }
-            else {
-                // Make sure the member is defined on this union
-                if (!sig.Members.Where(x => x.Name == names[0]).FirstOrNone().TryGetValue(out var mem)) {
-                    throw new TypeCheckingException(
-                        this.Location,
-                        "Invalid Union Initialization",
-                        $"The member '{ names[0] }' does not exist in the " 
-                            + "union type '{new NamedType(this.sig.Path)}'");
-                }
-
-                // Make sure that all the other union members have default values
-                var noDefault = sig.Members
-                    .Where(x => x.Name != names[0])
-                    .Where(x => !x.Type.HasDefaultValue(types))
-                    .Select(x => x.Name)
-                    .FirstOrNone();
-
-                if (noDefault.HasValue) {
-                    throw new TypeCheckingException(
-                        this.Location,
-                        "Invalid Union Initialization",
-                        $"The unspecified union member '{noDefault.GetValue()}' does not have a " 
-                            + "default value and must be provided in the union initializer");
-                }
-
-                var values = new[] { 
-                    this.values[0]
-                        .CheckTypes(types)
-                        .UnifyTo(mem.Type, types) 
-                };
-
-                result = new NewAggregateSyntax(
-                    this.Location,
-                    this.sig,
-                    new[] { names[0] },
-                    values,
-                    true);
-            }
-
-            types.ReturnTypes[result] = new NamedType(sig.Path);
-
-            // TODO: Handle this
-            types.Lifetimes[result] = new ScalarLifetimeBundle();
-
-            return result;
-        }
-
-
-        private ISyntaxTree CheckStructTypes(IReadOnlyList<string> names, SyntaxFrame types) {
             var type = new NamedType(sig.Path);
 
             var dups = names
@@ -163,8 +78,8 @@ namespace Helix.Features.Aggregates {
             if (dups.Any()) {
                 throw new TypeCheckingException(
                     this.Location,
-                    "Invalid Struct Initialization", 
-                    $"This initializer contains the duplicate member '{ dups.First() }'");
+                    "Invalid Struct Initialization",
+                    $"This initializer contains the duplicate member '{dups.First()}'");
             }
 
             var undefinedFields = names
@@ -177,8 +92,8 @@ namespace Helix.Features.Aggregates {
                 throw new TypeCheckingException(
                     this.Location,
                     "Invalid Struct Initialization",
-                    $"The member '{ undefinedFields.First() }' does not exist in the "
-                        + $"struct type '{ type }'");
+                    $"The member '{undefinedFields.First()}' does not exist in the "
+                        + $"struct type '{type}'");
             }
 
             var absentFields = sig.Members
@@ -197,7 +112,7 @@ namespace Helix.Features.Aggregates {
                 throw new TypeCheckingException(
                     this.Location,
                     "Invalid Struct Initialization",
-                    $"The unspecified struct member '{ requiredAbsentFields.First() }' does not have a default "
+                    $"The unspecified struct member '{requiredAbsentFields.First()}' does not have a default "
                         + "value and must be provided in the struct initializer");
             }
 
@@ -218,14 +133,13 @@ namespace Helix.Features.Aggregates {
                 allValues.Add(value);
             }
 
-            var result = new NewAggregateSyntax(this.Location, this.sig, allNames, allValues, true);
+            var result = new NewStructSyntax(this.Location, this.sig, allNames, allValues, true);
 
             types.ReturnTypes[result] = type;
             types.Lifetimes[result] = CalculateLifetimes(allNames, allValues, types);
 
             return result;
         }
-
         private static ILifetimeBundle CalculateLifetimes(
             IReadOnlyList<string> memNames, 
             IReadOnlyList<ISyntaxTree> memValues, 

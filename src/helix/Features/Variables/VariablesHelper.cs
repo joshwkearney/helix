@@ -26,15 +26,11 @@ namespace Helix.Features.Variables {
                 yield break;
             }
 
-            if (!types.Aggregates.TryGetValue(named.Path, out var agSig)) {
+            if (!types.Aggregates.TryGetValue(named.Path, out var structSig)) {
                 yield break;
             }
 
-            if (agSig.Kind != AggregateKind.Struct) {
-                yield break;
-            }
-
-            foreach (var mem in agSig.Members) {
+            foreach (var mem in structSig.Members) {
                 var path = basePath.Append(mem.Name);
 
                 foreach (var subs in GetMemberPathsHelper(path, mem.Type, types)) {

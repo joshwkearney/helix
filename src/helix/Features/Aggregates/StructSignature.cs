@@ -2,19 +2,14 @@
 using Helix.Analysis.Types;
 
 namespace Helix.Features.Aggregates {
-    public record AggregateSignature {
+    public record StructSignature {
         public IdentifierPath Path { get; }
 
         public IReadOnlyList<AggregateMember> Members { get; }
 
-        public AggregateKind Kind { get; }
-
-        public AggregateSignature(IdentifierPath name, AggregateKind kind,
-            IReadOnlyList<AggregateMember> mems) {
-
+        public StructSignature(IdentifierPath name, IReadOnlyList<AggregateMember> mems) {
             this.Path = name;
             this.Members = mems;
-            this.Kind = kind;
         }                
     }
 

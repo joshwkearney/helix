@@ -2,23 +2,20 @@
 using Helix.Parsing;
 
 namespace Helix.Features.Aggregates {
-    public record AggregateParseSignature {
+    public record StructParseSignature {
         public string Name { get; }
 
         public IReadOnlyList<ParseAggregateMember> Members { get; }
 
-        public AggregateKind Kind { get; }
-
         public TokenLocation Location { get; }
 
-        public AggregateParseSignature(TokenLocation loc, string name, AggregateKind kind, IReadOnlyList<ParseAggregateMember> mems) {
+        public StructParseSignature(TokenLocation loc, string name, IReadOnlyList<ParseAggregateMember> mems) {
             this.Name = name;
             this.Members = mems;
-            this.Kind = kind;
             this.Location = loc;
         }
 
-        public AggregateSignature ResolveNames(SyntaxFrame types) {
+        public StructSignature ResolveNames(SyntaxFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.Name);
             var mems = new List<AggregateMember>();
 
@@ -30,7 +27,7 @@ namespace Helix.Features.Aggregates {
                 mems.Add(new AggregateMember(mem.MemberName, type, mem.IsWritable));
             }
 
-            return new AggregateSignature(path, this.Kind, mems);
+            return new StructSignature(path, mems);
         }
     }
 

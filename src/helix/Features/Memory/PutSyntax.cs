@@ -121,7 +121,7 @@ namespace Helix.Features.Memory {
                     throw TypeCheckingErrors.ExpectedStructType(this.type.Location, type);
                 }
 
-                var result = new NewAggregateSyntax(
+                var result = new NewStructSyntax(
                     this.Location,
                     sig, 
                     this.names, 

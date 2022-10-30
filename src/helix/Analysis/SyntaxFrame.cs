@@ -28,7 +28,7 @@ namespace Helix.Analysis {
         // Global things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
-        public IDictionary<IdentifierPath, AggregateSignature> Aggregates { get; }
+        public IDictionary<IdentifierPath, StructSignature> Aggregates { get; }
 
         public IDictionary<HelixType, DeclarationCG> TypeDeclarations { get; }
 
@@ -48,7 +48,7 @@ namespace Helix.Analysis {
             };
 
             this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
-            this.Aggregates = new Dictionary<IdentifierPath, AggregateSignature>();
+            this.Aggregates = new Dictionary<IdentifierPath, StructSignature>();
 
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();

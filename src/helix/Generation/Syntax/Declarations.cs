@@ -67,7 +67,7 @@ namespace Helix.Generation.CSyntax {
     public record CAggregateDeclaration() : ICStatement {
         private readonly Option<IReadOnlyList<CParameter>> members = Option.None;
 
-        public AggregateKind? Kind { get; init; } = null;
+        public bool IsUnion { get; init; } = false;
 
         public string? Name { get; init; } = null;
 
@@ -79,7 +79,7 @@ namespace Helix.Generation.CSyntax {
 
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
-            var type = this.Kind == AggregateKind.Union ? "union" : "struct";
+            var type = this.IsUnion ? "union" : "struct";
 
             if (this.members.TryGetValue(out var mems)) {
                 sb.Append(type).Append(' ').Append(this.Name).AppendLine(" {");

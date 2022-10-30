@@ -10,14 +10,7 @@ using System.IO;
 namespace Helix.Parsing {
     public partial class Parser {
         private IDeclaration AggregateDeclaration() {
-            Token start;
-            if (this.Peek(TokenKind.StructKeyword)) {
-                start = this.Advance(TokenKind.StructKeyword);
-            }
-            else {
-                start = this.Advance(TokenKind.UnionKeyword);
-            }
-
+            var start = this.Advance(TokenKind.StructKeyword);
             var name = this.Advance(TokenKind.Identifier).Value;
             var mems = new List<ParseAggregateMember>();
 
@@ -49,29 +42,22 @@ namespace Helix.Parsing {
             this.Advance(TokenKind.CloseBrace);
             var last = this.Advance(TokenKind.Semicolon);
             var loc = start.Location.Span(last.Location);
-            var kind = start.Kind == TokenKind.StructKeyword ? AggregateKind.Struct : AggregateKind.Union;
-            var sig = new AggregateParseSignature(loc, name, kind, mems);
+            var sig = new StructParseSignature(loc, name, mems);
 
-            return new AggregateDeclaration(loc, sig, kind);
+            return new StructDeclaration(loc, sig);
         }
     }
 }
 
 namespace Helix.Features.Aggregates {
-    public enum AggregateKind {
-        Struct, Union
-    }
-
-    public record AggregateDeclaration : IDeclaration {
-        private readonly AggregateParseSignature signature;
-        private readonly AggregateKind kind;
+    public record StructDeclaration : IDeclaration {
+        private readonly StructParseSignature signature;
 
         public TokenLocation Location { get; }
 
-        public AggregateDeclaration(TokenLocation loc, AggregateParseSignature sig, AggregateKind kind) {
+        public StructDeclaration(TokenLocation loc, StructParseSignature sig) {
             this.Location = loc;
             this.signature = sig;
-            this.kind = kind;
         }
 
         public void DeclareNames(SyntaxFrame names) {
@@ -119,30 +105,12 @@ namespace Helix.Features.Aggregates {
                 throw TypeCheckingErrors.CircularValueObject(this.Location, structType);
             }
 
-            // Disallow pointers in unions
-            if (sig.Kind == AggregateKind.Union) {
-                // For loop for better error messages
-                for (int i = 0; i < sig.Members.Count; i++) {
-                    var pointer = sig.Members[i].Type
-                        .GetContainedTypes(types)
-                        .Where(x => x is PointerType)
-                        .FirstOrNone();
-
-                    if (pointer.HasValue) {
-                        throw new TypeCheckingException(
-                            this.signature.Members[i].Location,
-                            "Invalid Union Type",
-                            $"The pointer type '{pointer.GetValue()}' cannot be a union member.");
-                    }
-                }
-            }
-
             return this;
         }
 
         public void GenerateCode(SyntaxFrame types, ICWriter writer) { }
 
-        private void RealCodeGenerator(AggregateSignature signature, ICWriter writer) {
+        private void RealCodeGenerator(StructSignature signature, ICWriter writer) {
             var name = writer.GetVariableName(signature.Path);
 
             var mems = signature.Members
@@ -153,12 +121,10 @@ namespace Helix.Features.Aggregates {
                 .ToArray();
 
             var prototype = new CAggregateDeclaration() {
-                Kind = this.kind,
                 Name = name
             };
 
             var fullDeclaration = new CAggregateDeclaration() {
-                Kind = this.kind,
                 Name = name,
                 Members = mems
             };
