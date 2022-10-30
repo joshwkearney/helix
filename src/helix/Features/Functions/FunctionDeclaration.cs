@@ -224,25 +224,21 @@ namespace Helix.Features.Functions {
                 new Lifetime(new IdentifierPath("$heap"), 0, true), 
                 new CVariableLiteral("_pool_get_index(_pool)"));
 
+            // Register the parameter member paths
+            foreach (var par in this.Signature.Parameters) {
+                foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(par.Type, types)) {
+                    writer.SetMemberPath(this.Signature.Path.Append(par.Name), relPath);
+                }
+            }
+
             // Register the parameter lifetimes
             foreach (var par in this.Signature.Parameters) {
-                foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(par.Type, types)) {
-                    // TODO: Change this
-                    if (type is not PointerType && type is not ArrayType) {
-                        continue;
-                    }
-
-                    var path = this.Signature.Path.Append(par.Name);
+                foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(par.Type, types)) {
+                    var path = this.Signature.Path.Append(par.Name).Append(relPath);
                     var lifetime = new Lifetime(path, 0, true);
 
-                    // TODO: Fix hack
-                    var hack = writer.GetVariableName(path);
-                    if (relPath != new IdentifierPath()) {
-                        hack += "." + String.Join('.', relPath.Segments);
-                    }
-
                     bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
-                        Target = new CVariableLiteral(hack),
+                        Target = new CVariableLiteral(writer.GetVariableName(path)),
                         MemberName = "pool"
                     });
                 }

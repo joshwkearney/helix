@@ -1,6 +1,6 @@
 ﻿
 
-func lifetime_test_3(let a as int**, let b as int**) as void {
+func lifetime_test_3(let a as int**, let b as int**, let c as Point) as void {
 	var some = new int;
 	var target = a;
 

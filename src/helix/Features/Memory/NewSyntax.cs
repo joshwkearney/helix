@@ -105,7 +105,6 @@ namespace Helix.Features.Memory {
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var roots = types.LifetimeGraph
                 .GetDerivedLifetimes(this.lifetime, this.validRoots)
-                //.Where(x => x.IsRoot)
                 .ToValueList();
 
             if (roots.Any() && !roots.All(x => this.validRoots.Contains(x))) {
