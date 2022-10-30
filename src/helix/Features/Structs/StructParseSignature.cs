@@ -15,7 +15,7 @@ namespace Helix.Features.Aggregates {
             this.Location = loc;
         }
 
-        public StructSignature ResolveNames(SyntaxFrame types) {
+        public StructSignature ResolveNames(EvalFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.Name);
             var mems = new List<AggregateMember>();
 

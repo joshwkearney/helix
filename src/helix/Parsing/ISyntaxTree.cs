@@ -17,19 +17,19 @@ namespace Helix.Parsing {
 
         public bool IsPure { get; }
 
-        public Option<HelixType> AsType(SyntaxFrame types) => Option.None;
+        public Option<HelixType> AsType(EvalFrame types) => Option.None;
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types);
+        public ISyntaxTree CheckTypes(EvalFrame types);
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             throw TypeCheckingErrors.RValueRequired(this.Location);
         }
 
-        public ILValue ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(EvalFrame types) {
             throw TypeCheckingErrors.LValueRequired(this.Location);
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer);
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer);
 
         // Mixins
         public IEnumerable<ISyntaxTree> GetAllChildren() {
@@ -50,12 +50,12 @@ namespace Helix.Parsing {
     public interface IDeclaration {
         public TokenLocation Location { get; }
 
-        public void DeclareNames(SyntaxFrame names);
+        public void DeclareNames(EvalFrame names);
 
-        public void DeclareTypes(SyntaxFrame types);
+        public void DeclareTypes(EvalFrame types);
 
-        public IDeclaration CheckTypes(SyntaxFrame types);
+        public IDeclaration CheckTypes(EvalFrame types);
 
-        public void GenerateCode(SyntaxFrame types, ICWriter writer);
+        public void GenerateCode(EvalFrame types, ICWriter writer);
     }
 }

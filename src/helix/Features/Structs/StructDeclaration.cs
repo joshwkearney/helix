@@ -60,7 +60,7 @@ namespace Helix.Features.Aggregates {
             this.signature = sig;
         }
 
-        public void DeclareNames(SyntaxFrame names) {
+        public void DeclareNames(EvalFrame names) {
             // Make sure this name isn't taken
             if (names.TryResolvePath(this.Location.Scope, this.signature.Name, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.signature.Name);
@@ -79,7 +79,7 @@ namespace Helix.Features.Aggregates {
             //}
         }
 
-        public void DeclareTypes(SyntaxFrame types) {
+        public void DeclareTypes(EvalFrame types) {
             var sig = this.signature.ResolveNames(types);
             var structType = new NamedType(sig.Path);
 
@@ -90,13 +90,13 @@ namespace Helix.Features.Aggregates {
             types.TypeDeclarations[structType] = writer => this.RealCodeGenerator(sig, writer);
         }
 
-        public IDeclaration CheckTypes(SyntaxFrame types) {
+        public IDeclaration CheckTypes(EvalFrame types) {
             var sig = this.signature.ResolveNames(types);
             var structType = new NamedType(sig.Path);
 
             var isRecursive = sig.Members
                 .Select(x => x.Type)
-                .Where(x => x.IsValueType(types))
+                .Where(x => !x.IsRemote(types))
                 .SelectMany(x => x.GetContainedTypes(types))
                 .Contains(structType);
 
@@ -108,7 +108,7 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public void GenerateCode(SyntaxFrame types, ICWriter writer) { }
+        public void GenerateCode(EvalFrame types, ICWriter writer) { }
 
         private void RealCodeGenerator(StructSignature signature, ICWriter writer) {
             var name = writer.GetVariableName(signature.Path);

@@ -28,18 +28,18 @@ namespace Helix.Features.Primitives {
             this.Location = loc;
         }
 
-        public Option<HelixType> AsType(SyntaxFrame types) => PrimitiveType.Void;
+        public Option<HelixType> AsType(EvalFrame types) => PrimitiveType.Void;
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
             types.Lifetimes[this] = new LifetimeBundle();
 
             return this;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             return new CIntLiteral(0);
         }
     }

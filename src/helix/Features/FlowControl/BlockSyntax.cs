@@ -60,7 +60,7 @@ namespace Helix.Features.FlowControl {
         public BlockSyntax(ISyntaxTree statement, bool isTypeChecked = false)
             : this(statement.Location, new[] { statement }, isTypeChecked) { }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             if (this.isTypeChecked) {
                 return this;
             }
@@ -82,7 +82,7 @@ namespace Helix.Features.FlowControl {
             return result;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }
@@ -90,7 +90,7 @@ namespace Helix.Features.FlowControl {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }

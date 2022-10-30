@@ -54,7 +54,7 @@ namespace Helix.Features.Aggregates {
             this.isPointerAccess = isPointerAccess;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
@@ -102,19 +102,19 @@ namespace Helix.Features.Aggregates {
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        private LifetimeBundle CalculateLifetimes(ISyntaxTree target, HelixType memberType, SyntaxFrame types) {
+        private LifetimeBundle CalculateLifetimes(ISyntaxTree target, HelixType memberType, EvalFrame types) {
             var relPath = new IdentifierPath(this.memberName);
             var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
-            foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(memberType, types)) {
+            foreach (var (memPath, _) in VariablesHelper.GetMemberPaths(memberType, types)) {
                 bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
             }
 
             return new LifetimeBundle(bundleDict);
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -122,7 +122,7 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ILValue ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -143,7 +143,7 @@ namespace Helix.Features.Aggregates {
             return result;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }

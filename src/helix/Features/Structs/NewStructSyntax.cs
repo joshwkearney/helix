@@ -34,7 +34,7 @@ namespace Helix.Features.Aggregates {
             this.IsPure = this.values.All(x => x.IsPure);
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             var names = new string[this.names.Count];
             int missingCounter = 0;
 
@@ -143,7 +143,7 @@ namespace Helix.Features.Aggregates {
         private static LifetimeBundle CalculateLifetimes(
             IReadOnlyList<string> memNames, 
             IReadOnlyList<ISyntaxTree> memValues, 
-            SyntaxFrame types) {
+            EvalFrame types) {
 
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
@@ -167,7 +167,7 @@ namespace Helix.Features.Aggregates {
             return new LifetimeBundle(bundleDict);
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }
@@ -175,7 +175,7 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -196,7 +196,8 @@ namespace Helix.Features.Aggregates {
             }
 
             return new CCompoundExpression() {
-                Arguments = mems
+                Arguments = mems,
+                Type = writer.ConvertType(types.ReturnTypes[this])
             };
         }
     }

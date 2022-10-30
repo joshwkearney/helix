@@ -46,13 +46,13 @@ namespace Helix.Features.Memory {
             this.isLValue = islvalue;
         }
 
-        public Option<HelixType> AsType(SyntaxFrame types) {
+        public Option<HelixType> AsType(EvalFrame types) {
             return this.target.AsType(types)
                 .Select(x => new PointerType(x, true))
                 .Select(x => (HelixType)x);
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             if (this.isTypeChecked) {
                 return this;
             }
@@ -67,11 +67,11 @@ namespace Helix.Features.Memory {
             return result;
         }
 
-        public LifetimeBundle CalculateLifetimes(PointerType pointerType, SyntaxFrame types) {
+        public LifetimeBundle CalculateLifetimes(PointerType pointerType, EvalFrame types) {
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
             foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, types)) {
-                if (type is PointerType || type is ArrayType) {
+                if (type.IsRemote(types)) {
                     var lifetime = new Lifetime(this.tempPath.Append(compPath), 0, true);
 
                     bundleDict[compPath] = new[] { lifetime };
@@ -85,7 +85,7 @@ namespace Helix.Features.Memory {
             return new LifetimeBundle(bundleDict);
         }
 
-        public ILValue ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -107,7 +107,7 @@ namespace Helix.Features.Memory {
             return result;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -115,7 +115,7 @@ namespace Helix.Features.Memory {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
             var result = new CPointerDereference() {
                 Target = new CMemberAccess() {
@@ -126,12 +126,16 @@ namespace Helix.Features.Memory {
 
             var returnType = types.ReturnTypes[this];
 
+            // Register our member paths with the code generator
+            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(returnType, types)) {
+                writer.SetMemberPath(this.tempPath, relPath);
+            }
+
             writer.WriteEmptyLine();
 
-            foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(returnType, types)) {
-                if (type is not PointerType && type is not ArrayType) {
-                    continue;
-                }
+            // TODO: Fix this
+            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(returnType, types)) {
+                writer.SetMemberPath(this.tempPath, relPath);
 
                 var lifetime = new Lifetime(this.tempPath.Append(relPath), 0, true);
 

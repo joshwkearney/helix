@@ -4,7 +4,7 @@ using Helix.Parsing;
 
 namespace Helix.Analysis {
     public static partial class AnalysisExtensions {
-        public static PointerType AssertIsPointer(this ISyntaxTree syntax, SyntaxFrame types) {
+        public static PointerType AssertIsPointer(this ISyntaxTree syntax, EvalFrame types) {
             var type = types.ReturnTypes[syntax];
 
             if (type is not PointerType pointer) {
@@ -14,13 +14,13 @@ namespace Helix.Analysis {
             return pointer;
         }
 
-        public static ISyntaxTree WithMutableType(this ISyntaxTree syntax, SyntaxFrame types) {
+        public static ISyntaxTree WithMutableType(this ISyntaxTree syntax, EvalFrame types) {
             var betterType = types.ReturnTypes[syntax].ToMutableType();
 
             return syntax.UnifyTo(betterType, types);
         }
 
-        public static ISyntaxTree UnifyTo(this ISyntaxTree fromSyntax, HelixType toType, SyntaxFrame types) {
+        public static ISyntaxTree UnifyTo(this ISyntaxTree fromSyntax, HelixType toType, EvalFrame types) {
             var type = types.ReturnTypes[fromSyntax];
 
             if (!type.CanUnifyTo(toType, types, false)) {
@@ -33,7 +33,7 @@ namespace Helix.Analysis {
             return result;
         }
 
-        public static ISyntaxTree UnifyFrom(this ISyntaxTree fromSyntax, ISyntaxTree otherSyntax, SyntaxFrame types) {
+        public static ISyntaxTree UnifyFrom(this ISyntaxTree fromSyntax, ISyntaxTree otherSyntax, EvalFrame types) {
             var type1 = types.ReturnTypes[fromSyntax];
             var type2 = types.ReturnTypes[otherSyntax];
 

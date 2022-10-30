@@ -27,7 +27,7 @@ namespace Helix.Features.Variables {
             this.IsPure = args.All(x => x.IsPure);
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             var result = new CompoundSyntax(
                 this.Location, 
                 this.args.Select(x => x.CheckTypes(types)).ToArray());
@@ -38,9 +38,9 @@ namespace Helix.Features.Variables {
             return result;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             foreach (var arg in this.args) {
                 arg.GenerateCode(types, writer);
             }

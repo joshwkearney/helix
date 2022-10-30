@@ -62,7 +62,7 @@ namespace Helix.Features.FlowControl {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public Option<ISyntaxTree> ToRValue(SyntaxFrame types) {
+        public Option<ISyntaxTree> ToRValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }
@@ -70,12 +70,12 @@ namespace Helix.Features.FlowControl {
             return this;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             if (this.isTypeChecked) {
                 return this;
             }
 
-            var bodyTypes = new SyntaxFrame(types);
+            var bodyTypes = new EvalFrame(types);
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = new LoopStatement(this.Location, body, true);
 
@@ -144,7 +144,7 @@ namespace Helix.Features.FlowControl {
             return result;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var bodyStats = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, bodyStats);
 

@@ -50,7 +50,7 @@ namespace Helix.Features.Functions {
             this.args = args;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
@@ -119,15 +119,15 @@ namespace Helix.Features.Functions {
             return result;            
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ISyntaxTree ToLValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
 
@@ -164,11 +164,11 @@ namespace Helix.Features.Functions {
             this.args = args;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+        public ISyntaxTree CheckTypes(EvalFrame types) => this;
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var args = this.args
                 .Select(x => x.GenerateCode(types, writer))
                 .Prepend(new CVariableLiteral("_pool"))

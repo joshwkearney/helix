@@ -18,7 +18,7 @@ namespace Helix.Features.Functions {
             this.Parameters = pars;
         }
 
-        public FunctionSignature ResolveNames(SyntaxFrame types) {
+        public FunctionSignature ResolveNames(EvalFrame types) {
             var path = this.Location.Scope.Append(this.Name);
             var pars = new List<FunctionParameter>();
 

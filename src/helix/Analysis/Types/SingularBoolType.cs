@@ -18,7 +18,7 @@ namespace Helix.Analysis.Types {
             return new BoolLiteral(loc, this.Value);
         }
 
-        public override bool CanUnifyTo(HelixType other, SyntaxFrame types, bool isCast) {
+        public override bool CanUnifyTo(HelixType other, EvalFrame types, bool isCast) {
             if (base.CanUnifyTo(other, types, isCast)) {
                 return true;
             }
@@ -26,7 +26,7 @@ namespace Helix.Analysis.Types {
             return other == PrimitiveType.Bool || other == PrimitiveType.Int;
         }
 
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) {
+        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, EvalFrame types) {
             if (base.CanUnifyTo(other, types, isCast)) {
                 return base.UnifyTo(other, syntax, isCast, types);
             }
@@ -35,7 +35,7 @@ namespace Helix.Analysis.Types {
             return syntax;
         }
 
-        public override bool CanUnifyFrom(HelixType other, SyntaxFrame types) {
+        public override bool CanUnifyFrom(HelixType other, EvalFrame types) {
             if (base.CanUnifyFrom(other, types)) {
                 return true;
             }
@@ -43,7 +43,7 @@ namespace Helix.Analysis.Types {
             return other.CanUnifyTo(PrimitiveType.Bool, types, false);
         }
 
-        public override HelixType UnifyFrom(HelixType other, SyntaxFrame types) {
+        public override HelixType UnifyFrom(HelixType other, EvalFrame types) {
             if (base.CanUnifyFrom(other, types)) {
                 return base.UnifyFrom(other, types);
             }
@@ -57,6 +57,6 @@ namespace Helix.Analysis.Types {
 
         public override string ToString() => this.Value.ToString().ToLower();
 
-        public override bool IsValueType(SyntaxFrame types) => true;
+        public override bool IsRemote(EvalFrame types) => false;
     }
 }

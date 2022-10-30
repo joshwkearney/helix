@@ -48,7 +48,7 @@ namespace Helix.Features.FlowControl {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame frame) {
+        public ISyntaxTree ToRValue(EvalFrame frame) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }
@@ -56,7 +56,7 @@ namespace Helix.Features.FlowControl {
             return this;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             var sig = types.Functions[this.func];
             var payload = this.payload.CheckTypes(types).ToRValue(types);
             var result = new ReturnSyntax(this.Location, payload, this.func, true);
@@ -74,7 +74,7 @@ namespace Helix.Features.FlowControl {
             return result;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }

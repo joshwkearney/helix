@@ -11,11 +11,7 @@ using System.Runtime.CompilerServices;
 namespace Helix.Analysis {
     public delegate void DeclarationCG(ICWriter writer);
 
-    public enum LifetimeDependencyKind {
-        RValue, LValue
-    }
-
-    public class SyntaxFrame {
+    public class EvalFrame {
         private int tempCounter = 0;
 
         // Frame-specific things
@@ -36,7 +32,7 @@ namespace Helix.Analysis {
 
         public LifetimeGraph LifetimeGraph { get; }
 
-        public SyntaxFrame() {
+        public EvalFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
             this.Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
             this.LifetimeGraph = new();
@@ -54,7 +50,7 @@ namespace Helix.Analysis {
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
         }
 
-        public SyntaxFrame(SyntaxFrame prev) {
+        public EvalFrame(EvalFrame prev) {
             this.Variables = new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
             this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
             this.LifetimeGraph = prev.LifetimeGraph;

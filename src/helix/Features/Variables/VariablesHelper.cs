@@ -11,14 +11,20 @@ using System.Threading.Tasks;
 
 namespace Helix.Features.Variables {
     public static class VariablesHelper {
-        public static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPaths(HelixType type, SyntaxFrame types) {
+        public static IEnumerable<IdentifierPath> GetRemoteMemberPaths(HelixType type, EvalFrame types) {
+            return GetMemberPaths(type, types)
+                .Where(x => x.type.IsRemote(types))
+                .Select(x => x.path);
+        }
+
+        public static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPaths(HelixType type, EvalFrame types) {
             return GetMemberPathsHelper(new IdentifierPath(), type, types);
         }
 
         private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPathsHelper(
             IdentifierPath basePath, 
             HelixType type, 
-            SyntaxFrame types) {
+            EvalFrame types) {
 
             yield return (basePath, type);
 

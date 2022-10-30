@@ -74,7 +74,7 @@ namespace Helix.Features.Variables {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             if (this.isTypeChecked) {
                 return this;
             }
@@ -101,7 +101,7 @@ namespace Helix.Features.Variables {
             return result;
         }
 
-        private IEnumerable<ISyntaxTree> CalculateLifetimes(ILValue target, ISyntaxTree assign, SyntaxFrame types) {
+        private IEnumerable<ISyntaxTree> CalculateLifetimes(ILValue target, ISyntaxTree assign, EvalFrame types) {
             var targetType = types.ReturnTypes[target];
 
             // TODO: Implement the below comment
@@ -140,7 +140,7 @@ namespace Helix.Features.Variables {
                 // setting multiple variables with this one assignment if we are assigning
                 // a struct type. Therefore, loop through all the possible variables and
                 // members and set them correctly
-                foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(targetType, types)) {
+                foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(targetType, types)) {
                     if (assignBundle.ComponentLifetimes[relPath].Count != 1) {
                         throw new Exception("Compiler bug: invalid state");
                     }
@@ -173,8 +173,7 @@ namespace Helix.Features.Variables {
                     var binding = new BindLifetimeSyntax(
                         this.Location,
                         newLifetime,
-                        newSig.Path,
-                        relPath);
+                        newSig.Path);
 
                     lifetimeBindings.Add(binding);
 
@@ -202,7 +201,7 @@ namespace Helix.Features.Variables {
             return lifetimeBindings;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }
@@ -210,7 +209,7 @@ namespace Helix.Features.Variables {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
             var assign = this.assign.GenerateCode(types, writer);
 

@@ -18,7 +18,7 @@ namespace Helix.Features.Functions {
             }
         }
 
-        public static void DeclareName(FunctionParseSignature sig, SyntaxFrame types) {
+        public static void DeclareName(FunctionParseSignature sig, EvalFrame types) {
             // Make sure this name isn't taken
             if (types.TryResolvePath(sig.Location.Scope, sig.Name, out _)) {
                 throw TypeCheckingErrors.IdentifierDefined(sig.Location, sig.Name);
@@ -30,7 +30,7 @@ namespace Helix.Features.Functions {
             types.SyntaxValues[path] = new TypeSyntax(sig.Location, new NamedType(path));
         }
 
-        public static void DeclareParameters(TokenLocation loc, FunctionSignature sig, SyntaxFrame types) {
+        public static void DeclareParameters(TokenLocation loc, FunctionSignature sig, EvalFrame types) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];

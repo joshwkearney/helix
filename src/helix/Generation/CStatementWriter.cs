@@ -148,5 +148,9 @@ namespace Helix.Generation {
         public ICSyntax ConvertType(HelixType type) => this.prev.ConvertType(type);
 
         public void ResetTempNames() => this.prev.ResetTempNames();
+
+        public void SetMemberPath(IdentifierPath varPath, IdentifierPath memberPath) {
+            this.prev.SetMemberPath(varPath, memberPath);
+        }
     }
 }

@@ -10,7 +10,7 @@
             return this.Path.Segments.Last();
         }
 
-        public override IEnumerable<HelixType> GetContainedTypes(SyntaxFrame types) {
+        public override IEnumerable<HelixType> GetContainedTypes(EvalFrame types) {
             if (types.Aggregates.TryGetValue(this.Path, out var sig)) {
                 return sig.Members
                     .SelectMany(x => x.Type.GetContainedTypes(types))
@@ -20,18 +20,13 @@
             return new[] { this };
         }
 
-        public override bool IsValueType(SyntaxFrame types) {
+        public override bool IsRemote(EvalFrame types) {
             if (types.Functions.ContainsKey(this.Path)) {
                 return false;
             }
 
             if (types.Aggregates.TryGetValue(this.Path, out var sig)) {
-                // Filter out our own type from the list so we don't stack
-                // overflow. Recursive structs dont' compile so this is ok.
-                return sig.Members
-                    .Select(x => x.Type)
-                    .Where(x => x != this)
-                    .All(x => x.IsValueType(types));
+                return false;
             }
 
             throw new InvalidOperationException("Unexpected named type");

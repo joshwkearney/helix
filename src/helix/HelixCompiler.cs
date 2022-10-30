@@ -22,7 +22,7 @@ namespace Helix {
                 .Replace("\t", "    ");
 
             var parser = new Parser(input);
-            var types = new SyntaxFrame();
+            var types = new EvalFrame();
             var writer = new CWriter(this.header, types.TypeDeclarations);
             var parseStats = parser.Parse();
 

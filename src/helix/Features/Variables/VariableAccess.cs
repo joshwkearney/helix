@@ -35,7 +35,7 @@ namespace Helix.Features.Variables {
             this.Name = name;
         }
 
-        public Option<HelixType> AsType(SyntaxFrame types) {
+        public Option<HelixType> AsType(EvalFrame types) {
             // If we're pointing at a type then return it
             if (types.TryResolveName(this.Location.Scope, this.Name, out var syntax)) {
                 if (syntax.AsType(types).TryGetValue(out var type)) {
@@ -46,7 +46,7 @@ namespace Helix.Features.Variables {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             // Make sure this name exists
             if (!types.TryResolvePath(this.Location.Scope, this.Name, out var path)) {
                 throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
@@ -78,7 +78,7 @@ namespace Helix.Features.Variables {
             throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
         }
 
-        public LifetimeBundle CalculteLifetimes(VariableSignature sig, SyntaxFrame types) {
+        public LifetimeBundle CalculteLifetimes(VariableSignature sig, EvalFrame types) {
             var lifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
             // Go through all this variable's members and set the lifetime bundle correctly
@@ -91,15 +91,15 @@ namespace Helix.Features.Variables {
             return new LifetimeBundle(lifetimes);
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ILValue ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -120,9 +120,9 @@ namespace Helix.Features.Variables {
             this.variablePath = path;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+        public ISyntaxTree CheckTypes(EvalFrame types) => this;
 
-        public ILValue ToLValue(SyntaxFrame types) {
+        public ILValue ToLValue(EvalFrame types) {
             // Make sure this variable is writable
             if (!types.Variables[this.variablePath].IsWritable) {
                 throw TypeCheckingErrors.WritingToConstVariable(this.Location);
@@ -131,9 +131,9 @@ namespace Helix.Features.Variables {
             return this;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
 
             return new CVariableLiteral(name);

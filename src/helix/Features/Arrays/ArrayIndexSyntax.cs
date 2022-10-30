@@ -58,7 +58,7 @@ namespace Helix.Features.Arrays {
             this.IsPure = this.target.IsPure && this.index.IsPure;
         }
 
-        ISyntaxTree ISyntaxTree.ToRValue(SyntaxFrame types) {
+        ISyntaxTree ISyntaxTree.ToRValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -66,14 +66,14 @@ namespace Helix.Features.Arrays {
             return this;
         }
 
-        ILValue ISyntaxTree.ToLValue(SyntaxFrame types) {
+        ILValue ISyntaxTree.ToLValue(EvalFrame types) {
             var arrayType = (ArrayType)types.ReturnTypes[this.target];
             var result = new ArrayToPointerAdapter(arrayType, this.target, this.index);
 
             return result.CheckTypes(types).ToLValue(types);
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             var target = this.target
                 .CheckTypes(types)
                 .ToRValue(types);
@@ -93,17 +93,18 @@ namespace Helix.Features.Arrays {
             var result = new ArrayIndexSyntax(this.Location, target, index, true);
             types.ReturnTypes[result] = arrayType.InnerType;
 
-            if (arrayType.InnerType.IsValueType(types)) {
-                types.Lifetimes[result] = new LifetimeBundle();
+            // TODO: Update this
+            if (arrayType.InnerType.IsRemote(types)) {
+                types.Lifetimes[result] = types.Lifetimes[target];
             }
             else {
-                types.Lifetimes[result] = types.Lifetimes[target];
+                types.Lifetimes[result] = new LifetimeBundle();
             }
 
             return result;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             return new CPointerDereference() {
                 Target = new CBinaryExpression() {
                     Operation = BinaryOperationKind.Add,

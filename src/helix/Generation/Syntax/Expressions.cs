@@ -12,10 +12,12 @@ namespace Helix.Generation.Syntax {
     public record CCompoundExpression : ICSyntax {
         public IEnumerable<ICSyntax>? Arguments { get; init; } = null;
 
+        public ICSyntax? Type { get; init; } = null;
+
         public string WriteToC() {
             var args = string.Join(", ", this.Arguments!.Select(x => x.WriteToC()));
 
-            return "{ " + args + " }";
+            return "(" + this.Type!.WriteToC() + "){ " + args + " }";
         }
     }
 

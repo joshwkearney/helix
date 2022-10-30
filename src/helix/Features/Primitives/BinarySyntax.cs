@@ -204,7 +204,7 @@ namespace Helix.Features.Primitives {
             this.IsPure = this.left.IsPure && this.right.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             // Delegate type resolution
             var left = this.left.CheckTypes(types).ToRValue(types);
             var right = this.right.CheckTypes(types).ToRValue(types);
@@ -252,7 +252,7 @@ namespace Helix.Features.Primitives {
             return result;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }
@@ -260,7 +260,7 @@ namespace Helix.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             return new CBinaryExpression() {
                 Left = this.left.GenerateCode(types, writer),
                 Right = this.right.GenerateCode(types, writer),

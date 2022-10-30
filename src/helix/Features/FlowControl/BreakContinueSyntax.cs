@@ -58,14 +58,14 @@ namespace Helix.Features.FlowControl {
 
         public ISyntaxTree ToRValue() => this;
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
             types.Lifetimes[this] = new LifetimeBundle();
 
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             if (this.isbreak) {
                 writer.WriteStatement(new CBreak());
             }

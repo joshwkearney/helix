@@ -20,11 +20,11 @@ namespace Helix.Features {
             this.Location = loc;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

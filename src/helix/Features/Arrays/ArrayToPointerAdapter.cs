@@ -48,18 +48,18 @@ namespace Helix.Features.Arrays {
             this.IsPure = target.IsPure;
         }
 
-        ISyntaxTree ISyntaxTree.ToRValue(SyntaxFrame types) => this;
+        ISyntaxTree ISyntaxTree.ToRValue(EvalFrame types) => this;
 
-        ILValue ISyntaxTree.ToLValue(SyntaxFrame types) => this;
+        ILValue ISyntaxTree.ToLValue(EvalFrame types) => this;
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType, true);
             types.Lifetimes[this] = types.Lifetimes[this.target];
 
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
 
             ICSyntax newData = new CMemberAccess() {
@@ -75,7 +75,7 @@ namespace Helix.Features.Arrays {
                 };
             }
 
-            var ptrType = new PointerType(this.arrayType.InnerType, true);
+            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, true));
             var ptrValue = new CCompoundExpression() {
                 Arguments = new[] {
                     newData,
@@ -84,10 +84,11 @@ namespace Helix.Features.Arrays {
                         Target = target,
                         MemberName = "pool"
                     }
-                }
+                },
+                Type = ptrType
             };
 
-            return writer.WriteImpureExpression(writer.ConvertType(ptrType), ptrValue);
+            return writer.WriteImpureExpression(ptrType, ptrValue);
         }
     }
 }

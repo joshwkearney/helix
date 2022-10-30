@@ -3,6 +3,7 @@ using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Memory;
 using Helix.Features.Primitives;
+using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -59,7 +60,7 @@ namespace Helix.Features.Memory {
             this.tempPath = tempPath;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             if (!this.type.AsType(types).TryGetValue(out var type)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);
             }
@@ -74,7 +75,7 @@ namespace Helix.Features.Memory {
             return result;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -97,11 +98,11 @@ namespace Helix.Features.Memory {
             this.validRoots = validRoots;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+        public ISyntaxTree CheckTypes(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var roots = types.LifetimeGraph
                 .GetDerivedLifetimes(this.lifetime, this.validRoots)
                 .Where(x => x.IsRoot)
@@ -116,6 +117,11 @@ namespace Helix.Features.Memory {
                     "must be calculated at runtime. Are you assigning this allocation to a pointer " + 
                     "that has not been dereferenced?. Please try moving the allocation " + 
                     "closer to the site of its use.");
+            }
+
+            // Register our member paths with the code generator
+            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(this.returnType, types)) {
+                writer.SetMemberPath(this.lifetime.Path, relPath);
             }
 
             var innerType = writer.ConvertType(this.returnType.InnerType);
@@ -168,7 +174,8 @@ namespace Helix.Features.Memory {
                         pointerExpr,
                         new CIntLiteral(1),
                         allocLifetime
-                    }
+                    },
+                    Type = fatPointerType
                 }
             };
 

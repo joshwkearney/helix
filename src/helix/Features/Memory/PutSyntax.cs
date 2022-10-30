@@ -93,7 +93,7 @@ namespace Helix.Features.Memory {
             this.values = Array.Empty<ISyntaxTree>();
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             if (!this.type.AsType(types).TryGetValue(out var type)) {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);
             }
@@ -136,7 +136,7 @@ namespace Helix.Features.Memory {
                 $"The type '{type}' does not have a default value and cannot be initialized.");
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

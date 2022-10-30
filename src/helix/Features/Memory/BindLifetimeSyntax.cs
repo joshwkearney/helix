@@ -12,8 +12,7 @@ using System.Threading.Tasks;
 
 namespace Helix.Features.Memory {
     public class BindLifetimeSyntax : ISyntaxTree {
-        private readonly IdentifierPath varPath;
-        private readonly IdentifierPath componentPath;
+        private readonly IdentifierPath path;
         private readonly Lifetime lifetime;
         public TokenLocation Location { get; }
 
@@ -21,31 +20,25 @@ namespace Helix.Features.Memory {
 
         public bool IsPure => false;
 
-        public BindLifetimeSyntax(TokenLocation loc, Lifetime lifetime, IdentifierPath path, IdentifierPath compPath) {
+        public BindLifetimeSyntax(TokenLocation loc, Lifetime lifetime, IdentifierPath path) {
             this.Location = loc;
             this.lifetime = lifetime;
-            this.varPath = path;
-            this.componentPath = compPath;
+            this.path = path;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
             types.Lifetimes[this] = new LifetimeBundle();
 
             return this;
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Saving lifetime '{this.lifetime.Path}'");
 
-            var hack = writer.GetVariableName(this.varPath);
-            if (this.componentPath != new IdentifierPath()) {
-                hack += "." + string.Join('.', this.componentPath.Segments);
-            }
-
             writer.RegisterLifetime(this.lifetime, new CMemberAccess() {
-                Target = new CVariableLiteral(hack),
+                Target = new CVariableLiteral(writer.GetVariableName(this.path)),
                 MemberName = "pool"
             });
 

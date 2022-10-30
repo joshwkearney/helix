@@ -99,7 +99,7 @@ namespace Helix.Features.Functions {
             this.body = body;
         }
 
-        public void DeclareNames(SyntaxFrame types) {
+        public void DeclareNames(EvalFrame types) {
             FunctionsHelper.CheckForDuplicateParameters(
                 this.Location, 
                 this.signature.Parameters.Select(x => x.Name));
@@ -107,19 +107,19 @@ namespace Helix.Features.Functions {
             FunctionsHelper.DeclareName(this.signature, types);
         }
 
-        public void DeclareTypes(SyntaxFrame types) {
+        public void DeclareTypes(EvalFrame types) {
             var sig = this.signature.ResolveNames(types);
 
             // Declare this function
             types.Functions[sig.Path] = sig;
         }
         
-        public IDeclaration CheckTypes(SyntaxFrame types) {
+        public IDeclaration CheckTypes(EvalFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.signature.Name);
             var sig = types.Functions[path];
 
             // Set the scope for type checking the body
-            types = new SyntaxFrame(types);
+            types = new EvalFrame(types);
 
             // Declare parameters
             FunctionsHelper.DeclareParameters(this.Location, sig, types);
@@ -167,7 +167,7 @@ namespace Helix.Features.Functions {
             return new FunctionDeclaration(this.Location, sig, body);
         }
 
-        public void GenerateCode(SyntaxFrame types, ICWriter writer) => throw new InvalidOperationException();
+        public void GenerateCode(EvalFrame types, ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record FunctionDeclaration : IDeclaration {
@@ -184,19 +184,19 @@ namespace Helix.Features.Functions {
             this.body = body;
         }
 
-        public void DeclareNames(SyntaxFrame names) {
+        public void DeclareNames(EvalFrame names) {
             throw new InvalidOperationException();
         }
 
-        public void DeclareTypes(SyntaxFrame paths) {
+        public void DeclareTypes(EvalFrame paths) {
             throw new InvalidOperationException();
         }
 
-        public IDeclaration CheckTypes(SyntaxFrame types) {
+        public IDeclaration CheckTypes(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public void GenerateCode(SyntaxFrame types, ICWriter writer) {
+        public void GenerateCode(EvalFrame types, ICWriter writer) {
             writer.ResetTempNames();
 
             var returnType = this.Signature.ReturnType == PrimitiveType.Void

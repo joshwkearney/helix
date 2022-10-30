@@ -27,16 +27,16 @@ namespace Helix.Features.Arrays {
             this.inner = inner;
         }
 
-        Option<HelixType> ISyntaxTree.AsType(SyntaxFrame types) {
+        Option<HelixType> ISyntaxTree.AsType(EvalFrame types) {
             return this.inner
                 .AsType(types)
                 .Select(x => new ArrayType(x))
                 .Select(x => (HelixType)x);
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+        public ISyntaxTree CheckTypes(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

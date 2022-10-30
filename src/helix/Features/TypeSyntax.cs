@@ -24,13 +24,13 @@ namespace Helix.Features {
             this.type = type;
         }
 
-        public Option<HelixType> AsType(SyntaxFrame types) => this.type;
+        public Option<HelixType> AsType(EvalFrame types) => this.type;
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

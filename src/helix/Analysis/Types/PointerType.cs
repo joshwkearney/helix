@@ -11,7 +11,7 @@ namespace Helix.Analysis.Types {
             this.IsWritable = isWritable;
         }
 
-        public override bool CanUnifyTo(HelixType other, SyntaxFrame types, bool isCast) {
+        public override bool CanUnifyTo(HelixType other, EvalFrame types, bool isCast) {
             if (this == other) {
                 return true;
             }
@@ -23,15 +23,15 @@ namespace Helix.Analysis.Types {
             return false;
         }
 
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) => syntax;
+        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, EvalFrame types) => syntax;
 
         public override string ToString() {
             return this.InnerType + (this.IsWritable ? "*" : "^");
         }
 
-        public override bool IsValueType(SyntaxFrame types) => false;
+        public override bool IsRemote(EvalFrame types) => true;
 
-        public override IEnumerable<HelixType> GetContainedTypes(SyntaxFrame frame) {
+        public override IEnumerable<HelixType> GetContainedTypes(EvalFrame frame) {
             yield return this;
             yield return this.InnerType;
         }

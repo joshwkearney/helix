@@ -41,7 +41,7 @@ namespace Helix.Features.Primitives {
             this.IsPure = this.target.IsPure && this.arg.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             var arg = this.arg.CheckTypes(types).ToRValue(types);
 
             if (!this.target.AsType(types).TryGetValue(out var targetType)) {
@@ -53,15 +53,15 @@ namespace Helix.Features.Primitives {
             return arg;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ISyntaxTree ToLValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

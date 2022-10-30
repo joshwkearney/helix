@@ -70,7 +70,7 @@ namespace Helix {
         public VarParseStatement(TokenLocation loc, string name, ISyntaxTree assign, bool isWritable)
             : this(loc, new[] { name }, assign, isWritable) { }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);
 
@@ -100,7 +100,7 @@ namespace Helix {
             return result.CheckTypes(types);
         }
 
-        private IEnumerable<ISyntaxTree> CalculateLifetimes(ISyntaxTree assign, HelixType assignType, SyntaxFrame types) {
+        private IEnumerable<ISyntaxTree> CalculateLifetimes(ISyntaxTree assign, HelixType assignType, EvalFrame types) {
             // Calculate a signature and lifetime for this variable
             var assignBundle = types.Lifetimes[assign];
             var basePath = this.Location.Scope.Append(this.names[0]);
@@ -131,17 +131,15 @@ namespace Helix {
                 types.Variables[path] = sig;
                 types.SyntaxValues[path] = assign;
 
-                // TODO: Comment this
-                // TODO: Change to type method
-                if (sig.Type is PointerType || sig.Type is ArrayType) {
-                    bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, basePath, compPath));
+                if (sig.Type.IsRemote(types)) {
+                    bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, path));
                 }
             }
 
             return bindings;
         }
 
-        private ISyntaxTree Destructure(HelixType assignType, SyntaxFrame types) {
+        private ISyntaxTree Destructure(HelixType assignType, EvalFrame types) {
             if (assignType is not NamedType named) {
                 throw new TypeCheckingException(
                     this.Location,
@@ -188,15 +186,15 @@ namespace Helix {
             return new CompoundSyntax(this.Location, stats).CheckTypes(types);
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ISyntaxTree ToLValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -226,11 +224,11 @@ namespace Helix {
             this.returnType = returnType;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+        public ISyntaxTree CheckTypes(EvalFrame types) => this;
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
 
             var stat = new CVariableDeclaration() {
@@ -238,6 +236,10 @@ namespace Helix {
                 Name = name,
                 Assignment = this.assign.Select(x => x.GenerateCode(types, writer))
             };
+
+            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(this.returnType, types)) {
+                writer.SetMemberPath(this.path, relPath);
+            }
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");

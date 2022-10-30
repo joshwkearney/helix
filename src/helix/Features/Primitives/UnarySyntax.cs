@@ -58,7 +58,7 @@ namespace Helix.Features.Primitives {
             this.arg = arg;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
                 var left = new IntLiteral(this.Location, 0);
 
@@ -89,15 +89,15 @@ namespace Helix.Features.Primitives {
             }
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ISyntaxTree ToLValue(SyntaxFrame types) {
+        public ISyntaxTree ToLValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -116,11 +116,11 @@ namespace Helix.Features.Primitives {
             this.target = target;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+        public ISyntaxTree CheckTypes(EvalFrame types) => this;
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             return new CNot() {
                 Target = this.target.GenerateCode(types, writer)
             };

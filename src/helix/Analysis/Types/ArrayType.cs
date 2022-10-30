@@ -9,7 +9,7 @@ namespace Helix.Analysis.Types {
             this.InnerType = innerType;
         }
 
-        public override bool CanUnifyTo(HelixType other, SyntaxFrame types, bool isCast) {
+        public override bool CanUnifyTo(HelixType other, EvalFrame types, bool isCast) {
             if (other is PointerType pointer && pointer.IsWritable) {
                 if (this.InnerType.Equals(pointer.InnerType)) {
                     return true;
@@ -19,7 +19,7 @@ namespace Helix.Analysis.Types {
             return base.CanUnifyTo(other, types, isCast);
         }
 
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) {
+        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, EvalFrame types) {
             if (other is PointerType) {
                 return new ArrayToPointerAdapter(this, syntax);
             }
@@ -31,9 +31,9 @@ namespace Helix.Analysis.Types {
             return this.InnerType + "[]";
         }
 
-        public override bool IsValueType(SyntaxFrame types) => false;
+        public override bool IsRemote(EvalFrame types) => true;
 
-        public override IEnumerable<HelixType> GetContainedTypes(SyntaxFrame frame) {
+        public override IEnumerable<HelixType> GetContainedTypes(EvalFrame frame) {
             yield return this;
             yield return this.InnerType;
         }

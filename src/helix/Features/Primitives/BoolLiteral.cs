@@ -32,20 +32,20 @@ namespace Helix.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<HelixType> AsType(SyntaxFrame types) {
+        public Option<HelixType> AsType(EvalFrame types) {
             return new SingularBoolType(this.Value);
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
             types.ReturnTypes[this] = new SingularBoolType(this.Value);
             types.Lifetimes[this] = new LifetimeBundle();
 
             return this;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value ? 1 : 0);
         }
     }

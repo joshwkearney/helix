@@ -20,7 +20,7 @@ namespace Helix.Analysis.Types {
             this.kind = kind;
         }
 
-        public override bool CanUnifyTo(HelixType other, SyntaxFrame types, bool isCast) {
+        public override bool CanUnifyTo(HelixType other, EvalFrame types, bool isCast) {
             if (this == other) {
                 return true;
             }
@@ -38,7 +38,7 @@ namespace Helix.Analysis.Types {
             return false;
         }
 
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, SyntaxFrame types) {
+        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, EvalFrame types) {
             if (this == other) {
                 return syntax;
             }
@@ -73,7 +73,7 @@ namespace Helix.Analysis.Types {
             return base.ToSyntax(loc);
         }
 
-        public override bool IsValueType(SyntaxFrame types) => true;
+        public override bool IsRemote(EvalFrame types) => false;
 
         private enum PrimitiveTypeKind {
             Int = 11, 

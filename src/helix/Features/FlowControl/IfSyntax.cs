@@ -72,9 +72,9 @@ namespace Helix.Features.FlowControl {
             this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) {
-            var iftrueTypes = new SyntaxFrame(types);
-            var iffalseTypes = new SyntaxFrame(types);
+        public ISyntaxTree CheckTypes(EvalFrame types) {
+            var iftrueTypes = new EvalFrame(types);
+            var iffalseTypes = new EvalFrame(types);
 
             var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
             var iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
@@ -85,14 +85,13 @@ namespace Helix.Features.FlowControl {
 
             var newLifetimes = this.CalculateModifiedVariables(iftrueTypes, iffalseTypes, types);            
 
-            // TODO: Fix this not giving the component path at all
             // Make sure to bind all the new lifetimes we have discovered
             var bindings = newLifetimes
-                .Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path, new IdentifierPath()))
+                .Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path))
                 .Select(x => (ISyntaxTree)x)
                 .ToList();
 
-            var lifetimeBundle = this.CalculateLifetimes(bindings, types);
+            var lifetimeBundle = this.CalculateLifetimes(iftrue, iffalse, bindings, types);
             var resultType = types.ReturnTypes[iftrue];
 
             var result = new IfSyntax(
@@ -110,7 +109,12 @@ namespace Helix.Features.FlowControl {
             return result;
         }
 
-        private LifetimeBundle CalculateLifetimes(List<ISyntaxTree> bindings, SyntaxFrame types) {
+        private LifetimeBundle CalculateLifetimes(
+            ISyntaxTree iftrue, 
+            ISyntaxTree iffalse, 
+            List<ISyntaxTree> bindings, 
+            EvalFrame types) {
+
             var lifetimeBundle = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
             var resultType = types.ReturnTypes[iftrue];
 
@@ -137,9 +141,8 @@ namespace Helix.Features.FlowControl {
                 }
 
                 // Add this new lifetime to the list of bindings we calculated earlier
-                // TODO: Fix this
-                if (type is PointerType || type is ArrayType) {
-                    bindings.Add(new BindLifetimeSyntax(this.Location, resultLifetime, this.tempPath, relPath));
+                if (type.IsRemote(types)) {
+                    bindings.Add(new BindLifetimeSyntax(this.Location, resultLifetime, path));
                 }
             }
 
@@ -147,9 +150,9 @@ namespace Helix.Features.FlowControl {
         }
 
         private IReadOnlyList<VariableSignature> CalculateModifiedVariables(
-            SyntaxFrame iftrueTypes,
-            SyntaxFrame iffalseTypes, 
-            SyntaxFrame types) {
+            EvalFrame iftrueTypes,
+            EvalFrame iffalseTypes, 
+            EvalFrame types) {
 
             var modifiedVars = iftrueTypes.Variables
                 .Concat(iffalseTypes.Variables)
@@ -228,11 +231,11 @@ namespace Helix.Features.FlowControl {
             return newLifetimes;
         }
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }
@@ -265,11 +268,11 @@ namespace Helix.Features.FlowControl {
             this.bindings = bindings;
         }
 
-        public ISyntaxTree CheckTypes(SyntaxFrame types) => this;
+        public ISyntaxTree CheckTypes(EvalFrame types) => this;
 
-        public ISyntaxTree ToRValue(SyntaxFrame types) => this;
+        public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(SyntaxFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();
             var negList = new List<ICStatement>();
 
@@ -280,6 +283,11 @@ namespace Helix.Features.FlowControl {
             var neg = this.iffalse.GenerateCode(types, negWriter);
 
             var tempName = writer.GetVariableName(this.tempPath);
+
+            // Register our member paths with the code generator
+            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(this.returnType, types)) {
+                writer.SetMemberPath(this.tempPath, relPath);
+            }
 
             if (this.returnType != PrimitiveType.Void) {
                 affirmWriter.WriteStatement(new CAssignment() {
