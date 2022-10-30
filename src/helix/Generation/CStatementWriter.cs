@@ -91,14 +91,13 @@ namespace Helix.Generation {
                 return value;
             }
 
-            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0, true);
+            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
 
             if (lifetimes.Count == 1) {
                 return this.GetLifetime(lifetimes[0]);
             }
 
             var values = lifetimes
-                .Where(x => !x.Equals(heapLifetime))
                 .Select(x => GetLifetime(x))
                 .ToValueList();
 
