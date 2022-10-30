@@ -67,7 +67,7 @@ namespace Helix.Features.Memory {
             return result;
         }
 
-        public ILifetimeBundle CalculateLifetimes(PointerType pointerType, SyntaxFrame types) {
+        public LifetimeBundle CalculateLifetimes(PointerType pointerType, SyntaxFrame types) {
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
             foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, types)) {
@@ -82,7 +82,7 @@ namespace Helix.Features.Memory {
                 }
             }
 
-            return new StructLifetimeBundle(bundleDict);
+            return new LifetimeBundle(bundleDict);
         }
 
         public ILValue ToLValue(SyntaxFrame types) {

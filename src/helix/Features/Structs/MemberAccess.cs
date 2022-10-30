@@ -68,7 +68,7 @@ namespace Helix.Features.Aggregates {
                         true);
 
                     types.ReturnTypes[result] = PrimitiveType.Int;
-                    types.Lifetimes[result] = new ScalarLifetimeBundle();
+                    types.Lifetimes[result] = new LifetimeBundle();
                     return result;
                 }
             }
@@ -102,7 +102,7 @@ namespace Helix.Features.Aggregates {
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        private ILifetimeBundle CalculateLifetimes(ISyntaxTree target, HelixType memberType, SyntaxFrame types) {
+        private LifetimeBundle CalculateLifetimes(ISyntaxTree target, HelixType memberType, SyntaxFrame types) {
             var relPath = new IdentifierPath(this.memberName);
             var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
@@ -111,7 +111,7 @@ namespace Helix.Features.Aggregates {
                 bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
             }
 
-            return new StructLifetimeBundle(bundleDict);
+            return new LifetimeBundle(bundleDict);
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {

@@ -70,7 +70,7 @@ namespace Helix.Features.Variables {
                 var result = new VariableAccessSyntax(this.Location, path);
 
                 types.ReturnTypes[result] = new NamedType(path);
-                types.Lifetimes[result] = new ScalarLifetimeBundle();
+                types.Lifetimes[result] = new LifetimeBundle();
 
                 return result;
             }
@@ -78,7 +78,7 @@ namespace Helix.Features.Variables {
             throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
         }
 
-        public ILifetimeBundle CalculteLifetimes(VariableSignature sig, SyntaxFrame types) {
+        public LifetimeBundle CalculteLifetimes(VariableSignature sig, SyntaxFrame types) {
             var lifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
             // Go through all this variable's members and set the lifetime bundle correctly
@@ -88,7 +88,7 @@ namespace Helix.Features.Variables {
                 lifetimes[compPath] = new[] { types.Variables[memPath].Lifetime };
             }
 
-            return new StructLifetimeBundle(lifetimes);
+            return new LifetimeBundle(lifetimes);
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {

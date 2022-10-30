@@ -77,7 +77,7 @@ namespace Helix.Features.FlowControl {
             types.Lifetimes[result] = stats
                 .LastOrNone()
                 .Select(x => types.Lifetimes[x])
-                .OrElse(() => new ScalarLifetimeBundle());
+                .OrElse(() => new LifetimeBundle());
 
             return result;
         }

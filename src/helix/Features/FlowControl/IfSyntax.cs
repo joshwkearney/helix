@@ -110,7 +110,7 @@ namespace Helix.Features.FlowControl {
             return result;
         }
 
-        private ILifetimeBundle CalculateLifetimes(List<ISyntaxTree> bindings, SyntaxFrame types) {
+        private LifetimeBundle CalculateLifetimes(List<ISyntaxTree> bindings, SyntaxFrame types) {
             var lifetimeBundle = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
             var resultType = types.ReturnTypes[iftrue];
 
@@ -143,7 +143,7 @@ namespace Helix.Features.FlowControl {
                 }
             }
 
-            return new StructLifetimeBundle(lifetimeBundle);
+            return new LifetimeBundle(lifetimeBundle);
         }
 
         private IReadOnlyList<VariableSignature> CalculateModifiedVariables(

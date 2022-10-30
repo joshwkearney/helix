@@ -32,7 +32,7 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree CheckTypes(SyntaxFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
-            types.Lifetimes[this] = new ScalarLifetimeBundle();
+            types.Lifetimes[this] = new LifetimeBundle();
 
             return this;
         }

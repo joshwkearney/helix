@@ -8,6 +8,8 @@ namespace Helix.Analysis.Lifetimes {
         private readonly Dictionary<Lifetime, List<Lifetime>> parentLifetimes = new();
         private readonly Dictionary<Lifetime, List<Lifetime>> childLifetimes = new();
 
+        public ISet<Lifetime> ActiveLifetimes { get; } = new HashSet<Lifetime>();
+
         public IReadOnlySet<Lifetime> AllLifetimes => this.allLifetimes;
 
         public void AddPrecursor(Lifetime childLifetime, Lifetime parentLifetime) {

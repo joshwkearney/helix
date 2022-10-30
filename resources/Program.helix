@@ -1,6 +1,4 @@
-﻿
-
-func lifetime_test_3(let c as Point*) as int* {
+﻿func lifetime_test_3(let c as Point*) as int* {
 	let some = c*.x;
 
 	c*.x = new int;

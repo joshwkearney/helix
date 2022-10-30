@@ -92,7 +92,7 @@ namespace Helix {
             var bindings = this.CalculateLifetimes(assign, assignType, types);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new ScalarLifetimeBundle();
+            types.Lifetimes[result] = new LifetimeBundle();
 
             // Be sure to bind our new lifetime to this variable
             result = new BlockSyntax(result.Location, bindings.Prepend(result).ToArray());

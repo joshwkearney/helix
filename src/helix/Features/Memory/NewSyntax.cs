@@ -69,7 +69,7 @@ namespace Helix.Features.Memory {
             var result = new NewSyntax(this.Location, pointerType, lifetime, types.LifetimeGraph.AllLifetimes);
 
             types.ReturnTypes[result] = pointerType;
-            types.Lifetimes[result] = new ScalarLifetimeBundle(lifetime);
+            types.Lifetimes[result] = new LifetimeBundle(new[] { lifetime });
 
             return result;
         }

@@ -140,7 +140,7 @@ namespace Helix.Features.Aggregates {
 
             return result;
         }
-        private static ILifetimeBundle CalculateLifetimes(
+        private static LifetimeBundle CalculateLifetimes(
             IReadOnlyList<string> memNames, 
             IReadOnlyList<ISyntaxTree> memValues, 
             SyntaxFrame types) {
@@ -164,7 +164,7 @@ namespace Helix.Features.Aggregates {
             // Structs themselves do not have lifetimes
             bundleDict[new IdentifierPath()] = Array.Empty<Lifetime>();
 
-            return new StructLifetimeBundle(bundleDict);
+            return new LifetimeBundle(bundleDict);
         }
 
         public ISyntaxTree ToRValue(SyntaxFrame types) {

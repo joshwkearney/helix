@@ -114,7 +114,7 @@ namespace Helix.Features.Functions {
             var result = new InvokeSyntax(this.Location, sig, newArgs);
 
             types.ReturnTypes[result] = sig.ReturnType;
-            types.Lifetimes[result] = new ScalarLifetimeBundle();
+            types.Lifetimes[result] = new LifetimeBundle();
 
             return result;            
         }
