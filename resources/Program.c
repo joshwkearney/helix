@@ -52,14 +52,8 @@ Point lifetime_test_3(Pool* _pool, int$ptr a) {
         /* Line 5: Saving lifetime 'lifetime_test_3/$block_0/some/y' */
         int $G = (some.y.pool);
 
-        /* Line 5: Saving lifetime 'lifetime_test_3/$block_0/some/x' */
-        int $H = (some.x.pool);
-
-        /* Line 5: Saving lifetime 'lifetime_test_3/$block_0/some/y' */
-        int $I = (some.y.pool);
-
         /* Line 5: Saving lifetime 'lifetime_test_3/a' */
-        int $J = (a.pool);
+        int $H = (a.pool);
 
         /* Line 5: If statement */
         if ((i >= 10U)) { 
@@ -70,10 +64,10 @@ Point lifetime_test_3(Pool* _pool, int$ptr a) {
         some = (Point){ a, a };
 
         /* Line 6: Saving lifetime 'lifetime_test_3/$block_0/some/x' */
-        int $L = (some.x.pool);
+        int $J = (some.x.pool);
 
         /* Line 6: Saving lifetime 'lifetime_test_3/$block_0/some/y' */
-        int $M = (some.y.pool);
+        int $K = (some.y.pool);
 
         /* Line 5: Assignment statement */
         i = (i + 1U);
@@ -81,13 +75,13 @@ Point lifetime_test_3(Pool* _pool, int$ptr a) {
     }
 
     /* Line 5: Saving lifetime 'lifetime_test_3/$block_0/some/x' */
-    int $N = (some.x.pool);
+    int $L = (some.x.pool);
 
     /* Line 5: Saving lifetime 'lifetime_test_3/$block_0/some/y' */
-    int $O = (some.y.pool);
+    int $M = (some.y.pool);
 
     /* Line 5: Saving lifetime 'lifetime_test_3/a' */
-    int $P = (a.pool);
+    int $N = (a.pool);
 
     return some;
 }

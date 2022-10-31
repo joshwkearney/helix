@@ -129,14 +129,18 @@ namespace Helix.Features.FlowControl {
             var bodyBindings = new List<ISyntaxTree>();
 
             var modifiedVars = bodyTypes.Variables.Values
-                .Except(bodyVars)
+                .Select(x => x.Path)
+                .Except(bodyVars.Select(x => x.Path))
+                .Distinct()
                 .ToValueList();
 
             // For every variable that does change, change the scope after the loop
             // by incrementing its mutation counter. Also, DO NOT link up the variable
             // before the loop with the new signature we made. This forces any code in 
             // the loop to treat this variable as a root since we don't know its origin
-            foreach (var sig in modifiedVars) {
+            foreach (var path in modifiedVars) {
+                var sig = bodyTypes.Variables[path];
+
                 var newSig = new VariableSignature(
                     sig.Type,
                     sig.IsWritable,
@@ -149,14 +153,20 @@ namespace Helix.Features.FlowControl {
             }
 
             var postBindings = new List<ISyntaxTree>();
-            var unmodifiedVars = potentiallyModifiedVars.Except(modifiedVars).ToValueList();
+
+            var unmodifiedVars = potentiallyModifiedVars
+                .Select(x => x.Path)
+                .Except(modifiedVars)
+                .Distinct()
+                .ToValueList();
 
             // For every variable that is not changed in the loop, change the scope after
             // the loop to just be the new signature we made earlier. Also, since it didn't
             // change, we are safe to link up the original lifetime for this variable with what
             // will be seen in the loop
-            foreach (var sig in unmodifiedVars) {
-                var oldSig = types.Variables[sig.Path];
+            foreach (var path in unmodifiedVars) {
+                var sig = bodyTypes.Variables[path];
+                var oldSig = types.Variables[path];
 
                 types.Variables[sig.Path] = sig;
                 types.LifetimeGraph.AddAlias(sig.Lifetime, oldSig.Lifetime);
