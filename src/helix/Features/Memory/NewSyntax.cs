@@ -13,75 +13,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Helix.Parsing {
-    public partial class Parser {
-        private int newTempCounter = 0;
-
-        private ISyntaxTree NewExpression() {
-            TokenLocation start;
-            //  bool isStackAllocated;
-
-            //if (this.Peek(TokenKind.NewKeyword)) {
-            //    start = this.Advance(TokenKind.NewKeyword).Location;
-            //    isStackAllocated = false;
-            //}
-            //else {
-            start = this.Advance(TokenKind.NewKeyword).Location;
-            // isStackAllocated = true;
-            //}
-
-            var targetType = this.TopExpression();
-            var loc = start.Span(targetType.Location);
-
-            return new NewParseSyntax(
-                loc, 
-                targetType, 
-                new IdentifierPath("$new_temp_" + newTempCounter++));
-        }
-    }
-}
-
 namespace Helix.Features.Memory {
-    public record NewParseSyntax : ISyntaxTree {
-        private readonly ISyntaxTree type;
-        private readonly IdentifierPath tempPath;
-
-        public TokenLocation Location { get; }
-
-        public IEnumerable<ISyntaxTree> Children => new[] { this.type };
-
-        public bool IsPure => this.type.IsPure;
-
-        public NewParseSyntax(TokenLocation loc, ISyntaxTree type, 
-            IdentifierPath tempPath) {
-
-            this.Location = loc;
-            this.type = type;
-            this.tempPath = tempPath;
-        }
-
-        public ISyntaxTree CheckTypes(EvalFrame types) {
-            if (!this.type.AsType(types).TryGetValue(out var type)) {
-                throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);
-            }
-
-            var pointerType = new PointerType(type, true);
-            var lifetime = new Lifetime(this.tempPath, 0);
-            var result = new NewSyntax(this.Location, pointerType, lifetime, types.LifetimeGraph.AllLifetimes);
-
-            types.ReturnTypes[result] = pointerType;
-            types.Lifetimes[result] = new LifetimeBundle(new[] { lifetime });
-
-            return result;
-        }
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
-        }
-    }
-
     public record NewSyntax : ISyntaxTree {
-        private readonly PointerType returnType;
+        private readonly ISyntaxTree target;
         private readonly Lifetime lifetime;
         private readonly IReadOnlySet<Lifetime> validRoots;
 
@@ -91,16 +25,21 @@ namespace Helix.Features.Memory {
 
         public bool IsPure => true;
 
-        public NewSyntax(TokenLocation loc, PointerType type, Lifetime lifetime, IReadOnlySet<Lifetime> validRoots) {
+        public NewSyntax(TokenLocation loc, ISyntaxTree target, Lifetime lifetime, IReadOnlySet<Lifetime> validRoots) {
             this.Location = loc;
-            this.returnType = type;
+            this.target = target;
             this.lifetime = lifetime;
             this.validRoots = validRoots;
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ISyntaxTree CheckTypes(EvalFrame types) => this;
+        public ISyntaxTree CheckTypes(EvalFrame types) {
+            types.Lifetimes[this] = new LifetimeBundle(new[] { this.lifetime });
+            types.ReturnTypes[this] = new PointerType(types.ReturnTypes[this.target], true);
+
+            return this;
+        }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var roots = types.LifetimeGraph
@@ -117,12 +56,15 @@ namespace Helix.Features.Memory {
                     "closer to the site of its use.");
             }
 
+            var returnType = (PointerType)types.ReturnTypes[this];
+            var target = this.target.GenerateCode(types, writer);
+
             // Register our member paths with the code generator
-            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(this.returnType, types)) {
+            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.lifetime.Path, relPath);
             }
 
-            var innerType = writer.ConvertType(this.returnType.InnerType);
+            var innerType = writer.ConvertType(returnType.InnerType);
             var pointerTemp = writer.GetVariableName();
 
             var tempName = writer.GetVariableName();
@@ -135,7 +77,7 @@ namespace Helix.Features.Memory {
                 pointerExpr = new CVariableLiteral(tempName);
 
                 writer.WriteEmptyLine();
-                writer.WriteComment($"Line {this.Location.Line}: New '{this.returnType}'");
+                writer.WriteComment($"Line {this.Location.Line}: New '{returnType}'");
 
                 writer.WriteStatement(new CVariableDeclaration() {
                     Name = tempName,
@@ -145,7 +87,7 @@ namespace Helix.Features.Memory {
             }
             else {
                 writer.WriteEmptyLine();
-                writer.WriteComment($"Line {this.Location.Line}: New '{this.returnType}'");
+                writer.WriteComment($"Line {this.Location.Line}: New '{returnType}'");
 
                 // Allocate on the stack
                 writer.WriteStatement(new CVariableDeclaration() {
@@ -162,7 +104,7 @@ namespace Helix.Features.Memory {
             }
 
             var fatPointerName = writer.GetVariableName();
-            var fatPointerType = writer.ConvertType(this.returnType);
+            var fatPointerType = writer.ConvertType(returnType);
 
             var fatPointerDecl = new CVariableDeclaration() {
                 Name = fatPointerName,
@@ -177,12 +119,23 @@ namespace Helix.Features.Memory {
                 }
             };
 
+            var assignmentDecl = new CAssignment() {
+                Left = new CPointerDereference() {
+                    Target = new CMemberAccess() {
+                        Target = new CVariableLiteral(fatPointerName),
+                        MemberName = "data"
+                    }
+                },
+                Right = target
+            };
+
             writer.WriteStatement(fatPointerDecl);
             writer.RegisterLifetime(this.lifetime, new CMemberAccess() { 
                 Target = new CVariableLiteral(fatPointerName),
                 MemberName = "pool"
             });
 
+            writer.WriteStatement(assignmentDecl);
             writer.WriteEmptyLine();
 
             return new CVariableLiteral(fatPointerName);

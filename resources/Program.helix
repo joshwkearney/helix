@@ -1,15 +1,18 @@
 ﻿
-func lifetime_test_3(var a as int*) as Point {
-	var some = put Point { x= a, y= a };
+func lifetime_test_3(var a as int*) as void {
+	let x = 45;
 
-	for i = 0 until 10 {
-		some = put Point { x= a, y= a };
-	};
+	var some = new Point { x= a, y= a };
 
-	some;
+	//for i = 0 until 10 {
+	//	some = put Point { x= a, y= a };
+	//};
+
+	//some;
 };
 
 struct Point {
 	let x as int*;
 	let y as int*;
 };
+

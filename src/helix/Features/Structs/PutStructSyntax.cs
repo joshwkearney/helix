@@ -7,7 +7,7 @@ using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
 
 namespace Helix.Features.Aggregates {
-    public class NewStructSyntax : ISyntaxTree {
+    public class PutStructSyntax : ISyntaxTree {
         private readonly bool isTypeChecked;
         private readonly StructSignature sig;
         private readonly IReadOnlyList<string?> names;
@@ -19,7 +19,7 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure { get; }
 
-        public NewStructSyntax(
+        public PutStructSyntax(
             TokenLocation loc, 
             StructSignature sig,
             IReadOnlyList<string?> names,
@@ -133,13 +133,14 @@ namespace Helix.Features.Aggregates {
                 allValues.Add(value);
             }
 
-            var result = new NewStructSyntax(this.Location, this.sig, allNames, allValues, true);
+            var result = new PutStructSyntax(this.Location, this.sig, allNames, allValues, true);
 
             types.ReturnTypes[result] = type;
             types.Lifetimes[result] = CalculateLifetimes(allNames, allValues, types);
 
             return result;
         }
+
         private static LifetimeBundle CalculateLifetimes(
             IReadOnlyList<string> memNames, 
             IReadOnlyList<ISyntaxTree> memValues, 
