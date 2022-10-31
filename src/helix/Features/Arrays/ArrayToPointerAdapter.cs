@@ -79,7 +79,6 @@ namespace Helix.Features.Arrays {
             var ptrValue = new CCompoundExpression() {
                 Arguments = new[] {
                     newData,
-                    new CIntLiteral(1),
                     new CMemberAccess() {
                         Target = target,
                         MemberName = "pool"

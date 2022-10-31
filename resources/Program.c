@@ -13,25 +13,11 @@ extern void* _pool_malloc(Pool* pool, int pool_index, int size);
 extern int _pool_get_index(Pool* pool);
 extern void _pool_delete();
 typedef struct int$ptr int$ptr;
-typedef struct Point Point;
-typedef struct Point$ptr Point$ptr;
 
 void lifetime_test_3(Pool* _pool, int$ptr a);
 
 struct int$ptr {
     int* data;
-    int count;
-    int pool;
-};
-
-struct Point {
-    int$ptr x;
-    int$ptr y;
-};
-
-struct Point$ptr {
-    Point* data;
-    int count;
     int pool;
 };
 
@@ -42,17 +28,17 @@ void lifetime_test_3(Pool* _pool, int$ptr a) {
     /* Line 3: New variable declaration 'x' */
     int x = 45U;
 
-    /* Line 5: New 'Point*' */
-    Point $E = 0U;
-    Point$ptr $F = (Point$ptr){ (&$E), 1U, $A };
-    int $G = ($F.pool);
-    (*($F.data)) = (Point){ a, a };
+    /* Line 5: New '0*' */
+    int $D = 0U;
+    int$ptr $E = (int$ptr){ (&$D), $A };
+    int $F = ($E.pool);
+    (*($E.data)) = 0U;
 
     /* Line 5: New variable declaration 'some' */
-    Point$ptr some = $F;
+    int$ptr some = $E;
 
     /* Line 5: Saving lifetime 'lifetime_test_3/$block_0/some' */
-    int $H = (some.pool);
+    int $G = (some.pool);
 
 }
 

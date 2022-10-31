@@ -2,7 +2,7 @@
 func lifetime_test_3(var a as int*) as void {
 	let x = 45;
 
-	var some = new Point { x= a, y= a };
+	var some = new int;
 
 	//for i = 0 until 10 {
 	//	some = put Point { x= a, y= a };

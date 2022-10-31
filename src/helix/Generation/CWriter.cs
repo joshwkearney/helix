@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Text.RegularExpressions;
 using Helix.Analysis;
 using Helix.Analysis.Types;
@@ -37,7 +38,8 @@ namespace Helix.Generation {
         private readonly Dictionary<string, int> nameCounters = new();
 
         private int arrayCounter = 0;
-        private readonly Dictionary<ArrayType, string> arrayNames = new();
+        private readonly Dictionary<string, string> arrayNames = new();
+        private readonly Dictionary<string, string> pointerNames = new();
 
         private readonly StringBuilder decl1Sb = new();
         private readonly StringBuilder decl2Sb = new();
@@ -120,18 +122,25 @@ namespace Helix.Generation {
         }
 
         public ICSyntax ConvertType(HelixType type) {
-            if (type == PrimitiveType.Bool || type is SingularBoolType) {
+            // Normalize types by removing dependent types so we dont' have duplicate definitions
+            if (type is SingularIntType) {
+                return this.ConvertType(PrimitiveType.Int);
+            }
+            else if (type is SingularBoolType) {
+                return this.ConvertType(PrimitiveType.Bool);
+            }
+
+            if (type == PrimitiveType.Bool) {
                 return new CNamedType("int");
             }
-            else if (type == PrimitiveType.Int || type is SingularIntType) {
+            else if (type == PrimitiveType.Int) {
                 return new CNamedType("int");
             }
             else if (type == PrimitiveType.Void) {
                 return new CNamedType("int");
             }
             else if (type is PointerType type2) {
-                //return new CPointerType(ConvertType(type2.InnerType));
-                return ConvertType(new ArrayType(type2.InnerType));
+                return new CNamedType(this.GeneratePointerType(type2));
             }
             else if (type is NamedType named) {
                 if (this.pathNames.TryGetValue(named.Path, out var cname)) {
@@ -148,12 +157,7 @@ namespace Helix.Generation {
                 return new CNamedType(cname);
             }
             else if (type is ArrayType array) {
-                if (this.arrayNames.TryGetValue(array, out var name)) {
-                    return new CNamedType(name);
-                }
-
-                name = this.arrayNames[array] = this.GenerateArrayType(array);
-                return new CNamedType(name);
+                return new CNamedType(this.GenerateArrayType(array));
             }
             else {
                 throw new Exception();
@@ -162,14 +166,21 @@ namespace Helix.Generation {
 
         private string GenerateArrayType(ArrayType arrayType) {
             var inner = this.ConvertType(arrayType.InnerType);
-            var name = inner.WriteToC();
+            var innerName = inner.WriteToC();
+
+            if (this.arrayNames.TryGetValue(innerName, out var name)) {
+                return name;
+            }
+            else {
+                name = innerName;
+            }
 
             if (Regex.Match(name, @"[a-zA-Z0-9_$]+").Length == 0) {
                 name = this.arrayCounter.ToString();
                 this.arrayCounter++;
             }
 
-            name = name + "$ptr";
+            name += "$array";
 
             var decl = new CAggregateDeclaration() {
                 Name = name,
@@ -196,6 +207,53 @@ namespace Helix.Generation {
             this.WriteDeclaration1(forwardDecl);
             this.WriteDeclaration3(decl);
             this.WriteDeclaration3(new CEmptyLine());
+
+            this.arrayNames[innerName] = name; 
+
+            return name;
+        }
+
+        private string GeneratePointerType(PointerType pointerType) {
+            var inner = this.ConvertType(pointerType.InnerType);
+            var innerName = inner.WriteToC();
+
+            if (this.pointerNames.TryGetValue(innerName, out var name)) {
+                return name;
+            }
+            else {
+                name = innerName;
+            }
+
+            if (Regex.Match(name, @"[a-zA-Z0-9_$]+").Length == 0) {
+                name = this.arrayCounter.ToString();
+                this.arrayCounter++;
+            }
+
+            name += "$ptr";
+
+            var decl = new CAggregateDeclaration() {
+                Name = name,
+                Members = new[] {
+                    new CParameter() {
+                        Name = "data",
+                        Type = new CPointerType(inner)
+                    },
+                    new CParameter() {
+                        Name = "pool",
+                        Type = this.ConvertType(PrimitiveType.Int)
+                    }
+                }
+            };
+
+            var forwardDecl = new CAggregateDeclaration() {
+                Name = name
+            };
+
+            this.WriteDeclaration1(forwardDecl);
+            this.WriteDeclaration3(decl);
+            this.WriteDeclaration3(new CEmptyLine());
+
+            this.pointerNames[innerName] = name;
 
             return name;
         }

@@ -112,7 +112,6 @@ namespace Helix.Features.Memory {
                 Assignment = new CCompoundExpression() {
                     Arguments = new ICSyntax[] {
                         pointerExpr,
-                        new CIntLiteral(1),
                         allocLifetime
                     },
                     Type = fatPointerType
