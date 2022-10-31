@@ -8,6 +8,7 @@ using Helix.Features.Primitives;
 using System.Net;
 using Helix.Analysis.Lifetimes;
 using Helix.Features.Variables;
+using Helix.Features.Memory;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -76,6 +77,7 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
+            // Get a list of all the mutable variables that could change in this loop body
             var potentiallyModifiedVars = this.body.GetAllChildren()
                 .Select(x => x as VariableAccessParseSyntax)
                 .Where(x => x != null)
@@ -90,119 +92,89 @@ namespace Helix.Features.FlowControl {
                 .Where(x => x != new IdentifierPath())
                 .Where(x => types.Variables.ContainsKey(x))
                 .Select(x => types.Variables[x])
+                .SelectMany(x => {
+                    var list = new List<VariableSignature>();
+
+                    foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(x.Type, types)) {
+                        list.Add(types.Variables[x.Path.Append(relPath)]);
+                    }
+
+                    return list;
+                })
                 .Where(x => x.IsWritable)
                 .Where(x => x.Type.IsRemote(types))
                 .Distinct()
                 .ToValueList();
 
             var bodyTypes = new EvalFrame(types);
+            var bodyVars = potentiallyModifiedVars
+                .Select(sig => {
+                    var newSig = new VariableSignature(
+                        sig.Type,
+                        sig.IsWritable,
+                        new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1));
 
-            foreach (var sig in potentiallyModifiedVars) {
-                var newSig = new VariableSignature(
-                    sig.Type,
-                    sig.IsWritable,
-                    new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1));
+                    return newSig;
+                })
+                .ToValueList();
 
-                bodyTypes.Variables[sig.Path] = newSig;
+            // For every variable that might be modified in the loop, create a new lifetime
+            // for it in the loop body so that if it does change, it is only changing the
+            // new variable signature and not the old one
+            foreach (var sig in bodyVars) {               
+                bodyTypes.Variables[sig.Path] = sig;
             }
 
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
-            var result = new LoopStatement(this.Location, body, true);
+            var bodyBindings = new List<ISyntaxTree>();
 
             var modifiedVars = bodyTypes.Variables.Values
-                .Where(x => potentiallyModifiedVars.Any(y => y.Path == x.Path))
-                .Except(potentiallyModifiedVars)
+                .Except(bodyVars)
                 .ToValueList();
 
+            // For every variable that does change, change the scope after the loop
+            // by incrementing its mutation counter. Also, DO NOT link up the variable
+            // before the loop with the new signature we made. This forces any code in 
+            // the loop to treat this variable as a root since we don't know its origin
             foreach (var sig in modifiedVars) {
-                var oldSig = types.Variables[sig.Path];
-
                 var newSig = new VariableSignature(
                     sig.Type,
                     sig.IsWritable,
                     new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1));
 
                 types.Variables[sig.Path] = newSig;
-
                 types.LifetimeGraph.AddAlias(newSig.Lifetime, sig.Lifetime);
-                types.LifetimeGraph.AddAlias(newSig.Lifetime, oldSig.Lifetime);
+
+                bodyBindings.Add(new BindLifetimeSyntax(this.Location, sig.Lifetime, sig.Path));
             }
 
-            var unmodifiedVars = bodyTypes.Variables.Values
-                .Intersect(potentiallyModifiedVars)
-                .ToValueList();
+            var postBindings = new List<ISyntaxTree>();
+            var unmodifiedVars = potentiallyModifiedVars.Except(modifiedVars).ToValueList();
 
+            // For every variable that is not changed in the loop, change the scope after
+            // the loop to just be the new signature we made earlier. Also, since it didn't
+            // change, we are safe to link up the original lifetime for this variable with what
+            // will be seen in the loop
             foreach (var sig in unmodifiedVars) {
                 var oldSig = types.Variables[sig.Path];
-                var bodySig = bodyTypes.Variables[sig.Path];
 
                 types.Variables[sig.Path] = sig;
                 types.LifetimeGraph.AddAlias(sig.Lifetime, oldSig.Lifetime);
-                types.LifetimeGraph.AddAlias(sig.Lifetime, bodySig.Lifetime);
+
+                bodyBindings.Add(new BindLifetimeSyntax(this.Location, sig.Lifetime, sig.Path));
+                postBindings.Add(new BindLifetimeSyntax(this.Location, sig.Lifetime, sig.Path));
             }
 
-            //var modifiedVars = bodyTypes
-            //    .Variables
-            //    .Select(x => x.Key)
-            //    .Intersect(types.Variables.Select(x => x.Key))
-            //    .ToArray();
+            body = new BlockSyntax(body.Location, bodyBindings.Append(body).ToValueList());
+            body = body.CheckTypes(types);
 
-            // TODO: Fix this
-
-            // Loops are a very weird case to lifetime check. The problem is that loop
-            // bodies can run more than once so we can have an assignment later in the
-            // loop affect the lifetime of a variable earlier in the loop. The solution
-            // is to first identify which variables in the loop body are modified using
-            // a new syntax frame, and then for each modified variable, sum its lifetime
-            // through a graph representing the modified variables in the loop. This will
-            // trace the lifetime through the loop modifications until we hit a lifetime
-            // that was not modified by the loop, which will stop the graph search. This
-            // makes sure that the variable lifetimes after the loop represent all the 
-            // posibilities that could have occured inside the loop.
-            //foreach (var path in modifiedVars) {
-            //    var found = new HashSet<IdentifierPath>();
-            //    var search = new Stack<IdentifierPath>(new[] { path });
-            //    var lifetime = new Lifetime();
-
-            //    // Search through the modified variables of the loop until we discover all
-            //    // possible mutations paths, summing the lifetime along the way
-            //    while (search.Any()) {
-            //        var next = search.Pop();
-
-            //        // This variable is constant with respect to the loop, so we're done
-            //        if (!bodyTypes.Variables.Keys.Contains(next)) {
-            //            continue;
-            //        }
-
-            //        // We have already visited this variable and merged it, so skip it now
-            //        // This prevents infinite loops, which can happen
-            //        if (found.Contains(next)) {
-            //            continue;
-            //        }
-
-            //        var sig = bodyTypes.Variables[next];
-
-            //        lifetime = lifetime.Concat(sig.Lifetime);
-            //        found.Add(next);
-
-            //        foreach (var origin in sig.Lifetime.Dependencies) {
-            //            search.Push(origin);
-            //        }
-            //    }
-
-            //    var oldSig = types.Variables[path];
-
-            //    // Add the newly discovered loop lifetime to the existing variable lifetime,
-            //    // since loops may not run at all
-            //    types.Variables[path] = new VariableSignature(
-            //        path,
-            //        oldSig.Type,
-            //        oldSig.IsWritable,
-            //        lifetime);
-            //}
+            var result = (ISyntaxTree)new LoopStatement(this.Location, body, true);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
             types.Lifetimes[result] = new LifetimeBundle();
+
+            result = new BlockSyntax(result.Location, postBindings.Prepend(result).ToValueList());
+            result = result.CheckTypes(types);
 
             return result;
         }
