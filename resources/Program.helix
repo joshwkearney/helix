@@ -3,7 +3,7 @@ func lifetime_test_3(var a as int**) as void {
 	var target = new int*;
 	var some = new int;
 
-	for i = 0 to 10 {
+	for i = 0 until 10 {
 		some = new int;
 	};
 

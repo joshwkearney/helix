@@ -16,7 +16,8 @@ namespace Helix.Parsing {
             { "and", TokenKind.AndKeyword }, { "or", TokenKind.OrKeyword },
             { "xor", TokenKind.XorKeyword }, { "put", TokenKind.PutKeyword },
             { "break", TokenKind.BreakKeyword }, { "continue", TokenKind.ContinueKeyword },
-            { "return", TokenKind.ReturnKeyword }, { "new", TokenKind.NewKeyword }
+            { "return", TokenKind.ReturnKeyword }, { "new", TokenKind.NewKeyword },
+            { "until", TokenKind.UntilKeyword }
         };
 
         private static readonly Dictionary<char, TokenKind> symbols = new() {

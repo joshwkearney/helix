@@ -17,7 +17,12 @@ namespace Helix.Parsing {
             this.Advance(TokenKind.Assignment);
             var startIndex = this.TopExpression();
 
-            this.Advance(TokenKind.ToKeyword);
+            var inclusive = true;
+            if (!this.TryAdvance(TokenKind.ToKeyword)) {
+                this.Advance(TokenKind.UntilKeyword);
+                inclusive = false;
+            }
+
             var endIndex = this.TopExpression();
 
             startIndex = new AsParseTree(
@@ -53,7 +58,9 @@ namespace Helix.Parsing {
                     loc,
                     counterAccess,
                     endIndex,
-                    BinaryOperationKind.GreaterThanOrEqualTo),
+                    inclusive
+                        ? BinaryOperationKind.GreaterThan
+                        : BinaryOperationKind.GreaterThanOrEqualTo),
                 new BreakContinueSyntax(loc, true));
 
             loopBlock.Add(test);

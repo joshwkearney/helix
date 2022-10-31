@@ -73,7 +73,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?:\b)(if|then|else|while|do|for|break|continue|return)(?:\b)</string>
+            <string>(?:\b)(if|then|else|while|do|for|to|until|break|continue|return)(?:\b)</string>
             <key>name</key>
             <string>keyword.control.flow.if.helix</string>
           </dict>
@@ -85,7 +85,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?:\b)(int|bool|void|var|let|func|as|put|cast|extern|to)(?:\b)</string>
+            <string>(?:\b)(int|bool|void|var|let|func|as|put|cast|extern)(?:\b)</string>
             <key>name</key>
             <string>keyword.other.helix</string>
           </dict>
