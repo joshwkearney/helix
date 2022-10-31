@@ -88,7 +88,7 @@ namespace Helix.Analysis.Lifetimes {
                             // in terms of our roots.
                             var parents = GetPrecursorLifetimes(dep, roots);
 
-                            if (parents.All(roots.Contains)) {
+                            if (parents.Any() && parents.All(roots.Contains)) {
                                 // Success! Item has been expressed in terms of our roots, so we can
                                 // just be dependent on those roots
                                 foreach (var parent in parents) {
@@ -119,10 +119,12 @@ namespace Helix.Analysis.Lifetimes {
                 if (visited.Contains(item)) {
                     continue;
                 }
+                else {
+                    visited.Add(item);
+                }
 
                 if (roots.Contains(item) || !this.parentLifetimes.TryGetValue(item, out var list)) {
                     parents.Add(item);
-                    visited.Add(item);
                 }
                 else {
                     foreach (var parent in list) {

@@ -7,6 +7,7 @@ using Helix.Generation.Syntax;
 using Helix.Features.Primitives;
 using System.Net;
 using Helix.Analysis.Lifetimes;
+using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -75,14 +76,76 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
+            var potentiallyModifiedVars = this.body.GetAllChildren()
+                .Select(x => x as VariableAccessParseSyntax)
+                .Where(x => x != null)
+                .Select(x => {
+                    if (types.TryResolvePath(this.Location.Scope, x.Name, out var path)) {
+                        return path;
+                    }
+                    else {
+                        return new IdentifierPath();
+                    }
+                })
+                .Where(x => x != new IdentifierPath())
+                .Where(x => types.Variables.ContainsKey(x))
+                .Select(x => types.Variables[x])
+                .Where(x => x.IsWritable)
+                .Where(x => x.Type.IsRemote(types))
+                .Distinct()
+                .ToValueList();
+
             var bodyTypes = new EvalFrame(types);
+
+            foreach (var sig in potentiallyModifiedVars) {
+                var newSig = new VariableSignature(
+                    sig.Type,
+                    sig.IsWritable,
+                    new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1));
+
+                bodyTypes.Variables[sig.Path] = newSig;
+            }
+
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = new LoopStatement(this.Location, body, true);
 
-            var modifiedVars = bodyTypes.Variables
-                .Select(x => x.Key)
-                .Intersect(types.Variables.Select(x => x.Key))
-                .ToArray();
+            var modifiedVars = bodyTypes.Variables.Values
+                .Where(x => potentiallyModifiedVars.Any(y => y.Path == x.Path))
+                .Except(potentiallyModifiedVars)
+                .ToValueList();
+
+            foreach (var sig in modifiedVars) {
+                var oldSig = types.Variables[sig.Path];
+
+                var newSig = new VariableSignature(
+                    sig.Type,
+                    sig.IsWritable,
+                    new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1));
+
+                types.Variables[sig.Path] = newSig;
+
+                types.LifetimeGraph.AddAlias(newSig.Lifetime, sig.Lifetime);
+                types.LifetimeGraph.AddAlias(newSig.Lifetime, oldSig.Lifetime);
+            }
+
+            var unmodifiedVars = bodyTypes.Variables.Values
+                .Intersect(potentiallyModifiedVars)
+                .ToValueList();
+
+            foreach (var sig in unmodifiedVars) {
+                var oldSig = types.Variables[sig.Path];
+                var bodySig = bodyTypes.Variables[sig.Path];
+
+                types.Variables[sig.Path] = sig;
+                types.LifetimeGraph.AddAlias(sig.Lifetime, oldSig.Lifetime);
+                types.LifetimeGraph.AddAlias(sig.Lifetime, bodySig.Lifetime);
+            }
+
+            //var modifiedVars = bodyTypes
+            //    .Variables
+            //    .Select(x => x.Key)
+            //    .Intersect(types.Variables.Select(x => x.Key))
+            //    .ToArray();
 
             // TODO: Fix this
 

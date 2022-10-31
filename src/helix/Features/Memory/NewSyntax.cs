@@ -113,8 +113,7 @@ namespace Helix.Features.Memory {
                     "Lifetime Inference Failed",
                     "The lifetime of this new object allocation has failed because it is " +
                     "dependent on a value that does not exist at this point in the program and " + 
-                    "must be calculated at runtime. Are you assigning this allocation to a pointer " + 
-                    "that has not been dereferenced?. Please try moving the allocation " + 
+                    "must be calculated at runtime. Please try moving the allocation " + 
                     "closer to the site of its use.");
             }
 
