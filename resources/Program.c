@@ -12,33 +12,34 @@ extern Pool* _pool_create();
 extern void* _pool_malloc(Pool* pool, int pool_index, int size);
 extern int _pool_get_index(Pool* pool);
 extern void _pool_delete();
+typedef struct int$array int$array;
 typedef struct int$ptr int$ptr;
 
-void lifetime_test_3(Pool* _pool, int$ptr a);
+void lifetime_test_3(Pool* _pool, int$array a);
+
+struct int$array {
+    int* data;
+    int pool;
+    int count;
+};
 
 struct int$ptr {
     int* data;
     int pool;
 };
 
-void lifetime_test_3(Pool* _pool, int$ptr a) {
+void lifetime_test_3(Pool* _pool, int$array a) {
     int $A = _pool_get_index(_pool);
     int $B = (a.pool);
 
-    /* Line 3: New variable declaration 'x' */
-    int x = 45U;
+    /* Line 3: Array to pointer conversion */
+    int$ptr $C = (int$ptr){ ((a.data) + 45U), (a.pool) };
 
-    /* Line 5: New '0*' */
-    int $D = 0U;
-    int$ptr $E = (int$ptr){ (&$D), $A };
-    int $F = ($E.pool);
-    (*($E.data)) = 0U;
+    /* Line 3: Array to pointer conversion */
+    int$ptr $D = (int$ptr){ ((a.data) + 0U), (a.pool) };
 
-    /* Line 5: New variable declaration 'some' */
-    int$ptr some = $E;
-
-    /* Line 5: Saving lifetime 'lifetime_test_3/$block_0/some' */
-    int $G = (some.pool);
+    /* Line 3: Assignment statement */
+    (*($C.data)) = (*($D.data));
 
 }
 

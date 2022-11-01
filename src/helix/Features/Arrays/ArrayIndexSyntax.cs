@@ -7,6 +7,7 @@ using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Arrays;
+using Helix.Features.Memory;
 using Helix.Features.Primitives;
 using Helix.Features.Variables;
 using Helix.Generation;
@@ -22,7 +23,7 @@ namespace Helix.Parsing {
                 var end = this.Advance(TokenKind.CloseBracket);
                 var loc = start.Location.Span(end.Location);
 
-                return new ArrayTypeSyntax(loc, start);
+                return new ArrayTypeSyntax(loc, start, true);
             }
             else {
                 var index = this.TopExpression();
@@ -37,9 +38,10 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.Arrays {
     public record ArrayIndexSyntax : ISyntaxTree {
+        private static int tempCounter = 0;
+
         private readonly ISyntaxTree target;
         private readonly ISyntaxTree index;
-        private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
@@ -47,30 +49,12 @@ namespace Helix.Features.Arrays {
 
         public bool IsPure { get; }
 
-        public ArrayIndexSyntax(TokenLocation loc, ISyntaxTree target, 
-            ISyntaxTree index, bool isTypeChecked = false) {
-
+        public ArrayIndexSyntax(TokenLocation loc, ISyntaxTree target, ISyntaxTree index) {
             this.Location = loc;
             this.target = target;
             this.index = index;
-            this.isTypeChecked = isTypeChecked;
 
             this.IsPure = this.target.IsPure && this.index.IsPure;
-        }
-
-        ISyntaxTree ISyntaxTree.ToRValue(EvalFrame types) {
-            if (!this.isTypeChecked) {
-                throw new InvalidOperationException();
-            }
-
-            return this;
-        }
-
-        ILValue ISyntaxTree.ToLValue(EvalFrame types) {
-            var arrayType = (ArrayType)types.ReturnTypes[this.target];
-            var result = new ArrayToPointerAdapter(arrayType, this.target, this.index);
-
-            return result.CheckTypes(types).ToLValue(types);
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
@@ -90,30 +74,18 @@ namespace Helix.Features.Arrays {
                     types.ReturnTypes[target]);
             }
 
-            var result = new ArrayIndexSyntax(this.Location, target, index, true);
-            types.ReturnTypes[result] = arrayType.InnerType;
+            var adapter = new ArrayToPointerAdapter(arrayType, target, index);
 
-            if (arrayType.InnerType.IsRemote(types)) {
-                types.Lifetimes[result] = types.Lifetimes[target];
-            }
-            else {
-                types.Lifetimes[result] = new LifetimeBundle();
-            }
+            var deref = new DereferenceSyntax(
+                this.Location,
+                adapter,
+                this.Location.Scope.Append("$array_index_" + tempCounter++));
 
-            return result;
+            return deref.CheckTypes(types);
         }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            return new CPointerDereference() {
-                Target = new CBinaryExpression() {
-                    Operation = BinaryOperationKind.Add,
-                    Left = new CMemberAccess() {
-                        MemberName = "data",
-                        Target = this.target.GenerateCode(types, writer)
-                    },
-                    Right = this.index.GenerateCode(types, writer)
-                }
-            };
+            throw new InvalidOperationException();
         }
     }
 }

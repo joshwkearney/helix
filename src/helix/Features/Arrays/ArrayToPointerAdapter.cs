@@ -12,7 +12,7 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Features.Arrays {
-    public record ArrayToPointerAdapter : ISyntaxTree, ILValue {
+    public record ArrayToPointerAdapter : ISyntaxTree {
         private readonly ArrayType arrayType;
         private readonly ISyntaxTree target;
         private readonly ISyntaxTree? offset = null;
@@ -31,8 +31,6 @@ namespace Helix.Features.Arrays {
 
         public bool IsPure { get; }
 
-        public bool IsLocal => false;
-
         public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target, ISyntaxTree offset) {
             this.arrayType = arrayType;
             this.target = target;
@@ -41,19 +39,13 @@ namespace Helix.Features.Arrays {
             this.IsPure = target.IsPure && offset.IsPure;
         }
 
-        public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target) {
-            this.arrayType = arrayType;
-            this.target = target;
-
-            this.IsPure = target.IsPure;
-        }
+        public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target)
+            : this(arrayType, target, new IntLiteral(target.Location, 0)) { }
 
         ISyntaxTree ISyntaxTree.ToRValue(EvalFrame types) => this;
 
-        ILValue ISyntaxTree.ToLValue(EvalFrame types) => this;
-
         public ISyntaxTree CheckTypes(EvalFrame types) {
-            types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType, true);
+            types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType, this.arrayType.IsWritable);
             types.Lifetimes[this] = types.Lifetimes[this.target];
 
             return this;
@@ -75,7 +67,10 @@ namespace Helix.Features.Arrays {
                 };
             }
 
-            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, true));
+            writer.WriteEmptyLine();
+            writer.WriteComment($"Line {this.Location.Line}: Array to pointer conversion");
+
+            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, this.arrayType.IsWritable));
             var ptrValue = new CCompoundExpression() {
                 Arguments = new[] {
                     newData,
@@ -87,7 +82,10 @@ namespace Helix.Features.Arrays {
                 Type = ptrType
             };
 
-            return writer.WriteImpureExpression(ptrType, ptrValue);
+            var result = writer.WriteImpureExpression(ptrType, ptrValue);
+            writer.WriteEmptyLine();
+
+            return result;
         }
     }
 }

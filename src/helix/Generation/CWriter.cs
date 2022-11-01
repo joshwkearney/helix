@@ -190,11 +190,11 @@ namespace Helix.Generation {
                         Type = new CPointerType(inner)
                     },
                     new CParameter() {
-                        Name = "count",
+                        Name = "pool",
                         Type = this.ConvertType(PrimitiveType.Int)
                     },
                     new CParameter() {
-                        Name = "pool",
+                        Name = "count",
                         Type = this.ConvertType(PrimitiveType.Int)
                     }
                 }

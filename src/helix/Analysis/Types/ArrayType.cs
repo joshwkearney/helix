@@ -5,8 +5,11 @@ namespace Helix.Analysis.Types {
     public record ArrayType : HelixType {
         public HelixType InnerType { get; }
 
-        public ArrayType(HelixType innerType) {
+        public bool IsWritable { get; }
+
+        public ArrayType(HelixType innerType, bool isWritable) {
             this.InnerType = innerType;
+            this.IsWritable = isWritable;
         }
 
         public override bool CanUnifyTo(HelixType other, EvalFrame types, bool isCast) {

@@ -136,7 +136,7 @@ namespace Helix.Features.Functions {
                 return new PointerType(ptr.InnerType, true);
             }
             else if (type is ArrayType arr) {
-                return new ArrayType(arr.InnerType);
+                return new ArrayType(arr.InnerType, true);
             }
             else {
                 return type;

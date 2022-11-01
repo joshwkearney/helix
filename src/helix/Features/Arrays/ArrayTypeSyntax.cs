@@ -22,15 +22,18 @@ namespace Helix.Features.Arrays {
 
         public bool IsPure => this.inner.IsPure;
 
-        public ArrayTypeSyntax(TokenLocation loc, ISyntaxTree inner) {
+        public bool IsWritable { get; }
+
+        public ArrayTypeSyntax(TokenLocation loc, ISyntaxTree inner, bool isWritable) {
             this.Location = loc;
             this.inner = inner;
+            this.IsWritable = isWritable;
         }
 
         Option<HelixType> ISyntaxTree.AsType(EvalFrame types) {
             return this.inner
                 .AsType(types)
-                .Select(x => new ArrayType(x))
+                .Select(x => new ArrayType(x, this.IsWritable))
                 .Select(x => (HelixType)x);
         }
 
