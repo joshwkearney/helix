@@ -65,6 +65,7 @@ namespace Helix.Features.Aggregates {
                         this.Location,
                         target,
                         "count",
+                        true,
                         true);
 
                     types.ReturnTypes[result] = PrimitiveType.Int;
