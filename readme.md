@@ -2,31 +2,37 @@
 
 Welcome to the Helix repository! This page serves as an introduction to the language as well as  a basic language specification. See the code samples to get a general feel for Helix or the more detailed descriptions of language features for a more in-depth look.
 
-# Table of Contents
+## Table of Contents
 1. [Code Samples](#code-samples)
-    - Selection sort
-    - Binary search
+    - [Fibonacci](#fibonacci)
 2. [Project Overview](#project-overview)
-3. [Motivations for a New Language](#motivations-for-a-new-language)
-4. [Major Features](#major-features)
-    - Region-based memory management
-    - Automatic region assignment
-    - Type system and values as singleton types
-5. [Syntax Description](#syntax-description)
-    - Variables and pointers
-    - Loops and control flow
-    - Functions
-    - Structs and unions
+3. [Major Features](#major-features)
+    - [Region-based memory management](#region-based-memory-management)
+    - [Automatic region assignment](#automatic-region-assignment)
+    - [Type system and values as singleton types](#Type-system-and-values-as-singleton-types)
+4. [Syntax Description](#syntax-description)
+    - [Variables and pointers](#variables-and-pointers)
+    - [Loops and control flow](#loops-and-control-flow)
+    - [Functions](#functions)
+    - [Structs](#structs)
+    - [Put and new](#put-and-new)
+    - [As operator](#as-operator)
 
 
-# Code Samples
+## Code Samples
+### Fibonacci
+    func fib(let x as int) as int {
+	    if x <= 1 
+	    then x
+	    else fib(x - 1) + fib(x - 2);
+    };
 
-## Selection sort
+### Selection sort
 
-## Binary search
+### Binary search
 
 
-# Project Overview
+## Project Overview
 
 This repository contains the compiler for the Helix language, which is a statically-typed, ahead-of-time compiled, small, intuitive systems language. The compiler is written in C# and Helix itself compiles to C for maximum compatibility and portability. The eventual goal will be to self-host the compiler in Helix but that is yet a ways off.
 
@@ -39,9 +45,9 @@ Helix is being designed to be a modern systems language that is as simple and in
 3. Compatibility. 
 
 
-# Major Features
+## Major Features
 
-## Region-based memory management
+### Region-based memory management
 
 Helix uses a lexical, heirarchical, region-based memory management system for heap allocation. That's a lot of descriptors, but basically what it means is that Helix allocates all dynamic memory to one of several nested memory blocks called regions. Each region can be thought of as a simple bump allocator, and all the memory in a region is deallocated at once when the region goes out of scope. In helix a region is declared as follows: 
 
@@ -54,7 +60,7 @@ Because regions are lexical it is very easy to immediately see where memory is b
 Helix's regions are also heirarchical, which means that its heap can best be conceptualized as a stack of regions. New regions are pushed to the bottom of the stack and must be freed before any region above them is freed; any the memory in lower regions has a shorter lifetime than all the memory in higher regions. 
 
 
-## Automatic region assignment
+### Automatic region assignment
 
 Not many languages have experimented with region-based memory management ([Cyclone](https://cyclone.thelanguage.org) and [Cone](https://cone.jondgoodwin.com) being notable exceptions), and the languages that do must solve two primary problems: 1) How are memory allocations assigned to regions? 2) How do memory-complex programs operate around region lifetimes?
 
@@ -103,7 +109,7 @@ This system allows Helix to mix static analysis with light runtime computations 
 What about long-lived data structures? Don't many programs use data structures that live in the global scope and will never be deallocated? Indeed this is true, and it is a fine objection to lexical regions. In response I would say that most memory is lexically scoped, even if some is not, so in general Helix's memory management will be good enough for most use cases. In situations where non-lexical scoping is truly needed, I am planning on implementing a series of data structures in the standard library based on malloc/free that provide an "out" for these situations; these structures will use value-semantics to make sure that data in the data structures can never point to invalid memory. Every memory management technique is a balance of compromises, and for Helix, lexical regions makes the most sense. In the far future I might experiment with linear types or something similar but it is not a high priority at the moment. 
 
 
-## Type system and values as singleton types
+### Type system and values as singleton types
 
 The Helix language was designed with metaprogramming in mind, and consequently it has a very unique type system that is quite different from most mainstream languages. In essence the biggest difference is that, in Helix, types and values are the same concept. 
 
@@ -126,9 +132,9 @@ Helix actually gets its name from this process: types and values can be imagined
 Generics will blend seamlessly with normal code without messy angle brackets, computations on types can be easily mixed with runtime code using the same syntax, function specialization will happen transparently, and specialized functions will be partially evaluated automatically. This is the future of Helix and is where I intent to take this project in the future.
 
 
-# Syntax Description
+## Syntax Description
 
-## Variables and pointers
+### Variables and pointers
 
 Variables in Helix come in two flavors: constants and variables. Constants are defined by `let` while variables are defined by `var`, and types are inferred for both. Constants always have the same type as their value, whereas for variables the compiler will abstract individual integer types like `1`, `2`, etc into the more generic `int` type for convienence (see description of type system for details).
 
@@ -138,7 +144,7 @@ Variables in Helix come in two flavors: constants and variables. Constants are d
     y = 45;
     
 
-## Loops and control flow
+### Loops and control flow
 
 Helix comes with a standard assortment of control flow, including `for` loops, `while` loops, `if` expressions, and match statements.
 
@@ -157,7 +163,11 @@ Helix comes with a standard assortment of control flow, including `for` loops, `
     };
     
 
-## Functions
+### Functions
 
 
-## Structs and unions
+### Structs
+
+### Put and new
+
+### As operator
