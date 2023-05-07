@@ -128,9 +128,9 @@ namespace Helix.Features.FlowControl {
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var bodyBindings = new List<ISyntaxTree>();
 
-            var modifiedVars = bodyTypes.Variables.Values
+            var modifiedVars = bodyVars
                 .Select(x => x.Path)
-                .Except(bodyVars.Select(x => x.Path))
+                .Except(bodyTypes.Variables.Values.Select(x => x.Path))
                 .Distinct()
                 .ToValueList();
 
