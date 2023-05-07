@@ -6,16 +6,12 @@ Welcome to the Helix repository! This page serves as an introduction to the lang
 1. [Code Samples](#code-samples)
     - Selection sort
     - Binary search
-    
 2. [Project Overview](#project-overview)
-    
 3. [Motivations for a New Language](#motivations-for-a-new-language)
-
 4. [Major Features](#major-features)
     - Region-based memory management
     - Automatic region assignment
     - Type system and values as singleton types
-    
 5. [Syntax Description](#syntax-description)
     - Variables and pointers
     - Loops and control flow
