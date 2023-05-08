@@ -10,24 +10,12 @@ namespace Helix.Analysis {
 
         public IdentifierPath Path { get; }
 
-        public Lifetime Lifetime { get; }
-
         public VariableSignature(IdentifierPath path, HelixType type, 
-            bool isWritable, int mutationCount) {
+            bool isWritable) {
 
             this.Path = path;
             this.Type = type;
             this.IsWritable = isWritable;
-            this.Lifetime = new Lifetime(this.Path, mutationCount);
-        }
-
-        public VariableSignature(HelixType type,
-            bool isWritable, Lifetime lifetime) {
-
-            this.Path = lifetime.Path;
-            this.Type = type;
-            this.IsWritable = isWritable;
-            this.Lifetime = lifetime;
         }
     }
 }

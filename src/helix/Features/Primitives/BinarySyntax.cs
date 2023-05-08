@@ -19,7 +19,7 @@ namespace Helix.Parsing {
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    first = new IfParseSyntax(
+                    first = new IfSyntax(
                         loc, 
                         first,
                         new BoolLiteral(loc, true),
@@ -55,7 +55,7 @@ namespace Helix.Parsing {
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    first = new IfParseSyntax(
+                    first = new IfSyntax(
                         loc,
                         new UnaryParseSyntax(loc, UnaryOperatorKind.Not, first),
                         new BoolLiteral(loc, false),

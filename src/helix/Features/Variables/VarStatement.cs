@@ -9,6 +9,7 @@ using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
 using Helix.Features.FlowControl;
 using Helix.Features.Memory;
+using System.IO;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -73,68 +74,28 @@ namespace Helix {
         public ISyntaxTree CheckTypes(EvalFrame types) {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);
-
             if (this.isWritable) {
                 assign = assign.WithMutableType(types);
             }
 
-            var assignType = types.ReturnTypes[assign];
-
             // If this is a compound assignment, check if we have the right
             // number of names and then recurse
+            var assignType = types.ReturnTypes[assign];
             if (this.names.Count > 1) {
                 return this.Destructure(assignType, types);
             }
 
-            // Set the return type of the new syntax tree
+            // Make sure we're not shadowing another variable
             var basePath = this.Location.Scope.Append(this.names[0]);
-            var result = (ISyntaxTree)new VarStatement(this.Location, basePath, assignType, assign);
-            var bindings = this.CalculateLifetimes(assign, assignType, types);
-
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new LifetimeBundle();
-
-            // Be sure to bind our new lifetime to this variable
-            result = new BlockSyntax(result.Location, bindings.Prepend(result).ToArray());
-
-            return result.CheckTypes(types);
-        }
-
-        private IEnumerable<ISyntaxTree> CalculateLifetimes(ISyntaxTree assign, HelixType assignType, EvalFrame types) {
-            // Calculate a signature and lifetime for this variable
-            var assignBundle = types.Lifetimes[assign];
-            var basePath = this.Location.Scope.Append(this.names[0]);
-            var bindings = new List<ISyntaxTree>();
-
-            // Go through all the variables and sub variables and set up the lifetimes 
-            // correctly
-            foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, types)) {
-                var path = basePath.Append(compPath);
-
-                // Make sure we're not shadowing another variable
-                if (types.Variables.ContainsKey(path)) {
-                    throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
-                }
-
-                var varLifetime = new Lifetime(path, 0);
-                var sig = new VariableSignature(compType, this.isWritable, varLifetime);
-
-                // Make sure that this variable acts as a passthrough for the lifetimes that are
-                // in the assignment expression
-                foreach (var assignLifetime in assignBundle.ComponentLifetimes[compPath]) {
-                    types.LifetimeGraph.AddAlias(varLifetime, assignLifetime);
-                }
-
-                // Put this variable's value in the value table
-                types.Variables[path] = sig;
-                types.SyntaxValues[path] = assign;
-
-                if (sig.Type.IsRemote(types)) {
-                    bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, path));
-                }
+            if (types.Variables.ContainsKey(basePath)) {
+                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
             }
 
-            return bindings;
+            // Set the return type of the new syntax tree
+            var result = new VarStatement(this.Location, basePath, assignType, assign);
+            types.ReturnTypes[result] = PrimitiveType.Void;
+
+            return result.CheckTypes(types);
         }
 
         private ISyntaxTree Destructure(HelixType assignType, EvalFrame types) {
@@ -188,7 +149,11 @@ namespace Helix {
             throw new InvalidOperationException();
         }
 
-        public ISyntaxTree ToLValue(EvalFrame types) {
+        public ILValue ToLValue(EvalFrame types) {
+            throw new InvalidOperationException();
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
             throw new InvalidOperationException();
         }
 
@@ -198,27 +163,20 @@ namespace Helix {
     }
 
     public record VarStatement : ISyntaxTree {
-        private readonly Option<ISyntaxTree> assign;
+        private readonly ISyntaxTree assign;
         private readonly IdentifierPath path;
         private readonly HelixType returnType;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => this.assign.ToEnumerable();
+        public IEnumerable<ISyntaxTree> Children => new[] { this.assign };
 
         public bool IsPure => false;
 
         public VarStatement(TokenLocation loc, IdentifierPath path, HelixType returnType, ISyntaxTree assign) {
             this.Location = loc;
             this.path = path;
-            this.assign = Option.Some(assign);
-            this.returnType = returnType;
-        }
-
-        public VarStatement(TokenLocation loc, IdentifierPath path, HelixType returnType) {
-            this.Location = loc;
-            this.path = path;
-            this.assign = Option.None;
+            this.assign = assign;
             this.returnType = returnType;
         }
 
@@ -226,13 +184,42 @@ namespace Helix {
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;
 
+        public void AnalyzeFlow(FlowFrame flow) {
+            this.assign.AnalyzeFlow(flow);
+
+            // Calculate a signature and lifetime for this variable
+            var assignType = flow.ReturnTypes[this.assign];
+            var assignBundle = flow.Lifetimes[this.assign];
+
+            // Go through all the variables and sub variables and set up the lifetimes
+            // correctly
+            foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, flow)) {
+                var path = this.path.Append(compPath);               
+                var varLifetime = new Lifetime(path, 0);
+
+                // Add this variable's lifetime
+                flow.VariableLifetimes[path] = varLifetime;
+
+                // Make sure that this variable acts as a passthrough for the lifetimes that are
+                // in the assignment expression
+                foreach (var assignLifetime in assignBundle.ComponentLifetimes[compPath]) {
+                    flow.LifetimeGraph.AddAlias(varLifetime, assignLifetime);
+                }
+
+                if (sig.Type.IsRemote(flow)) {
+                    // TODO: Put back binding
+                    //bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, path));
+                }
+            }
+        }
+
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
 
             var stat = new CVariableDeclaration() {
                 Type = writer.ConvertType(returnType),
                 Name = name,
-                Assignment = this.assign.Select(x => x.GenerateCode(types, writer))
+                Assignment = Option.Some(this.assign.GenerateCode(types, writer))
             };
 
             foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(this.returnType, types)) {

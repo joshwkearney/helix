@@ -57,7 +57,6 @@ namespace Helix.Parsing {
 namespace Helix.Features.Variables {
     public record AssignmentStatement : ISyntaxTree {
         private readonly ISyntaxTree target, assign;
-        private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
@@ -65,17 +64,15 @@ namespace Helix.Features.Variables {
 
         public bool IsPure => false;
 
-        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, 
-            ISyntaxTree assign, bool isTypeChecked = false) {
+        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, ISyntaxTree assign) {
 
             this.Location = loc;
             this.target = target;
             this.assign = assign;
-            this.isTypeChecked = isTypeChecked;
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
-            if (this.isTypeChecked) {
+            if (types.ReturnTypes.ContainsKey(this)) {
                 return this;
             }
 
@@ -87,22 +84,28 @@ namespace Helix.Features.Variables {
                 .ToRValue(types)
                 .UnifyTo(targetType, types);            
 
-            var result = (ISyntaxTree)new AssignmentStatement(this.Location, target, assign, true);
-            var bindings = this.CalculateLifetimes(target, assign, types);
-
+            var result = (ISyntaxTree)new AssignmentStatement(this.Location, target, assign);
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new LifetimeBundle();
-
-            // Prepend is significant because we want the assignment to generate before the new
-            // lifetime binding
-            result = new BlockSyntax(this.Location, bindings.Prepend(result).ToArray());
-            result = result.CheckTypes(types);
 
             return result;
         }
 
-        private IEnumerable<ISyntaxTree> CalculateLifetimes(ILValue target, ISyntaxTree assign, EvalFrame types) {
-            var targetType = types.ReturnTypes[target];
+        public ISyntaxTree ToRValue(EvalFrame types) {
+            // We need to be type checked to be an r-value
+            if (!types.ReturnTypes.ContainsKey(this)) {
+                throw TypeCheckingErrors.RValueRequired(this.Location);
+            }
+
+            return this;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            if (flow.Lifetimes.ContainsKey(this)) {
+                return;
+            }
+
+            this.assign.AnalyzeFlow(flow);
+            this.target.AnalyzeFlow(flow);
 
             // TODO: Implement the below comment
             // Check to see if the assigned value has the same origins
@@ -112,8 +115,9 @@ namespace Helix.Features.Variables {
             // check. If the lifetimes do not have runtime values, then we
             // need to throw an error
 
-            var targetBundle = types.Lifetimes[target];
-            var assignBundle = types.Lifetimes[assign];
+            var targetType = flow.ReturnTypes[target];
+            var targetBundle = flow.Lifetimes[target];
+            var assignBundle = flow.Lifetimes[assign];
 
             //if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
             //    throw new LifetimeException(
@@ -133,14 +137,12 @@ namespace Helix.Features.Variables {
             // array variable replaces the current lifetime for that variable, so we need to
             // increment the mutation counter and create the new lifetime. 
 
-            var lifetimeBindings = new List<ISyntaxTree>();
-
-            if (target.IsLocal) {
+            if (this.target.ToLValue(flow).IsLocal) {
                 // Because structs are basically just bags of locals, we could actually be
                 // setting multiple variables with this one assignment if we are assigning
                 // a struct type. Therefore, loop through all the possible variables and
                 // members and set them correctly
-                foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(targetType, types)) {
+                foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(targetType, flow)) {
                     if (assignBundle.ComponentLifetimes[relPath].Count != 1) {
                         throw new Exception("Compiler bug: invalid state");
                     }
@@ -154,33 +156,29 @@ namespace Helix.Features.Variables {
                     // lifetime.
                     var assignLifetime = assignBundle.ComponentLifetimes[relPath][0];
                     var oldLifetime = targetBundle.ComponentLifetimes[relPath][0];
-                    var sig = types.Variables[oldLifetime.Path];
+                    var sig = flow.VariableLifetimes[oldLifetime.Path];
 
                     var newLifetime = new Lifetime(
                         sig.Path,
-                        sig.Lifetime.MutationCount + 1);
-
-                    var newSig = new VariableSignature(
-                        sig.Type,
-                        sig.IsWritable,
-                        newLifetime);
+                        sig.MutationCount + 1);
 
                     // Replace the old variable signature
-                    types.Variables[oldLifetime.Path] = newSig;
+                    flow.VariableLifetimes[oldLifetime.Path] = newLifetime;
 
+                    // TODO: Add binding
                     // We need to generate a variable for this new lifetime in the c
-                    var binding = new BindLifetimeSyntax(
-                        this.Location,
-                        newLifetime,
-                        newSig.Path);
+                    //var binding = new BindLifetimeSyntax(
+                    //    this.Location,
+                    //    newLifetime,
+                    //    newSig.Path);
 
-                    lifetimeBindings.Add(binding);
+                    //lifetimeBindings.Add(binding);
 
                     // Register the new variable lifetime with the graph. Both AddDerived and 
                     // AddPrecursor are used because the new lifetime is being created as an
                     // alias for the assigned lifetimes, and the assigned lifetimes will be
                     // dependent on whatever the new lifetime is dependent on.
-                    types.LifetimeGraph.AddAlias(newLifetime, assignLifetime);
+                    flow.LifetimeGraph.AddAlias(newLifetime, assignLifetime);
                 }
             }
             else {
@@ -191,20 +189,10 @@ namespace Helix.Features.Variables {
                 // independent of the assigned lifetimes.
                 foreach (var assignTime in assignBundle.AllLifetimes) {
                     foreach (var targetTime in targetBundle.AllLifetimes) {
-                        types.LifetimeGraph.AddDependency(assignTime, targetTime);
+                        flow.LifetimeGraph.AddDependency(assignTime, targetTime);
                     }
                 }
             }
-
-            return lifetimeBindings;
-        }
-
-        public ISyntaxTree ToRValue(EvalFrame types) {
-            if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
-            }
-
-            return this;
         }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {

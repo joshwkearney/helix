@@ -17,7 +17,7 @@ namespace Helix.Parsing {
             var cond = this.TopExpression();
             var newBlock = new List<ISyntaxTree>();
 
-            var test = new IfParseSyntax(
+            var test = new IfSyntax(
                 cond.Location,
                 new UnaryParseSyntax(cond.Location, UnaryOperatorKind.Not, cond),
                 new BreakContinueSyntax(cond.Location, true));

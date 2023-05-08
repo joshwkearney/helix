@@ -20,7 +20,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Variables {
+namespace Helix.Features.Variables {                                                                                
     public record VariableAccessParseSyntax : ISyntaxTree {
         public string Name { get; }
 
@@ -59,18 +59,14 @@ namespace Helix.Features.Variables {
             // Make sure we are accessing a variable
             if (types.Variables.TryGetValue(path, out var varSig)) {
                 var result = new VariableAccessSyntax(this.Location, path);
-
                 types.ReturnTypes[result] = varSig.Type;
-                types.Lifetimes[result] = this.CalculteLifetimes(varSig, types);
 
                 return result;
             }
 
             if (types.Functions.ContainsKey(path)) {
                 var result = new VariableAccessSyntax(this.Location, path);
-
                 types.ReturnTypes[result] = new NamedType(path);
-                types.Lifetimes[result] = new LifetimeBundle();
 
                 return result;
             }
@@ -78,24 +74,13 @@ namespace Helix.Features.Variables {
             throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
         }
 
-        public LifetimeBundle CalculteLifetimes(VariableSignature sig, EvalFrame types) {
-            var lifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
-
-            // Go through all this variable's members and set the lifetime bundle correctly
-            foreach (var (compPath, _) in VariablesHelper.GetMemberPaths(sig.Type, types)) {
-                var memPath = sig.Path.Append(compPath);
-
-                lifetimes[compPath] = new[] { types.Variables[memPath].Lifetime };
-            }
-
-            return new LifetimeBundle(lifetimes);
-        }
-
         public ISyntaxTree ToRValue(EvalFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ILValue ToLValue(EvalFrame types) {
+        public ILValue ToLValue(EvalFrame types) { throw new InvalidOperationException(); }
+
+        public void AnalyzeFlow(FlowFrame flow) {
             throw new InvalidOperationException();
         }
 
@@ -132,6 +117,20 @@ namespace Helix.Features.Variables {
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            var lifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+            var sig = flow.Variables[this.variablePath];
+
+            // Go through all this variable's members and set the lifetime bundle correctly
+            foreach (var (compPath, _) in VariablesHelper.GetMemberPaths(sig.Type, flow)) {
+                var memPath = sig.Path.Append(compPath);
+
+                lifetimes[compPath] = new[] { flow.VariableLifetimes[memPath] };
+            }
+
+            flow.Lifetimes[this] = new LifetimeBundle(lifetimes);
+        }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);

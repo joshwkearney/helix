@@ -52,7 +52,7 @@ namespace Helix.Parsing {
             var loopBlock = new List<ISyntaxTree>();
             var loc = startTok.Location.Span(endIndex.Location);
 
-            var test = new IfParseSyntax(
+            var test = new IfSyntax(
                 loc,
                 new BinarySyntax(
                     loc,

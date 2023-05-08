@@ -54,7 +54,7 @@ namespace Helix.Features.Aggregates {
             this.isPointerAccess = isPointerAccess;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(FlowFrame types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
@@ -103,7 +103,7 @@ namespace Helix.Features.Aggregates {
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        private LifetimeBundle CalculateLifetimes(ISyntaxTree target, HelixType memberType, EvalFrame types) {
+        private LifetimeBundle CalculateLifetimes(ISyntaxTree target, HelixType memberType, FlowFrame types) {
             var relPath = new IdentifierPath(this.memberName);
             var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
@@ -115,7 +115,7 @@ namespace Helix.Features.Aggregates {
             return new LifetimeBundle(bundleDict);
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(FlowFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -123,7 +123,7 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ILValue ToLValue(EvalFrame types) {
+        public ILValue ToLValue(FlowFrame types) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -144,7 +144,7 @@ namespace Helix.Features.Aggregates {
             return result;
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }

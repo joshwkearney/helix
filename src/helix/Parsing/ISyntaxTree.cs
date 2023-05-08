@@ -21,6 +21,11 @@ namespace Helix.Parsing {
 
         public ISyntaxTree CheckTypes(EvalFrame types);
 
+        public void AnalyzeFlow(FlowFrame flow);
+
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer);
+
+        // Mixins
         public ISyntaxTree ToRValue(EvalFrame types) {
             throw TypeCheckingErrors.RValueRequired(this.Location);
         }
@@ -29,9 +34,6 @@ namespace Helix.Parsing {
             throw TypeCheckingErrors.LValueRequired(this.Location);
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer);
-
-        // Mixins
         public IEnumerable<ISyntaxTree> GetAllChildren() {
             var stack = new Queue<ISyntaxTree>(this.Children);
 

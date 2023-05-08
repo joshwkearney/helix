@@ -11,15 +11,13 @@ using System.Runtime.CompilerServices;
 namespace Helix.Analysis {
     public delegate void DeclarationCG(ICWriter writer);
 
-    public class EvalFrame {
+    public class EvalFrame : ITypedFrame {
         private int tempCounter = 0;
 
         // Frame-specific things
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
 
         public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
-
-        public IDictionary<ISyntaxTree, LifetimeBundle> Lifetimes { get; }
 
         // Global things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
@@ -30,12 +28,11 @@ namespace Helix.Analysis {
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
-        public LifetimeGraph LifetimeGraph { get; }
+        //public LifetimeGraph LifetimeGraph { get; }
 
         public EvalFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            this.Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
-            this.LifetimeGraph = new();
+            //this.LifetimeGraph = new();
 
             this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
@@ -53,14 +50,13 @@ namespace Helix.Analysis {
         public EvalFrame(EvalFrame prev) {
             this.Variables = new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
             this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
-            this.LifetimeGraph = prev.LifetimeGraph;
+            //this.LifetimeGraph = prev.LifetimeGraph;
 
             this.Functions = prev.Functions;
             this.Aggregates = prev.Aggregates;
 
             this.TypeDeclarations = prev.TypeDeclarations;
             this.ReturnTypes = prev.ReturnTypes;
-            this.Lifetimes = prev.Lifetimes;
         }
 
         public string GetVariableName() {
