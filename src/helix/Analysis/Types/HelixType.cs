@@ -10,7 +10,7 @@ namespace Helix.Analysis.Types {
             return new TypeSyntaxWrapper(loc, this);
         }
 
-        public abstract bool IsRemote(EvalFrame types);
+        public abstract bool IsValueType(ITypedFrame types);
 
         public virtual IEnumerable<HelixType> GetContainedTypes(EvalFrame frame) {
             yield return this;
@@ -68,6 +68,10 @@ namespace Helix.Analysis.Types {
             }
 
             public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+                throw new InvalidOperationException();
+            }
+
+            public void AnalyzeFlow(FlowFrame flow) {
                 throw new InvalidOperationException();
             }
         }

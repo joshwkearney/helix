@@ -32,7 +32,7 @@ namespace Helix.Features.Variables {
                 yield break;
             }
 
-            if (!types.Aggregates.TryGetValue(named.Path, out var structSig)) {
+            if (!types.Structs.TryGetValue(named.Path, out var structSig)) {
                 yield break;
             }
 

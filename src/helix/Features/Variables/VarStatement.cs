@@ -106,7 +106,7 @@ namespace Helix {
                     $"Cannot deconstruct non-struct type '{ assignType }'");
             }
 
-            if (!types.Aggregates.TryGetValue(named.Path, out var sig)) {
+            if (!types.Structs.TryGetValue(named.Path, out var sig)) {
                 throw new TypeCheckingException(
                     this.Location,
                     "Invalid Desconstruction",

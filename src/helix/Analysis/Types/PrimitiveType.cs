@@ -29,7 +29,7 @@ namespace Helix.Analysis.Types {
                     return true;
                 }
                 else if (other is NamedType named) {
-                    if (types.Aggregates.TryGetValue(named.Path, out var sig)) {
+                    if (types.Structs.TryGetValue(named.Path, out var sig)) {
                         return sig.Members.All(x => x.Type.HasDefaultValue(types));
                     }
                 }
@@ -74,7 +74,7 @@ namespace Helix.Analysis.Types {
             return base.ToSyntax(loc);
         }
 
-        public override bool IsRemote(EvalFrame types) => false;
+        public override bool IsValueType(ITypedFrame types) => true;
 
         private enum PrimitiveTypeKind {
             Int = 11, 

@@ -163,7 +163,7 @@ namespace Helix.Features.Memory {
                 return new BoolLiteral(this.Location, singBool.Value).CheckTypes(types);
             }
             else if (type is NamedType named) {
-                if (!types.Aggregates.TryGetValue(named.Path, out var sig)) {
+                if (!types.Structs.TryGetValue(named.Path, out var sig)) {
                     throw TypeCheckingErrors.ExpectedStructType(this.type.Location, type);
                 }
 

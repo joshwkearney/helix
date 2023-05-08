@@ -57,6 +57,6 @@ namespace Helix.Analysis.Types {
 
         public override string ToString() => this.Value.ToString().ToLower();
 
-        public override bool IsRemote(EvalFrame types) => false;
+        public override bool IsValueType(ITypedFrame types) => true;
     }
 }

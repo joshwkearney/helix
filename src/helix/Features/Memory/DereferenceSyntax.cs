@@ -34,7 +34,7 @@ namespace Helix.Features.Memory {
 
         public bool IsPure => this.target.IsPure;
 
-        public bool IsLocal => false;
+        public bool IsLocalVariable => false;
 
         public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, 
             IdentifierPath tempPath, bool isTypeChecked = false, bool islvalue = false) {

@@ -29,7 +29,7 @@ namespace Helix.Analysis.Types {
             return this.InnerType + (this.IsWritable ? "*" : "^");
         }
 
-        public override bool IsRemote(EvalFrame types) => true;
+        public override bool IsValueType(ITypedFrame types) => false;
 
         public override IEnumerable<HelixType> GetContainedTypes(EvalFrame frame) {
             yield return this;

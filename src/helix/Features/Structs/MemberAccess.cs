@@ -33,10 +33,10 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure => this.target.IsPure;
 
-        public bool IsLocal {
+        public bool IsLocalVariable {
             get {
                 if (this.target is ILValue lvalue) {
-                    return lvalue.IsLocal;
+                    return lvalue.IsLocalVariable;
                 }
 
                 return false;
@@ -77,7 +77,7 @@ namespace Helix.Features.Aggregates {
             // If this is a named type it could be a struct or union
             if (targetType is NamedType named) {
                 // If this is a struct or union we can access the fields
-                if (types.Aggregates.TryGetValue(named.Path, out var sig)) {
+                if (types.Structs.TryGetValue(named.Path, out var sig)) {
                     var fieldOpt = sig
                         .Members
                         .Where(x => x.Name == this.memberName)

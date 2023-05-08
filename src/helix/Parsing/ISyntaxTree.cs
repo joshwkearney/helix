@@ -7,7 +7,7 @@ using Helix.Generation.Syntax;
 
 namespace Helix.Parsing {
     public interface ILValue : ISyntaxTree {
-        public bool IsLocal { get; }
+        public bool IsLocalVariable { get; }
     }
 
     public interface ISyntaxTree {

@@ -12,6 +12,10 @@ namespace Helix.Analysis {
     public interface ITypedFrame {
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
 
+        public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
+
+        public IDictionary<IdentifierPath, StructSignature> Aggregates { get; }
+
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
     }
 
@@ -25,25 +29,33 @@ namespace Helix.Analysis {
 
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
 
+        public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
+
+        public IDictionary<IdentifierPath, StructSignature> Aggregates { get; }
+
         // Frame-specific things
-        public IDictionary<IdentifierPath, Lifetime> VariableLifetimes { get; }
+        public IDictionary<IdentifierPath, LifetimeBundle> VariableLifetimes { get; }
 
         public FlowFrame(EvalFrame frame) {
             this.ReturnTypes = frame.ReturnTypes;
             this.Variables = frame.Variables;
+            this.Functions = frame.Functions;
+            this.Aggregates = frame.Aggregates;
 
             this.LifetimeGraph = new();
             this.Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
-            this.VariableLifetimes = new Dictionary<IdentifierPath, Lifetime>();
+            this.VariableLifetimes = new Dictionary<IdentifierPath, LifetimeBundle>();
         }
 
         public FlowFrame(FlowFrame prev) {
             this.ReturnTypes = prev.ReturnTypes;
             this.Variables = prev.Variables;
+            this.Functions = prev.Functions;
+            this.Aggregates = prev.Aggregates;
 
             this.LifetimeGraph = prev.LifetimeGraph;
             this.Lifetimes = prev.Lifetimes;
-            this.VariableLifetimes = new StackedDictionary<IdentifierPath, Lifetime>(prev.VariableLifetimes);
+            this.VariableLifetimes = new StackedDictionary<IdentifierPath, LifetimeBundle>(prev.VariableLifetimes);
         }
     }
 }

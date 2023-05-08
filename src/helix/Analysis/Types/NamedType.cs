@@ -11,7 +11,7 @@
         }
 
         public override IEnumerable<HelixType> GetContainedTypes(EvalFrame types) {
-            if (types.Aggregates.TryGetValue(this.Path, out var sig)) {
+            if (types.Structs.TryGetValue(this.Path, out var sig)) {
                 return sig.Members
                     .SelectMany(x => x.Type.GetContainedTypes(types))
                     .Prepend(this);
@@ -20,13 +20,13 @@
             return new[] { this };
         }
 
-        public override bool IsRemote(EvalFrame types) {
+        public override bool IsValueType(ITypedFrame types) {
             if (types.Functions.ContainsKey(this.Path)) {
                 return false;
             }
 
-            if (types.Aggregates.TryGetValue(this.Path, out var sig)) {
-                return false;
+            if (types.Structs.TryGetValue(this.Path, out var sig)) {
+                return sig.Members.All(x => x.Type.IsValueType(types));
             }
 
             throw new InvalidOperationException("Unexpected named type");

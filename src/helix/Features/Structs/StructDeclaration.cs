@@ -83,7 +83,7 @@ namespace Helix.Features.Aggregates {
             var sig = this.signature.ResolveNames(types);
             var structType = new NamedType(sig.Path);
 
-            types.Aggregates[sig.Path] = sig;
+            types.Structs[sig.Path] = sig;
 
             // Register this declaration with the code generator so 
             // types are constructed in order
