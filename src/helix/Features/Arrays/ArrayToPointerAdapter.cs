@@ -46,9 +46,14 @@ namespace Helix.Features.Arrays {
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
             types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType, this.arrayType.IsWritable);
-            types.Lifetimes[this] = types.Lifetimes[this.target];
 
             return this;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            this.target.AnalyzeFlow(flow);
+
+            flow.Lifetimes[this] = flow.Lifetimes[this.target];
         }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {

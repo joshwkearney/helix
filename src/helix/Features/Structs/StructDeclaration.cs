@@ -96,7 +96,7 @@ namespace Helix.Features.Aggregates {
 
             var isRecursive = sig.Members
                 .Select(x => x.Type)
-                .Where(x => !x.IsRemote(types))
+                .Where(x => !x.IsValueType(types))
                 .SelectMany(x => x.GetContainedTypes(types))
                 .Contains(structType);
 

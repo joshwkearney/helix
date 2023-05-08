@@ -144,22 +144,6 @@ namespace Helix {
 
             return new CompoundSyntax(this.Location, stats).CheckTypes(types);
         }
-
-        public ISyntaxTree ToRValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public ILValue ToLValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public void AnalyzeFlow(FlowFrame flow) {
-            throw new InvalidOperationException();
-        }
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
-        }
     }
 
     public record VarStatement : ISyntaxTree {
@@ -194,7 +178,7 @@ namespace Helix {
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
             foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, flow)) {
-                var path = this.path.Append(compPath);               
+                var path = this.path.Append(compPath);
                 var varLifetime = new Lifetime(path, 0);
 
                 // Add this variable's lifetime
@@ -206,11 +190,12 @@ namespace Helix {
                     flow.LifetimeGraph.AddAlias(varLifetime, assignLifetime);
                 }
 
-                if (sig.Type.IsRemote(flow)) {
-                    // TODO: Put back binding
+                // TODO: Put back binding
+                //if (sig.Type.IsRemote(flow)) {
                     //bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, path));
-                }
+                //}
             }
+            
         }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
@@ -222,7 +207,7 @@ namespace Helix {
                 Assignment = Option.Some(this.assign.GenerateCode(types, writer))
             };
 
-            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(this.returnType, types)) {
+            foreach (var relPath in VariablesHelper.GetMemberPaths(this.returnType, types)) {
                 writer.SetMemberPath(this.path, relPath);
             }
 

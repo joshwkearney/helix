@@ -52,17 +52,5 @@ namespace Helix.Features.Primitives {
 
             return arg;
         }
-
-        public ISyntaxTree ToRValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public ISyntaxTree ToLValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
-        }
     }
 }

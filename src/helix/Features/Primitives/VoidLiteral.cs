@@ -32,12 +32,15 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
-            types.Lifetimes[this] = new LifetimeBundle();
 
             return this;
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            flow.Lifetimes[this] = new LifetimeBundle();
+        }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
             return new CIntLiteral(0);

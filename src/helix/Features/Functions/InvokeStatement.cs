@@ -7,6 +7,7 @@ using Helix.Generation.Syntax;
 using Helix.Features.Primitives;
 using Helix.Features.Variables;
 using Helix.Analysis.Lifetimes;
+using System;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -112,23 +113,19 @@ namespace Helix.Features.Functions {
             // passed to the function
 
             var result = new InvokeSyntax(this.Location, sig, newArgs);
-
             types.ReturnTypes[result] = sig.ReturnType;
-            types.Lifetimes[result] = new LifetimeBundle();
 
             return result;            
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
+        public void AnalyzeFlow(FlowFrame flow) {
+            this.target.AnalyzeFlow(flow);
 
-        public ISyntaxTree ToLValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
+            foreach (var arg in this.args) {
+                arg.AnalyzeFlow(flow);
+            }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
+            flow.Lifetimes[this] = new LifetimeBundle();
         }
 
         private static HelixType NormalizeTypes(HelixType type) {

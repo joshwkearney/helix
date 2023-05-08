@@ -17,7 +17,6 @@ namespace Helix.Features.Memory {
     public record NewSyntax : ISyntaxTree {
         private readonly ISyntaxTree target;
         private readonly Lifetime lifetime;
-        private readonly IReadOnlySet<Lifetime> validRoots;
 
         public TokenLocation Location { get; }
 
@@ -25,20 +24,24 @@ namespace Helix.Features.Memory {
 
         public bool IsPure => true;
 
-        public NewSyntax(TokenLocation loc, ISyntaxTree target, Lifetime lifetime, IReadOnlySet<Lifetime> validRoots) {
+        public NewSyntax(TokenLocation loc, ISyntaxTree target, Lifetime lifetime) {
             this.Location = loc;
             this.target = target;
             this.lifetime = lifetime;
-            this.validRoots = validRoots;
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
-            types.Lifetimes[this] = new LifetimeBundle(new[] { this.lifetime });
             types.ReturnTypes[this] = new PointerType(types.ReturnTypes[this.target], true);
 
             return this;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            this.target.AnalyzeFlow(flow);
+
+            flow.Lifetimes[this] = new LifetimeBundle(new[] { this.lifetime });
         }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
@@ -60,7 +63,7 @@ namespace Helix.Features.Memory {
             var target = this.target.GenerateCode(types, writer);
 
             // Register our member paths with the code generator
-            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(returnType, types)) {
+            foreach (var relPath in VariablesHelper.GetMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.lifetime.Path, relPath);
             }
 

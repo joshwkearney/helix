@@ -27,7 +27,7 @@ namespace Helix.Parsing {
             var loc = start.Span(targetType.Location);
 
             if (!this.TryAdvance(TokenKind.OpenBrace)) {
-                return new NewPutSyntax(
+                return new PutSyntax(
                     loc, 
                     targetType,
                     isNew,
@@ -59,13 +59,13 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBrace);
             loc = start.Span(end.Location);
 
-            return new NewPutSyntax(loc, targetType, isNew, names, values);
+            return new PutSyntax(loc, targetType, isNew, names, values);
         }
     }
 }
 
 namespace Helix.Features.Memory {
-    public class NewPutSyntax : ISyntaxTree {
+    public class PutSyntax : ISyntaxTree {
         private static int tempCounter = 0;
 
         private readonly ISyntaxTree type;
@@ -79,7 +79,7 @@ namespace Helix.Features.Memory {
 
         public bool IsPure { get; }
 
-        public NewPutSyntax(TokenLocation loc, ISyntaxTree type, bool isNew,
+        public PutSyntax(TokenLocation loc, ISyntaxTree type, bool isNew,
             IReadOnlyList<string?> names, IReadOnlyList<ISyntaxTree> values) {
 
             this.Location = loc;
@@ -91,7 +91,7 @@ namespace Helix.Features.Memory {
             this.IsPure = type.IsPure && values.All(x => x.IsPure);
         }
 
-        public NewPutSyntax(TokenLocation loc, ISyntaxTree type, bool isNew) {
+        public PutSyntax(TokenLocation loc, ISyntaxTree type, bool isNew) {
             this.Location = loc;
             this.type = type;
             this.isNew = isNew;
@@ -108,7 +108,7 @@ namespace Helix.Features.Memory {
                 if (!this.isNew) {
                     throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);
                 }
-                
+
                 // Make sure we are not supplying members to a value new expression
                 if (this.names.Any()) {
                     throw new TypeCheckingException(
@@ -122,8 +122,7 @@ namespace Helix.Features.Memory {
                 var result = new NewSyntax(
                     this.Location, 
                     this.type.CheckTypes(types), 
-                    lifetime, 
-                    types.LifetimeGraph.AllLifetimes);
+                    lifetime);
 
                 return result.CheckTypes(types);
             }
@@ -140,8 +139,8 @@ namespace Helix.Features.Memory {
 
             // Rewrite a new type expression to a new value expression and a put expression
             if (this.isNew) {
-                var putSyntax = new NewPutSyntax(this.Location, this.type, false, this.names, this.values);
-                var newSyntax = new NewPutSyntax(this.Location, putSyntax, true);
+                var putSyntax = new PutSyntax(this.Location, this.type, false, this.names, this.values);
+                var newSyntax = new PutSyntax(this.Location, putSyntax, true);
 
                 return newSyntax.CheckTypes(types);
             }
@@ -181,10 +180,6 @@ namespace Helix.Features.Memory {
                     "Invalid Initialization",
                     $"The type '{type}' does not have a default value and cannot be initialized.");
             }
-        }
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
         }
     }
 }

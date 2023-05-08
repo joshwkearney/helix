@@ -158,11 +158,11 @@ namespace Helix.Features.FlowControl {
                     flow.LifetimeGraph.AddAlias(resultLifetime, bodyLifetime);
                 }
 
+                // TODO: Add bindings
                 // Add this new lifetime to the list of bindings we calculated earlier
-                if (type.IsRemote(flow)) {
-                    // TODO: Add bindings
-                    //bindings.Add(new BindLifetimeSyntax(this.Location, resultLifetime, path));
-                }
+                //if (type.IsRemote(flow)) {
+                //bindings.Add(new BindLifetimeSyntax(this.Location, resultLifetime, path));
+                //}
             }
 
             // TODO: Add bindings
@@ -184,7 +184,7 @@ namespace Helix.Features.FlowControl {
             var tempName = writer.GetVariableName(this.tempPath);
 
             // Register our member paths with the code generator
-            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(this.returnType, types)) {
+            foreach (var relPath in VariablesHelper.GetMemberPaths(this.returnType, types)) {
                 writer.SetMemberPath(this.tempPath, relPath);
             }
 

@@ -247,9 +247,15 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
             types.ReturnTypes[result] = returnType;
-            types.Lifetimes[result] = new LifetimeBundle();
 
             return result;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            this.left.AnalyzeFlow(flow);
+            this.right.AnalyzeFlow(flow);
+
+            flow.Lifetimes[this] = new LifetimeBundle();
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) {

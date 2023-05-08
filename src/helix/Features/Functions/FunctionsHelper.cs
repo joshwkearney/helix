@@ -30,7 +30,7 @@ namespace Helix.Features.Functions {
             types.SyntaxValues[path] = new TypeSyntax(sig.Location, new NamedType(path));
         }
 
-        public static void DeclareParameters(TokenLocation loc, FunctionSignature sig, EvalFrame types) {
+        public static void DeclareParameterTypes(TokenLocation loc, FunctionSignature sig, EvalFrame types) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
@@ -45,10 +45,29 @@ namespace Helix.Features.Functions {
                     var path = sig.Path.Append(parsePar.Name).Append(relPath);
                     var lifetime = new Lifetime(path, 0);
 
-                    types.LifetimeGraph.AddRoot(lifetime);
-
-                    types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable, 0);
+                    types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable);
                     types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
+                }
+            }
+        }
+
+        public static void DeclareParameterFlow(TokenLocation loc, FunctionSignature sig, FlowFrame flow) {
+            // Declare the parameters
+            for (int i = 0; i < sig.Parameters.Count; i++) {
+                var parsePar = sig.Parameters[i];
+                var type = sig.Parameters[i].Type;
+
+                if (parsePar.IsWritable) {
+                    type = type.ToMutableType();
+                }
+
+                // Declare this parameter as a root by making an end cycle in the graph
+                foreach (var (relPath, memType) in VariablesHelper.GetMemberPaths(type, flow)) {
+                    var path = sig.Path.Append(parsePar.Name).Append(relPath);
+                    var lifetime = new Lifetime(path, 0);
+
+                    flow.LifetimeGraph.AddRoot(lifetime);
+                    flow.VariableLifetimes[path] = lifetime;
                 }
             }
         }

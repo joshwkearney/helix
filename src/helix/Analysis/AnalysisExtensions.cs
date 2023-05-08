@@ -1,10 +1,11 @@
-﻿using Helix.Analysis.Types;
+﻿using Helix.Analysis.Lifetimes;
+using Helix.Analysis.Types;
 using Helix.Features.Aggregates;
 using Helix.Parsing;
 
 namespace Helix.Analysis {
     public static partial class AnalysisExtensions {
-        public static PointerType AssertIsPointer(this ISyntaxTree syntax, EvalFrame types) {
+        public static PointerType AssertIsPointer(this ISyntaxTree syntax, ITypedFrame types) {
             var type = types.ReturnTypes[syntax];
 
             if (type is not PointerType pointer) {
@@ -46,6 +47,30 @@ namespace Helix.Analysis {
             else {
                 throw TypeCheckingErrors.UnexpectedType(fromSyntax.Location, type1, type2);
             }
+        }
+
+        public static bool IsTypeChecked(this ISyntaxTree syntax, ITypedFrame types) {
+            return types.ReturnTypes.ContainsKey(syntax);
+        }
+
+        public static bool IsFlowAnalyzed(this ISyntaxTree syntax, FlowFrame flow) {
+            return flow.ReturnTypes.ContainsKey(syntax);
+        }
+
+        public static HelixType GetReturnType(this ISyntaxTree syntax, ITypedFrame types) {
+            return types.ReturnTypes[syntax];
+        }
+
+        public static void SetReturnType(this ISyntaxTree syntax, HelixType type, ITypedFrame types) {
+            types.ReturnTypes[syntax] = type;
+        }
+
+        public static LifetimeBundle GetLifetimes(this ISyntaxTree syntax, FlowFrame flow) {
+            return flow.Lifetimes[syntax];
+        }
+
+        public static void SetLifetimes(this ISyntaxTree syntax, LifetimeBundle bundle, FlowFrame flow) {
+            flow.Lifetimes[syntax] = bundle;
         }
     }
 }

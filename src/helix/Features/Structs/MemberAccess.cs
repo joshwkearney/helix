@@ -6,6 +6,8 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Lifetimes;
 using Helix.Features.Variables;
+using System;
+using System.Reflection;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -24,7 +26,6 @@ namespace Helix.Features.Aggregates {
     public record MemberAccessSyntax : ISyntaxTree, ILValue {
         private readonly ISyntaxTree target;
         private readonly string memberName;
-        private readonly bool isTypeChecked;
         private readonly bool isPointerAccess;
 
         public TokenLocation Location { get; }
@@ -44,17 +45,19 @@ namespace Helix.Features.Aggregates {
         }
 
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
-                                  string memberName, bool isPointerAccess = false,
-                                  bool isTypeChecked = false) {
+                                  string memberName, bool isPointerAccess = false) {
 
             this.Location = location;
             this.target = target;
             this.memberName = memberName;
-            this.isTypeChecked = isTypeChecked;
             this.isPointerAccess = isPointerAccess;
         }
 
-        public ISyntaxTree CheckTypes(FlowFrame types) {
+        public ISyntaxTree CheckTypes(EvalFrame types) {
+            if (this.IsTypeChecked(types)) {
+                return this;
+            }
+
             var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
@@ -65,11 +68,9 @@ namespace Helix.Features.Aggregates {
                         this.Location,
                         target,
                         "count",
-                        false,
-                        true);
+                        false);
 
                     types.ReturnTypes[result] = PrimitiveType.Int;
-                    types.Lifetimes[result] = new LifetimeBundle();
                     return result;
                 }
             }
@@ -89,11 +90,9 @@ namespace Helix.Features.Aggregates {
                             this.Location,
                             target,
                             this.memberName,
-                            isPointerAccess,
-                            true);                       
+                            isPointerAccess);                       
 
                         types.ReturnTypes[result] = field.Type;
-                        types.Lifetimes[result] = this.CalculateLifetimes(target, field.Type, types);
 
                         return result;
                     }                    
@@ -103,28 +102,16 @@ namespace Helix.Features.Aggregates {
             throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
         }
 
-        private LifetimeBundle CalculateLifetimes(ISyntaxTree target, HelixType memberType, FlowFrame types) {
-            var relPath = new IdentifierPath(this.memberName);
-            var targetLifetimes = types.Lifetimes[target].ComponentLifetimes;
-            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
-
-            foreach (var (memPath, _) in VariablesHelper.GetMemberPaths(memberType, types)) {
-                bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
-            }
-
-            return new LifetimeBundle(bundleDict);
-        }
-
-        public ISyntaxTree ToRValue(FlowFrame types) {
-            if (!this.isTypeChecked) {
+        public ISyntaxTree ToRValue(EvalFrame types) {
+            if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 
             return this;
         }
 
-        public ILValue ToLValue(FlowFrame types) {
-            if (!this.isTypeChecked) {
+        public ILValue ToLValue(EvalFrame types) {
+            if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 
@@ -135,17 +122,37 @@ namespace Helix.Features.Aggregates {
                 this.Location, 
                 target, 
                 this.memberName, 
-                this.isPointerAccess,
-                true);
+                this.isPointerAccess);
 
             types.ReturnTypes[result] = types.ReturnTypes[this];
-            types.Lifetimes[result] = types.Lifetimes[this];
 
             return result;
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
-            if (!this.isTypeChecked) {
+        public void AnalyzeFlow(FlowFrame flow) {
+            if (this.IsFlowAnalyzed(flow)) {
+                return;
+            }
+
+            var memberType = flow.ReturnTypes[this];
+            var relPath = new IdentifierPath(this.memberName);
+            var targetLifetimes = flow.Lifetimes[target].ComponentLifetimes;
+            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+
+            foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(memberType, flow)) {
+                if (type.IsValueType(flow)) {
+                    bundleDict[memPath] = new Lifetime[0];
+                }
+                else {
+                    bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
+                }
+            }
+
+            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+        }
+
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+            if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 

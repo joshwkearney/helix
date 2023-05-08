@@ -38,9 +38,11 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
             types.ReturnTypes[this] = new SingularBoolType(this.Value);
-            types.Lifetimes[this] = new LifetimeBundle();
-
             return this;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            flow.Lifetimes[this] = new LifetimeBundle();
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;

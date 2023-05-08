@@ -5,6 +5,7 @@ using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
+using System;
 
 namespace Helix.Features.Aggregates {
     public class PutStructSyntax : ISyntaxTree {
@@ -136,36 +137,7 @@ namespace Helix.Features.Aggregates {
             var result = new PutStructSyntax(this.Location, this.sig, allNames, allValues, true);
 
             types.ReturnTypes[result] = type;
-            types.Lifetimes[result] = CalculateLifetimes(allNames, allValues, types);
-
             return result;
-        }
-
-        private static LifetimeBundle CalculateLifetimes(
-            IReadOnlyList<string> memNames, 
-            IReadOnlyList<ISyntaxTree> memValues, 
-            EvalFrame types) {
-
-            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
-
-            // Add each member to the lifetime bundle
-            for (int i = 0; i < memNames.Count; i++) {
-                var name = memNames[i];
-                var value = memValues[i];
-
-                // Go through each member of this field
-                foreach (var (relPath, lifetimes) in types.Lifetimes[value].ComponentLifetimes) {
-                    var memPath = new IdentifierPath(name).Append(relPath);
-
-                    // Add this member to the lifetime dict
-                    bundleDict[memPath] = lifetimes;
-                }
-            }
-
-            // Structs themselves do not have lifetimes
-            bundleDict[new IdentifierPath()] = Array.Empty<Lifetime>();
-
-            return new LifetimeBundle(bundleDict);
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) {
@@ -174,6 +146,27 @@ namespace Helix.Features.Aggregates {
             }
 
             return this;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+
+            // Add each member to the lifetime bundle
+            for (int i = 0; i < this.names.Count; i++) {
+                var name = this.names[i];
+                var value = this.values[i];
+
+                // Go through each member of this field
+                foreach (var (relPath, lifetimes) in value.GetLifetimes(flow).ComponentLifetimes) {
+                    var memPath = new IdentifierPath(name).Append(relPath);
+
+                    // Add this member to the lifetime dict
+                    bundleDict[memPath] = lifetimes;
+                }
+            }
+
+            bundleDict[new IdentifierPath()] = Array.Empty<Lifetime>();
+            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
         }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {

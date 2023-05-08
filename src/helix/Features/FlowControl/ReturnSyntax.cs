@@ -62,16 +62,19 @@ namespace Helix.Features.FlowControl {
             var result = new ReturnSyntax(this.Location, payload, this.func, true);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new LifetimeBundle();
-
-            // Add a dependency for every lifetime in the result on the heap
-            foreach (var time in types.Lifetimes[result].AllLifetimes) {
-                var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
-
-                types.LifetimeGraph.AddDependency(time, heapLifetime);
-            }
 
             return result;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            flow.Lifetimes[this] = new LifetimeBundle();
+
+            // Add a dependency on the heap for every lifetime in the result
+            foreach (var time in flow.Lifetimes[this.payload].AllLifetimes) {
+                var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
+
+                flow.LifetimeGraph.AddDependency(time, heapLifetime);
+            }
         }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {

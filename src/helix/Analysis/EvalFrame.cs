@@ -22,7 +22,7 @@ namespace Helix.Analysis {
         // Global things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
-        public IDictionary<IdentifierPath, StructSignature> Aggregates { get; }
+        public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         public IDictionary<HelixType, DeclarationCG> TypeDeclarations { get; }
 
@@ -41,7 +41,7 @@ namespace Helix.Analysis {
             };
 
             this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
-            this.Aggregates = new Dictionary<IdentifierPath, StructSignature>();
+            this.Structs = new Dictionary<IdentifierPath, StructSignature>();
 
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
@@ -53,7 +53,7 @@ namespace Helix.Analysis {
             //this.LifetimeGraph = prev.LifetimeGraph;
 
             this.Functions = prev.Functions;
-            this.Aggregates = prev.Aggregates;
+            this.Structs = prev.Structs;
 
             this.TypeDeclarations = prev.TypeDeclarations;
             this.ReturnTypes = prev.ReturnTypes;

@@ -23,6 +23,7 @@ namespace Helix {
 
             var parser = new Parser(input);
             var types = new EvalFrame();
+            var flow = new FlowFrame(types);
             var writer = new CWriter(this.header, types.TypeDeclarations);
             var parseStats = parser.Parse();
 
@@ -35,6 +36,10 @@ namespace Helix {
             }
 
             var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
+
+            foreach (var stat in stats) {
+                stat.AnalyzeFlow(flow);
+            }
 
             foreach (var stat in stats) {
                 stat.GenerateCode(types, writer);

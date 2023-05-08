@@ -10,6 +10,7 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.Variables;
 using Helix.Analysis.Lifetimes;
+using System;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -122,10 +123,7 @@ namespace Helix.Features.Functions {
             types = new EvalFrame(types);
 
             // Declare parameters
-            FunctionsHelper.DeclareParameters(this.Location, sig, types);
-
-            // Declare a "heap" lifetime used for function returns
-            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
+            FunctionsHelper.DeclareParameterTypes(this.Location, sig, types);
 
             // Check types
             var body = this.body;
@@ -137,16 +135,9 @@ namespace Helix.Features.Functions {
                 });
             }
 
-            types.LifetimeGraph.AddRoot(heapLifetime);
-
             body = body.CheckTypes(types)
                 .ToRValue(types)
                 .UnifyTo(sig.ReturnType, types);
-
-            // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in types.Lifetimes[body].AllLifetimes) {
-                types.LifetimeGraph.AddDependency(lifetime, heapLifetime);
-            }
 
 #if DEBUG
             // Debug check: make sure that every syntax tree has a return type
@@ -155,19 +146,10 @@ namespace Helix.Features.Functions {
                     throw new Exception("Compiler assertion failed: syntax tree does not have a return type");
                 }
             }
-
-            // Debug check: make sure that every syntax tree has captured variables
-            foreach (var expr in body.GetAllChildren()) {
-                if (!types.Lifetimes.ContainsKey(expr)) {
-                    throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
-                }
-            }
 #endif
 
             return new FunctionDeclaration(this.Location, sig, body);
         }
-
-        public void GenerateCode(EvalFrame types, ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record FunctionDeclaration : IDeclaration {
@@ -194,6 +176,34 @@ namespace Helix.Features.Functions {
 
         public IDeclaration CheckTypes(EvalFrame types) {
             throw new InvalidOperationException();
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            // Set the scope for type checking the body
+            var bodyTypes = new FlowFrame(flow);
+
+            // Declare parameters
+            FunctionsHelper.DeclareParameterFlow(this.Location, this.Signature, flow);
+
+            // Declare a "heap" lifetime used for function returns
+            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
+            flow.LifetimeGraph.AddRoot(heapLifetime);
+
+            this.body.AnalyzeFlow(flow);
+
+            // Add a dependency between every returned lifetime and the heap
+            foreach (var lifetime in flow.Lifetimes[body].AllLifetimes) {
+                flow.LifetimeGraph.AddDependency(lifetime, heapLifetime);
+            }
+
+#if DEBUG
+            // Debug check: make sure that every syntax tree has captured variables
+            foreach (var expr in body.GetAllChildren()) {
+                if (!flow.Lifetimes.ContainsKey(expr)) {
+                    throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
+                }
+            }
+#endif
         }
 
         public void GenerateCode(EvalFrame types, ICWriter writer) {

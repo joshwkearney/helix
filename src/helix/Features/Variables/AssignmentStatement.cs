@@ -111,7 +111,10 @@ namespace Helix.Features.Variables {
             // Check to see if the assigned value has the same origins
             // (or more restricted origins) than the target expression.
             // If the origins are compatible, we can assign with no further
-            // issue. If they are different, then we need to insert a runtime
+            // issue. If they are different, compile error and make the user
+            // clarify regions in the signature
+            //
+            // NOPE: If they are different, then we need to insert a runtime
             // check. If the lifetimes do not have runtime values, then we
             // need to throw an error
 
@@ -119,6 +122,7 @@ namespace Helix.Features.Variables {
             var targetBundle = flow.Lifetimes[target];
             var assignBundle = flow.Lifetimes[assign];
 
+            // TODO: Put this back
             //if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
             //    throw new LifetimeException(
             //        this.Location,
@@ -142,11 +146,7 @@ namespace Helix.Features.Variables {
                 // setting multiple variables with this one assignment if we are assigning
                 // a struct type. Therefore, loop through all the possible variables and
                 // members and set them correctly
-                foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(targetType, flow)) {
-                    if (assignBundle.ComponentLifetimes[relPath].Count != 1) {
-                        throw new Exception("Compiler bug: invalid state");
-                    }
-
+                foreach (var (relPath, memType) in VariablesHelper.GetMemberPaths(targetType, flow)) {
                     if (targetBundle.ComponentLifetimes[relPath].Count != 1) {
                         throw new Exception("Compiler bug: invalid state");
                     }
@@ -154,16 +154,14 @@ namespace Helix.Features.Variables {
                     // Increment the mutation counter for modified local variables so that
                     // any new accesses to this variable will be forced to get the new 
                     // lifetime.
-                    var assignLifetime = assignBundle.ComponentLifetimes[relPath][0];
                     var oldLifetime = targetBundle.ComponentLifetimes[relPath][0];
-                    var sig = flow.VariableLifetimes[oldLifetime.Path];
 
                     var newLifetime = new Lifetime(
-                        sig.Path,
-                        sig.MutationCount + 1);
+                        oldLifetime.Path,
+                        oldLifetime.MutationCount + 1);
 
                     // Replace the old variable signature
-                    flow.VariableLifetimes[oldLifetime.Path] = newLifetime;
+                    flow.VariableLifetimes[newLifetime.Path] = newLifetime;
 
                     // TODO: Add binding
                     // We need to generate a variable for this new lifetime in the c
@@ -178,7 +176,9 @@ namespace Helix.Features.Variables {
                     // AddPrecursor are used because the new lifetime is being created as an
                     // alias for the assigned lifetimes, and the assigned lifetimes will be
                     // dependent on whatever the new lifetime is dependent on.
-                    flow.LifetimeGraph.AddAlias(newLifetime, assignLifetime);
+                    foreach (var assignLifetime in assignBundle.ComponentLifetimes[relPath]) {
+                        flow.LifetimeGraph.AddAlias(newLifetime, assignLifetime);
+                    }
                 }
             }
             else {

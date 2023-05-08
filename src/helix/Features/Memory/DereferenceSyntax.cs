@@ -1,4 +1,5 @@
-﻿using Helix.Analysis;
+﻿using System;
+using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Memory;
@@ -25,7 +26,6 @@ namespace Helix.Features.Memory {
     public record DereferenceSyntax : ISyntaxTree, ILValue {
         private readonly ISyntaxTree target;
         private readonly IdentifierPath tempPath;
-        private readonly bool isTypeChecked;
         private readonly bool isLValue;
 
         public TokenLocation Location { get; }
@@ -37,12 +37,11 @@ namespace Helix.Features.Memory {
         public bool IsLocalVariable => false;
 
         public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, 
-            IdentifierPath tempPath, bool isTypeChecked = false, bool islvalue = false) {
+            IdentifierPath tempPath, bool islvalue = false) {
 
             this.Location = loc;
             this.target = target;
             this.tempPath = tempPath;
-            this.isTypeChecked = isTypeChecked;
             this.isLValue = islvalue;
         }
 
@@ -53,7 +52,7 @@ namespace Helix.Features.Memory {
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
-            if (this.isTypeChecked) {
+            if (this.IsTypeChecked(types)) {
                 return this;
             }
 
@@ -62,58 +61,57 @@ namespace Helix.Features.Memory {
             var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
 
             types.ReturnTypes[result] = pointerType.InnerType;
-            types.Lifetimes[result] = this.CalculateLifetimes(pointerType, target, types);
-
             return result;
         }
 
-        public LifetimeBundle CalculateLifetimes(PointerType pointerType, ISyntaxTree target, EvalFrame types) {
-            // If we are dereferencing a 
-            if (pointerType.InnerType.IsRemote(types)) {
-                return types.Lifetimes[target];
+        public void AnalyzeFlow(FlowFrame flow) {
+            if (this.IsFlowAnalyzed(flow)) {
+                return;
             }
 
+            var pointerType = this.target.AssertIsPointer(flow);
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
-            foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, types)) {
-                if (type.IsRemote(types)) {
+            this.target.AnalyzeFlow(flow);
+
+            foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, flow)) {
+                if (type.IsValueType(flow)) {
+                    bundleDict[compPath] = Array.Empty<Lifetime>();
+                }
+                else { 
                     var lifetime = new Lifetime(this.tempPath.Append(compPath), 0);
 
                     bundleDict[compPath] = new[] { lifetime };
-                    types.LifetimeGraph.AddRoot(lifetime);
-                }
-                else {
-                    bundleDict[compPath] = Array.Empty<Lifetime>();
+                    flow.LifetimeGraph.AddRoot(lifetime);
                 }
             }
 
-            return new LifetimeBundle(bundleDict);
+            flow.Lifetimes[this.target] = new LifetimeBundle(bundleDict);
         }
 
         public ILValue ToLValue(EvalFrame types) {
-            if (!this.isTypeChecked) {
+            if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 
             if (this.isLValue) {
                 return this;
             }
+            else {
+                var result = new DereferenceSyntax(
+                    this.Location,
+                    this.target,
+                    this.tempPath,
+                    true);
 
-            var result = new DereferenceSyntax(
-                this.Location, 
-                this.target, 
-                this.tempPath,
-                true, 
-                true);
+                types.ReturnTypes[result] = types.ReturnTypes[this];
 
-            types.ReturnTypes[result] = types.ReturnTypes[this];
-            types.Lifetimes[result] = types.Lifetimes[this];
-
-            return result;
+                return result;
+            }
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) {
-            if (!this.isTypeChecked) {
+            if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 
@@ -132,14 +130,14 @@ namespace Helix.Features.Memory {
             var returnType = types.ReturnTypes[this];
 
             // Register our member paths with the code generator
-            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(returnType, types)) {
+            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.tempPath, relPath);
             }
 
             writer.WriteEmptyLine();
 
 
-            foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(returnType, types)) {
+            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.tempPath, relPath);
 
                 var lifetime = new Lifetime(this.tempPath.Append(relPath), 0);

@@ -9,6 +9,7 @@ using System.Net;
 using Helix.Analysis.Lifetimes;
 using Helix.Features.Variables;
 using Helix.Features.Memory;
+using System;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -48,7 +49,6 @@ namespace Helix.Parsing {
 namespace Helix.Features.FlowControl {
     public record LoopStatement : ISyntaxTree {
         private readonly ISyntaxTree body;
-        private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
@@ -56,16 +56,14 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure => false;
 
-        public LoopStatement(TokenLocation location,
-                             ISyntaxTree body, bool isTypeChecked = false) {
+        public LoopStatement(TokenLocation location, ISyntaxTree body) {
 
             this.Location = location;
             this.body = body;
-            this.isTypeChecked = isTypeChecked;
         }
 
         public Option<ISyntaxTree> ToRValue(EvalFrame types) {
-            if (!this.isTypeChecked) {
+            if (!types.ReturnTypes.ContainsKey(this)) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }
 
@@ -73,12 +71,27 @@ namespace Helix.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
-            if (this.isTypeChecked) {
+            if (types.ReturnTypes.ContainsKey(this)) {
                 return this;
             }
 
+            var bodyTypes = new EvalFrame(types);
+            var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
+            var result = (ISyntaxTree)new LoopStatement(this.Location, body);
+
+            types.ReturnTypes[result] = PrimitiveType.Void;
+
+            return result;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            this.body.AnalyzeFlow(flow);
+
+            flow.Lifetimes[this] = new LifetimeBundle();
+
+            // TODO: Redo all of this
             // Get a list of all the mutable variables that could change in this loop body
-            var potentiallyModifiedVars = this.body.GetAllChildren()
+            /*var potentiallyModifiedVars = this.body.GetAllChildren()
                 .Select(x => x as VariableAccessParseSyntax)
                 .Where(x => x != null)
                 .Select(x => {
@@ -106,7 +119,6 @@ namespace Helix.Features.FlowControl {
                 .Distinct()
                 .ToValueList();
 
-            var bodyTypes = new EvalFrame(types);
             var bodyVars = potentiallyModifiedVars
                 .Select(sig => {
                     var newSig = new VariableSignature(
@@ -121,11 +133,10 @@ namespace Helix.Features.FlowControl {
             // For every variable that might be modified in the loop, create a new lifetime
             // for it in the loop body so that if it does change, it is only changing the
             // new variable signature and not the old one
-            foreach (var sig in bodyVars) {               
+            foreach (var sig in bodyVars) {
                 bodyTypes.Variables[sig.Path] = sig;
             }
 
-            var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var bodyBindings = new List<ISyntaxTree>();
 
             var modifiedVars = bodyVars
@@ -173,20 +184,7 @@ namespace Helix.Features.FlowControl {
 
                 bodyBindings.Add(new BindLifetimeSyntax(this.Location, sig.Lifetime, sig.Path));
                 postBindings.Add(new BindLifetimeSyntax(this.Location, sig.Lifetime, sig.Path));
-            }
-
-            body = new BlockSyntax(body.Location, bodyBindings.Append(body).ToValueList());
-            body = body.CheckTypes(types);
-
-            var result = (ISyntaxTree)new LoopStatement(this.Location, body, true);
-
-            types.ReturnTypes[result] = PrimitiveType.Void;
-            types.Lifetimes[result] = new LifetimeBundle();
-
-            result = new BlockSyntax(result.Location, postBindings.Prepend(result).ToValueList());
-            result = result.CheckTypes(types);
-
-            return result;
+            }*/
         }
 
         public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {

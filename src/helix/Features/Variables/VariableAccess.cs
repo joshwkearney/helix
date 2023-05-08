@@ -98,7 +98,7 @@ namespace Helix.Features.Variables {
 
         public bool IsPure => true;
 
-        public bool IsLocal => true;
+        public bool IsLocalVariable => true;
 
         public VariableAccessSyntax(TokenLocation loc, IdentifierPath path) {
             this.Location = loc;
@@ -123,10 +123,15 @@ namespace Helix.Features.Variables {
             var sig = flow.Variables[this.variablePath];
 
             // Go through all this variable's members and set the lifetime bundle correctly
-            foreach (var (compPath, _) in VariablesHelper.GetMemberPaths(sig.Type, flow)) {
+            foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(sig.Type, flow)) {
                 var memPath = sig.Path.Append(compPath);
 
-                lifetimes[compPath] = new[] { flow.VariableLifetimes[memPath] };
+                if (compType.IsValueType(flow)) {
+                    lifetimes[compPath] = new Lifetime[0];
+                }
+                else {
+                    lifetimes[compPath] = new[] { flow.VariableLifetimes[memPath] };
+                }
             }
 
             flow.Lifetimes[this] = new LifetimeBundle(lifetimes);

@@ -83,9 +83,5 @@ namespace Helix.Features.Arrays {
 
             return deref.CheckTypes(types);
         }
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
-        }
     }
 }

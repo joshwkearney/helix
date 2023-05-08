@@ -80,25 +80,12 @@ namespace Helix.Features.Primitives {
                     arg);
 
                 types.ReturnTypes[result] = PrimitiveType.Bool;
-                types.Lifetimes[result] = new LifetimeBundle();
 
                 return result;
             }
             else {
                 throw new Exception("Unexpected unary operator kind");
             }
-        }
-
-        public ISyntaxTree ToRValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public ISyntaxTree ToLValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
         }
     }
 

@@ -14,7 +14,7 @@ namespace Helix.Analysis {
 
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
-        public IDictionary<IdentifierPath, StructSignature> Aggregates { get; }
+        public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
     }
@@ -31,31 +31,31 @@ namespace Helix.Analysis {
 
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
-        public IDictionary<IdentifierPath, StructSignature> Aggregates { get; }
+        public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         // Frame-specific things
-        public IDictionary<IdentifierPath, LifetimeBundle> VariableLifetimes { get; }
+        public IDictionary<IdentifierPath, Lifetime> VariableLifetimes { get; }
 
         public FlowFrame(EvalFrame frame) {
             this.ReturnTypes = frame.ReturnTypes;
             this.Variables = frame.Variables;
             this.Functions = frame.Functions;
-            this.Aggregates = frame.Aggregates;
+            this.Structs = frame.Structs;
 
             this.LifetimeGraph = new();
             this.Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
-            this.VariableLifetimes = new Dictionary<IdentifierPath, LifetimeBundle>();
+            this.VariableLifetimes = new Dictionary<IdentifierPath, Lifetime>();
         }
 
         public FlowFrame(FlowFrame prev) {
             this.ReturnTypes = prev.ReturnTypes;
             this.Variables = prev.Variables;
             this.Functions = prev.Functions;
-            this.Aggregates = prev.Aggregates;
+            this.Structs = prev.Structs;
 
             this.LifetimeGraph = prev.LifetimeGraph;
             this.Lifetimes = prev.Lifetimes;
-            this.VariableLifetimes = new StackedDictionary<IdentifierPath, LifetimeBundle>(prev.VariableLifetimes);
+            this.VariableLifetimes = new StackedDictionary<IdentifierPath, Lifetime>(prev.VariableLifetimes);
         }
     }
 }

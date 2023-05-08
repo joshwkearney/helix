@@ -21,11 +21,15 @@ namespace Helix.Parsing {
 
         public ISyntaxTree CheckTypes(EvalFrame types);
 
-        public void AnalyzeFlow(FlowFrame flow);
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer);
-
         // Mixins
+        public void AnalyzeFlow(FlowFrame flow) {
+            throw new Exception("Compiler bug");
+        }
+
+        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+            throw new Exception("Compiler bug");
+        }
+
         public ISyntaxTree ToRValue(EvalFrame types) {
             throw TypeCheckingErrors.RValueRequired(this.Location);
         }
@@ -58,6 +62,12 @@ namespace Helix.Parsing {
 
         public IDeclaration CheckTypes(EvalFrame types);
 
-        public void GenerateCode(EvalFrame types, ICWriter writer);
+        public void AnalyzeFlow(FlowFrame flow) {
+            throw new InvalidOperationException();
+        }
+
+        public void GenerateCode(EvalFrame types, ICWriter writer) {
+            throw new InvalidOperationException();
+        }
     }
 }

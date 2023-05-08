@@ -38,9 +38,5 @@ namespace Helix.Features.Arrays {
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) => this;
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
-        }
     }
 }
