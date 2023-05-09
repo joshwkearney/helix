@@ -42,7 +42,7 @@ namespace Helix {
             }
 
             foreach (var stat in stats) {
-                stat.GenerateCode(types, writer);
+                stat.GenerateCode(flow, writer);
             }
 
             return writer.ToString();            

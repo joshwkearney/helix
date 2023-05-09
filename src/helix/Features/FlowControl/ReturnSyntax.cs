@@ -77,7 +77,7 @@ namespace Helix.Features.FlowControl {
             }
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }

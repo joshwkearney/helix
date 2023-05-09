@@ -125,6 +125,10 @@ namespace Helix.Features.Functions {
             // Declare parameters
             FunctionsHelper.DeclareParameterTypes(this.Location, sig, types);
 
+            // Declare a "heap" lifetime used for function returns
+            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
+            types.LifetimeRoots[heapLifetime.Path] = heapLifetime;
+
             // Check types
             var body = this.body;
 
@@ -206,7 +210,7 @@ namespace Helix.Features.Functions {
 #endif
         }
 
-        public void GenerateCode(EvalFrame types, ICWriter writer) {
+        public void GenerateCode(FlowFrame types, ICWriter writer) {
             writer.ResetTempNames();
 
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
@@ -236,14 +240,14 @@ namespace Helix.Features.Functions {
 
             // Register the parameter member paths
             foreach (var par in this.Signature.Parameters) {
-                foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(par.Type, types)) {
+                foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
                     writer.SetMemberPath(this.Signature.Path.Append(par.Name), relPath);
                 }
             }
 
             // Register the parameter lifetimes
             foreach (var par in this.Signature.Parameters) {
-                foreach (var relPath in VariablesHelper.GetRemoteMemberPaths(par.Type, types)) {
+                foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
                     var path = this.Signature.Path.Append(par.Name).Append(relPath);
                     var lifetime = new Lifetime(path, 0);
 

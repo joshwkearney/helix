@@ -171,7 +171,7 @@ namespace Helix.Features.FlowControl {
             flow.Lifetimes[this] = new LifetimeBundle(lifetimeBundle);
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();
             var negList = new List<ICStatement>();
 
@@ -182,13 +182,14 @@ namespace Helix.Features.FlowControl {
             var neg = this.iffalse.GenerateCode(types, negWriter);
 
             var tempName = writer.GetVariableName(this.tempPath);
-
+            var returnType = this.GetReturnType(types);
+            
             // Register our member paths with the code generator
-            foreach (var relPath in VariablesHelper.GetMemberPaths(this.returnType, types)) {
+            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.tempPath, relPath);
             }
 
-            if (this.returnType != PrimitiveType.Void) {
+            if (returnType != PrimitiveType.Void) {
                 affirmWriter.WriteStatement(new CAssignment() {
                     Left = new CVariableLiteral(tempName),
                     Right = affirm
@@ -201,7 +202,7 @@ namespace Helix.Features.FlowControl {
             }
 
             var tempStat = new CVariableDeclaration() {
-                Type = writer.ConvertType(this.returnType),
+                Type = writer.ConvertType(returnType),
                 Name = tempName
             };
 
@@ -215,7 +216,7 @@ namespace Helix.Features.FlowControl {
             writer.WriteComment($"Line {this.cond.Location.Line}: If statement");
 
             // Don't bother writing the temp variable if we are returning void
-            if (this.returnType != PrimitiveType.Void) {
+            if (returnType != PrimitiveType.Void) {
                 writer.WriteStatement(tempStat);
             }
 
@@ -223,13 +224,13 @@ namespace Helix.Features.FlowControl {
 
             // Register all the lifetimes that changed within this if statement, including
             // the binding that register our return lifetime
-            foreach (var binding in this.bindings) {
-                binding.GenerateCode(types, writer);
-            }
+            //foreach (var binding in this.bindings) {
+            //    binding.GenerateCode(types, writer);
+            //}
 
             writer.WriteEmptyLine();
 
-            if (this.returnType != PrimitiveType.Void) {
+            if (returnType != PrimitiveType.Void) {
                 return new CVariableLiteral(tempName);
             }
             else {

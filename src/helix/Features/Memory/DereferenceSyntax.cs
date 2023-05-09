@@ -86,7 +86,7 @@ namespace Helix.Features.Memory {
                 }
             }
 
-            flow.Lifetimes[this.target] = new LifetimeBundle(bundleDict);
+            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
         }
 
         public ILValue ToLValue(EvalFrame types) {
@@ -118,7 +118,7 @@ namespace Helix.Features.Memory {
             return this;
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
             var result = new CPointerDereference() {
                 Target = new CMemberAccess() {

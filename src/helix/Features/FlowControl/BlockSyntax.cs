@@ -6,6 +6,7 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
+using System;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -36,7 +37,6 @@ namespace Helix.Features.FlowControl {
         private static int idCounter = 0;
 
         private readonly int id;
-        private readonly bool isTypeChecked;
 
         public TokenLocation Location { get; }
 
@@ -52,7 +52,6 @@ namespace Helix.Features.FlowControl {
             this.Location = statements.Select(x => x.Location).Prepend(location).Last();
             this.Statements = statements;
             this.id = idCounter++;
-            this.isTypeChecked = isTypeChecked;
 
             this.IsPure = this.Statements.All(x => x.IsPure);
         }
@@ -61,7 +60,7 @@ namespace Helix.Features.FlowControl {
             : this(statement.Location, new[] { statement }, isTypeChecked) { }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
-            if (this.isTypeChecked) {
+            if (this.IsTypeChecked(types)) {
                 return this;
             }
 
@@ -72,26 +71,30 @@ namespace Helix.Features.FlowControl {
                 .Select(x => types.ReturnTypes[x])
                 .OrElse(() => PrimitiveType.Void);
 
-            types.ReturnTypes[result] = returnType;
-
-            types.Lifetimes[result] = stats
-                .LastOrNone()
-                .Select(x => types.Lifetimes[x])
-                .OrElse(() => new LifetimeBundle());
+            this.SetReturnType(returnType, types);
 
             return result;
         }
 
+        public void AnalyzeFlow(FlowFrame flow) {
+            var bundle = this.Statements
+                .LastOrNone()
+                .Select(x => x.GetLifetimes(flow))
+                .OrElse(() => new LifetimeBundle());
+
+            this.SetLifetimes(bundle, flow);
+        }
+
         public ISyntaxTree ToRValue(EvalFrame types) {
-            if (!this.isTypeChecked) {
+            if (!this.IsTypeChecked(types)) {
                 throw TypeCheckingErrors.RValueRequired(this.Location);
             }
 
             return this;
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            if (!this.isTypeChecked) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+            if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 

@@ -108,7 +108,7 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public void GenerateCode(EvalFrame types, ICWriter writer) { }
+        public void GenerateCode(FlowFrame types, ICWriter writer) { }
 
         private void RealCodeGenerator(StructSignature signature, ICWriter writer) {
             var name = writer.GetVariableName(signature.Path);

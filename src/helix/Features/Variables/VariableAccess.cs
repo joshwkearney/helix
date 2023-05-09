@@ -137,7 +137,7 @@ namespace Helix.Features.Variables {
             flow.Lifetimes[this] = new LifetimeBundle(lifetimes);
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.variablePath);
 
             return new CVariableLiteral(name);

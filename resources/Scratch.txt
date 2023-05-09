@@ -2,18 +2,22 @@
 
 let y = int^;
 
+TODO: Fix registering member paths with the code generator
+TODO: Fix target being deleted on invoke expressions
 
-3 access: mutable, immutable, readonly
+3 permissions: mutable, immutable, readonly
 mut int[]
 ref int[]
 
 Roots are created when a lifetime exists that cannot be referenced
-in terms of previous lifetimes. Right now the only two root-creation
+in terms of previous lifetimes. Right now the only three root-creation
 events are function parameters, the built-in heap, and dereferencing
 a pointer
 
-
-
+The problem:
+Lifetimes are created at discreet program points and the variables they are based
+on change at discreet program points, so lifetime code has to be contextual
+just like other declarations
 
 Idea:
 int* should refer to unmanaged pointers while int^ to references, or managed pointers

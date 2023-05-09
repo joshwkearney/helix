@@ -56,7 +56,7 @@ namespace Helix.Features.Arrays {
             flow.Lifetimes[this] = flow.Lifetimes[this.target];
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
 
             ICSyntax newData = new CMemberAccess() {

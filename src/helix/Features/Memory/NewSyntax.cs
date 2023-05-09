@@ -17,6 +17,7 @@ namespace Helix.Features.Memory {
     public record NewSyntax : ISyntaxTree {
         private readonly ISyntaxTree target;
         private readonly Lifetime lifetime;
+        private readonly IReadOnlySet<Lifetime> allowedRoots;
 
         public TokenLocation Location { get; }
 
@@ -24,10 +25,13 @@ namespace Helix.Features.Memory {
 
         public bool IsPure => true;
 
-        public NewSyntax(TokenLocation loc, ISyntaxTree target, Lifetime lifetime) {
+        public NewSyntax(TokenLocation loc, ISyntaxTree target,
+            Lifetime lifetime, IReadOnlySet<Lifetime> allowedRoots) {
+
             this.Location = loc;
             this.target = target;
             this.lifetime = lifetime;
+            this.allowedRoots = allowedRoots;
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;
@@ -44,17 +48,18 @@ namespace Helix.Features.Memory {
             flow.Lifetimes[this] = new LifetimeBundle(new[] { this.lifetime });
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            var roots = types.LifetimeGraph
-                .GetDerivedLifetimes(this.lifetime, this.validRoots)
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+            var roots = types
+                .LifetimeGraph
+                .GetDerivedLifetimes(this.lifetime, this.allowedRoots)
                 .ToValueList();
 
-            if (roots.Any() && !roots.All(x => this.validRoots.Contains(x))) {
+            if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
                 throw new LifetimeException(
                     this.Location,
                     "Lifetime Inference Failed",
                     "The lifetime of this new object allocation has failed because it is " +
-                    "dependent on a value that does not exist at this point in the program and " + 
+                    "dependent on a root that does not exist at this point in the program and " + 
                     "must be calculated at runtime. Please try moving the allocation " + 
                     "closer to the site of its use.");
             }
@@ -63,7 +68,7 @@ namespace Helix.Features.Memory {
             var target = this.target.GenerateCode(types, writer);
 
             // Register our member paths with the code generator
-            foreach (var relPath in VariablesHelper.GetMemberPaths(returnType, types)) {
+            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.lifetime.Path, relPath);
             }
 

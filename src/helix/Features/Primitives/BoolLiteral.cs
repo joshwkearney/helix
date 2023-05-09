@@ -47,7 +47,7 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value ? 1 : 0);
         }
     }

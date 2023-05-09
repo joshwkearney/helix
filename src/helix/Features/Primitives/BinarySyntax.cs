@@ -266,7 +266,7 @@ namespace Helix.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             return new CBinaryExpression() {
                 Left = this.left.GenerateCode(types, writer),
                 Right = this.right.GenerateCode(types, writer),

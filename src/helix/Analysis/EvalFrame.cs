@@ -19,6 +19,8 @@ namespace Helix.Analysis {
 
         public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
 
+        public IDictionary<IdentifierPath, Lifetime> LifetimeRoots { get; }
+
         // Global things
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
@@ -28,11 +30,9 @@ namespace Helix.Analysis {
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
-        //public LifetimeGraph LifetimeGraph { get; }
-
         public EvalFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            //this.LifetimeGraph = new();
+            this.LifetimeRoots = new Dictionary<IdentifierPath, Lifetime>();
 
             this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
@@ -50,7 +50,7 @@ namespace Helix.Analysis {
         public EvalFrame(EvalFrame prev) {
             this.Variables = new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
             this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
-            //this.LifetimeGraph = prev.LifetimeGraph;
+            this.LifetimeRoots = new StackedDictionary<IdentifierPath, Lifetime>(prev.LifetimeRoots);
 
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;

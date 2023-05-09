@@ -141,7 +141,8 @@ namespace Helix.Features.Variables {
             // array variable replaces the current lifetime for that variable, so we need to
             // increment the mutation counter and create the new lifetime. 
 
-            if (this.target.ToLValue(flow).IsLocal) {
+            // TODO: Fix this
+            //if (this.target.ToLValue(flow).IsLocal) {
                 // Because structs are basically just bags of locals, we could actually be
                 // setting multiple variables with this one assignment if we are assigning
                 // a struct type. Therefore, loop through all the possible variables and
@@ -180,22 +181,22 @@ namespace Helix.Features.Variables {
                         flow.LifetimeGraph.AddAlias(newLifetime, assignLifetime);
                     }
                 }
-            }
-            else {
+            //}
+            //else {
                 // Add a dependency between every variable in the assignment statement and
                 // the old lifetime. We are using AddDerived only because the target lifetime
                 // will exist whether or not we write into it, since this is a dereferenced write.
                 // That means that for the purposes of lifetime analysis, the target lifetime is
                 // independent of the assigned lifetimes.
-                foreach (var assignTime in assignBundle.AllLifetimes) {
-                    foreach (var targetTime in targetBundle.AllLifetimes) {
-                        flow.LifetimeGraph.AddDependency(assignTime, targetTime);
-                    }
-                }
-            }
+            //    foreach (var assignTime in assignBundle.AllLifetimes) {
+            //        foreach (var targetTime in targetBundle.AllLifetimes) {
+            //            flow.LifetimeGraph.AddDependency(assignTime, targetTime);
+            //        }
+            //    }
+            //}
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
             var assign = this.assign.GenerateCode(types, writer);
 

@@ -26,7 +26,7 @@ namespace Helix.Parsing {
             throw new Exception("Compiler bug");
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             throw new Exception("Compiler bug");
         }
 
@@ -66,7 +66,7 @@ namespace Helix.Parsing {
             throw new InvalidOperationException();
         }
 
-        public void GenerateCode(EvalFrame types, ICWriter writer) {
+        public void GenerateCode(FlowFrame types, ICWriter writer) {
             throw new InvalidOperationException();
         }
     }

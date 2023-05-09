@@ -169,7 +169,7 @@ namespace Helix.Features.Aggregates {
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }

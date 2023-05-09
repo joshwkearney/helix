@@ -65,10 +65,10 @@ namespace Helix.Features.FlowControl {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            flow.Lifetimes[this] = new LifetimeBundle();
+            this.SetLifetimes(new LifetimeBundle(), flow);
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             if (this.isbreak) {
                 writer.WriteStatement(new CBreak());
             }

@@ -117,12 +117,14 @@ namespace Helix.Features.Memory {
                         $"You may not supply explicit members to a new expression when providing an existing value.'");
                 }
 
+                var roots = types.LifetimeRoots.Values.ToHashSet();
                 var lifetime = new Lifetime(this.Location.Scope.Append("$new_temp_" + tempCounter++), 0);
 
                 var result = new NewSyntax(
                     this.Location, 
                     this.type.CheckTypes(types), 
-                    lifetime);
+                    lifetime,
+                    roots);
 
                 return result.CheckTypes(types);
             }

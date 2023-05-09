@@ -118,16 +118,6 @@ namespace Helix.Features.Functions {
             return result;            
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.target.AnalyzeFlow(flow);
-
-            foreach (var arg in this.args) {
-                arg.AnalyzeFlow(flow);
-            }
-
-            flow.Lifetimes[this] = new LifetimeBundle();
-        }
-
         private static HelixType NormalizeTypes(HelixType type) {
             if (type is PointerType ptr) {
                 return new PointerType(ptr.InnerType, true);
@@ -165,7 +155,16 @@ namespace Helix.Features.Functions {
 
         public ISyntaxTree ToRValue(EvalFrame types) => this;
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public void AnalyzeFlow(FlowFrame flow) {
+            foreach (var arg in this.args) {
+                arg.AnalyzeFlow(flow);
+            }
+
+            // TODO: Fix this
+            flow.Lifetimes[this] = new LifetimeBundle();
+        }
+
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var args = this.args
                 .Select(x => x.GenerateCode(types, writer))
                 .Prepend(new CVariableLiteral("_pool"))

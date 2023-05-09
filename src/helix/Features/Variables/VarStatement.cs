@@ -195,10 +195,11 @@ namespace Helix {
                     //bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, path));
                 //}
             }
-            
+
+            this.SetLifetimes(new LifetimeBundle(), flow);
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
 
             var stat = new CVariableDeclaration() {
@@ -207,7 +208,7 @@ namespace Helix {
                 Assignment = Option.Some(this.assign.GenerateCode(types, writer))
             };
 
-            foreach (var relPath in VariablesHelper.GetMemberPaths(this.returnType, types)) {
+            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(this.returnType, types)) {
                 writer.SetMemberPath(this.path, relPath);
             }
 

@@ -187,7 +187,7 @@ namespace Helix.Features.FlowControl {
             }*/
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var bodyStats = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, bodyStats);
 
