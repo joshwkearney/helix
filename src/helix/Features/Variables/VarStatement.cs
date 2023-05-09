@@ -91,6 +91,19 @@ namespace Helix {
                 throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
             }
 
+            // Go through all the variables and sub variables and set up the lifetimes
+            // correctly
+            foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, types)) {
+                var path = basePath.Append(compPath);
+                var sig = new VariableSignature(path, compType, this.isWritable);
+
+                // Add this variable's lifetime
+                types.Variables[path] = sig;
+            }
+
+            // Put this variable's value in the main table
+            types.SyntaxValues[basePath] = assign;
+
             // Set the return type of the new syntax tree
             var result = new VarStatement(this.Location, basePath, assignType, assign);
             types.ReturnTypes[result] = PrimitiveType.Void;

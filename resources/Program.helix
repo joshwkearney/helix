@@ -1,8 +1,8 @@
 ﻿
-func lifetime_test_3(let a as int[]) as void {
-	a[45] = a[0];
+func lifetime_test_3() as void {
+	var x = 45;
 
-	let b = new int[45];
+	x = x + 9;
 };
 
 struct Point {

@@ -15,13 +15,13 @@ namespace Helix.Analysis {
         private int tempCounter = 0;
 
         // Frame-specific things
-        public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
-
         public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
 
         public IDictionary<IdentifierPath, Lifetime> LifetimeRoots { get; }
 
         // Global things
+        public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
+
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
@@ -48,7 +48,7 @@ namespace Helix.Analysis {
         }
 
         public EvalFrame(EvalFrame prev) {
-            this.Variables = new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
+            this.Variables = prev.Variables; //new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
             this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
             this.LifetimeRoots = new StackedDictionary<IdentifierPath, Lifetime>(prev.LifetimeRoots);
 

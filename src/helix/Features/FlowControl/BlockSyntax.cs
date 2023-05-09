@@ -71,12 +71,16 @@ namespace Helix.Features.FlowControl {
                 .Select(x => types.ReturnTypes[x])
                 .OrElse(() => PrimitiveType.Void);
 
-            this.SetReturnType(returnType, types);
+            result.SetReturnType(returnType, types);
 
             return result;
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
+            foreach (var stat in this.Statements) {
+                stat.AnalyzeFlow(flow);
+            }
+
             var bundle = this.Statements
                 .LastOrNone()
                 .Select(x => x.GetLifetimes(flow))
