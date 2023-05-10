@@ -73,20 +73,6 @@ namespace Helix.Features.Variables {
 
             throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
         }
-
-        public ISyntaxTree ToRValue(EvalFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public ILValue ToLValue(EvalFrame types) { throw new InvalidOperationException(); }
-
-        public void AnalyzeFlow(FlowFrame flow) {
-            throw new InvalidOperationException();
-        }
-
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
-        }
     }
 
     public record VariableAccessSyntax : ISyntaxTree, ILValue {
@@ -126,12 +112,12 @@ namespace Helix.Features.Variables {
             foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(sig.Type, flow)) {
                 var memPath = sig.Path.Append(compPath);
 
-                if (compType.IsValueType(flow)) {
-                    lifetimes[compPath] = new Lifetime[0];
-                }
-                else {
+                //if (compType.IsValueType(flow)) {
+                //    lifetimes[compPath] = new Lifetime[0];
+                //}
+                //else {
                     lifetimes[compPath] = new[] { flow.VariableLifetimes[memPath] };
-                }
+                //}
             }
 
             flow.Lifetimes[this] = new LifetimeBundle(lifetimes);

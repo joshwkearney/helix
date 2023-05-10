@@ -1,12 +1,23 @@
 ﻿
 func lifetime_test_3() as void {
-	var x = 45;
+	var x = put Point;
+	var y = 9;
 
-	x = x + 9;
+	x.x += y;
+};
+
+func struct_test(let x as Node) as void {
+	let p = x.prev;
+	let n = x.next;
+};
+
+struct Node {
+	let prev as Node*;
+	let next as Node*;
+	let data as int;
 };
 
 struct Point {
-	let x as int*;
-	let y as int*;
+	let x as int;
+	let y as int;
 };
-

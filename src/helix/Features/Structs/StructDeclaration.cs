@@ -96,7 +96,7 @@ namespace Helix.Features.Aggregates {
 
             var isRecursive = sig.Members
                 .Select(x => x.Type)
-                .Where(x => !x.IsValueType(types))
+                .Where(x => x.IsValueType(types))
                 .SelectMany(x => x.GetContainedTypes(types))
                 .Contains(structType);
 
@@ -107,6 +107,8 @@ namespace Helix.Features.Aggregates {
 
             return this;
         }
+
+        public void AnalyzeFlow(FlowFrame flow) { }
 
         public void GenerateCode(FlowFrame types, ICWriter writer) { }
 

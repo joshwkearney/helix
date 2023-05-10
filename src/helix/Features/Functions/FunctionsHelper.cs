@@ -47,6 +47,10 @@ namespace Helix.Features.Functions {
 
                     types.Variables[path] = new VariableSignature(path, type, parsePar.IsWritable);
                     types.SyntaxValues[path] = new VariableAccessSyntax(loc, path);
+
+                    if (!memType.IsValueType(types)) {
+                        types.LifetimeRoots[path] = lifetime;
+                    }
                 }
             }
         }

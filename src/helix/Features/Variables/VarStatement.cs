@@ -199,8 +199,10 @@ namespace Helix {
 
                 // Make sure that this variable acts as a passthrough for the lifetimes that are
                 // in the assignment expression
-                foreach (var assignLifetime in assignBundle.ComponentLifetimes[compPath]) {
-                    flow.LifetimeGraph.AddAlias(varLifetime, assignLifetime);
+                if (!compType.IsValueType(flow)) {
+                    foreach (var assignLifetime in assignBundle.ComponentLifetimes[compPath]) {
+                        flow.LifetimeGraph.AddAlias(varLifetime, assignLifetime);
+                    }
                 }
 
                 // TODO: Put back binding

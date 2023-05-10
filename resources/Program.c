@@ -12,34 +12,55 @@ extern Pool* _pool_create();
 extern void* _pool_malloc(Pool* pool, int pool_index, int size);
 extern int _pool_get_index(Pool* pool);
 extern void _pool_delete();
-typedef struct int$array int$array;
-typedef struct int$ptr int$ptr;
+typedef struct Point Point;
+typedef struct Node$ptr Node$ptr;
+typedef struct Node Node;
 
-void lifetime_test_3(Pool* _pool, int$array a);
+void lifetime_test_3(Pool* _pool);
+void struct_test(Pool* _pool, Node x_1);
 
-struct int$array {
-    int* data;
-    int pool;
-    int count;
+struct Point {
+    int x;
+    int y;
 };
 
-struct int$ptr {
-    int* data;
+struct Node$ptr {
+    Node* data;
     int pool;
 };
 
-void lifetime_test_3(Pool* _pool, int$array a) {
+struct Node {
+    Node$ptr prev;
+    Node$ptr next;
+    int data;
+};
+
+void lifetime_test_3(Pool* _pool) {
     int $A = _pool_get_index(_pool);
-    int $B = (a.pool);
 
-    /* Line 3: Array to pointer conversion */
-    int$ptr $C = (int$ptr){ ((a.data) + 45U), (a.pool) };
+    /* Line 3: New variable declaration 'x' */
+    Point x = (Point){ 0U, 0U };
 
-    /* Line 3: Array to pointer conversion */
-    int$ptr $D = (int$ptr){ ((a.data) + 0U), (a.pool) };
+    /* Line 4: New variable declaration 'y' */
+    int y = 9U;
 
-    /* Line 3: Assignment statement */
-    (*($C.data)) = (*($D.data));
+    /* Line 6: Assignment statement */
+    (x.x) = ((x.x) + y);
+
+}
+
+void struct_test(Pool* _pool, Node x_1) {
+    int $A = _pool_get_index(_pool);
+    int $B = (x_1.pool);
+    int $C = (x_1.prev.pool);
+    int $D = (x_1.next.pool);
+    int $E = (x_1.data.pool);
+
+    /* Line 10: New variable declaration 'p' */
+    Node$ptr p = (x_1.prev);
+
+    /* Line 11: New variable declaration 'n' */
+    Node$ptr n = (x_1.next);
 
 }
 

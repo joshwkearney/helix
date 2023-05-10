@@ -130,22 +130,24 @@ namespace Helix.Features.Aggregates {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
+            if (!this.IsFlowAnalyzed(flow)) {
                 return;
             }
 
-            var memberType = flow.ReturnTypes[this];
+            this.target.AnalyzeFlow(flow);
+
+            var memberType = this.GetReturnType(flow);
             var relPath = new IdentifierPath(this.memberName);
-            var targetLifetimes = flow.Lifetimes[target].ComponentLifetimes;
+            var targetLifetimes = this.target.GetLifetimes(flow).ComponentLifetimes;
             var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
 
             foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(memberType, flow)) {
-                if (type.IsValueType(flow)) {
-                    bundleDict[memPath] = new Lifetime[0];
-                }
-                else {
+                //if (type.IsValueType(flow)) {
+                //    bundleDict[memPath] = new Lifetime[0];
+                //}
+                //else {
                     bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
-                }
+                //}
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

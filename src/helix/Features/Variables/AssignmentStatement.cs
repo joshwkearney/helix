@@ -183,17 +183,19 @@ namespace Helix.Features.Variables {
                 }
             //}
             //else {
-                // Add a dependency between every variable in the assignment statement and
-                // the old lifetime. We are using AddDerived only because the target lifetime
-                // will exist whether or not we write into it, since this is a dereferenced write.
-                // That means that for the purposes of lifetime analysis, the target lifetime is
-                // independent of the assigned lifetimes.
+            // Add a dependency between every variable in the assignment statement and
+            // the old lifetime. We are using AddDerived only because the target lifetime
+            // will exist whether or not we write into it, since this is a dereferenced write.
+            // That means that for the purposes of lifetime analysis, the target lifetime is
+            // independent of the assigned lifetimes.
             //    foreach (var assignTime in assignBundle.AllLifetimes) {
             //        foreach (var targetTime in targetBundle.AllLifetimes) {
             //            flow.LifetimeGraph.AddDependency(assignTime, targetTime);
             //        }
             //    }
             //}
+
+            this.SetLifetimes(new LifetimeBundle(), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

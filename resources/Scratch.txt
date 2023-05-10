@@ -23,3 +23,7 @@ Idea:
 int* should refer to unmanaged pointers while int^ to references, or managed pointers
 The difference between them would be bitwidth, and the fact that references work with
 regions while unmanaged pointers don't
+
+
+Why have a single lifetime per path, with multiple paths per variable?
+Why not just a single path per variable, each storing a lifetime bundle?
