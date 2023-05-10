@@ -19,18 +19,10 @@ namespace helix.FlowAnalysis {
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             foreach (var (memPath, _) in GetMemberPaths(sig.Type, flow)) {
-                bundleDict[memPath] = flow.VariableLifetimes[memPath];
+                bundleDict[memPath] = new Lifetime(path.Append(memPath), 0);
             }
 
             return new LifetimeBundle(bundleDict);
-        }
-
-        public static void SetVariableBundle(this FlowFrame flow, IdentifierPath path, LifetimeBundle bundle) {
-            foreach (var (relPath, _) in GetMemberPaths(flow.Variables[path].Type, flow)) {
-                var memPath = path.Append(relPath);
-
-                flow.VariableLifetimes[memPath] = bundle.Components[relPath];
-            }
         }
 
         public static Dictionary<IdentifierPath, HelixType> GetMembers(this HelixType type, ITypedFrame types) {

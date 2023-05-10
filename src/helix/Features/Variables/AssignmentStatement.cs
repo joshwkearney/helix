@@ -162,12 +162,12 @@ namespace Helix.Features.Variables {
                     // lifetime.
                     var oldLifetime = targetBundle.Components[relPath];
 
-                    var newLifetime = new Lifetime(
-                        oldLifetime.Path,
-                        oldLifetime.MutationCount + 1);
+                    //var newLifetime = new Lifetime(
+                    //    oldLifetime.Path,
+                    //    oldLifetime.MutationCount + 1);
 
                     // Replace the old variable signature
-                    flow.VariableLifetimes[newLifetime.Path] = newLifetime;
+                    //flow.VariableLifetimes[newLifetime.Path] = newLifetime;
 
                     // TODO: Add binding
                     // We need to generate a variable for this new lifetime in the c
@@ -183,7 +183,7 @@ namespace Helix.Features.Variables {
                     // alias for the assigned lifetimes, and the assigned lifetimes will be
                     // dependent on whatever the new lifetime is dependent on.
                     //foreach (var assignLifetime in assignBundle.Components[relPath]) {
-                        flow.LifetimeGraph.AddAlias(newLifetime, assignBundle.Components[relPath]);
+                        flow.LifetimeGraph.AddAlias(oldLifetime, assignBundle.Components[relPath]);
                     //}
                 }
             }

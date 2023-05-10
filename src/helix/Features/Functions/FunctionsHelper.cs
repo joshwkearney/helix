@@ -71,7 +71,7 @@ namespace Helix.Features.Functions {
                     var lifetime = new Lifetime(path, 0);
 
                     flow.LifetimeGraph.AddRoot(lifetime);
-                    flow.VariableLifetimes[path] = lifetime;
+                    //flow.VariableLifetimes[path] = lifetime;
                 }
             }
         }

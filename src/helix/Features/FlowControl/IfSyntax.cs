@@ -257,23 +257,24 @@ namespace Helix.Features.FlowControl {
             foreach (var path in modifiedVars) {
                 var oldSig = flow.Variables[path];
 
+                // TODO: Fix all of this
                 // If this variable is changed in both paths, take the max mutation count and add one
                 //if (ifTrueFlow.Variables.Keys.Contains(path) && ifFalseFlow.Variables.Keys.Contains(path)) {
-                    var trueLifetime = ifTrueFlow.VariableLifetimes[path];
-                    var falseLifetime = ifFalseFlow.VariableLifetimes[path];
+                   // var trueLifetime = ifTrueFlow.VariableLifetimes[path];
+                   // var falseLifetime = ifFalseFlow.VariableLifetimes[path];
 
-                    var mutationCount = 1 + Math.Max(
-                        trueLifetime.MutationCount,
-                        falseLifetime.MutationCount);
+                  //  var mutationCount = 1 + Math.Max(
+                  //      trueLifetime.MutationCount,
+                  //      falseLifetime.MutationCount);
 
-                    var newLifetime = new Lifetime(path, mutationCount);
+                  //  var newLifetime = new Lifetime(path, mutationCount);
 
-                    newLifetimes.Add(newLifetime);
+                 /*   newLifetimes.Add(newLifetime);
                     flow.VariableLifetimes[path] = newLifetime;
 
                     // Make sure that the new lifetime is dependent on both if branches
                     flow.LifetimeGraph.AddAlias(newLifetime, trueLifetime);
-                    flow.LifetimeGraph.AddAlias(newLifetime, falseLifetime);
+                    flow.LifetimeGraph.AddAlias(newLifetime, falseLifetime);*/
                // }
               /*  else {
                     // TODO: Why not just always use the first branch?

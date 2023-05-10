@@ -196,7 +196,7 @@ namespace Helix {
                 var varLifetime = new Lifetime(path, 0);
 
                 // Add this variable members's lifetime
-                flow.VariableLifetimes[path] = varLifetime;
+                //flow.VariableLifetimes[path] = varLifetime;
 
                 // Make sure that this variable acts as a passthrough for the lifetimes that are
                 // in the assignment expression

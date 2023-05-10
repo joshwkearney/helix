@@ -1,4 +1,5 @@
-﻿using Helix.Analysis;
+﻿using helix.FlowAnalysis;
+using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
@@ -108,19 +109,7 @@ namespace Helix.Features.Variables {
             var lifetimes = new Dictionary<IdentifierPath, Lifetime>();
             var sig = flow.Variables[this.variablePath];
 
-            // Go through all this variable's members and set the lifetime bundle correctly
-            foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(sig.Type, flow)) {
-                var memPath = sig.Path.Append(compPath);
-
-                //if (compType.IsValueType(flow)) {
-                //    lifetimes[compPath] = new Lifetime[0];
-                //}
-                //else {
-                    lifetimes[compPath] = flow.VariableLifetimes[memPath];
-                //}
-            }
-
-            flow.Lifetimes[this] = new LifetimeBundle(lifetimes);
+            flow.Lifetimes[this] = flow.GetVariableBundle(this.variablePath);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
