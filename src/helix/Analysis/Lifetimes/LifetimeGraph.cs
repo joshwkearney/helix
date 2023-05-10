@@ -14,6 +14,10 @@ namespace Helix.Analysis.Lifetimes {
         public IReadOnlySet<Lifetime> AllLifetimes => this.allLifetimes;
 
         private void AddPrecursor(Lifetime childLifetime, Lifetime parentLifetime) {
+            if (childLifetime == Lifetime.None || parentLifetime == Lifetime.None) {
+                return;
+            }
+
             this.allLifetimes = this.allLifetimes.Add(childLifetime).Add(parentLifetime);
 
             if (!this.parentLifetimes.TryGetValue(childLifetime, out var parentList)) {
@@ -24,6 +28,10 @@ namespace Helix.Analysis.Lifetimes {
         }
 
         private void AddDerived(Lifetime parentLifetime, Lifetime childLifetime) {
+            if (parentLifetime == Lifetime.None || childLifetime == Lifetime.None) {
+                return;
+            }
+
             this.allLifetimes = this.allLifetimes.Add(childLifetime).Add(parentLifetime);
 
             if (!this.childLifetimes.TryGetValue(parentLifetime, out var childList)) {
@@ -44,6 +52,10 @@ namespace Helix.Analysis.Lifetimes {
         }
 
         public void AddDependency(Lifetime dependent, Lifetime target) {
+            if (dependent == Lifetime.None || target == Lifetime.None) {
+                return;
+            }
+
             this.allLifetimes = this.allLifetimes.Add(dependent).Add(target);
 
             if (!this.dependentLifetimes.TryGetValue(dependent, out var childList)) {
@@ -61,7 +73,7 @@ namespace Helix.Analysis.Lifetimes {
             while (stack.Count > 0) {
                 var item = stack.Pop();
 
-                if (visited.Contains(item)) {
+                if (visited.Contains(item) || item == Lifetime.None) {
                     continue;
                 }
                 else {
@@ -116,7 +128,7 @@ namespace Helix.Analysis.Lifetimes {
             while (stack.Count > 0) {
                 var item = stack.Pop();
 
-                if (visited.Contains(item)) {
+                if (visited.Contains(item) || item == Lifetime.None) {
                     continue;
                 }
                 else {

@@ -196,7 +196,7 @@ namespace Helix.Features.Functions {
             this.body.AnalyzeFlow(flow);
 
             // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in flow.Lifetimes[body].AllLifetimes) {
+            foreach (var lifetime in flow.Lifetimes[body].Lifetimes) {
                 flow.LifetimeGraph.AddDependency(lifetime, heapLifetime);
             }
 

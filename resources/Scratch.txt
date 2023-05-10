@@ -2,6 +2,36 @@
 
 let y = int^;
 
+
+Region rules for assignment:
+NOPE - 1. The assigned expression *must* outlive the current expression
+
+2. The assigned expression must outlive where the variable is allocated
+
+
+
+var test = A
+test = B
+
+// Mutation of test through alias
+*(&test) = 90;
+
+// Possible mutation of test through alias
+some_func(&test);
+
+
+test.some = new ...
+
+
+
+
+
+
+
+
+
+
+
 TODO: Fix registering member paths with the code generator
 TODO: Fix target being deleted on invoke expressions
 

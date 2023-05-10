@@ -9,25 +9,23 @@ using System.Threading.Tasks;
 
 namespace Helix.Analysis.Lifetimes {
     public class LifetimeBundle {
-        public IReadOnlyDictionary<IdentifierPath, IReadOnlyList<Lifetime>> ComponentLifetimes { get; }
+        public IReadOnlyDictionary<IdentifierPath, Lifetime> Components { get; }
 
-        public IReadOnlyList<Lifetime> ScalarLifetimes => this.ComponentLifetimes[new IdentifierPath()];
+        public IEnumerable<Lifetime> Lifetimes => this.Components.Values;
 
-        public IEnumerable<Lifetime> AllLifetimes => this.ComponentLifetimes.SelectMany(x => x.Value);
-
-        public LifetimeBundle(IReadOnlyDictionary<IdentifierPath, IReadOnlyList<Lifetime>> lifetimes) {
-            this.ComponentLifetimes = lifetimes;
+        public LifetimeBundle(IReadOnlyDictionary<IdentifierPath, Lifetime> lifetimes) {
+            this.Components = lifetimes;
         }
 
         public LifetimeBundle() {
-            this.ComponentLifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>() {
-                { new IdentifierPath(), Array.Empty<Lifetime>() }
+            this.Components = new Dictionary<IdentifierPath, Lifetime>() {
+                { new IdentifierPath(), Lifetime.None }
             };
         }
 
-        public LifetimeBundle(IReadOnlyList<Lifetime> lifetimes) {
-            this.ComponentLifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>() {
-                { new IdentifierPath(), lifetimes }
+        public LifetimeBundle(Lifetime lifetime) {
+            this.Components = new Dictionary<IdentifierPath, Lifetime>() {
+                { new IdentifierPath(), lifetime }
             };
         }
     }

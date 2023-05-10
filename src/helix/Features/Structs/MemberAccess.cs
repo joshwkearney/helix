@@ -138,8 +138,8 @@ namespace Helix.Features.Aggregates {
 
             var memberType = this.GetReturnType(flow);
             var relPath = new IdentifierPath(this.memberName);
-            var targetLifetimes = this.target.GetLifetimes(flow).ComponentLifetimes;
-            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+            var targetLifetimes = this.target.GetLifetimes(flow).Components;
+            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(memberType, flow)) {
                 //if (type.IsValueType(flow)) {

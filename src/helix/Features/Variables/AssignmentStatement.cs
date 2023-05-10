@@ -148,14 +148,10 @@ namespace Helix.Features.Variables {
                 // a struct type. Therefore, loop through all the possible variables and
                 // members and set them correctly
                 foreach (var (relPath, memType) in VariablesHelper.GetMemberPaths(targetType, flow)) {
-                    if (targetBundle.ComponentLifetimes[relPath].Count != 1) {
-                        throw new Exception("Compiler bug: invalid state");
-                    }
-
                     // Increment the mutation counter for modified local variables so that
                     // any new accesses to this variable will be forced to get the new 
                     // lifetime.
-                    var oldLifetime = targetBundle.ComponentLifetimes[relPath][0];
+                    var oldLifetime = targetBundle.Components[relPath];
 
                     var newLifetime = new Lifetime(
                         oldLifetime.Path,
@@ -177,9 +173,9 @@ namespace Helix.Features.Variables {
                     // AddPrecursor are used because the new lifetime is being created as an
                     // alias for the assigned lifetimes, and the assigned lifetimes will be
                     // dependent on whatever the new lifetime is dependent on.
-                    foreach (var assignLifetime in assignBundle.ComponentLifetimes[relPath]) {
-                        flow.LifetimeGraph.AddAlias(newLifetime, assignLifetime);
-                    }
+                    //foreach (var assignLifetime in assignBundle.Components[relPath]) {
+                        flow.LifetimeGraph.AddAlias(newLifetime, assignBundle.Components[relPath]);
+                    //}
                 }
             //}
             //else {

@@ -105,7 +105,7 @@ namespace Helix.Features.Variables {
         public ISyntaxTree ToRValue(EvalFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var lifetimes = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+            var lifetimes = new Dictionary<IdentifierPath, Lifetime>();
             var sig = flow.Variables[this.variablePath];
 
             // Go through all this variable's members and set the lifetime bundle correctly
@@ -116,7 +116,7 @@ namespace Helix.Features.Variables {
                 //    lifetimes[compPath] = new Lifetime[0];
                 //}
                 //else {
-                    lifetimes[compPath] = new[] { flow.VariableLifetimes[memPath] };
+                    lifetimes[compPath] = flow.VariableLifetimes[memPath];
                 //}
             }
 

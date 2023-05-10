@@ -149,7 +149,7 @@ namespace Helix.Features.Aggregates {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             // Add each member to the lifetime bundle
             for (int i = 0; i < this.names.Count; i++) {
@@ -159,15 +159,15 @@ namespace Helix.Features.Aggregates {
                 value.AnalyzeFlow(flow);
 
                 // Go through each member of this field
-                foreach (var (relPath, lifetimes) in value.GetLifetimes(flow).ComponentLifetimes) {
+                foreach (var (relPath, lifetime) in value.GetLifetimes(flow).Components) {
                     var memPath = new IdentifierPath(name).Append(relPath);
 
                     // Add this member to the lifetime dict
-                    bundleDict[memPath] = lifetimes;
+                    bundleDict[memPath] = lifetime;
                 }
             }
 
-            bundleDict[new IdentifierPath()] = Array.Empty<Lifetime>();
+            bundleDict[new IdentifierPath()] = Lifetime.None;
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
         }
 

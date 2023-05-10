@@ -70,18 +70,18 @@ namespace Helix.Features.Memory {
             }
 
             var pointerType = this.target.AssertIsPointer(flow);
-            var bundleDict = new Dictionary<IdentifierPath, IReadOnlyList<Lifetime>>();
+            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             this.target.AnalyzeFlow(flow);
 
             foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, flow)) {
                 if (type.IsValueType(flow)) {
-                    bundleDict[compPath] = Array.Empty<Lifetime>();
+                    bundleDict[compPath] = Lifetime.None;
                 }
                 else { 
                     var lifetime = new Lifetime(this.tempPath.Append(compPath), 0);
 
-                    bundleDict[compPath] = new[] { lifetime };
+                    bundleDict[compPath] = lifetime;
                     flow.LifetimeGraph.AddRoot(lifetime);
                 }
             }

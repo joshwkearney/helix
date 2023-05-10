@@ -8,6 +8,8 @@ namespace Helix.Analysis.Lifetimes {
     // the implicit heap, and newly dereferenced reference types are all root lifetimes,
     // along with any locals that depend on root lifetimes.
     public record struct Lifetime(IdentifierPath Path, int MutationCount) {
+        public static Lifetime None { get; } = new Lifetime(new IdentifierPath(), 0);
+
         public Lifetime() : this(new IdentifierPath(), 0) { }        
     }
 }

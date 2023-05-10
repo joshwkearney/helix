@@ -70,7 +70,7 @@ namespace Helix.Features.FlowControl {
             flow.Lifetimes[this] = new LifetimeBundle();
 
             // Add a dependency on the heap for every lifetime in the result
-            foreach (var time in flow.Lifetimes[this.payload].AllLifetimes) {
+            foreach (var time in flow.Lifetimes[this.payload].Lifetimes) {
                 var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
 
                 flow.LifetimeGraph.AddDependency(time, heapLifetime);

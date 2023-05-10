@@ -45,7 +45,7 @@ namespace Helix.Features.Memory {
         public void AnalyzeFlow(FlowFrame flow) {
             this.target.AnalyzeFlow(flow);
 
-            flow.Lifetimes[this] = new LifetimeBundle(new[] { this.lifetime });
+            flow.Lifetimes[this] = new LifetimeBundle(this.lifetime);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
