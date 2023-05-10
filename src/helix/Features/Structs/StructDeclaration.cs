@@ -12,7 +12,7 @@ namespace Helix.Parsing {
         private IDeclaration AggregateDeclaration() {
             var start = this.Advance(TokenKind.StructKeyword);
             var name = this.Advance(TokenKind.Identifier).Value;
-            var mems = new List<ParseAggregateMember>();
+            var mems = new List<ParseStructMember>();
 
             this.Advance(TokenKind.OpenBrace);
 
@@ -36,7 +36,7 @@ namespace Helix.Parsing {
                 var memLoc = memStart.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);
-                mems.Add(new ParseAggregateMember(memLoc, memName.Value, memType, isWritable));
+                mems.Add(new ParseStructMember(memLoc, memName.Value, memType, isWritable));
             }
 
             this.Advance(TokenKind.CloseBrace);

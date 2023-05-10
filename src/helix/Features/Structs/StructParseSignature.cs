@@ -5,11 +5,11 @@ namespace Helix.Features.Aggregates {
     public record StructParseSignature {
         public string Name { get; }
 
-        public IReadOnlyList<ParseAggregateMember> Members { get; }
+        public IReadOnlyList<ParseStructMember> Members { get; }
 
         public TokenLocation Location { get; }
 
-        public StructParseSignature(TokenLocation loc, string name, IReadOnlyList<ParseAggregateMember> mems) {
+        public StructParseSignature(TokenLocation loc, string name, IReadOnlyList<ParseStructMember> mems) {
             this.Name = name;
             this.Members = mems;
             this.Location = loc;
@@ -31,7 +31,7 @@ namespace Helix.Features.Aggregates {
         }
     }
 
-    public record ParseAggregateMember {
+    public record ParseStructMember {
         public string MemberName { get; }
 
         public ISyntaxTree MemberType { get; }
@@ -40,7 +40,7 @@ namespace Helix.Features.Aggregates {
 
         public bool IsWritable { get; }
 
-        public ParseAggregateMember(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
+        public ParseStructMember(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
             this.Location = loc;
             this.MemberName = name;
             this.MemberType = type;

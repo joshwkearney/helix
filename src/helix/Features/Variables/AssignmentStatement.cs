@@ -1,4 +1,5 @@
-﻿using Helix.Analysis;
+﻿using helix.FlowAnalysis;
+using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.FlowControl;
@@ -57,6 +58,7 @@ namespace Helix.Parsing {
 namespace Helix.Features.Variables {
     public record AssignmentStatement : ISyntaxTree {
         private readonly ISyntaxTree target, assign;
+        private readonly bool isLocal;
 
         public TokenLocation Location { get; }
 
@@ -64,11 +66,16 @@ namespace Helix.Features.Variables {
 
         public bool IsPure => false;
 
-        public AssignmentStatement(TokenLocation loc, ISyntaxTree target, ISyntaxTree assign) {
+        public AssignmentStatement(
+            TokenLocation loc,
+            ISyntaxTree target,
+            ISyntaxTree assign,
+            bool isLocal = false) {
 
             this.Location = loc;
             this.target = target;
             this.assign = assign;
+            this.isLocal = isLocal;
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
@@ -77,16 +84,20 @@ namespace Helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var targetType = types.ReturnTypes[target];
+            var targetType = target.GetReturnType(types);
 
             var assign = this.assign
                 .CheckTypes(types)
                 .ToRValue(types)
                 .UnifyTo(targetType, types);            
 
-            var result = (ISyntaxTree)new AssignmentStatement(this.Location, target, assign);
-            types.ReturnTypes[result] = PrimitiveType.Void;
+            var result = new AssignmentStatement(
+                this.Location,
+                target,
+                assign,
+                target.IsLocalVariable);
 
+            result.SetReturnType(PrimitiveType.Void, types);
             return result;
         }
 
@@ -140,9 +151,7 @@ namespace Helix.Features.Variables {
             // must outlive the target lifetimes. However, overriding a local pointer or
             // array variable replaces the current lifetime for that variable, so we need to
             // increment the mutation counter and create the new lifetime. 
-
-            // TODO: Fix this
-            //if (this.target.ToLValue(flow).IsLocal) {
+            if (this.isLocal) {
                 // Because structs are basically just bags of locals, we could actually be
                 // setting multiple variables with this one assignment if we are assigning
                 // a struct type. Therefore, loop through all the possible variables and
@@ -177,19 +186,19 @@ namespace Helix.Features.Variables {
                         flow.LifetimeGraph.AddAlias(newLifetime, assignBundle.Components[relPath]);
                     //}
                 }
-            //}
-            //else {
-            // Add a dependency between every variable in the assignment statement and
-            // the old lifetime. We are using AddDerived only because the target lifetime
-            // will exist whether or not we write into it, since this is a dereferenced write.
-            // That means that for the purposes of lifetime analysis, the target lifetime is
-            // independent of the assigned lifetimes.
-            //    foreach (var assignTime in assignBundle.AllLifetimes) {
-            //        foreach (var targetTime in targetBundle.AllLifetimes) {
-            //            flow.LifetimeGraph.AddDependency(assignTime, targetTime);
-            //        }
-            //    }
-            //}
+            }
+            else {
+                // Add a dependency between every variable in the assignment statement and
+                // the old lifetime. We are using AddDerived only because the target lifetime
+                // will exist whether or not we write into it, since this is a dereferenced write.
+                // That means that for the purposes of lifetime analysis, the target lifetime is
+                // independent of the assigned lifetimes.
+                foreach (var assignTime in assignBundle.Lifetimes) {
+                    foreach (var targetTime in targetBundle.Lifetimes) {
+                        flow.LifetimeGraph.AddDependency(assignTime, targetTime);
+                    }
+                }
+            }
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }

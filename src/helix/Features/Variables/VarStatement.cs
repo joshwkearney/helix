@@ -10,6 +10,7 @@ using Helix.Analysis.Lifetimes;
 using Helix.Features.FlowControl;
 using Helix.Features.Memory;
 using System.IO;
+using helix.FlowAnalysis;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -185,25 +186,22 @@ namespace Helix {
             this.assign.AnalyzeFlow(flow);
 
             // Calculate a signature and lifetime for this variable
-            var assignType = flow.ReturnTypes[this.assign];
-            var assignBundle = flow.Lifetimes[this.assign];
+            var assignType = this.assign.GetReturnType(flow);
+            var assignBundle = this.assign.GetLifetimes(flow);
 
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
-            foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, flow)) {
+            foreach (var (compPath, compType) in assignType.GetMembers(flow)) {
                 var path = this.path.Append(compPath);
                 var varLifetime = new Lifetime(path, 0);
 
-                // Add this variable's lifetime
+                // Add this variable members's lifetime
                 flow.VariableLifetimes[path] = varLifetime;
 
                 // Make sure that this variable acts as a passthrough for the lifetimes that are
                 // in the assignment expression
-                // TODO: Fix this
                 if (!compType.IsValueType(flow)) {
-                    //foreach (var assignLifetime in assignBundle.Components[compPath]) {
-                    //    flow.LifetimeGraph.AddAlias(varLifetime, assignLifetime);
-                    //}
+                    flow.LifetimeGraph.AddAlias(varLifetime, assignBundle.Components[compPath]);
                 }
 
                 // TODO: Put back binding

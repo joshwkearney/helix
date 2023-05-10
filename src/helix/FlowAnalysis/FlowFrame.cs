@@ -57,44 +57,5 @@ namespace Helix.Analysis {
             this.Lifetimes = prev.Lifetimes;
             this.VariableLifetimes = new StackedDictionary<IdentifierPath, Lifetime>(prev.VariableLifetimes);
         }
-
-        public LifetimeBundle GetVariableBundle(IdentifierPath path) {
-            var sig = this.Variables[path];
-            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
-
-            foreach (var (memPath, _) in GetMemberPaths(sig.Type, this)) {
-                bundleDict[memPath] = this.VariableLifetimes[memPath];
-            }
-
-            return new LifetimeBundle(bundleDict);
-        }
-
-        private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPaths(HelixType type, ITypedFrame types) {
-            return GetMemberPathsHelper(new IdentifierPath(), type, types);
-        }
-
-        private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPathsHelper(
-            IdentifierPath basePath,
-            HelixType type,
-            ITypedFrame types) {
-
-            yield return (basePath, type);
-
-            if (type is not NamedType named) {
-                yield break;
-            }
-
-            if (!types.Structs.TryGetValue(named.Path, out var structSig)) {
-                yield break;
-            }
-
-            foreach (var mem in structSig.Members) {
-                var path = basePath.Append(mem.Name);
-
-                foreach (var subs in GetMemberPathsHelper(path, mem.Type, types)) {
-                    yield return subs;
-                }
-            }
-        }
     }
 }

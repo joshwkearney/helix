@@ -6,6 +6,7 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
 using System;
+using helix.FlowAnalysis;
 
 namespace Helix.Features.Aggregates {
     public class PutStructSyntax : ISyntaxTree {

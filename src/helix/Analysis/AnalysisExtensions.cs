@@ -64,13 +64,5 @@ namespace Helix.Analysis {
         public static void SetReturnType(this ISyntaxTree syntax, HelixType type, ITypedFrame types) {
             types.ReturnTypes[syntax] = type;
         }
-
-        public static LifetimeBundle GetLifetimes(this ISyntaxTree syntax, FlowFrame flow) {
-            return flow.Lifetimes[syntax];
-        }
-
-        public static void SetLifetimes(this ISyntaxTree syntax, LifetimeBundle bundle, FlowFrame flow) {
-            flow.Lifetimes[syntax] = bundle;
-        }
     }
 }
