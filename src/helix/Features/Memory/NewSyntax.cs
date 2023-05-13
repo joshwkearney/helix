@@ -51,7 +51,8 @@ namespace Helix.Features.Memory {
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var roots = types
                 .LifetimeGraph
-                .GetDerivedLifetimes(this.lifetime, this.allowedRoots)
+                .GetOutlivedLifetimes(this.lifetime)
+                .Where(x => x.Kind == LifetimeKind.Root)
                 .ToValueList();
 
             if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
@@ -72,6 +73,7 @@ namespace Helix.Features.Memory {
                 writer.SetMemberPath(this.lifetime.Path, relPath);
             }
 
+            var isStack = roots.Count == 1 && roots[0] == Lifetime.Stack;
             var innerType = writer.ConvertType(returnType.InnerType);
             var pointerTemp = writer.GetVariableName();
 
@@ -79,9 +81,28 @@ namespace Helix.Features.Memory {
             ICSyntax allocLifetime;
             ICSyntax pointerExpr;
 
-            if (roots.Any()) {
+            if (isStack) {
+                writer.WriteEmptyLine();
+                writer.WriteComment($"Line {this.Location.Line}: New '{returnType}'");
+
+                // Allocate on the stack
+                writer.WriteStatement(new CVariableDeclaration() {
+                    Name = tempName,
+                    Type = innerType,
+                    Assignment = Option.Some(target)
+                });
+
+                pointerExpr = new CAddressOf() {
+                    Target = new CVariableLiteral(tempName)
+                };
+
+                // TODO: Instead of using the heap as our region, use the region
+                // closest to us
+                allocLifetime = writer.GetLifetime(Lifetime.Heap);
+            }
+            else {
                 // Allocate on the heap
-                allocLifetime = writer.GetSmallestLifetime(roots);
+                allocLifetime = writer.GetSmallestLifetime(roots.Where(x => x != Lifetime.Stack).ToValueList());
                 pointerExpr = new CVariableLiteral(tempName);
 
                 writer.WriteEmptyLine();
@@ -92,23 +113,15 @@ namespace Helix.Features.Memory {
                     Type = new CPointerType(innerType),
                     Assignment = new CVariableLiteral($"({innerType.WriteToC()}*)_pool_malloc(_pool, {allocLifetime.WriteToC()}, sizeof({innerType.WriteToC()}))")
                 });
-            }
-            else {
-                writer.WriteEmptyLine();
-                writer.WriteComment($"Line {this.Location.Line}: New '{returnType}'");
 
-                // Allocate on the stack
-                writer.WriteStatement(new CVariableDeclaration() {
-                    Name = tempName,
-                    Type = innerType,
-                    Assignment = new CIntLiteral(0)
-                });
-
-                pointerExpr = new CAddressOf() {
-                    Target = new CVariableLiteral(tempName)
+                var assignmentDecl = new CAssignment() {
+                    Left = new CPointerDereference() {
+                        Target = new CVariableLiteral(tempName)
+                    },
+                    Right = target
                 };
 
-                allocLifetime = writer.GetLifetime(new Lifetime(new IdentifierPath("$heap"), 0));
+                writer.WriteStatement(assignmentDecl);
             }
 
             var fatPointerName = writer.GetVariableName();
@@ -126,23 +139,12 @@ namespace Helix.Features.Memory {
                 }
             };
 
-            var assignmentDecl = new CAssignment() {
-                Left = new CPointerDereference() {
-                    Target = new CMemberAccess() {
-                        Target = new CVariableLiteral(fatPointerName),
-                        MemberName = "data"
-                    }
-                },
-                Right = target
-            };
-
             writer.WriteStatement(fatPointerDecl);
             writer.RegisterLifetime(this.lifetime, new CMemberAccess() { 
                 Target = new CVariableLiteral(fatPointerName),
                 MemberName = "pool"
             });
 
-            writer.WriteStatement(assignmentDecl);
             writer.WriteEmptyLine();
 
             return new CVariableLiteral(fatPointerName);

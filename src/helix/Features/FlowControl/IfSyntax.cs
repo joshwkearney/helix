@@ -147,15 +147,16 @@ namespace Helix.Features.FlowControl {
                     .ToValueList();
 
                 var path = this.tempPath.Append(relPath);
-                var resultLifetime = new Lifetime(path, 0);
+                var resultLifetime = new Lifetime(path, 0, LifetimeKind.Passthrough);
 
                 lifetimeBundle.Add(relPath, resultLifetime);
 
+                // TODO: Fix this
                 // Make sure that our new lifetime is derived from the body lifetimes, and that
                 // the body lifetimes are precursors to our lifetime for the purposes of lifetime
                 // analysis
                 foreach (var bodyLifetime in bodyLifetimes) {
-                    flow.LifetimeGraph.AddAlias(resultLifetime, bodyLifetime);
+                //    flow.LifetimeGraph.AddAlias(resultLifetime, bodyLifetime);
                 }
 
                 // TODO: Add bindings

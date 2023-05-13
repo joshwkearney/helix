@@ -118,7 +118,11 @@ namespace Helix.Features.Memory {
                 }
 
                 var roots = types.LifetimeRoots.Values.ToHashSet();
-                var lifetime = new Lifetime(this.Location.Scope.Append("$new_temp_" + tempCounter++), 0);
+
+                var lifetime = new Lifetime(
+                    this.Location.Scope.Append("$new_temp_" + tempCounter++),
+                    0,
+                    LifetimeKind.Inferencee);
 
                 var result = new NewSyntax(
                     this.Location, 

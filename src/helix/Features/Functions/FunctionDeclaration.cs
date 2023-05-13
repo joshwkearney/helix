@@ -11,6 +11,7 @@ using Helix.Generation.Syntax;
 using Helix.Features.Variables;
 using Helix.Analysis.Lifetimes;
 using System;
+using helix.FlowAnalysis;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -126,8 +127,8 @@ namespace Helix.Features.Functions {
             FunctionsHelper.DeclareParameterTypes(this.Location, sig, types);
 
             // Declare a "heap" lifetime used for function returns
-            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
-            types.LifetimeRoots[heapLifetime.Path] = heapLifetime;
+            types.LifetimeRoots[Lifetime.Heap.Path] = Lifetime.Heap;
+            types.LifetimeRoots[Lifetime.Stack.Path] = Lifetime.Stack;
 
             // Check types
             var body = this.body;
@@ -189,15 +190,24 @@ namespace Helix.Features.Functions {
             // Declare parameters
             FunctionsHelper.DeclareParameterFlow(this.Location, this.Signature, flow);
 
-            // Declare a "heap" lifetime used for function returns
-            var heapLifetime = new Lifetime(new IdentifierPath("$heap"), 0);
-            flow.LifetimeGraph.AddRoot(heapLifetime);
-
             this.body.AnalyzeFlow(flow);
+
+            // Here we need to make sure that the return value can outlive the heap
+            // We're going to find all roots that are contributing to the return value
+            // and confirm that each one outlives the heap
+            var roots = this.body.GetLifetimes(flow).Lifetimes
+                .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
+                .Where(x => x.Kind == LifetimeKind.Root)
+                .ToArray();
+
+            // Make sure all the roots outlive the heap
+            if (!roots.All(x => flow.LifetimeGraph.DoesOutlive(x, Lifetime.Heap))) {
+                throw new Exception("Put better error message here");
+            }
 
             // Add a dependency between every returned lifetime and the heap
             foreach (var lifetime in flow.Lifetimes[body].Lifetimes) {
-                flow.LifetimeGraph.AddDependency(lifetime, heapLifetime);
+                flow.LifetimeGraph.RequireOutlives(lifetime, Lifetime.Heap);
             }
 
 #if DEBUG
@@ -235,12 +245,12 @@ namespace Helix.Features.Functions {
 
             // Register the heap lifetime for the body to use
             bodyWriter.RegisterLifetime(
-                new Lifetime(new IdentifierPath("$heap"), 0), 
+                Lifetime.Heap, 
                 new CVariableLiteral("_pool_get_index(_pool)"));
 
             // Register the parameter member paths
             foreach (var par in this.Signature.Parameters) {
-                foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
+                foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(par.Type, types)) {
                     writer.SetMemberPath(this.Signature.Path.Append(par.Name), relPath);
                 }
             }
@@ -249,7 +259,7 @@ namespace Helix.Features.Functions {
             foreach (var par in this.Signature.Parameters) {
                 foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
                     var path = this.Signature.Path.Append(par.Name).Append(relPath);
-                    var lifetime = new Lifetime(path, 0);
+                    var lifetime = new Lifetime(path, 0, LifetimeKind.Root);
 
                     bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
                         Target = new CVariableLiteral(writer.GetVariableName(path)),

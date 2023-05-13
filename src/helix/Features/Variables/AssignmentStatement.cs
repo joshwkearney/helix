@@ -129,9 +129,9 @@ namespace Helix.Features.Variables {
             // check. If the lifetimes do not have runtime values, then we
             // need to throw an error
 
-            var targetType = flow.ReturnTypes[target];
-            var targetBundle = flow.Lifetimes[target];
-            var assignBundle = flow.Lifetimes[assign];
+            var targetType = this.target.GetReturnType(flow);
+            var targetBundle = this.target.GetLifetimes(flow);
+            var assignBundle = this.assign.GetLifetimes(flow);
 
             // TODO: Put this back
             //if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
@@ -151,16 +151,20 @@ namespace Helix.Features.Variables {
             // must outlive the target lifetimes. However, overriding a local pointer or
             // array variable replaces the current lifetime for that variable, so we need to
             // increment the mutation counter and create the new lifetime. 
-            if (this.isLocal) {
+            //if (this.isLocal) {
                 // Because structs are basically just bags of locals, we could actually be
                 // setting multiple variables with this one assignment if we are assigning
                 // a struct type. Therefore, loop through all the possible variables and
                 // members and set them correctly
-                foreach (var (relPath, memType) in VariablesHelper.GetMemberPaths(targetType, flow)) {
+            //    foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(targetType, flow)) {
                     // Increment the mutation counter for modified local variables so that
                     // any new accesses to this variable will be forced to get the new 
                     // lifetime.
-                    var oldLifetime = targetBundle.Components[relPath];
+                    //var oldLifetime = targetBundle.Components[relPath];
+
+           //         flow.LifetimeGraph.RequireOutlives(
+           //             assignBundle.Components[relPath],
+           //             Lifetime.Stack);
 
                     //var newLifetime = new Lifetime(
                     //    oldLifetime.Path,
@@ -183,22 +187,25 @@ namespace Helix.Features.Variables {
                     // alias for the assigned lifetimes, and the assigned lifetimes will be
                     // dependent on whatever the new lifetime is dependent on.
                     //foreach (var assignLifetime in assignBundle.Components[relPath]) {
-                        flow.LifetimeGraph.AddAlias(oldLifetime, assignBundle.Components[relPath]);
+                        //flow.LifetimeGraph.AddAlias(oldLifetime, assignBundle.Components[relPath]);
                     //}
-                }
-            }
-            else {
+               // }
+            //}
+            //else {
                 // Add a dependency between every variable in the assignment statement and
                 // the old lifetime. We are using AddDerived only because the target lifetime
                 // will exist whether or not we write into it, since this is a dereferenced write.
                 // That means that for the purposes of lifetime analysis, the target lifetime is
                 // independent of the assigned lifetimes.
-                foreach (var assignTime in assignBundle.Lifetimes) {
-                    foreach (var targetTime in targetBundle.Lifetimes) {
-                        flow.LifetimeGraph.AddDependency(assignTime, targetTime);
+                foreach (var (path, type) in this.assign.GetReturnType(flow).GetMembers(flow)) {
+                    var targetLifetime = targetBundle.Components[path];
+                    var assignLifetime = assignBundle.Components[path];
+
+                    if (!type.IsValueType(flow)) {
+                        flow.LifetimeGraph.RequireOutlives(assignLifetime, targetLifetime);
                     }
                 }
-            }
+          //  }
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }

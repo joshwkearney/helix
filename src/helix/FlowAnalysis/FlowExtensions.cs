@@ -19,7 +19,7 @@ namespace helix.FlowAnalysis {
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             foreach (var (memPath, _) in GetMemberPaths(sig.Type, flow)) {
-                bundleDict[memPath] = new Lifetime(path.Append(memPath), 0);
+                bundleDict[memPath] = flow.VariableValueLifetimes[path.Append(memPath)];
             }
 
             return new LifetimeBundle(bundleDict);

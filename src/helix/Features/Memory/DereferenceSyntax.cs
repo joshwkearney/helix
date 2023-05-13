@@ -80,10 +80,12 @@ namespace Helix.Features.Memory {
                     bundleDict[compPath] = Lifetime.None;
                 }
                 else { 
-                    var lifetime = new Lifetime(this.tempPath.Append(compPath), 0);
+                    var lifetime = new Lifetime(
+                        this.tempPath.Append(compPath),
+                        0,
+                        LifetimeKind.Root);
 
                     bundleDict[compPath] = lifetime;
-                    flow.LifetimeGraph.AddRoot(lifetime);
                 }
             }
 
@@ -141,7 +143,7 @@ namespace Helix.Features.Memory {
             foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
                 writer.SetMemberPath(this.tempPath, relPath);
 
-                var lifetime = new Lifetime(this.tempPath.Append(relPath), 0);
+                var lifetime = new Lifetime(this.tempPath.Append(relPath), 0, LifetimeKind.Root);
 
                 writer.WriteComment($"Line {this.Location.Line}: Saving lifetime '{lifetime.Path}'");
 

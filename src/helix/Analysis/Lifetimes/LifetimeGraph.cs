@@ -4,71 +4,44 @@ using System.Collections.ObjectModel;
 
 namespace Helix.Analysis.Lifetimes {
     public class LifetimeGraph {
-        private ImmutableHashSet<Lifetime> allLifetimes = ImmutableHashSet.Create<Lifetime>();
-        private readonly Dictionary<Lifetime, List<Lifetime>> parentLifetimes = new();
-        private readonly Dictionary<Lifetime, List<Lifetime>> childLifetimes = new();
-        private readonly Dictionary<Lifetime, List<Lifetime>> dependentLifetimes = new();
+        private readonly Dictionary<Lifetime, ISet<Lifetime>> outlivesGraph = new();
+        private readonly Dictionary<Lifetime, ISet<Lifetime>> reverseOutlivesGraph = new();
 
-        public ISet<Lifetime> ActiveLifetimes { get; } = new HashSet<Lifetime>();
-
-        public IReadOnlySet<Lifetime> AllLifetimes => this.allLifetimes;
-
-        private void AddPrecursor(Lifetime childLifetime, Lifetime parentLifetime) {
-            if (childLifetime == Lifetime.None || parentLifetime == Lifetime.None) {
+        public void RequireOutlives(Lifetime lifetime, Lifetime outlivedLifetime) {
+            if (lifetime == Lifetime.None || outlivedLifetime == Lifetime.None) {
                 return;
             }
 
-            this.allLifetimes = this.allLifetimes.Add(childLifetime).Add(parentLifetime);
-
-            if (!this.parentLifetimes.TryGetValue(childLifetime, out var parentList)) {
-                this.parentLifetimes[childLifetime] = parentList = new();
+            if (!this.outlivesGraph.TryGetValue(lifetime, out var outlivedList)) {
+                this.outlivesGraph[lifetime] = outlivedList = new HashSet<Lifetime>();
             }
 
-            parentList.Add(parentLifetime);
-        }
-
-        private void AddDerived(Lifetime parentLifetime, Lifetime childLifetime) {
-            if (parentLifetime == Lifetime.None || childLifetime == Lifetime.None) {
-                return;
+            if (!this.reverseOutlivesGraph.TryGetValue(outlivedLifetime, out var outlivingList)) {
+                this.reverseOutlivesGraph[outlivedLifetime] = outlivingList = new HashSet<Lifetime>();
             }
 
-            this.allLifetimes = this.allLifetimes.Add(childLifetime).Add(parentLifetime);
-
-            if (!this.childLifetimes.TryGetValue(parentLifetime, out var childList)) {
-                this.childLifetimes[parentLifetime] = childList = new();
-            }
-
-            childList.Add(childLifetime);
+            outlivedList.Add(outlivedLifetime);
+            outlivingList.Add(lifetime);
         }
 
-        public void AddRoot(Lifetime root) {
-            this.AddDerived(root, root);
-            this.AddPrecursor(root, root);
+        public IEnumerable<Lifetime> GetOutlivedLifetimes(Lifetime time) {
+            return TraverseGraph(time, this.outlivesGraph);
         }
 
-        public void AddAlias(Lifetime derived, Lifetime precursor) {
-            this.AddPrecursor(derived, precursor);
-            this.AddDerived(precursor, derived);
+        public IEnumerable<Lifetime> GetPrecursorLifetimes(Lifetime time) {
+            return TraverseGraph(time, this.reverseOutlivesGraph);
         }
 
-        public void AddDependency(Lifetime dependent, Lifetime target) {
-            if (dependent == Lifetime.None || target == Lifetime.None) {
-                return;
-            }
-
-            this.allLifetimes = this.allLifetimes.Add(dependent).Add(target);
-
-            if (!this.dependentLifetimes.TryGetValue(dependent, out var childList)) {
-                this.dependentLifetimes[dependent] = childList = new();
-            }
-
-            childList.Add(target);
+        public bool DoesOutlive(Lifetime first, Lifetime second) {
+            return this.GetOutlivedLifetimes(first).Contains(second);
         }
 
-        public IReadOnlySet<Lifetime> GetDerivedLifetimes(Lifetime time, IReadOnlySet<Lifetime> roots) {
+        public static IEnumerable<Lifetime> TraverseGraph(
+            Lifetime time,
+            Dictionary<Lifetime, ISet<Lifetime>> graph) {
+
             var visited = new HashSet<Lifetime>();
             var stack = new Stack<Lifetime>(new[] { time });
-            var children = new HashSet<Lifetime>();
 
             while (stack.Count > 0) {
                 var item = stack.Pop();
@@ -80,72 +53,16 @@ namespace Helix.Analysis.Lifetimes {
                     visited.Add(item);
                 }
 
-                if (this.childLifetimes.TryGetValue(item, out var list)) {
-                    // Transitively search the children of our children
-                    foreach (var child in list) {
+                yield return item;
+
+                // Whenever we hit a lifetime that does not outlive any other lifetime,
+                // we have found a root, so add it to the results
+                if (graph.TryGetValue(item, out var outlivedList) && outlivedList.Any()) {
+                    foreach (var child in outlivedList) {
                         stack.Push(child);
                     }
-                }
-                
-                if (this.dependentLifetimes.TryGetValue(item, out var depList)) {
-                    foreach (var dep in depList) {
-                        if (roots.Contains(dep)) {
-                            children.Add(dep);
-                        }
-                        else {
-                            // Here we have found a child lifetime that has no other children and
-                            // is also not in our root set, which is a problem. But, this lifetime
-                            // may be derived from lifetimes that are in our root set, so we can 
-                            // flip the search direction and try to express this lifetime's parents
-                            // in terms of our roots.
-                            var parents = GetPrecursorLifetimes(dep, roots);
-
-                            if (parents.Any() && parents.All(roots.Contains)) {
-                                // Success! Item has been expressed in terms of our roots, so we can
-                                // just be dependent on those roots
-                                foreach (var parent in parents) {
-                                    children.Add(parent);
-                                }
-                            }
-                            else {
-                                // Item is itself a root and cannot be further expressed in terms of 
-                                // anything else, so just add it as a root and be done
-                                children.Add(dep);
-                            }
-                        }
-                    }
-                }
+                }          
             }
-
-            return children;
-        }
-
-        public IReadOnlySet<Lifetime> GetPrecursorLifetimes(Lifetime time, IReadOnlySet<Lifetime> roots) {
-            var visited = new HashSet<Lifetime>();
-            var stack = new Stack<Lifetime>(new[] { time });
-            var parents = new HashSet<Lifetime>();
-
-            while (stack.Count > 0) {
-                var item = stack.Pop();
-
-                if (visited.Contains(item) || item == Lifetime.None) {
-                    continue;
-                }
-                else {
-                    visited.Add(item);
-                }
-
-                if (roots.Contains(item) || !this.parentLifetimes.TryGetValue(item, out var list)) {
-                    parents.Add(item);
-                }
-                else {
-                    foreach (var parent in list) {
-                        stack.Push(parent);
-                    }
-                }
-            }
-
-            return parents;
         }
     }
 }

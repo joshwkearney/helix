@@ -191,23 +191,24 @@ namespace Helix {
 
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
-            foreach (var (compPath, compType) in assignType.GetMembers(flow)) {
-                var path = this.path.Append(compPath);
-                var varLifetime = new Lifetime(path, 0);
+            foreach (var (relPath, _) in assignType.GetMembers(flow)) {
+                var path = this.path.Append(relPath);
+                var varLifetime = new Lifetime(path, 0, LifetimeKind.Passthrough);
+
+                // All local variables are allocated on the stack, so make sure
+                // we outlive the stack
+                flow.LifetimeGraph.RequireOutlives(varLifetime, Lifetime.Stack);
+
+                // Add a dependency between this version of the variable lifetime
+                // and the assigned expression. Whenever an alias might occur the
+                // version will be incremented, so this will not be unsafe with
+                // mutable variables
+                flow.LifetimeGraph.RequireOutlives(
+                    assignBundle.Components[relPath],
+                    varLifetime);
 
                 // Add this variable members's lifetime
-                //flow.VariableLifetimes[path] = varLifetime;
-
-                // Make sure that this variable acts as a passthrough for the lifetimes that are
-                // in the assignment expression
-                if (!compType.IsValueType(flow)) {
-                    flow.LifetimeGraph.AddAlias(varLifetime, assignBundle.Components[compPath]);
-                }
-
-                // TODO: Put back binding
-                //if (sig.Type.IsRemote(flow)) {
-                    //bindings.Add(new BindLifetimeSyntax(this.Location, varLifetime, path));
-                //}
+                flow.VariableValueLifetimes[path] = assignBundle.Components[relPath];
             }
 
             this.SetLifetimes(new LifetimeBundle(), flow);
