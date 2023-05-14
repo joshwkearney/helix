@@ -73,7 +73,7 @@ namespace Helix.Features.Primitives {
             else if (this.op == UnaryOperatorKind.Not) {
                 var arg = this.arg
                     .CheckTypes(types)
-                    .UnifyTo(PrimitiveType.Bool, types);
+                    .ConvertTo(PrimitiveType.Bool, types);
 
                 var result = new UnaryNotSyntax(
                     this.Location,

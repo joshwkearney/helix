@@ -11,25 +11,46 @@ namespace Helix.Analysis.Types {
             this.IsWritable = isWritable;
         }
 
-        public override bool CanUnifyTo(HelixType other, EvalFrame types, bool isCast) {
-            if (this == other) {
-                return true;
-            }
-
-            if (other is PointerType pointer && !pointer.IsWritable) {
-                return true;
-            }
-
-            return false;
+        public override PassingSemantics GetSemantics(ITypedFrame types) {
+            return PassingSemantics.ReferenceType;
         }
 
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, EvalFrame types) => syntax;
+        public override UnificationKind TestUnification(HelixType other, EvalFrame types) {
+            if (other is PointerType pointer) {
+                // If we have the same inner type both read-only and read-write
+                // pointers are punnable
+                if (this.InnerType == pointer.InnerType) {
+                    return UnificationKind.Pun;
+                }
+
+                var isInnerCompatible = this.InnerType.TestUnification(pointer.InnerType, types) == UnificationKind.Pun;
+                var isWriteCompatible = !this.IsWritable && !pointer.IsWritable;
+
+                // Otherwise, read-only pointers can be punnable if the inner types
+                // are punnable
+                if (isInnerCompatible && isWriteCompatible) {
+                    return UnificationKind.Pun;
+                }
+            }
+
+            return UnificationKind.None;
+        }
+
+        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax,
+                                            UnificationKind unify, EvalFrame types) {
+            if (this.TestUnification(other, types).IsSubsetOf(unify)) {
+                // Pointer types only pun, so this just returning the original
+                // syntax will be ok
+                return syntax;
+            }
+            else {
+                throw new InvalidOperationException();
+            }
+        }
 
         public override string ToString() {
             return this.InnerType + (this.IsWritable ? "*" : "^");
         }
-
-        public override bool IsValueType(ITypedFrame types) => false;
 
         public override IEnumerable<HelixType> GetContainedTypes(EvalFrame frame) {
             yield return this;

@@ -48,7 +48,7 @@ namespace Helix.Features.Primitives {
                 throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
             }
 
-            arg = arg.UnifyTo(targetType, types);
+            arg = arg.ConvertTo(targetType, types);
 
             return arg;
         }

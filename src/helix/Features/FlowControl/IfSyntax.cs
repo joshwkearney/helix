@@ -85,12 +85,12 @@ namespace Helix.Features.FlowControl {
             var iftrueTypes = new EvalFrame(types);
             var iffalseTypes = new EvalFrame(types);
 
-            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
+            var cond = this.cond.CheckTypes(types).ToRValue(types).ConvertTo(PrimitiveType.Bool, types);
             var iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
             var iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
 
-            iftrue = iftrue.UnifyFrom(iffalse, types);
-            iffalse = iffalse.UnifyFrom(iftrue, types);
+            iftrue = iftrue.ConvertFrom(iffalse, types);
+            iffalse = iffalse.ConvertFrom(iftrue, types);
 
             //var newLifetimes = this.CalculateModifiedVariables(iftrueTypes, iffalseTypes, types);            
 

@@ -74,7 +74,7 @@ namespace Helix.Features.Functions {
             for (int i = 0; i < this.args.Count; i++) {
                 var expectedType = sig.Parameters[i].Type;
 
-                newArgs[i] = this.args[i].CheckTypes(types).UnifyTo(expectedType, types);
+                newArgs[i] = this.args[i].CheckTypes(types).ConvertTo(expectedType, types);
             }
 
             // TODO: Fix this

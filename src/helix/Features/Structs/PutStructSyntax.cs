@@ -131,7 +131,7 @@ namespace Helix.Features.Aggregates {
                     value = new VoidLiteral(this.Location);
                 }
 
-                value = value.CheckTypes(types).UnifyTo(mem.Type, types);
+                value = value.CheckTypes(types).ConvertTo(mem.Type, types);
                 allValues.Add(value);
             }
 

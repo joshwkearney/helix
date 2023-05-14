@@ -18,31 +18,31 @@ namespace Helix.Analysis {
         public static ISyntaxTree WithMutableType(this ISyntaxTree syntax, EvalFrame types) {
             var betterType = types.ReturnTypes[syntax].ToMutableType();
 
-            return syntax.UnifyTo(betterType, types);
+            return syntax.ConvertTo(betterType, types);
         }
 
-        public static ISyntaxTree UnifyTo(this ISyntaxTree fromSyntax, HelixType toType, EvalFrame types) {
+        public static ISyntaxTree ConvertTo(this ISyntaxTree fromSyntax, HelixType toType, EvalFrame types) {
             var type = types.ReturnTypes[fromSyntax];
 
-            if (!type.CanUnifyTo(toType, types, false)) {
+            if (!type.CanConvertTo(toType, types)) {
                 throw TypeCheckingErrors.UnexpectedType(fromSyntax.Location, toType, type);
             }
 
-            var result = type.UnifyTo(toType, fromSyntax, false, types).CheckTypes(types);
+            var result = type.ConvertTo(toType, fromSyntax, types).CheckTypes(types);
 
             types.ReturnTypes[result] = toType;
             return result;
         }
 
-        public static ISyntaxTree UnifyFrom(this ISyntaxTree fromSyntax, ISyntaxTree otherSyntax, EvalFrame types) {
+        public static ISyntaxTree ConvertFrom(this ISyntaxTree fromSyntax, ISyntaxTree otherSyntax, EvalFrame types) {
             var type1 = types.ReturnTypes[fromSyntax];
             var type2 = types.ReturnTypes[otherSyntax];
 
-            if (type1.CanUnifyFrom(type2, types)) {
-                return fromSyntax.UnifyTo(type1.UnifyFrom(type2, types), types);
+            if (type1.CanConvertFrom(type2, types)) {
+                return fromSyntax.ConvertTo(type1.ConvertFrom(type2, types), types);
             }
-            else if (type2.CanUnifyFrom(type1, types)) {
-                return fromSyntax.UnifyTo(type2.UnifyFrom(type1, types), types);
+            else if (type2.CanConvertFrom(type1, types)) {
+                return fromSyntax.ConvertTo(type2.ConvertFrom(type1, types), types);
             }
             else {
                 throw TypeCheckingErrors.UnexpectedType(fromSyntax.Location, type1, type2);

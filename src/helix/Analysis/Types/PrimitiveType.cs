@@ -20,37 +20,49 @@ namespace Helix.Analysis.Types {
             this.kind = kind;
         }
 
-        public override bool CanUnifyTo(HelixType other, EvalFrame types, bool isCast) {
+        public override PassingSemantics GetSemantics(ITypedFrame types) {
+            return PassingSemantics.ValueType;
+        }
+
+        public override UnificationKind TestUnification(HelixType other, EvalFrame types) {
             if (this == other) {
-                return true;
+                return UnificationKind.Pun;
             }
             else if (this == Void) {
-                if (other == Int || other == Bool) {
-                    return true;
+                if (other == Int || other == Bool || other == Float) {
+                    return UnificationKind.Pun;
                 }
                 else if (other is NamedType named) {
                     if (types.Structs.TryGetValue(named.Path, out var sig)) {
-                        return sig.Members.All(x => x.Type.HasDefaultValue(types));
+                        var memsConvertable = sig.Members
+                            .Select(x => PrimitiveType.Void.TestUnification(x.Type, types))
+                            .All(x => x.IsSubsetOf(UnificationKind.Convert));
+
+                        return UnificationKind.Convert;
                     }
                 }
             }
-                
-            return false;
+
+            return UnificationKind.None;
         }
 
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, bool isCast, EvalFrame types) {
-            if (this == other) {
-                return syntax;
-            }
+        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax,
+                                            UnificationKind unify, EvalFrame types) {
+            var test = this.TestUnification(other, types);
 
-            if (this == Void) {
-                return new BlockSyntax(syntax.Location, new ISyntaxTree[] {
-                    syntax,
-                    new PutSyntax(
-                        syntax.Location,
-                        other.ToSyntax(syntax.Location),
-                        false)
-                });
+            if (test.IsSubsetOf(unify)) {
+                if (test == UnificationKind.Pun) {
+                    return syntax;
+                }
+                else {
+                    return new BlockSyntax(syntax.Location, new ISyntaxTree[] {
+                        syntax,
+                        new PutSyntax(
+                            syntax.Location,
+                            other.ToSyntax(syntax.Location),
+                            false)
+                    });
+                }
             }
 
             throw new InvalidOperationException();
@@ -73,8 +85,6 @@ namespace Helix.Analysis.Types {
 
             return base.ToSyntax(loc);
         }
-
-        public override bool IsValueType(ITypedFrame types) => true;
 
         private enum PrimitiveTypeKind {
             Int = 11, 

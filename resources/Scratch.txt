@@ -1,4 +1,30 @@
-﻿let x = mut int[];
+﻿Towards full symmetry:
+
+var Point = struct {
+	let x as int;
+	let y as int;
+};
+
+Point += struct {
+	let norm = func(let p as Point) as int => p.x*p.x + p.y*p.y;
+};
+
+
+Basic parallel constructs:
+1. A way to spawn async threads. "async" keyword. No await. Awaits inserted automatically. No function colors
+2. A way to communicate between threads. Channels? Reactive programming over channels?
+3. A way to iterate over (and modify?) collections in parallel
+
+4. Read-write for each loop?
+
+
+type key;
+type key = int;
+type key extends int;
+
+
+
+let x = mut int[];
 
 let y = int^;
 
