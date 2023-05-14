@@ -1,5 +1,5 @@
 ﻿func main(let ptr as int*) as int* {
-	let x = new 10;
+	let x = 10;
 
 	x;
 };

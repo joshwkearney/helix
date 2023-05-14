@@ -17,8 +17,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix_tests", "src\helix_te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "helix", "src\helix\helix.csproj", "{B6AEF241-4749-47A2-947E-FF354F59601C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mac_test", "mac_test\mac_test.csproj", "{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,18 +51,6 @@ Global
 		{B6AEF241-4749-47A2-947E-FF354F59601C}.Release|x64.Build.0 = Release|Any CPU
 		{B6AEF241-4749-47A2-947E-FF354F59601C}.Release|x86.ActiveCfg = Release|Any CPU
 		{B6AEF241-4749-47A2-947E-FF354F59601C}.Release|x86.Build.0 = Release|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Debug|x64.Build.0 = Debug|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Debug|x86.Build.0 = Debug|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Release|x64.ActiveCfg = Release|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Release|x64.Build.0 = Release|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Release|x86.ActiveCfg = Release|Any CPU
-		{7F5A49F9-CA7B-4C7C-97CD-79F543595F2B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

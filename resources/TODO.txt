@@ -1,9 +1,31 @@
-﻿DONE - Struct unpacking
+DONE - Struct unpacking
 DONE - Fix for loops
 DONE - Fix function calls
 DONE - Arrays
 DONE - Character literals
 DONE - Lines numbers in c comments
+
+Improve array type inference
+Make declarations symmetric with let/var
+Add closures
+Add defer
+Bounds check arrays
+Interfaces
+Implicit struct conversions
+Fix syntax highlighting
+Add "until" to for loops and make "to" inclusive
+
+### The Lifetimes Update
+	Add back address of operator
+	Invalidate variables if aliasing could occur
+	Infer region allocation for let/var
+	Reimplement lifetimes with if expressions
+	Reimplement lifetimes with loops
+	Reimplement lifetimes with pointer dereferencing
+	Reimplement lifetimes with function calls
+	Add potential auto-copying when moving values between regions
+	Add function argument region annotations
+	Remove new expression
 
 ### The Primitives Update
 	Bytes
@@ -15,13 +37,6 @@ DONE - Lines numbers in c comments
 	String literals / Singular strings
 	Coalescing
 	Differentiate bitwise from logical operators
-
-### The Unsafe Update
-	Unsafe blocks / functions
-	Pointer arithmetic
-	Pointer casting
-	Opaque types
-	alloc / free
 
 DONE ### The Imperative Update
 	DONE - Assignment operators
@@ -44,21 +59,10 @@ DONE ### The Imperative Update
 	Singular unification
 	Compile-time expression interpretation
 	Singular arrays / embedding binary data in c
+	Partial function application, both automatic and with f(?, 4, ?)
 
 ### The Memory Update
 	DONE - Address of operator
 	DONE - Check return values for stack allocations
-	Readonly pointers and arrays
 	DONE - Track lifetime dependencies between syntax trees
 	DONE - lvalue member access for structs
-	poolof operator
-	Implicit context struct for pooling functions
-	Insert lifetime checks at runtime
-	Region memory management
-
-bounds check arrays
-interfaces
-Implicit struct conversions
-Anonymous structs and unions
-Fix syntax highlighting
-Add "until" to for loops and make "to" inclusive
