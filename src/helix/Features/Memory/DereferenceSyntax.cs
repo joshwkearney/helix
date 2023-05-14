@@ -24,10 +24,9 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.Memory {
-    public record DereferenceSyntax : ISyntaxTree, ILValue {
+    public record DereferenceSyntax : ISyntaxTree {
         private readonly ISyntaxTree target;
         private readonly IdentifierPath tempPath;
-        private readonly bool isLValue;
 
         public TokenLocation Location { get; }
 
@@ -35,15 +34,12 @@ namespace Helix.Features.Memory {
 
         public bool IsPure => this.target.IsPure;
 
-        public bool IsLocalVariable => false;
-
         public DereferenceSyntax(TokenLocation loc, ISyntaxTree target, 
-            IdentifierPath tempPath, bool islvalue = false) {
+            IdentifierPath tempPath) {
 
             this.Location = loc;
             this.target = target;
             this.tempPath = tempPath;
-            this.isLValue = islvalue;
         }
 
         public Option<HelixType> AsType(EvalFrame types) {
@@ -59,10 +55,26 @@ namespace Helix.Features.Memory {
 
             var target = this.target.CheckTypes(types).ToRValue(types);
             var pointerType = target.AssertIsPointer(types);
-            var result = new DereferenceSyntax(this.Location, target, this.tempPath, true);
+            var result = new DereferenceSyntax(this.Location, target, this.tempPath);
 
             types.ReturnTypes[result] = pointerType.InnerType;
             return result;
+        }
+
+        public ISyntaxTree ToRValue(EvalFrame types) {
+            if (!this.IsTypeChecked(types)) {
+                throw new InvalidOperationException();
+            }
+
+            return this;
+        }
+
+        public ISyntaxTree ToLValue(EvalFrame types) {
+            if (!this.IsTypeChecked(types)) {
+                throw new InvalidOperationException();
+            }
+
+            return new DereferenceLValue(this.Location, this.target).CheckTypes(types);
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
@@ -70,12 +82,13 @@ namespace Helix.Features.Memory {
                 return;
             }
 
-            var pointerType = this.target.AssertIsPointer(flow);
-            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
-
             this.target.AnalyzeFlow(flow);
 
-            foreach (var (compPath, type) in VariablesHelper.GetMemberPaths(pointerType.InnerType, flow)) {
+            var pointerType = this.target.AssertIsPointer(flow);
+            var pointerLifetime = this.target.GetLifetimes(flow).Components[new IdentifierPath()];
+            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
+
+            foreach (var (compPath, type) in pointerType.InnerType.GetMembers(flow)) {
                 if (type.IsValueType(flow)) {
                     bundleDict[compPath] = Lifetime.None;
                 }
@@ -86,39 +99,13 @@ namespace Helix.Features.Memory {
                         LifetimeKind.Root);
 
                     bundleDict[compPath] = lifetime;
+
+                    // The lifetime that is stored in the pointer must outlive the pointer itself
+                    flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);
                 }
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
-        }
-
-        public ILValue ToLValue(EvalFrame types) {
-            if (!this.IsTypeChecked(types)) {
-                throw new InvalidOperationException();
-            }
-
-            if (this.isLValue) {
-                return this;
-            }
-            else {
-                var result = new DereferenceSyntax(
-                    this.Location,
-                    this.target,
-                    this.tempPath,
-                    true);
-
-                types.ReturnTypes[result] = types.ReturnTypes[this];
-
-                return result;
-            }
-        }
-
-        public ISyntaxTree ToRValue(EvalFrame types) {
-            if (!this.IsTypeChecked(types)) {
-                throw new InvalidOperationException();
-            }
-
-            return this;
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
@@ -168,10 +155,6 @@ namespace Helix.Features.Memory {
                 writer.WriteEmptyLine();
             }
 
-            if (this.isLValue) {
-                return result;
-            }
-
             var pointerType = (PointerType)types.ReturnTypes[this.target];
             if (pointerType.InnerType is not PointerType && pointerType.InnerType is not ArrayType) {
                 return result;
@@ -179,7 +162,6 @@ namespace Helix.Features.Memory {
 
             // If we are dereferencing a pointer or array, we need to put it in a 
             // temp variable and write out the new lifetime.
-
             var tempName = writer.GetVariableName(this.tempPath);
             var tempType = writer.ConvertType(pointerType.InnerType);
 
@@ -196,5 +178,73 @@ namespace Helix.Features.Memory {
 
             return new CVariableLiteral(tempName);
         }        
+    }
+
+    public record DereferenceLValue : ISyntaxTree {
+        private readonly ISyntaxTree target;
+
+        public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
+
+        public bool IsPure => this.target.IsPure;
+
+        public DereferenceLValue(TokenLocation loc, ISyntaxTree target) {
+            this.Location = loc;
+            this.target = target;
+        }
+
+        public ISyntaxTree CheckTypes(EvalFrame types) {
+            if (this.IsTypeChecked(types)) {
+                return this;
+            }
+
+            this.SetReturnType(this.target.GetReturnType(types), types);
+            return this;
+        }
+
+        public ISyntaxTree ToLValue(EvalFrame types) {
+            if (!this.IsTypeChecked(types)) {
+                throw new InvalidOperationException();
+            }
+
+            return this;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            if (this.IsFlowAnalyzed(flow)) {
+                return;
+            }
+
+            this.target.AnalyzeFlow(flow);
+
+            var pointerType = this.target.AssertIsPointer(flow);
+            var pointerLifetime = this.target.GetLifetimes(flow).Components[new IdentifierPath()];
+            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
+
+            foreach (var (compPath, _) in pointerType.InnerType.GetMembers(flow)) {
+                var lifetime = new Lifetime(
+                    pointerLifetime.Path.Append(compPath),
+                    0,
+                    LifetimeKind.Root);
+
+                bundleDict[compPath] = lifetime;
+
+                // The lifetime that is stored in the pointer must outlive the pointer itself
+                flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);
+            }
+
+            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+        }
+
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+            var target = this.target.GenerateCode(types, writer);
+            var result = new CMemberAccess() {
+                Target = target,
+                MemberName = "data"
+            };
+
+            return result;
+        }
     }
 }

@@ -16,9 +16,11 @@ Fix syntax highlighting
 Add "until" to for loops and make "to" inclusive
 
 ### The Lifetimes Update
+	Reimplement lvalues
 	Add back address of operator
 	Invalidate variables if aliasing could occur
 	Infer region allocation for let/var
+	Reimplement array literals
 	Reimplement lifetimes with if expressions
 	Reimplement lifetimes with loops
 	Reimplement lifetimes with pointer dereferencing
@@ -26,6 +28,8 @@ Add "until" to for loops and make "to" inclusive
 	Add potential auto-copying when moving values between regions
 	Add function argument region annotations
 	Remove new expression
+	Clean up lifetime codegen
+	Store regions as ints not pointers
 
 ### The Primitives Update
 	Bytes

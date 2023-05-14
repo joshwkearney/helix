@@ -1,7 +1,7 @@
-﻿func main(let ptr as int*) as int* {
-	let x = 10;
-
-	x;
+﻿func main(let array as Point*[]) as Point* {
+	let test = new Point;
+	array[10] = test;
+	test;
 };
 
 struct Point {

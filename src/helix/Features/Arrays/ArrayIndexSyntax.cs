@@ -58,6 +58,10 @@ namespace Helix.Features.Arrays {
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
+            if (this.IsTypeChecked(types)) {
+                return this;
+            }
+
             var target = this.target
                 .CheckTypes(types)
                 .ToRValue(types);

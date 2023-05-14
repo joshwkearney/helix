@@ -58,7 +58,6 @@ namespace Helix.Parsing {
 namespace Helix.Features.Variables {
     public record AssignmentStatement : ISyntaxTree {
         private readonly ISyntaxTree target, assign;
-        private readonly bool isLocal;
 
         public TokenLocation Location { get; }
 
@@ -69,13 +68,11 @@ namespace Helix.Features.Variables {
         public AssignmentStatement(
             TokenLocation loc,
             ISyntaxTree target,
-            ISyntaxTree assign,
-            bool isLocal = false) {
+            ISyntaxTree assign) {
 
             this.Location = loc;
             this.target = target;
             this.assign = assign;
-            this.isLocal = isLocal;
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
@@ -84,7 +81,7 @@ namespace Helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var targetType = target.GetReturnType(types);
+            var targetType = ((PointerType)target.GetReturnType(types)).InnerType;
 
             var assign = this.assign
                 .CheckTypes(types)
@@ -94,8 +91,7 @@ namespace Helix.Features.Variables {
             var result = new AssignmentStatement(
                 this.Location,
                 target,
-                assign,
-                target.IsLocalVariable);
+                assign);
 
             result.SetReturnType(PrimitiveType.Void, types);
             return result;
@@ -211,7 +207,10 @@ namespace Helix.Features.Variables {
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
-            var target = this.target.GenerateCode(types, writer);
+            var target = new CPointerDereference() {
+                Target = this.target.GenerateCode(types, writer)
+            };
+
             var assign = this.assign.GenerateCode(types, writer);
 
             writer.WriteEmptyLine();

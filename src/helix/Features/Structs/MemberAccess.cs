@@ -24,47 +24,39 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.Aggregates {
-    public record MemberAccessSyntax : ISyntaxTree, ILValue {
-        private readonly ISyntaxTree target;
-        private readonly string memberName;
-        private readonly bool isPointerAccess;
+    public record MemberAccessSyntax : ISyntaxTree {
+        public ISyntaxTree Target { get; }
+
+        public string MemberName { get; }
+
+        public bool IsPointerAccess { get; }
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
+        public IEnumerable<ISyntaxTree> Children => new[] { this.Target };
 
-        public bool IsPure => this.target.IsPure;
-
-        public bool IsLocalVariable {
-            get {
-                if (this.target is ILValue lvalue) {
-                    return lvalue.IsLocalVariable;
-                }
-
-                return false;
-            }
-        }
+        public bool IsPure => this.Target.IsPure;
 
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
                                   string memberName, bool isPointerAccess = false) {
 
             this.Location = location;
-            this.target = target;
-            this.memberName = memberName;
-            this.isPointerAccess = isPointerAccess;
+            this.Target = target;
+            this.MemberName = memberName;
+            this.IsPointerAccess = isPointerAccess;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public virtual ISyntaxTree CheckTypes(EvalFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
 
-            var target = this.target.CheckTypes(types).ToRValue(types);
+            var target = this.Target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
             // Handle getting the count of an array
             if (targetType is ArrayType array) {
-                if (this.memberName == "count") {
+                if (this.MemberName == "count") {
                     var result = new MemberAccessSyntax(
                         this.Location,
                         target,
@@ -78,11 +70,11 @@ namespace Helix.Features.Aggregates {
 
             // If this is a named type it could be a struct or union
             if (targetType is NamedType named) {
-                // If this is a struct or union we can access the fields
+                // If this is a struct we can access the fields
                 if (types.Structs.TryGetValue(named.Path, out var sig)) {
                     var fieldOpt = sig
                         .Members
-                        .Where(x => x.Name == this.memberName)
+                        .Where(x => x.Name == this.MemberName)
                         .FirstOrNone();
 
                     // Make sure this field is present
@@ -90,8 +82,8 @@ namespace Helix.Features.Aggregates {
                         var result = new MemberAccessSyntax(
                             this.Location,
                             target,
-                            this.memberName,
-                            isPointerAccess);                       
+                            this.MemberName,
+                            IsPointerAccess);                       
 
                         types.ReturnTypes[result] = field.Type;
 
@@ -100,7 +92,7 @@ namespace Helix.Features.Aggregates {
                 }               
             }
 
-            throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.memberName);
+            throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.MemberName);
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) {
@@ -111,44 +103,99 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ILValue ToLValue(EvalFrame types) {
+        public ISyntaxTree ToLValue(EvalFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 
-            // Make sure this is a named type
-            var target = this.target.ToLValue(types);
+            var target = this.Target.ToLValue(types);
+            var result = new MemberAccessLValue(this.Location, target, this.MemberName, this.GetReturnType(types));
 
-            var result = new MemberAccessSyntax(
-                this.Location, 
-                target, 
-                this.memberName, 
-                this.isPointerAccess);
+            return result.CheckTypes(types);
+        }
 
-            types.ReturnTypes[result] = types.ReturnTypes[this];
+        public virtual void AnalyzeFlow(FlowFrame flow) {
+            if (this.IsFlowAnalyzed(flow)) {
+                return;
+            }
 
-            return result;
+            this.Target.AnalyzeFlow(flow);
+
+            var memberType = this.GetReturnType(flow);
+            var targetLifetimes = this.Target.GetLifetimes(flow).Components;
+            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
+
+            foreach (var (relPath, _) in memberType.GetMembers(flow)) {
+                var memPath = new IdentifierPath(this.MemberName).Append(relPath);
+                var varPath = targetLifetimes[memPath].Path;
+                    
+                if (flow.VariableValueLifetimes.TryGetValue(varPath, out var lifetime)) {
+                    bundleDict[relPath] = lifetime;
+                }
+                else {
+                    bundleDict[relPath] = targetLifetimes[memPath];
+                }
+            }
+
+            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+        }
+
+        public virtual ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+            if (!this.IsTypeChecked(types)) {
+                throw new InvalidOperationException();
+            }
+
+            return new CMemberAccess() {
+                Target = this.Target.GenerateCode(types, writer),
+                MemberName = this.MemberName,
+                IsPointerAccess = this.IsPointerAccess
+            };
+        }
+    }
+
+    public record MemberAccessLValue : ISyntaxTree {
+        private readonly ISyntaxTree target;
+        private readonly string memberName;
+        private readonly HelixType memberType;
+
+        public TokenLocation Location { get; }
+
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
+
+        public bool IsPure => this.target.IsPure;
+
+        public MemberAccessLValue(TokenLocation location, ISyntaxTree target, 
+                                  string memberName, HelixType memberType) {
+            this.Location = location;
+            this.target = target;
+            this.memberName = memberName;
+            this.memberType = memberType;
+        }
+
+        public ISyntaxTree CheckTypes(EvalFrame types) {
+            if (this.IsTypeChecked(types)) {
+                return this;
+            }
+
+            this.SetReturnType(new PointerType(this.memberType, true), types);
+            return this;
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            if (!this.IsFlowAnalyzed(flow)) {
+            if (this.IsFlowAnalyzed(flow)) {
                 return;
             }
 
             this.target.AnalyzeFlow(flow);
 
-            var memberType = this.GetReturnType(flow);
-            var relPath = new IdentifierPath(this.memberName);
             var targetLifetimes = this.target.GetLifetimes(flow).Components;
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
-            foreach (var (memPath, type) in VariablesHelper.GetMemberPaths(memberType, flow)) {
-                //if (type.IsValueType(flow)) {
-                //    bundleDict[memPath] = new Lifetime[0];
-                //}
-                //else {
-                    bundleDict[memPath] = targetLifetimes[relPath.Append(memPath)];
-                //}
+            foreach (var (relPath, _) in this.memberType.GetMembers(flow)) {
+                var memPath = new IdentifierPath(this.memberName).Append(relPath);
+                var varPath = targetLifetimes[memPath].Path;
+
+                bundleDict[relPath] = new Lifetime(varPath, 0, LifetimeKind.Passthrough);
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
@@ -159,11 +206,18 @@ namespace Helix.Features.Aggregates {
                 throw new InvalidOperationException();
             }
 
-            return new CMemberAccess() {
-                Target = this.target.GenerateCode(types, writer),
-                MemberName = this.memberName,
-                IsPointerAccess = this.isPointerAccess
+            // Our target will be converted to an lvalue, so we have to dereference it first
+            var target = new CPointerDereference() {
+                Target = this.target.GenerateCode(types, writer)
+            };
+
+            return new CAddressOf() {
+                Target = new CMemberAccess() {
+                    Target = target,
+                    MemberName = this.memberName,
+                    IsPointerAccess = false
+                }
             };
         }
-    }    
+    }
 }

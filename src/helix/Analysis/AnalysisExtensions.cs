@@ -54,7 +54,7 @@ namespace Helix.Analysis {
         }
 
         public static bool IsFlowAnalyzed(this ISyntaxTree syntax, FlowFrame flow) {
-            return flow.ReturnTypes.ContainsKey(syntax);
+            return flow.Lifetimes.ContainsKey(syntax);
         }
 
         public static HelixType GetReturnType(this ISyntaxTree syntax, ITypedFrame types) {

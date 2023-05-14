@@ -15,7 +15,7 @@ namespace Helix.Features.Arrays {
     public record ArrayToPointerAdapter : ISyntaxTree {
         private readonly ArrayType arrayType;
         private readonly ISyntaxTree target;
-        private readonly ISyntaxTree? offset = null;
+        private readonly ISyntaxTree offset = null;
 
         public TokenLocation Location => this.target.Location;
 
@@ -45,13 +45,21 @@ namespace Helix.Features.Arrays {
         ISyntaxTree ISyntaxTree.ToRValue(EvalFrame types) => this;
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
-            types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType, this.arrayType.IsWritable);
+            if (this.IsTypeChecked(types)) {
+                return this;
+            }
 
+            types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType, this.arrayType.IsWritable);
             return this;
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
+            if (this.IsFlowAnalyzed(flow)) {
+                return;
+            }
+
             this.target.AnalyzeFlow(flow);
+            this.offset.AnalyzeFlow(flow);
 
             flow.Lifetimes[this] = flow.Lifetimes[this.target];
         }

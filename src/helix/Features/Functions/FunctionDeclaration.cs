@@ -211,7 +211,7 @@ namespace Helix.Features.Functions {
             }
 
 #if DEBUG
-            // Debug check: make sure that every syntax tree has captured variables
+            // Debug check: Make sure every part of the syntax tree has a lifetime
             foreach (var expr in body.GetAllChildren()) {
                 if (!flow.Lifetimes.ContainsKey(expr)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
