@@ -144,7 +144,7 @@ namespace Helix.Parsing {
                 return new VariableAccessParseSyntax(tok.Location, "bool");
             }
             else if (this.Peek(TokenKind.PutKeyword) || this.Peek(TokenKind.NewKeyword)) {
-                return this.NewPutExpression();
+                return this.PutExpression();
             }
             else {
                 var next = this.Advance();

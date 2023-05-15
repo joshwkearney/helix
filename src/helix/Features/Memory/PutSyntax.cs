@@ -10,29 +10,13 @@ using Helix.Analysis.Lifetimes;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree NewPutExpression() {
-            TokenLocation start;
-            bool isNew;
-
-            if (this.Peek(TokenKind.NewKeyword)) {
-                start = this.Advance(TokenKind.NewKeyword).Location;
-                isNew = true;
-            }
-            else {
-                start = this.Advance(TokenKind.PutKeyword).Location;
-                isNew = false;
-            }
-
+        private ISyntaxTree PutExpression() {
+            var start = this.Advance(TokenKind.PutKeyword).Location;
             var targetType = this.TopExpression();
             var loc = start.Span(targetType.Location);
 
             if (!this.TryAdvance(TokenKind.OpenBrace)) {
-                return new PutSyntax(
-                    loc, 
-                    targetType,
-                    isNew,
-                    Array.Empty<string>(), 
-                    Array.Empty<ISyntaxTree>());
+                return new PutSyntax(loc, targetType);
             }
 
             var names = new List<string?>();
@@ -59,7 +43,7 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBrace);
             loc = start.Span(end.Location);
 
-            return new PutSyntax(loc, targetType, isNew, names, values);
+            return new PutSyntax(loc, targetType, names, values);
         }
     }
 }
@@ -71,7 +55,6 @@ namespace Helix.Features.Memory {
         private readonly ISyntaxTree type;
         private readonly IReadOnlyList<string?> names;
         private readonly IReadOnlyList<ISyntaxTree> values;
-        private readonly bool isNew;
 
         public TokenLocation Location { get; }
 
@@ -79,22 +62,20 @@ namespace Helix.Features.Memory {
 
         public bool IsPure { get; }
 
-        public PutSyntax(TokenLocation loc, ISyntaxTree type, bool isNew,
+        public PutSyntax(TokenLocation loc, ISyntaxTree type,
             IReadOnlyList<string?> names, IReadOnlyList<ISyntaxTree> values) {
 
             this.Location = loc;
             this.type = type;
             this.names = names;
             this.values = values;
-            this.isNew = isNew;
 
             this.IsPure = type.IsPure && values.All(x => x.IsPure);
         }
 
-        public PutSyntax(TokenLocation loc, ISyntaxTree type, bool isNew) {
+        public PutSyntax(TokenLocation loc, ISyntaxTree type) {
             this.Location = loc;
             this.type = type;
-            this.isNew = isNew;
             this.names = Array.Empty<string>();
             this.values = Array.Empty<ISyntaxTree>();
 
@@ -104,33 +85,7 @@ namespace Helix.Features.Memory {
         public ISyntaxTree CheckTypes(EvalFrame types) {
             // If the supplied type isn't a type, then try to check this as a new value expression
             if (!this.type.AsType(types).TryGetValue(out var type)) {
-                // Put expression cannot take values
-                if (!this.isNew) {
-                    throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);
-                }
-
-                // Make sure we are not supplying members to a value new expression
-                if (this.names.Any()) {
-                    throw new TypeCheckingException(
-                        this.Location,
-                        "Invalid Members",
-                        $"You may not supply explicit members to a new expression when providing an existing value.'");
-                }
-
-                var roots = types.LifetimeRoots.Values.ToHashSet();
-
-                var lifetime = new Lifetime(
-                    this.Location.Scope.Append("$new_temp_" + tempCounter++),
-                    0,
-                    LifetimeKind.Inferencee);
-
-                var result = new NewSyntax(
-                    this.Location, 
-                    this.type.CheckTypes(types), 
-                    lifetime,
-                    roots);
-
-                return result.CheckTypes(types);
+                throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);              
             }
 
             // Make sure we are not supplying members to a primitive type
@@ -141,14 +96,6 @@ namespace Helix.Features.Memory {
                         "Member Not Defined",
                         $"The type '{type}' does not contain the member '{this.names[0]}'");
                 }
-            }
-
-            // Rewrite a new type expression to a new value expression and a put expression
-            if (this.isNew) {
-                var putSyntax = new PutSyntax(this.Location, this.type, false, this.names, this.values);
-                var newSyntax = new PutSyntax(this.Location, putSyntax, true);
-
-                return newSyntax.CheckTypes(types);
             }
 
             // Handle normal put syntax

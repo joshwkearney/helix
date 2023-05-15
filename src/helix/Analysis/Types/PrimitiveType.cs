@@ -57,10 +57,7 @@ namespace Helix.Analysis.Types {
                 else {
                     return new BlockSyntax(syntax.Location, new ISyntaxTree[] {
                         syntax,
-                        new PutSyntax(
-                            syntax.Location,
-                            other.ToSyntax(syntax.Location),
-                            false)
+                        new PutSyntax(syntax.Location, other.ToSyntax(syntax.Location))
                     });
                 }
             }
