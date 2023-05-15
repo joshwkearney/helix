@@ -12,6 +12,10 @@ namespace Helix.Analysis.Lifetimes {
                 return;
             }
 
+            if (lifetime == outlivedLifetime) {
+                return;
+            }
+
             if (!this.outlivesGraph.TryGetValue(lifetime, out var outlivedList)) {
                 this.outlivesGraph[lifetime] = outlivedList = new HashSet<Lifetime>();
             }

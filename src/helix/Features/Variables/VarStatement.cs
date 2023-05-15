@@ -106,7 +106,17 @@ namespace Helix {
             types.SyntaxValues[basePath] = assign;
 
             // Set the return type of the new syntax tree
-            var result = new VarStatement(this.Location, basePath, assignType, assign, types.LifetimeRoots.Values.ToHashSet());
+            var producer = new VariableProducer(basePath, assignType, LifetimeKind.Inferencee);
+            producer.DeclareNewRoots(types);
+
+            var result = new VarStatement(
+                this.Location, 
+                basePath, 
+                assignType, 
+                assign, 
+                types.LifetimeRoots.Values.ToHashSet(),
+                producer);
+
             types.ReturnTypes[result] = PrimitiveType.Void;
 
             return result.CheckTypes(types);
@@ -163,8 +173,9 @@ namespace Helix {
     public record VarStatement : ISyntaxTree {
         private readonly ISyntaxTree assign;
         private readonly IdentifierPath path;
-        private readonly HelixType returnType;
+        private readonly HelixType varType;
         private readonly IReadOnlySet<Lifetime> allowedRoots;
+        private readonly VariableProducer producer;
 
         public TokenLocation Location { get; }
 
@@ -172,13 +183,15 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        public VarStatement(TokenLocation loc, IdentifierPath path, HelixType returnType, 
-                            ISyntaxTree assign, IReadOnlySet<Lifetime> allowedRoots) {
+        public VarStatement(TokenLocation loc, IdentifierPath path, HelixType varType, 
+                            ISyntaxTree assign, IReadOnlySet<Lifetime> allowedRoots,
+                            VariableProducer producer) {
             this.Location = loc;
             this.path = path;
             this.assign = assign;
-            this.returnType = returnType;
+            this.varType = varType;
             this.allowedRoots = allowedRoots;
+            this.producer = producer;
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) => this;
@@ -189,45 +202,25 @@ namespace Helix {
             this.assign.AnalyzeFlow(flow);
 
             // Calculate a signature and lifetime for this variable
-            var assignType = this.assign.GetReturnType(flow);
             var assignBundle = this.assign.GetLifetimes(flow);
-            var baseLifetime = new Lifetime(this.path, 0, LifetimeKind.Inferencee);
 
-            // Go through all the variables and sub variables and set up the lifetimes
-            // correctly
-            foreach (var (relPath, _) in assignType.GetMembers(flow)) {
-                var path = this.path.Append(relPath);
-                var varLifetime = new Lifetime(path, 0, LifetimeKind.Inferencee);
-
-                // Add a dependency between this version of the variable lifetime
-                // and the assigned expression. Whenever an alias might occur the
-                // version will be incremented, so this will not be unsafe with
-                // mutable variables
-                flow.LifetimeGraph.RequireOutlives(
-                    assignBundle.Components[relPath],
-                    varLifetime);
-
-                // Make sure we say the main lifetime outlives all of the member lifetimes
-                flow.LifetimeGraph.RequireOutlives(baseLifetime, varLifetime);
-
-                // Add this variable members's lifetime
-                flow.VariableLifetimes[path] = varLifetime;
-                flow.VariableValueLifetimes[path] = assignBundle.Components[relPath];
-            }
+            this.producer.DeclareLifetimes(flow);
+            this.producer.DeclareLifetimeContents(assignBundle, flow);
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
-            var roots = types
+        public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+            var roots = flow
                 .LifetimeGraph
-                .GetOutlivedLifetimes(types.VariableLifetimes[this.path])
+                .GetOutlivedLifetimes(flow.VariableLifetimes[this.path])
                 .Where(x => x.Kind != LifetimeKind.Inferencee)
+                .Where(x => x != Lifetime.Stack)
                 .ToValueList();
 
             // This removes redundant roots that are outlived by other roots
             // We only need to allocate on the longest-lived of our roots
-            roots = types.ReduceRootSet(roots).ToValueList();
+            roots = flow.ReduceRootSet(roots).ToValueList();
 
             if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
                 throw new LifetimeException(
@@ -239,21 +232,19 @@ namespace Helix {
                     "closer to the site of its use.");
             }
 
-            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(this.returnType, types)) {
-                writer.RegisterMemberPath(this.path, relPath);
-            }
+            this.producer.DeclareLifetimePaths(flow, writer);
 
             var isStack = roots.Count == 0 || (roots.Count == 1 && roots[0] == Lifetime.Stack);
             var name = writer.GetVariableName(this.path);
-            var assign = this.assign.GenerateCode(types, writer);
-            var cReturnType = writer.ConvertType(returnType);
-
-            writer.RegisterLifetimes(this.path, this.GetLifetimes(types), new CVariableLiteral(name));
+            var assign = this.assign.GenerateCode(flow, writer);
+            var cReturnType = writer.ConvertType(varType);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
             if (isStack) {
+                // TODO: Register lifetimes here too. Need to fix CalculateSmallestLifetime()
+
                 var stat = new CVariableDeclaration() {
                     Type = cReturnType,
                     Name = name,
@@ -265,8 +256,8 @@ namespace Helix {
                 writer.RegisterVariableKind(this.path, CVariableKind.Local);
             }
             else {
-                // Allocate on the heap
-                var allocLifetime = writer.CalculateSmallestLifetime(roots.Where(x => x != Lifetime.Stack).ToValueList());
+                var allocLifetime = writer.CalculateSmallestLifetime(roots);
+                this.producer.RegisterLifetimes(flow, writer, allocLifetime);
 
                 writer.WriteStatement(new CVariableDeclaration() {
                     Name = name,

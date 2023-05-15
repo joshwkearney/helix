@@ -13,7 +13,7 @@ extern void _region_delete(int region);
 typedef struct Point Point;
 typedef struct Point$ptr Point$ptr;
 
-void test(int _return_region);
+Point$ptr test(int _return_region);
 
 struct Point {
     int x;
@@ -25,12 +25,12 @@ struct Point$ptr {
     int region;
 };
 
-void test(int _return_region) {
+Point$ptr test(int _return_region) {
     /* Line 2: New variable declaration 'x' */
-    Point x = (Point){ 4U, 8U };
+    Point* x = (Point*)_region_malloc(_return_region, sizeof(Point));
+    (*x) = (Point){ 4U, 8U };
 
-    /* Line 3: New variable declaration 'y' */
-    Point$ptr y = (&x);
+    return (Point$ptr){ x, _return_region };
 }
 
 #if __cplusplus
