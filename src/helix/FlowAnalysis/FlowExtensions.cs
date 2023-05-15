@@ -18,10 +18,13 @@ namespace helix.FlowAnalysis {
             var sig = flow.Variables[path];
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
-            foreach (var (relPath, _) in GetMemberPaths(sig.Type, flow)) {
+            foreach (var (relPath, type) in GetMemberPaths(sig.Type, flow)) {
                 var memPath = path.Append(relPath);
 
-                if (flow.VariableValueLifetimes.TryGetValue(memPath, out var lifetime)) {
+                if (type.IsValueType(flow)) {
+                    bundleDict[relPath] = Lifetime.None;
+                }
+                else if (flow.VariableValueLifetimes.TryGetValue(memPath, out var lifetime)) {
                     bundleDict[relPath] = lifetime;
                 }
                 else {
