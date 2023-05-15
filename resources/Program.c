@@ -10,16 +10,20 @@ extern int _region_create();
 extern void* _region_malloc(int region, int size);
 extern void _region_delete(int region);
 
-typedef struct Point Point;
+typedef struct int$ptr int$ptr;
 
-Point test(int _return_region, Point x);
+int$ptr test(int _return_region);
 
-struct Point {
-    int x;
-    int y;
+struct int$ptr {
+    int* data;
+    int region;
 };
 
-Point test(int _return_region, Point x) {
+int$ptr test(int _return_region) {
+    /* Line 2: New variable declaration 'x' */
+    int* x = (int*)_region_malloc(_return_region, sizeof(int));
+    (*x) = 45U;
+
     return x;
 }
 

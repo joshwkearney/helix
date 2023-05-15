@@ -119,7 +119,15 @@ namespace Helix.Features.Variables {
         }
 
         public virtual ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
-            return new CVariableLiteral(writer.GetVariableName(this.VariablePath));
+            ICSyntax result = new CVariableLiteral(writer.GetVariableName(this.VariablePath));
+
+            if (writer.GetVariableKind(this.VariablePath) == CVariableKind.Allocated) {
+                result = new CPointerDereference() {
+                    Target = result
+                };
+            }
+
+            return result;
         }
     }
 
@@ -145,7 +153,7 @@ namespace Helix.Features.Variables {
 
             foreach (var (memPath, _) in sig.Type.GetMembers(flow)) {
                 // TODO: This will break when variable invalidating is implemented
-                bundleDict[memPath] = new Lifetime(this.VariablePath.Append(memPath), 0);
+                bundleDict[memPath] = new Lifetime(this.VariablePath.Append(memPath), 0, LifetimeKind.Inferencee);
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

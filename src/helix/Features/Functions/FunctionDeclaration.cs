@@ -197,6 +197,7 @@ namespace Helix.Features.Functions {
             // and confirm that each one outlives the heap
             var roots = this.body.GetLifetimes(flow).Lifetimes
                 .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
+                .Where(x => x.Kind != LifetimeKind.Inferencee)
                 .ToArray();
 
             roots = flow.ReduceRootSet(roots).ToArray();
@@ -274,6 +275,15 @@ namespace Helix.Features.Functions {
                         Target = new CVariableLiteral(writer.GetVariableName(path)),
                         MemberName = "region"
                     });
+                }
+            }
+
+            // Register the parameters as local variables
+            foreach (var par in this.Signature.Parameters) {
+                foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
+                    var path = this.Signature.Path.Append(par.Name).Append(relPath);
+
+                    bodyWriter.RegisterVariableKind(path, CVariableKind.Local);
                 }
             }
 

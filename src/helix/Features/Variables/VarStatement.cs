@@ -106,7 +106,7 @@ namespace Helix {
             types.SyntaxValues[basePath] = assign;
 
             // Set the return type of the new syntax tree
-            var result = new VarStatement(this.Location, basePath, assignType, assign);
+            var result = new VarStatement(this.Location, basePath, assignType, assign, types.LifetimeRoots.Values.ToHashSet());
             types.ReturnTypes[result] = PrimitiveType.Void;
 
             return result.CheckTypes(types);
@@ -164,6 +164,7 @@ namespace Helix {
         private readonly ISyntaxTree assign;
         private readonly IdentifierPath path;
         private readonly HelixType returnType;
+        private readonly IReadOnlySet<Lifetime> allowedRoots;
 
         public TokenLocation Location { get; }
 
@@ -171,11 +172,13 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        public VarStatement(TokenLocation loc, IdentifierPath path, HelixType returnType, ISyntaxTree assign) {
+        public VarStatement(TokenLocation loc, IdentifierPath path, HelixType returnType, 
+                            ISyntaxTree assign, IReadOnlySet<Lifetime> allowedRoots) {
             this.Location = loc;
             this.path = path;
             this.assign = assign;
             this.returnType = returnType;
+            this.allowedRoots = allowedRoots;
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) => this;
@@ -188,16 +191,13 @@ namespace Helix {
             // Calculate a signature and lifetime for this variable
             var assignType = this.assign.GetReturnType(flow);
             var assignBundle = this.assign.GetLifetimes(flow);
+            var baseLifetime = new Lifetime(this.path, 0, LifetimeKind.Inferencee);
 
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
             foreach (var (relPath, _) in assignType.GetMembers(flow)) {
                 var path = this.path.Append(relPath);
-                var varLifetime = new Lifetime(path, 0);
-
-                // All local variables are allocated on the stack, so make sure
-                // we outlive the stack
-                flow.LifetimeGraph.RequireOutlives(Lifetime.Stack, varLifetime);
+                var varLifetime = new Lifetime(path, 0, LifetimeKind.Inferencee);
 
                 // Add a dependency between this version of the variable lifetime
                 // and the assigned expression. Whenever an alias might occur the
@@ -207,6 +207,9 @@ namespace Helix {
                     assignBundle.Components[relPath],
                     varLifetime);
 
+                // Make sure we say the main lifetime outlives all of the member lifetimes
+                flow.LifetimeGraph.RequireOutlives(baseLifetime, varLifetime);
+
                 // Add this variable members's lifetime
                 flow.VariableValueLifetimes[path] = assignBundle.Components[relPath];
             }
@@ -215,22 +218,70 @@ namespace Helix {
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
-            var name = writer.GetVariableName(this.path);
+            var roots = types
+                .LifetimeGraph
+                .GetOutlivedLifetimes(new Lifetime(this.path, 0, LifetimeKind.Inferencee))
+                .Where(x => x.Kind != LifetimeKind.Inferencee)
+                .ToValueList();
 
-            var stat = new CVariableDeclaration() {
-                Type = writer.ConvertType(returnType),
-                Name = name,
-                Assignment = Option.Some(this.assign.GenerateCode(types, writer))
-            };
+            // This removes redundant roots that are outlived by other roots
+            // We only need to allocate on the longest-lived of our roots
+            roots = types.ReduceRootSet(roots).ToValueList();
+
+            if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
+                throw new LifetimeException(
+                    this.Location,
+                    "Lifetime Inference Failed",
+                    "The lifetime of this new object allocation has failed because it is " +
+                    "dependent on a root that does not exist at this point in the program and " +
+                    "must be calculated at runtime. Please try moving the allocation " +
+                    "closer to the site of its use.");
+            }
 
             foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(this.returnType, types)) {
                 writer.RegisterMemberPath(this.path, relPath);
             }
 
+            var isStack = roots.Count == 0 || (roots.Count == 1 && roots[0] == Lifetime.Stack);
+            var name = writer.GetVariableName(this.path);
+            var assign = this.assign.GenerateCode(types, writer);
+            var cReturnType = writer.ConvertType(returnType);
+
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
-            writer.WriteStatement(stat);
-            writer.WriteEmptyLine();
+
+            if (isStack) {
+                var stat = new CVariableDeclaration() {
+                    Type = cReturnType,
+                    Name = name,
+                    Assignment = Option.Some(assign)
+                };
+
+                writer.WriteStatement(stat);
+                writer.WriteEmptyLine();
+                writer.RegisterVariableKind(this.path, CVariableKind.Local);
+            }
+            else {
+                // Allocate on the heap
+                var allocLifetime = writer.CalculateSmallestLifetime(roots.Where(x => x != Lifetime.Stack).ToValueList());
+
+                writer.WriteStatement(new CVariableDeclaration() {
+                    Name = name,
+                    Type = new CPointerType(cReturnType),
+                    Assignment = new CVariableLiteral($"({cReturnType.WriteToC()}*)_region_malloc({allocLifetime.WriteToC()}, sizeof({cReturnType.WriteToC()}))")
+                });
+
+                var assignmentDecl = new CAssignment() {
+                    Left = new CPointerDereference() {
+                        Target = new CVariableLiteral(name)
+                    },
+                    Right = assign
+                };
+
+                writer.WriteStatement(assignmentDecl);
+                writer.WriteEmptyLine();
+                writer.RegisterVariableKind(this.path, CVariableKind.Allocated);
+            }
 
             return new CIntLiteral(0);
         }

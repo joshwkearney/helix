@@ -1,8 +1,5 @@
-﻿func test(var x as Point) as Point {
-	x;
-};
+﻿func test() as int* {
+	var x = 45;
 
-struct Point {
-	let x as int;
-	let y as int;
+	&x;
 };

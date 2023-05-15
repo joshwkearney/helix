@@ -5,6 +5,10 @@ using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
 
 namespace Helix.Generation {
+    public enum CVariableKind {
+        Local, Allocated
+    }
+
     public interface ICStatementWriter : ICWriter {
         public ICStatementWriter WriteStatement(ICStatement stat);
 
@@ -15,6 +19,10 @@ namespace Helix.Generation {
         public void RegisterLifetime(Lifetime lifetime, ICSyntax value);
 
         public ICSyntax GetLifetime(Lifetime lifetime);
+
+        public void RegisterVariableKind(IdentifierPath path, CVariableKind kind);
+
+        public CVariableKind GetVariableKind(IdentifierPath path);
 
         public ICSyntax CalculateSmallestLifetime(ValueList<Lifetime> lifetimes);
 
@@ -56,6 +64,7 @@ namespace Helix.Generation {
 
         private readonly Dictionary<Lifetime, ICSyntax> lifetimes = new();
         private readonly Dictionary<ValueList<Lifetime>, ICSyntax> lifetimeCombinations = new();
+        private readonly Dictionary<IdentifierPath, CVariableKind> variableKinds = new();
 
         public CStatementWriter(ICWriter prev, IList<ICStatement> stats) {
             this.prev = prev;
@@ -166,6 +175,14 @@ namespace Helix.Generation {
 
         public void RegisterMemberPath(IdentifierPath varPath, IdentifierPath memberPath) {
             this.prev.RegisterMemberPath(varPath, memberPath);
+        }
+
+        public void RegisterVariableKind(IdentifierPath path, CVariableKind kind) {
+            this.variableKinds[path] = kind;
+        }
+
+        public CVariableKind GetVariableKind(IdentifierPath path) {
+            return this.variableKinds[path];
         }
     }
 }
