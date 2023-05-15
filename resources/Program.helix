@@ -1,5 +1,5 @@
 ﻿func test() as Point* {
-	var x = put Point { 4, 8 };
+	var x = new Point { 4, 8 };
 
 	&x;
 };

@@ -10,13 +10,13 @@ using Helix.Analysis.Lifetimes;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree PutExpression() {
-            var start = this.Advance(TokenKind.PutKeyword).Location;
+        private ISyntaxTree NewExpression() {
+            var start = this.Advance(TokenKind.NewKeyword).Location;
             var targetType = this.TopExpression();
             var loc = start.Span(targetType.Location);
 
             if (!this.TryAdvance(TokenKind.OpenBrace)) {
-                return new PutSyntax(loc, targetType);
+                return new NewSyntax(loc, targetType);
             }
 
             var names = new List<string?>();
@@ -43,13 +43,13 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBrace);
             loc = start.Span(end.Location);
 
-            return new PutSyntax(loc, targetType, names, values);
+            return new NewSyntax(loc, targetType, names, values);
         }
     }
 }
 
 namespace Helix.Features.Memory {
-    public class PutSyntax : ISyntaxTree {
+    public class NewSyntax : ISyntaxTree {
         private static int tempCounter = 0;
 
         private readonly ISyntaxTree type;
@@ -62,7 +62,7 @@ namespace Helix.Features.Memory {
 
         public bool IsPure { get; }
 
-        public PutSyntax(TokenLocation loc, ISyntaxTree type,
+        public NewSyntax(TokenLocation loc, ISyntaxTree type,
             IReadOnlyList<string?> names, IReadOnlyList<ISyntaxTree> values) {
 
             this.Location = loc;
@@ -73,7 +73,7 @@ namespace Helix.Features.Memory {
             this.IsPure = type.IsPure && values.All(x => x.IsPure);
         }
 
-        public PutSyntax(TokenLocation loc, ISyntaxTree type) {
+        public NewSyntax(TokenLocation loc, ISyntaxTree type) {
             this.Location = loc;
             this.type = type;
             this.names = Array.Empty<string>();
@@ -119,7 +119,7 @@ namespace Helix.Features.Memory {
                     throw TypeCheckingErrors.ExpectedStructType(this.type.Location, type);
                 }
 
-                var result = new PutStructSyntax(
+                var result = new NewStructSyntax(
                     this.Location,
                     sig,
                     this.names,

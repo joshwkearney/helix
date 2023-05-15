@@ -9,7 +9,7 @@ using System;
 using helix.FlowAnalysis;
 
 namespace Helix.Features.Aggregates {
-    public class PutStructSyntax : ISyntaxTree {
+    public class NewStructSyntax : ISyntaxTree {
         private readonly bool isTypeChecked;
         private readonly StructSignature sig;
         private readonly IReadOnlyList<string?> names;
@@ -21,7 +21,7 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure { get; }
 
-        public PutStructSyntax(
+        public NewStructSyntax(
             TokenLocation loc, 
             StructSignature sig,
             IReadOnlyList<string?> names,
@@ -135,7 +135,7 @@ namespace Helix.Features.Aggregates {
                 allValues.Add(value);
             }
 
-            var result = new PutStructSyntax(this.Location, this.sig, allNames, allValues, true);
+            var result = new NewStructSyntax(this.Location, this.sig, allNames, allValues, true);
 
             types.ReturnTypes[result] = type;
             return result;

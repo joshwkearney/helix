@@ -14,7 +14,7 @@ namespace Helix.Parsing {
             { "do", TokenKind.DoKeyword }, { "to", TokenKind.ToKeyword },
             { "struct", TokenKind.StructKeyword }, { "union", TokenKind.UnionKeyword },
             { "and", TokenKind.AndKeyword }, { "or", TokenKind.OrKeyword },
-            { "xor", TokenKind.XorKeyword }, { "put", TokenKind.PutKeyword },
+            { "xor", TokenKind.XorKeyword },
             { "break", TokenKind.BreakKeyword }, { "continue", TokenKind.ContinueKeyword },
             { "return", TokenKind.ReturnKeyword }, { "new", TokenKind.NewKeyword },
             { "until", TokenKind.UntilKeyword }

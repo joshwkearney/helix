@@ -34,7 +34,7 @@ contexts [] {
       
 
       : pattern {
-         regex \= (?:\b)(as|put|new)(\s+)([_a-zA-Z][_a-zA-Z0-9]*)
+         regex \= (?:\b)(as|new)(\s+)([_a-zA-Z][_a-zA-Z0-9]*)
          styles []= .keyword, .keyword, .typeName;
       }
       
@@ -54,7 +54,7 @@ contexts [] {
       }
       
       : pattern {
-         regex \= (?:\b)(int|bool|void|var|let|func|as|put|cast|extern|to)(?:\b)
+         regex \= (?:\b)(int|bool|void|var|let|func|as|cast|extern|to)(?:\b)
          styles []= .keyword;
       }
       
