@@ -18,7 +18,8 @@ Add "until" to for loops and make "to" inclusive
 ### The Lifetimes Update
 	DONE - Reimplement lvalues
 	Add back address of operator
-	Invalidate variables if aliasing could occur
+	Invalidate variables if aliasing could occur in assignments
+	Invalidate variables if aliasing could occur in function calls
 	Infer region allocation for let/var
 	Reimplement array literals
 	Reimplement lifetimes with if expressions
@@ -28,8 +29,8 @@ Add "until" to for loops and make "to" inclusive
 	Add potential auto-copying when moving values between regions
 	Add function argument region annotations
 	Remove new expression
-	Clean up lifetime codegen
-	Store regions as ints not pointers
+	DONE - Clean up lifetime codegen
+	DONE - Store regions as ints not pointers
 
 ### The Primitives Update
 	Bytes

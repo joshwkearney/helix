@@ -13,7 +13,7 @@ namespace Helix.Generation {
 
         public string GetVariableName(IdentifierPath path);
 
-        public void SetMemberPath(IdentifierPath varPath, IdentifierPath memberPath);
+        public void RegisterMemberPath(IdentifierPath varPath, IdentifierPath memberPath);
 
         public void ResetTempNames();
 
@@ -95,7 +95,7 @@ namespace Helix.Generation {
             return value;
         }
 
-        public void SetMemberPath(IdentifierPath varPath, IdentifierPath memberPath) {
+        public void RegisterMemberPath(IdentifierPath varPath, IdentifierPath memberPath) {
             var varName = this.GetVariableName(varPath);
 
             if (memberPath.Segments.Any()) {

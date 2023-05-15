@@ -187,7 +187,7 @@ namespace Helix.Features.FlowControl {
             
             // Register our member paths with the code generator
             foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
-                writer.SetMemberPath(this.tempPath, relPath);
+                writer.RegisterMemberPath(this.tempPath, relPath);
             }
 
             if (returnType != PrimitiveType.Void) {

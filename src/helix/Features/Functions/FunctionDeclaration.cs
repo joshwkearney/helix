@@ -251,7 +251,7 @@ namespace Helix.Features.Functions {
             // Register the parameter member paths
             foreach (var par in this.Signature.Parameters) {
                 foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(par.Type, types)) {
-                    writer.SetMemberPath(this.Signature.Path.Append(par.Name), relPath);
+                    writer.RegisterMemberPath(this.Signature.Path.Append(par.Name), relPath);
                 }
             }
 
@@ -276,6 +276,11 @@ namespace Helix.Features.Functions {
                 bodyWriter.WriteStatement(new CReturn() { 
                     Target = retExpr
                 });
+            }
+
+            // If the body ends with an empty line, trim it
+            if (body.Last().IsEmpty) {
+                body = body.SkipLast(1).ToList();
             }
 
             var decl = new CFunctionDeclaration() {

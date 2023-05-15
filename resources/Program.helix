@@ -1,7 +1,9 @@
-﻿func test(let array as Point*[]) as Point* {
-	let test = new Point { 6, 8 };
-	array[10] = test;
-	test;
+﻿func test(let array as Point***) as void {
+	
+
+	array** = new Point;
+
+	//test;
 };
 
 struct Point {

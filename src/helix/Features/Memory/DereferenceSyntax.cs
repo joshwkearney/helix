@@ -57,6 +57,18 @@ namespace Helix.Features.Memory {
             var pointerType = target.AssertIsPointer(types);
             var result = new DereferenceSyntax(this.Location, target, this.tempPath);
 
+            foreach (var (relPath, type) in pointerType.InnerType.GetMembers(types)) {
+                // Add new roots to the current root set
+                if (!type.IsValueType(types)) {
+                    var lifetime = new Lifetime(
+                        this.tempPath.Append(relPath),
+                        0,
+                        LifetimeKind.Root);
+
+                    types.LifetimeRoots[lifetime.Path] = lifetime;
+                }
+            }
+
             types.ReturnTypes[result] = pointerType.InnerType;
             return result;
         }
@@ -88,17 +100,21 @@ namespace Helix.Features.Memory {
             var pointerLifetime = this.target.GetLifetimes(flow).Components[new IdentifierPath()];
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
-            foreach (var (compPath, type) in pointerType.InnerType.GetMembers(flow)) {
+            foreach (var (relPath, type) in pointerType.InnerType.GetMembers(flow)) {
                 if (type.IsValueType(flow)) {
-                    bundleDict[compPath] = Lifetime.None;
+                    bundleDict[relPath] = Lifetime.None;
                 }
                 else { 
+                    // This value's lifetime actually isn't the pointer's lifetime, but some
+                    // other lifetime that outlives the pointer. It's important to represent
+                    // this value like this because we can't store things into it that just
+                    // outlive the pointer
                     var lifetime = new Lifetime(
-                        this.tempPath.Append(compPath),
+                        this.tempPath.Append(relPath),
                         0,
                         LifetimeKind.Root);
 
-                    bundleDict[compPath] = lifetime;
+                    bundleDict[relPath] = lifetime;
 
                     // The lifetime that is stored in the pointer must outlive the pointer itself
                     flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);
@@ -110,71 +126,48 @@ namespace Helix.Features.Memory {
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
-            var result = new CPointerDereference() {
-                Target = new CMemberAccess() {
-                    Target = target,
-                    MemberName = "data"
+            var pointerType = (PointerType)types.ReturnTypes[this.target];
+            var tempName = writer.GetVariableName(this.tempPath);
+            var tempType = writer.ConvertType(pointerType.InnerType);
+
+            writer.WriteEmptyLine();
+            writer.WriteComment($"Line {this.Location.Line}: Pointer dereference");
+            writer.WriteStatement(new CVariableDeclaration() {
+                Name = tempName,
+                Type = tempType,
+                Assignment = new CPointerDereference() {
+                    Target = new CMemberAccess() {
+                        Target = target,
+                        MemberName = "data",
+                        IsPointerAccess = false
+                    }
                 }
-            };
-
-            var returnType = types.ReturnTypes[this];
-
-            // Register our member paths with the code generator
-            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
-                writer.SetMemberPath(this.tempPath, relPath);
-            }
+            });
 
             writer.WriteEmptyLine();
 
+            var result = new CVariableLiteral(writer.GetVariableName(this.tempPath));
 
-            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
-                writer.SetMemberPath(this.tempPath, relPath);
-
+            foreach (var (relPath, _) in pointerType.GetMembers(types)) {
                 var lifetime = new Lifetime(this.tempPath.Append(relPath), 0, LifetimeKind.Root);
 
-                writer.WriteComment($"Line {this.Location.Line}: Saving lifetime '{lifetime.Path}'");
+                writer.RegisterMemberPath(this.tempPath, relPath);
 
-                var hack = new CMemberAccess() {
-                    Target = target,
-                    MemberName = "data"
-                };
+                var dataAccess = (ICSyntax)result;
 
                 foreach (var segment in relPath.Segments) {
-                    hack = new CMemberAccess() {
-                        Target = hack,
+                    dataAccess = new CMemberAccess() {
+                        Target = dataAccess,
                         MemberName = segment,
                         IsPointerAccess = true
                     };
                 }
 
                 writer.RegisterLifetime(lifetime, new CMemberAccess() {
-                    Target = hack,
+                    Target = dataAccess,
                     MemberName = "region"
                 });
-
-                writer.WriteEmptyLine();
             }
-
-            var pointerType = (PointerType)types.ReturnTypes[this.target];
-            if (pointerType.InnerType is not PointerType && pointerType.InnerType is not ArrayType) {
-                return result;
-            }
-
-            // If we are dereferencing a pointer or array, we need to put it in a 
-            // temp variable and write out the new lifetime.
-            var tempName = writer.GetVariableName(this.tempPath);
-            var tempType = writer.ConvertType(pointerType.InnerType);
-
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.Location.Line}: Pointer dereference");
-
-            writer.WriteStatement(new CVariableDeclaration() { 
-                Name = tempName,
-                Type = tempType,
-                Assignment = result
-            });
-
-            writer.WriteEmptyLine();
 
             return new CVariableLiteral(tempName);
         }        
@@ -223,6 +216,8 @@ namespace Helix.Features.Memory {
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             foreach (var (compPath, _) in pointerType.InnerType.GetMembers(flow)) {
+                // We are returning lifetimes that represent the minimum region
+                // required to store something in this pointer
                 var lifetime = new Lifetime(
                     pointerLifetime.Path.Append(compPath),
                     0,

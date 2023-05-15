@@ -224,7 +224,7 @@ namespace Helix {
             };
 
             foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(this.returnType, types)) {
-                writer.SetMemberPath(this.path, relPath);
+                writer.RegisterMemberPath(this.path, relPath);
             }
 
             writer.WriteEmptyLine();

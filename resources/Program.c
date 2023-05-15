@@ -12,10 +12,10 @@ extern void _region_delete(int region);
 
 typedef struct Point Point;
 typedef struct Point$ptr Point$ptr;
-typedef struct Point$ptr$array Point$ptr$array;
 typedef struct Point$ptr$ptr Point$ptr$ptr;
+typedef struct Point$ptr$ptr$ptr Point$ptr$ptr$ptr;
 
-Point$ptr test(int _return_region, Point$ptr$array array);
+void test(int _return_region, Point$ptr$ptr$ptr array);
 
 struct Point {
     int x;
@@ -27,40 +27,27 @@ struct Point$ptr {
     int region;
 };
 
-struct Point$ptr$array {
-    Point$ptr* data;
-    int region;
-    int count;
-};
-
 struct Point$ptr$ptr {
     Point$ptr* data;
     int region;
 };
 
-Point$ptr test(int _return_region, Point$ptr$array array) {
-    int $A = _return_region;
-    int $B = (array.region);
+struct Point$ptr$ptr$ptr {
+    Point$ptr$ptr* data;
+    int region;
+};
 
-    int $F = $A;
-    $F = (($F <= $B) ? $F : $B);
+void test(int _return_region, Point$ptr$ptr$ptr array) {
+    /* Line 4: Pointer dereference */
+    Point$ptr$ptr $deref_3 = (*(array.data));
 
-    /* Line 2: New 'Point*' */
-    Point* $E = (Point*)_region_malloc($F, sizeof(Point));
-    (*$E) = (Point){ 6U, 8U };
-    Point$ptr $G = (Point$ptr){ $E, $F };
-    int $H = ($G.region);
+    /* Line 4: New 'Point*' */
+    Point* $C = (Point*)_region_malloc(($deref_3.region), sizeof(Point));
+    (*$C) = (Point){ 0U, 0U };
+    Point$ptr $D = (Point$ptr){ $C, ($deref_3.region) };
 
-    /* Line 2: New variable declaration 'test' */
-    Point$ptr test = $G;
-
-    /* Line 3: Array to pointer conversion */
-    Point$ptr$ptr $I = (Point$ptr$ptr){ ((array.data) + 10U), (array.region) };
-
-    /* Line 3: Assignment statement */
-    (*($I.data)) = test;
-
-    return test;
+    /* Line 4: Assignment statement */
+    (*($deref_3.data)) = $D;
 }
 
 #if __cplusplus

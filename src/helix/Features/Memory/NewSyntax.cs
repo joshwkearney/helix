@@ -55,6 +55,10 @@ namespace Helix.Features.Memory {
                 .Where(x => x.Kind == LifetimeKind.Root)
                 .ToValueList();
 
+            // This removes redundant roots that are outlived by other roots
+            // We only need to allocate on the longest-lived of our roots
+            roots = ReduceRootSet(roots, types).ToValueList();
+
             if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
                 throw new LifetimeException(
                     this.Location,
@@ -70,7 +74,7 @@ namespace Helix.Features.Memory {
 
             // Register our member paths with the code generator
             foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
-                writer.SetMemberPath(this.lifetime.Path, relPath);
+                writer.RegisterMemberPath(this.lifetime.Path, relPath);
             }
 
             var isStack = roots.Count == 1 && roots[0] == Lifetime.Stack;
@@ -102,7 +106,7 @@ namespace Helix.Features.Memory {
             }
             else {
                 // Allocate on the heap
-                allocLifetime = writer.GetSmallestLifetime(roots.Where(x => x != Lifetime.Stack).ToValueList());
+                allocLifetime = writer.CalculateSmallestLifetime(roots.Where(x => x != Lifetime.Stack).ToValueList());
                 pointerExpr = new CVariableLiteral(tempName);
 
                 writer.WriteEmptyLine();
@@ -148,6 +152,18 @@ namespace Helix.Features.Memory {
             writer.WriteEmptyLine();
 
             return new CVariableLiteral(fatPointerName);
+        }
+
+        private static IEnumerable<Lifetime> ReduceRootSet(IEnumerable<Lifetime> roots, FlowFrame flow) {
+            var result = new List<Lifetime>();
+
+            foreach (var root in roots) {
+                if (!roots.Where(x => x != root).Any(x => flow.LifetimeGraph.DoesOutlive(x, root))) {
+                    result.Add(root);
+                }
+            }
+
+            return result;
         }
     }
 }

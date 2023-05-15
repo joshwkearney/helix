@@ -16,7 +16,7 @@ namespace Helix.Generation {
 
         public ICSyntax GetLifetime(Lifetime lifetime);
 
-        public ICSyntax GetSmallestLifetime(ValueList<Lifetime> lifetimes);
+        public ICSyntax CalculateSmallestLifetime(ValueList<Lifetime> lifetimes);
 
         // Mixins
         public ICStatementWriter WriteComment(string comment) {
@@ -71,9 +71,7 @@ namespace Helix.Generation {
         }
 
         public void RegisterLifetime(Lifetime lifetime, ICSyntax value) {
-            var expr = this.WriteImpureExpression(new CNamedType("int"), value);
-
-            this.lifetimes[lifetime] = expr;
+            this.lifetimes[lifetime] = value;
         }
 
         public ICSyntax GetLifetime(Lifetime lifetime) {
@@ -86,7 +84,7 @@ namespace Helix.Generation {
             return this.lifetimes[lifetime];
         }
 
-        public ICSyntax GetSmallestLifetime(ValueList<Lifetime> lifetimes) {
+        public ICSyntax CalculateSmallestLifetime(ValueList<Lifetime> lifetimes) {
             if (this.lifetimeCombinations.TryGetValue(lifetimes, out var value)) {
                 return value;
             }
@@ -146,8 +144,8 @@ namespace Helix.Generation {
 
         public void ResetTempNames() => this.prev.ResetTempNames();
 
-        public void SetMemberPath(IdentifierPath varPath, IdentifierPath memberPath) {
-            this.prev.SetMemberPath(varPath, memberPath);
+        public void RegisterMemberPath(IdentifierPath varPath, IdentifierPath memberPath) {
+            this.prev.RegisterMemberPath(varPath, memberPath);
         }
     }
 }

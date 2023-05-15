@@ -111,8 +111,8 @@ namespace Helix.Features.Variables {
                 return;
             }
 
-            this.assign.AnalyzeFlow(flow);
             this.target.AnalyzeFlow(flow);
+            this.assign.AnalyzeFlow(flow);
 
             // TODO: Implement the below comment
             // Check to see if the assigned value has the same origins
