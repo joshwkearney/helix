@@ -193,11 +193,11 @@ namespace Helix {
             // correctly
             foreach (var (relPath, _) in assignType.GetMembers(flow)) {
                 var path = this.path.Append(relPath);
-                var varLifetime = new Lifetime(path, 0, LifetimeKind.Passthrough);
+                var varLifetime = new Lifetime(path, 0);
 
                 // All local variables are allocated on the stack, so make sure
                 // we outlive the stack
-                flow.LifetimeGraph.RequireOutlives(varLifetime, Lifetime.Stack);
+                flow.LifetimeGraph.RequireOutlives(Lifetime.Stack, varLifetime);
 
                 // Add a dependency between this version of the variable lifetime
                 // and the assigned expression. Whenever an alias might occur the

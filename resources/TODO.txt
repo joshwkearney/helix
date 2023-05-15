@@ -17,7 +17,7 @@ Add "until" to for loops and make "to" inclusive
 
 ### The Lifetimes Update
 	DONE - Reimplement lvalues
-	Add back address of operator
+	DONE - Add back address of operator
 	Invalidate variables if aliasing could occur in assignments
 	Invalidate variables if aliasing could occur in function calls
 	Infer region allocation for let/var
@@ -26,7 +26,7 @@ Add "until" to for loops and make "to" inclusive
 	Reimplement lifetimes with loops
 	Reimplement lifetimes with pointer dereferencing
 	Reimplement lifetimes with function calls
-	Add potential auto-copying when moving values between regions
+	Add conditional auto-copying when moving values between regions
 	Add function argument region annotations
 	Remove new expression
 	DONE - Clean up lifetime codegen

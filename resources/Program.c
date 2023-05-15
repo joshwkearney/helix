@@ -15,7 +15,7 @@ typedef struct Point$ptr Point$ptr;
 typedef struct Point$ptr$ptr Point$ptr$ptr;
 typedef struct Point$ptr$ptr$ptr Point$ptr$ptr$ptr;
 
-void test(int _return_region, Point$ptr$ptr$ptr array);
+void test(int _return_region, Point$ptr$ptr$ptr x);
 
 struct Point {
     int x;
@@ -37,16 +37,16 @@ struct Point$ptr$ptr$ptr {
     int region;
 };
 
-void test(int _return_region, Point$ptr$ptr$ptr array) {
-    /* Line 4: Pointer dereference */
-    Point$ptr$ptr $deref_3 = (*(array.data));
+void test(int _return_region, Point$ptr$ptr$ptr x) {
+    /* Line 2: Pointer dereference */
+    Point$ptr$ptr $deref_3 = (*(x.data));
 
-    /* Line 4: New 'Point*' */
+    /* Line 2: New 'Point*' */
     Point* $C = (Point*)_region_malloc(($deref_3.region), sizeof(Point));
     (*$C) = (Point){ 0U, 0U };
     Point$ptr $D = (Point$ptr){ $C, ($deref_3.region) };
 
-    /* Line 4: Assignment statement */
+    /* Line 2: Assignment statement */
     (*($deref_3.data)) = $D;
 }
 

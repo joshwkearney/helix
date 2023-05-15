@@ -1,9 +1,5 @@
-﻿func test(let array as Point***) as void {
-	
-
-	array** = new Point;
-
-	//test;
+﻿func test(var x as Point) as Point {
+	x;
 };
 
 struct Point {

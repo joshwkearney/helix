@@ -1,4 +1,9 @@
-﻿/*using Helix.Analysis;
+﻿using helix.FlowAnalysis;
+using Helix.Analysis;
+using Helix.Analysis.Lifetimes;
+using Helix.Analysis.Types;
+using Helix.Generation.Syntax;
+using Helix.Generation;
 using Helix.Parsing;
 using System;
 using System.Collections.Generic;
@@ -16,7 +21,8 @@ namespace helix.Features.Variables {
 
         public bool IsPure => this.target.IsPure;
 
-        public AddressOfSyntax(ISyntaxTree target) {
+        public AddressOfSyntax(TokenLocation loc, ISyntaxTree target) {
+            this.Location = loc;
             this.target = target;
         }
 
@@ -25,8 +31,33 @@ namespace helix.Features.Variables {
                 return this;
             }
 
-            var target = this.target.CheckTypes(types);
+            var target = this.target.CheckTypes(types).ToLValue(types);
+            var ptrType = ((PointerType)target.GetReturnType(types));
+            var result = new AddressOfSyntax(this.Location, target);
 
+            result.SetReturnType(ptrType, types);
+            return result;
+        }
+
+        public ISyntaxTree ToRValue(EvalFrame types) {
+            return this;
+        }
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            if (this.IsFlowAnalyzed(flow)) {
+                return;
+            }
+
+            this.target.AnalyzeFlow(flow);
+
+            var lifetime = this.target.GetLifetimes(flow).Components[new IdentifierPath()];
+            var dict = new Dictionary<IdentifierPath, Lifetime>() { { new IdentifierPath(), lifetime } };
+
+            this.SetLifetimes(new LifetimeBundle(dict), flow);
+        }
+
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+            return this.target.GenerateCode(types, writer);
         }
     }
-}*/
+}

@@ -195,7 +195,7 @@ namespace Helix.Features.Aggregates {
                 var memPath = new IdentifierPath(this.memberName).Append(relPath);
                 var varPath = targetLifetimes[memPath].Path;
 
-                bundleDict[relPath] = new Lifetime(varPath, 0, LifetimeKind.Passthrough);
+                bundleDict[relPath] = new Lifetime(varPath, 0);
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

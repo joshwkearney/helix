@@ -145,7 +145,7 @@ namespace Helix.Features.Variables {
 
             foreach (var (memPath, _) in sig.Type.GetMembers(flow)) {
                 // TODO: This will break when variable invalidating is implemented
-                bundleDict[memPath] = new Lifetime(this.VariablePath.Append(memPath), 0, LifetimeKind.Passthrough);
+                bundleDict[memPath] = new Lifetime(this.VariablePath.Append(memPath), 0);
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

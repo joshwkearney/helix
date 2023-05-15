@@ -25,7 +25,7 @@ namespace helix.FlowAnalysis {
                     bundleDict[relPath] = lifetime;
                 }
                 else {
-                    bundleDict[relPath] = new Lifetime(memPath, 0, LifetimeKind.Passthrough);
+                    bundleDict[relPath] = new Lifetime(memPath, 0);
                 }
             }
 
@@ -71,6 +71,18 @@ namespace helix.FlowAnalysis {
                     yield return subs;
                 }
             }
+        }
+
+        public static IEnumerable<Lifetime> ReduceRootSet(this FlowFrame flow, IEnumerable<Lifetime> roots) {
+            var result = new List<Lifetime>();
+
+            foreach (var root in roots) {
+                if (!roots.Where(x => x != root).Any(x => flow.LifetimeGraph.DoesOutlive(x, root))) {
+                    result.Add(root);
+                }
+            }
+
+            return result;
         }
     }
 }

@@ -197,12 +197,21 @@ namespace Helix.Features.Functions {
             // and confirm that each one outlives the heap
             var roots = this.body.GetLifetimes(flow).Lifetimes
                 .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
-                .Where(x => x.Kind == LifetimeKind.Root)
                 .ToArray();
+
+            roots = flow.ReduceRootSet(roots).ToArray();
 
             // Make sure all the roots outlive the heap
             if (!roots.All(x => flow.LifetimeGraph.DoesOutlive(x, Lifetime.Heap))) {
-                throw new Exception("Put better error message here");
+                throw new LifetimeException(
+                   this.Location,
+                   "Lifetime Inference Failed",
+                   "This value cannot be returned from the function because the region it is allocated " 
+                   + "on might not outlive the function's return region. The problematic regions are: " 
+                   + $"'{ string.Join(", ", roots) }'.\n\nTo fix this error, you can try implementing a '.copy()' method " 
+                   + $"on the type '{this.Signature.ReturnType}' so that it can be moved between regions, " 
+                   + "or you can try adding explicit region annotations to the function's signature " 
+                   + "to help the compiler prove that this return value is safe.");
             }
 
             // Add a dependency between every returned lifetime and the heap
@@ -259,7 +268,7 @@ namespace Helix.Features.Functions {
             foreach (var par in this.Signature.Parameters) {
                 foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
                     var path = this.Signature.Path.Append(par.Name).Append(relPath);
-                    var lifetime = new Lifetime(path, 0, LifetimeKind.Root);
+                    var lifetime = new Lifetime(path, 0);
 
                     bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
                         Target = new CVariableLiteral(writer.GetVariableName(path)),

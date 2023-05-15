@@ -147,7 +147,7 @@ namespace Helix.Features.FlowControl {
                     .ToValueList();
 
                 var path = this.tempPath.Append(relPath);
-                var resultLifetime = new Lifetime(path, 0, LifetimeKind.Passthrough);
+                var resultLifetime = new Lifetime(path, 0);
 
                 lifetimeBundle.Add(relPath, resultLifetime);
 

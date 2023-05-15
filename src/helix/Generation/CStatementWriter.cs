@@ -28,6 +28,26 @@ namespace Helix.Generation {
                 Value = syntax
             });
         }
+
+        public void RegisterLifetimes(IdentifierPath basePath, LifetimeBundle bundle, ICSyntax syntax) {
+            // This registers each new lifetime and member path that results from this dereference
+            foreach (var (relPath, lifetime) in bundle.Components) {
+                this.RegisterMemberPath(basePath, relPath);
+
+                foreach (var segment in relPath.Segments) {
+                    syntax = new CMemberAccess() {
+                        Target = syntax,
+                        MemberName = segment,
+                        IsPointerAccess = true
+                    };
+                }
+
+                this.RegisterLifetime(lifetime, new CMemberAccess() {
+                    Target = syntax,
+                    MemberName = "region"
+                });
+            }
+        }
     }
 
     public class CStatementWriter : ICStatementWriter {

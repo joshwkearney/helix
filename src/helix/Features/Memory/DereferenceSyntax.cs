@@ -60,10 +60,7 @@ namespace Helix.Features.Memory {
             foreach (var (relPath, type) in pointerType.InnerType.GetMembers(types)) {
                 // Add new roots to the current root set
                 if (!type.IsValueType(types)) {
-                    var lifetime = new Lifetime(
-                        this.tempPath.Append(relPath),
-                        0,
-                        LifetimeKind.Root);
+                    var lifetime = new Lifetime(this.tempPath.Append(relPath), 0);
 
                     types.LifetimeRoots[lifetime.Path] = lifetime;
                 }
@@ -109,10 +106,7 @@ namespace Helix.Features.Memory {
                     // other lifetime that outlives the pointer. It's important to represent
                     // this value like this because we can't store things into it that just
                     // outlive the pointer
-                    var lifetime = new Lifetime(
-                        this.tempPath.Append(relPath),
-                        0,
-                        LifetimeKind.Root);
+                    var lifetime = new Lifetime(this.tempPath.Append(relPath), 0);
 
                     bundleDict[relPath] = lifetime;
 
@@ -147,27 +141,7 @@ namespace Helix.Features.Memory {
             writer.WriteEmptyLine();
 
             var result = new CVariableLiteral(writer.GetVariableName(this.tempPath));
-
-            foreach (var (relPath, _) in pointerType.GetMembers(types)) {
-                var lifetime = new Lifetime(this.tempPath.Append(relPath), 0, LifetimeKind.Root);
-
-                writer.RegisterMemberPath(this.tempPath, relPath);
-
-                var dataAccess = (ICSyntax)result;
-
-                foreach (var segment in relPath.Segments) {
-                    dataAccess = new CMemberAccess() {
-                        Target = dataAccess,
-                        MemberName = segment,
-                        IsPointerAccess = true
-                    };
-                }
-
-                writer.RegisterLifetime(lifetime, new CMemberAccess() {
-                    Target = dataAccess,
-                    MemberName = "region"
-                });
-            }
+            writer.RegisterLifetimes(this.tempPath, this.GetLifetimes(types), result);
 
             return new CVariableLiteral(tempName);
         }        
@@ -218,10 +192,7 @@ namespace Helix.Features.Memory {
             foreach (var (compPath, _) in pointerType.InnerType.GetMembers(flow)) {
                 // We are returning lifetimes that represent the minimum region
                 // required to store something in this pointer
-                var lifetime = new Lifetime(
-                    pointerLifetime.Path.Append(compPath),
-                    0,
-                    LifetimeKind.Root);
+                var lifetime = new Lifetime(pointerLifetime.Path.Append(compPath), 0);
 
                 bundleDict[compPath] = lifetime;
 

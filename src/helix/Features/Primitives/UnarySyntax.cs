@@ -5,13 +5,15 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Lifetimes;
+using helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
         private ISyntaxTree UnaryExpression() {
             var hasOperator = this.Peek(TokenKind.Minus)
                 || this.Peek(TokenKind.Plus)
-                || this.Peek(TokenKind.Not);
+                || this.Peek(TokenKind.Not)
+                || this.Peek(TokenKind.Ampersand);
 
             if (hasOperator) {
                 var tokOp = this.Advance();
@@ -24,6 +26,9 @@ namespace Helix.Parsing {
                 }
                 else if (tokOp.Kind == TokenKind.Minus) {
                     op = UnaryOperatorKind.Minus;
+                }
+                else if (tokOp.Kind == TokenKind.Ampersand) {
+                    return new AddressOfSyntax(loc, first);
                 }
                 else {
                     throw new Exception("Unexpected unary operator");

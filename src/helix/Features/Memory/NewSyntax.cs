@@ -1,4 +1,5 @@
-﻿using Helix.Analysis;
+﻿using helix.FlowAnalysis;
+using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Memory;
@@ -52,12 +53,12 @@ namespace Helix.Features.Memory {
             var roots = types
                 .LifetimeGraph
                 .GetOutlivedLifetimes(this.lifetime)
-                .Where(x => x.Kind == LifetimeKind.Root)
+                .Where(x => x.Kind != LifetimeKind.Inferencee)
                 .ToValueList();
 
             // This removes redundant roots that are outlived by other roots
             // We only need to allocate on the longest-lived of our roots
-            roots = ReduceRootSet(roots, types).ToValueList();
+            roots = types.ReduceRootSet(roots).ToValueList();
 
             if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
                 throw new LifetimeException(
@@ -152,18 +153,6 @@ namespace Helix.Features.Memory {
             writer.WriteEmptyLine();
 
             return new CVariableLiteral(fatPointerName);
-        }
-
-        private static IEnumerable<Lifetime> ReduceRootSet(IEnumerable<Lifetime> roots, FlowFrame flow) {
-            var result = new List<Lifetime>();
-
-            foreach (var root in roots) {
-                if (!roots.Where(x => x != root).Any(x => flow.LifetimeGraph.DoesOutlive(x, root))) {
-                    result.Add(root);
-                }
-            }
-
-            return result;
         }
     }
 }
