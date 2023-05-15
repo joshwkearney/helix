@@ -10,6 +10,7 @@ using Helix.Analysis.Lifetimes;
 using Helix.Features.Variables;
 using Helix.Features.Memory;
 using System;
+using helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {

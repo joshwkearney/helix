@@ -1,4 +1,4 @@
-﻿using Helix.Parsing;
+﻿using helix.Syntax;
 
 namespace Helix.Analysis.Types {
     public record NamedType : HelixType {

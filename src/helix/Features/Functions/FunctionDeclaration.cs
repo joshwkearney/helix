@@ -12,6 +12,7 @@ using Helix.Features.Variables;
 using Helix.Analysis.Lifetimes;
 using System;
 using helix.FlowAnalysis;
+using helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {

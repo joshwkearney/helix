@@ -1,5 +1,5 @@
-﻿using Helix.Features.Arrays;
-using Helix.Parsing;
+﻿using helix.Syntax;
+using Helix.Features.Arrays;
 
 namespace Helix.Analysis.Types {
     public record ArrayType : HelixType {

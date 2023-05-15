@@ -1,4 +1,5 @@
 ﻿using helix.FlowAnalysis;
+using helix.Syntax;
 using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;

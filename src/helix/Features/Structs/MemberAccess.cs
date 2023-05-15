@@ -9,6 +9,7 @@ using Helix.Features.Variables;
 using System;
 using System.Reflection;
 using helix.FlowAnalysis;
+using helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {

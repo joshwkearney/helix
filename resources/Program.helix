@@ -1,6 +1,7 @@
-﻿func test() as Point* {
+﻿func test(let z as Point**) as Point* {
 	var x = new Point { 4, 8 };
-	//var y = &x;
+	
+	z* = &x;
 
 	&x;
 };

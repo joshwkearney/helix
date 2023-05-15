@@ -1,4 +1,5 @@
 ﻿using helix.FlowAnalysis;
+using helix.Syntax;
 using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
@@ -123,23 +124,18 @@ namespace Helix.Features.Variables {
             foreach (var (relPath, type) in sig.Type.GetMembers(flow)) {
                 var memPath = this.VariablePath.Append(relPath);
 
-                if (!flow.VariableValueLifetimes.ContainsKey(memPath)) {
-                    // Here, we don't know what is in this variable. We need to return
-                    // a new lifetime that outlives the variable's lifetime to represent
-                    // this unknown value
-                    var varLifetime = flow.VariableLifetimes[memPath];
-                    var newPath = memPath.Pop().Append("$unknown_" + relPath.Segments.Last() + "_" + tempCounter++);
-                    var newLifetime = new Lifetime(newPath, 0);
-
-                    flow.LifetimeGraph.RequireOutlives(newLifetime, varLifetime);
-                    flow.VariableValueLifetimes[memPath] = newLifetime;
-                }
-
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
                 }
-                else {                    
-                    bundleDict[relPath] = flow.VariableValueLifetimes[memPath];
+
+                if (flow.VariableValueLifetimes.TryGetValue(memPath, out var bundle)) {
+                    // We know what's in this variable, so return it as a more specific answer
+                    bundleDict[relPath] = bundle;
+                }
+                else {
+                    // Not sure what's in the variable, so just return the variable's lifetime to
+                    // be safe
+                    bundleDict[relPath] = flow.VariableLifetimes[memPath];
                 }
             }
 

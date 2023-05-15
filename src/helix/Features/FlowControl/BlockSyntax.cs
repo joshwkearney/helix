@@ -8,6 +8,7 @@ using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
 using System;
 using helix.FlowAnalysis;
+using helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {

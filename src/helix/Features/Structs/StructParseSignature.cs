@@ -1,4 +1,5 @@
-﻿using Helix.Analysis;
+﻿using helix.Syntax;
+using Helix.Analysis;
 using Helix.Parsing;
 
 namespace Helix.Features.Aggregates {

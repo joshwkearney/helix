@@ -1,8 +1,8 @@
 ﻿using System;
+using helix.Syntax;
 using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
-using Helix.Parsing;
 
 namespace helix.FlowAnalysis {
     public static class FlowExtensions {

@@ -7,6 +7,7 @@ using Helix.Features.Primitives;
 using Helix.Analysis.Lifetimes;
 using System;
 using helix.FlowAnalysis;
+using helix.Syntax;
 
 namespace Helix.Features.Aggregates {
     public class NewStructSyntax : ISyntaxTree {

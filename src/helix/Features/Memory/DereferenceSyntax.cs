@@ -1,5 +1,6 @@
 ﻿using System;
 using helix.FlowAnalysis;
+using helix.Syntax;
 using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
@@ -189,12 +190,12 @@ namespace Helix.Features.Memory {
             var pointerLifetime = this.target.GetLifetimes(flow).Components[new IdentifierPath()];
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
-            foreach (var (compPath, _) in pointerType.InnerType.GetMembers(flow)) {
+            foreach (var (relPath, _) in pointerType.InnerType.GetMembers(flow)) {
                 // We are returning lifetimes that represent the minimum region
                 // required to store something in this pointer
-                var lifetime = new Lifetime(pointerLifetime.Path.Append(compPath), 0);
+                var lifetime = new Lifetime(pointerLifetime.Path.Append(relPath), 0);
 
-                bundleDict[compPath] = lifetime;
+                bundleDict[relPath] = lifetime;
 
                 // The lifetime that is stored in the pointer must outlive the pointer itself
                 flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);

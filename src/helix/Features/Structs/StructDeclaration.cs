@@ -6,6 +6,7 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Types;
 using System.IO;
+using helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {

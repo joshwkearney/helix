@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using helix.Syntax;
 using Helix.Analysis;
 using Helix.Generation;
 using Helix.Generation.Syntax;

@@ -1,4 +1,5 @@
-﻿using Helix.Generation;
+﻿using helix.Syntax;
+using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 

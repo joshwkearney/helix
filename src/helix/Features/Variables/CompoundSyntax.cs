@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using helix.FlowAnalysis;
+using helix.Syntax;
 using Helix.Analysis;
 using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
@@ -30,7 +31,7 @@ namespace Helix.Features.Variables {
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
             var result = new CompoundSyntax(
-                this.Location, 
+                this.Location,
                 this.args.Select(x => x.CheckTypes(types)).ToArray());
 
             this.SetReturnType(PrimitiveType.Void, types);

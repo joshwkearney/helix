@@ -11,6 +11,8 @@ using Helix.Features.FlowControl;
 using Helix.Features.Memory;
 using System.IO;
 using helix.FlowAnalysis;
+using helix.Syntax;
+using helix.Syntax.Decorators;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -43,9 +45,8 @@ namespace Helix.Parsing {
 
             var assign = this.TopExpression();
             var loc = startLok.Span(assign.Location);
-            var result = new VarParseStatement(loc, names, assign, isWritable);
 
-            return result;
+            return VarParseStatement.Create(loc, names, assign, isWritable);
         }
     }
 }
@@ -62,15 +63,17 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
+        private VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
             this.Location = loc;
             this.names = names;
             this.assign = assign;
             this.isWritable = isWritable;
         }
 
-        public VarParseStatement(TokenLocation loc, string name, ISyntaxTree assign, bool isWritable)
-            : this(loc, new[] { name }, assign, isWritable) { }
+        public static ISyntaxTree Create(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
+            return new VarParseStatement(loc, names, assign, isWritable)
+                .Decorate(new ShadowingPreventer(names));
+        }
 
         public ISyntaxTree CheckTypes(EvalFrame types) {
             // Type check the assignment value
@@ -86,14 +89,9 @@ namespace Helix {
                 return this.Destructure(assignType, types);
             }
 
-            // Make sure we're not shadowing another variable
-            var basePath = this.Location.Scope.Append(this.names[0]);
-            if (types.Variables.ContainsKey(basePath)) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.names[0]);
-            }
-
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
+            var basePath = this.Location.Scope.Append(this.names[0]);
             foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, types)) {
                 var path = basePath.Append(compPath);
                 var sig = new VariableSignature(path, compType, this.isWritable);
@@ -105,21 +103,18 @@ namespace Helix {
             // Put this variable's value in the main table
             types.SyntaxValues[basePath] = assign;
 
-            // Set the return type of the new syntax tree
-            var producer = new VariableProducer(basePath, assignType, LifetimeKind.Inferencee);
-            producer.DeclareNewRoots(types);
-
-            var result = new VarStatement(
+            ISyntaxTree result = new VarStatement(
                 this.Location, 
                 basePath, 
                 assignType, 
                 assign, 
-                types.LifetimeRoots.Values.ToHashSet(),
-                producer);
+                types.LifetimeRoots.Values.ToHashSet());
 
-            types.ReturnTypes[result] = PrimitiveType.Void;
+            result.SetReturnType(PrimitiveType.Void, types);
 
-            return result.CheckTypes(types);
+            return result
+                .Decorate(new AssignedLifetimeProducer(basePath, assignType, LifetimeKind.Inferencee, assign))
+                .CheckTypes(types);
         }
 
         private ISyntaxTree Destructure(HelixType assignType, EvalFrame types) {
@@ -146,7 +141,7 @@ namespace Helix {
             }
 
             var tempName = types.GetVariableName();
-            var tempStat = new VarParseStatement(
+            var tempStat = VarParseStatement.Create(
                 this.Location,
                 new[] { tempName },
                 this.assign,
@@ -157,7 +152,8 @@ namespace Helix {
             for (int i = 0; i < sig.Members.Count; i++) {
                 var literal = new VariableAccessParseSyntax(this.Location, tempName);
                 var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name, this.isWritable);
-                var assign = new VarParseStatement(
+
+                var assign = VarParseStatement.Create(
                     this.Location,
                     new[] { this.names[i] },
                     access,
@@ -175,7 +171,6 @@ namespace Helix {
         private readonly IdentifierPath path;
         private readonly HelixType varType;
         private readonly IReadOnlySet<Lifetime> allowedRoots;
-        private readonly VariableProducer producer;
 
         public TokenLocation Location { get; }
 
@@ -184,14 +179,12 @@ namespace Helix {
         public bool IsPure => false;
 
         public VarStatement(TokenLocation loc, IdentifierPath path, HelixType varType, 
-                            ISyntaxTree assign, IReadOnlySet<Lifetime> allowedRoots,
-                            VariableProducer producer) {
+                            ISyntaxTree assign, IReadOnlySet<Lifetime> allowedRoots) {
             this.Location = loc;
             this.path = path;
             this.assign = assign;
             this.varType = varType;
             this.allowedRoots = allowedRoots;
-            this.producer = producer;
         }
 
         public ISyntaxTree CheckTypes(EvalFrame types) => this;
@@ -200,12 +193,6 @@ namespace Helix {
 
         public void AnalyzeFlow(FlowFrame flow) {
             this.assign.AnalyzeFlow(flow);
-
-            // Calculate a signature and lifetime for this variable
-            var assignBundle = this.assign.GetLifetimes(flow);
-
-            this.producer.DeclareLifetimes(flow);
-            this.producer.DeclareLifetimeContents(assignBundle, flow);
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }
@@ -232,12 +219,12 @@ namespace Helix {
                     "closer to the site of its use.");
             }
 
-            this.producer.DeclareLifetimePaths(flow, writer);
-
             var isStack = roots.Count == 0 || (roots.Count == 1 && roots[0] == Lifetime.Stack);
             var name = writer.GetVariableName(this.path);
             var assign = this.assign.GenerateCode(flow, writer);
             var cReturnType = writer.ConvertType(varType);
+
+            var allocLifetime = writer.CalculateSmallestLifetime(this.Location, roots);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
@@ -256,8 +243,7 @@ namespace Helix {
                 writer.RegisterVariableKind(this.path, CVariableKind.Local);
             }
             else {
-                var allocLifetime = writer.CalculateSmallestLifetime(roots);
-                this.producer.RegisterLifetimes(flow, writer, allocLifetime);
+                //this.producer.RegisterLifetimes(flow, writer, allocLifetime);
 
                 writer.WriteStatement(new CVariableDeclaration() {
                     Name = name,

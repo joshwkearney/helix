@@ -1,7 +1,7 @@
-﻿using Helix.Analysis.Lifetimes;
+﻿using helix.Syntax;
+using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Aggregates;
-using Helix.Parsing;
 
 namespace Helix.Analysis {
     public static partial class AnalysisExtensions {

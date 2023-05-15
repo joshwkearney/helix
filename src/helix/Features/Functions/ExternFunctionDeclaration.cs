@@ -5,6 +5,7 @@ using Helix.Generation.CSyntax;
 using Helix.Features.Functions;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
+using helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {

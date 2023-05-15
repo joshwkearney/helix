@@ -4,9 +4,9 @@ using Helix.Generation;
 using Helix.Features.FlowControl;
 using Helix.Features.Primitives;
 using Helix.Features.Variables;
-using Helix.Parsing;
 using Helix.Generation.Syntax;
 using System.Linq.Expressions;
+using helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -36,7 +36,7 @@ namespace Helix.Parsing {
                 new VariableAccessParseSyntax(endIndex.Location, "int"));
 
             var counterName = id.Value;
-            var counterDecl = new VarParseStatement(startTok.Location, new[] { counterName }, startIndex, true);
+            var counterDecl = VarParseStatement.Create(startTok.Location, new[] { counterName }, startIndex, true);
             var counterAccess = new VariableAccessParseSyntax(startTok.Location, counterName);
 
             var counterInc = new AssignmentStatement(
@@ -80,5 +80,5 @@ namespace Helix.Parsing {
 
             return new BlockSyntax(loc, totalBlock);
         }
-    }        
+    }
 }

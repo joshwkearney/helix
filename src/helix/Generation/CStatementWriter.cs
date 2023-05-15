@@ -3,6 +3,7 @@ using Helix.Analysis.Lifetimes;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
+using Helix.Parsing;
 
 namespace Helix.Generation {
     public enum CVariableKind {
@@ -24,7 +25,7 @@ namespace Helix.Generation {
 
         public CVariableKind GetVariableKind(IdentifierPath path);
 
-        public ICSyntax CalculateSmallestLifetime(ValueList<Lifetime> lifetimes);
+        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes);
 
         // Mixins
         public ICStatementWriter WriteComment(string comment) {
@@ -113,13 +114,17 @@ namespace Helix.Generation {
             return this.lifetimes[lifetime];
         }
 
-        public ICSyntax CalculateSmallestLifetime(ValueList<Lifetime> lifetimes) {
-            if (this.lifetimeCombinations.TryGetValue(lifetimes, out var value)) {
-                return value;
-            }
+        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes) {
+            var lifetimeList = lifetimes.Where(x => x != Lifetime.Stack).ToValueList();
 
-            if (lifetimes.Count == 1) {
-                return this.GetLifetime(lifetimes[0]);
+            if (lifetimeList.Count == 0) {
+                return new CVariableLiteral("get_smallest_lifetime()");
+            }
+            else if (lifetimeList.Count == 1) {
+                return this.GetLifetime(lifetimeList[0]);
+            }
+            else if (this.lifetimeCombinations.TryGetValue(lifetimeList, out var value)) {
+                return value;
             }
 
             var values = lifetimes
@@ -134,6 +139,7 @@ namespace Helix.Generation {
             };
 
             this.WriteEmptyLine();
+            this.WriteStatement(new CComment($"Line {loc.Line}: Region calculation"));
             this.WriteStatement(decl);
 
             foreach (var item in values.Skip(1)) {
@@ -153,7 +159,7 @@ namespace Helix.Generation {
 
             this.WriteEmptyLine();
 
-            this.lifetimeCombinations[lifetimes] = new CVariableLiteral(tempName);
+            this.lifetimeCombinations[lifetimeList] = new CVariableLiteral(tempName);
             return new CVariableLiteral(tempName);
         }
 

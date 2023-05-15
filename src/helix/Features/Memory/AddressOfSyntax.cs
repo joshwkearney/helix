@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using helix.Syntax;
 
 namespace helix.Features.Memory {
     public class AddressOfSyntax : ISyntaxTree {

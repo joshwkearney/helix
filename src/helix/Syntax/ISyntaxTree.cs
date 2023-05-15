@@ -1,11 +1,14 @@
-﻿using Helix.Analysis;
+﻿using Helix;
+using Helix.Analysis;
 using Helix.Analysis.Types;
 using Helix.Features.FlowControl;
 using Helix.Features.Primitives;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.Parsing;
+using System;
 
-namespace Helix.Parsing {
+namespace helix.Syntax {
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 
@@ -27,7 +30,7 @@ namespace Helix.Parsing {
         }
 
         public ISyntaxTree ToRValue(EvalFrame types) {
-            throw TypeCheckingErrors.RValueRequired(this.Location);
+            throw TypeCheckingErrors.RValueRequired(Location);
         }
 
         /// <summary>
@@ -39,11 +42,13 @@ namespace Helix.Parsing {
         /// has been allocated, which any assigned values must outlive
         /// </summary>
         public ISyntaxTree ToLValue(EvalFrame types) {
-            throw TypeCheckingErrors.LValueRequired(this.Location);
+            throw TypeCheckingErrors.LValueRequired(Location);
         }
+    }
 
-        public IEnumerable<ISyntaxTree> GetAllChildren() {
-            var stack = new Queue<ISyntaxTree>(this.Children);
+    public static class SyntaxExtensions {
+        public static IEnumerable<ISyntaxTree> GetAllChildren(this ISyntaxTree syntax) {
+            var stack = new Queue<ISyntaxTree>(syntax.Children);
 
             while (stack.Count > 0) {
                 var item = stack.Dequeue();
@@ -54,6 +59,21 @@ namespace Helix.Parsing {
 
                 yield return item;
             }
+        }
+
+        public static DecoratedSyntaxTree Decorate(this ISyntaxTree syntax, IEnumerable<ISyntaxDecorator> decos) {
+            if (syntax is DecoratedSyntaxTree decoSyntax) {
+                return new DecoratedSyntaxTree(
+                    decoSyntax.WrappedSyntax, 
+                    decoSyntax.Decorators.Concat(decos));
+            }
+            else {
+                return new DecoratedSyntaxTree(syntax, decos);
+            }
+        }
+
+        public static DecoratedSyntaxTree Decorate(this ISyntaxTree syntax, ISyntaxDecorator deco) {
+            return syntax.Decorate(new[] { deco });
         }
     }
 
