@@ -72,6 +72,8 @@ namespace Helix.Features.Variables {
     }
 
     public record VariableAccessSyntax : ISyntaxTree {
+        private static int tempCounter = 0;
+
         public IdentifierPath VariablePath { get; }
 
         public TokenLocation Location { get; }
@@ -115,7 +117,33 @@ namespace Helix.Features.Variables {
         public ISyntaxTree ToRValue(EvalFrame types) => this;
 
         public virtual void AnalyzeFlow(FlowFrame flow) {
-            flow.Lifetimes[this] = flow.GetVariableBundle(this.VariablePath);
+            var sig = flow.Variables[this.VariablePath];
+            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
+
+            foreach (var (relPath, type) in sig.Type.GetMembers(flow)) {
+                var memPath = this.VariablePath.Append(relPath);
+
+                if (!flow.VariableValueLifetimes.ContainsKey(memPath)) {
+                    // Here, we don't know what is in this variable. We need to return
+                    // a new lifetime that outlives the variable's lifetime to represent
+                    // this unknown value
+                    var varLifetime = flow.VariableLifetimes[memPath];
+                    var newPath = memPath.Pop().Append("$unknown_" + relPath.Segments.Last() + "_" + tempCounter++);
+                    var newLifetime = new Lifetime(newPath, 0);
+
+                    flow.LifetimeGraph.RequireOutlives(newLifetime, varLifetime);
+                    flow.VariableValueLifetimes[memPath] = newLifetime;
+                }
+
+                if (type.IsValueType(flow)) {
+                    bundleDict[relPath] = Lifetime.None;
+                }
+                else {                    
+                    bundleDict[relPath] = flow.VariableValueLifetimes[memPath];
+                }
+            }
+
+            flow.Lifetimes[this] = new LifetimeBundle(bundleDict);
         }
 
         public virtual ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
@@ -153,7 +181,7 @@ namespace Helix.Features.Variables {
 
             foreach (var (memPath, _) in sig.Type.GetMembers(flow)) {
                 // TODO: This will break when variable invalidating is implemented
-                bundleDict[memPath] = new Lifetime(this.VariablePath.Append(memPath), 0, LifetimeKind.Inferencee);
+                bundleDict[memPath] = flow.VariableLifetimes[this.VariablePath.Append(memPath)];
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

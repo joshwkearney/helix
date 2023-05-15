@@ -269,7 +269,7 @@ namespace Helix.Features.Functions {
             foreach (var par in this.Signature.Parameters) {
                 foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
                     var path = this.Signature.Path.Append(par.Name).Append(relPath);
-                    var lifetime = new Lifetime(path, 0);
+                    var lifetime = types.VariableLifetimes[path];
 
                     bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
                         Target = new CVariableLiteral(writer.GetVariableName(path)),

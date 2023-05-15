@@ -71,8 +71,8 @@ namespace Helix.Features.Functions {
                     var path = sig.Path.Append(parsePar.Name).Append(relPath);
                     var lifetime = new Lifetime(path, 0);
 
-                    flow.VariableValueLifetimes[path] = lifetime;
                     flow.LifetimeGraph.RequireOutlives(Lifetime.Stack, lifetime);
+                    flow.VariableLifetimes[path] = lifetime;
                 }
             }
         }

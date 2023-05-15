@@ -11,18 +11,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace helix.Features.Variables {
+namespace helix.Features.Memory {
     public class AddressOfSyntax : ISyntaxTree {
         private readonly ISyntaxTree target;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
+        public IEnumerable<ISyntaxTree> Children => new[] { target };
 
-        public bool IsPure => this.target.IsPure;
+        public bool IsPure => target.IsPure;
 
         public AddressOfSyntax(TokenLocation loc, ISyntaxTree target) {
-            this.Location = loc;
+            Location = loc;
             this.target = target;
         }
 
@@ -32,8 +32,8 @@ namespace helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var ptrType = ((PointerType)target.GetReturnType(types));
-            var result = new AddressOfSyntax(this.Location, target);
+            var ptrType = (PointerType)target.GetReturnType(types);
+            var result = new AddressOfSyntax(Location, target);
 
             result.SetReturnType(ptrType, types);
             return result;
@@ -48,16 +48,22 @@ namespace helix.Features.Variables {
                 return;
             }
 
-            this.target.AnalyzeFlow(flow);
+            target.AnalyzeFlow(flow);
 
-            var lifetime = this.target.GetLifetimes(flow).Components[new IdentifierPath()];
+            var lifetime = target.GetLifetimes(flow).Components[new IdentifierPath()];
             var dict = new Dictionary<IdentifierPath, Lifetime>() { { new IdentifierPath(), lifetime } };
 
             this.SetLifetimes(new LifetimeBundle(dict), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
-            return this.target.GenerateCode(types, writer);
+            return new CCompoundExpression() {
+                Arguments = new ICSyntax[] {
+                    target.GenerateCode(types, writer),
+                    writer.GetLifetime(this.GetLifetimes(types).Components[new IdentifierPath()])
+                },
+                Type = writer.ConvertType(this.GetReturnType(types))
+            };
         }
     }
 }

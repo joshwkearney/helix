@@ -1,10 +1,10 @@
-﻿func test() as Point* {
+﻿func test() as void {
 	var x = new Point { 4, 8 };
+	var y = &x;
 
-	&x;
 };
 
 struct Point {
-	let x as int;
-	let y as int;
+	var x as int;
+	var y as int;
 };

@@ -146,7 +146,7 @@ namespace Helix {
 
             for (int i = 0; i < sig.Members.Count; i++) {
                 var literal = new VariableAccessParseSyntax(this.Location, tempName);
-                var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name);
+                var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name, this.isWritable);
                 var assign = new VarParseStatement(
                     this.Location,
                     new[] { this.names[i] },
@@ -211,6 +211,7 @@ namespace Helix {
                 flow.LifetimeGraph.RequireOutlives(baseLifetime, varLifetime);
 
                 // Add this variable members's lifetime
+                flow.VariableLifetimes[path] = varLifetime;
                 flow.VariableValueLifetimes[path] = assignBundle.Components[relPath];
             }
 
@@ -220,7 +221,7 @@ namespace Helix {
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var roots = types
                 .LifetimeGraph
-                .GetOutlivedLifetimes(new Lifetime(this.path, 0, LifetimeKind.Inferencee))
+                .GetOutlivedLifetimes(types.VariableLifetimes[this.path])
                 .Where(x => x.Kind != LifetimeKind.Inferencee)
                 .ToValueList();
 
@@ -246,6 +247,8 @@ namespace Helix {
             var name = writer.GetVariableName(this.path);
             var assign = this.assign.GenerateCode(types, writer);
             var cReturnType = writer.ConvertType(returnType);
+
+            writer.RegisterLifetimes(this.path, this.GetLifetimes(types), new CVariableLiteral(name));
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");

@@ -18,8 +18,6 @@ namespace Helix.Analysis.Lifetimes {
 
         public static Lifetime None { get; } = new Lifetime(new IdentifierPath("$none"), 0);
 
-        public Lifetime() : this(new IdentifierPath(), 0) { }
-
         public override string ToString() {
             if (this == Heap) {
                 return "return_region";
@@ -31,7 +29,7 @@ namespace Helix.Analysis.Lifetimes {
                 return "none";
             }
             else {
-                return this.Path.Segments.Last();
+                return this.Path.ToString();
             }
         }
     }

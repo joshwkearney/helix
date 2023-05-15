@@ -34,6 +34,8 @@ namespace Helix.Analysis {
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         // Frame-specific things
+        public IDictionary<IdentifierPath, Lifetime> VariableLifetimes { get; }
+
         public IDictionary<IdentifierPath, Lifetime> VariableValueLifetimes { get; }
 
         public FlowFrame(EvalFrame frame) {
@@ -44,6 +46,8 @@ namespace Helix.Analysis {
 
             this.LifetimeGraph = new();
             this.Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
+
+            this.VariableLifetimes = new Dictionary<IdentifierPath, Lifetime>();
             this.VariableValueLifetimes = new Dictionary<IdentifierPath, Lifetime>();
         }
 
@@ -55,6 +59,8 @@ namespace Helix.Analysis {
 
             this.LifetimeGraph = prev.LifetimeGraph;
             this.Lifetimes = prev.Lifetimes;
+
+            this.VariableLifetimes = new StackedDictionary<IdentifierPath, Lifetime>(prev.VariableLifetimes);
             this.VariableValueLifetimes = new StackedDictionary<IdentifierPath, Lifetime>(prev.VariableValueLifetimes);
         }
     }

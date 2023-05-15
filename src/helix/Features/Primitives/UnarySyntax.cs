@@ -5,7 +5,7 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Lifetimes;
-using helix.Features.Variables;
+using helix.Features.Memory;
 
 namespace Helix.Parsing {
     public partial class Parser {

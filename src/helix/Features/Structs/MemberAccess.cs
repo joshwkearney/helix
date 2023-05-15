@@ -25,11 +25,11 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.Aggregates {
     public record MemberAccessSyntax : ISyntaxTree {
+        private readonly bool isWritable;
+
         public ISyntaxTree Target { get; }
 
         public string MemberName { get; }
-
-        public bool IsPointerAccess { get; }
 
         public TokenLocation Location { get; }
 
@@ -38,12 +38,12 @@ namespace Helix.Features.Aggregates {
         public bool IsPure => this.Target.IsPure;
 
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
-                                  string memberName, bool isPointerAccess = false) {
+                                  string memberName, bool isWritable = false) {
 
             this.Location = location;
             this.Target = target;
             this.MemberName = memberName;
-            this.IsPointerAccess = isPointerAccess;
+            this.isWritable = isWritable;
         }
 
         public virtual ISyntaxTree CheckTypes(EvalFrame types) {
@@ -83,7 +83,7 @@ namespace Helix.Features.Aggregates {
                             this.Location,
                             target,
                             this.MemberName,
-                            IsPointerAccess);                       
+                            field.IsWritable);                       
 
                         types.ReturnTypes[result] = field.Type;
 
@@ -106,6 +106,10 @@ namespace Helix.Features.Aggregates {
         public ISyntaxTree ToLValue(EvalFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
+            }
+
+            if (!this.isWritable) {
+                throw TypeCheckingErrors.LValueRequired(this.Location);
             }
 
             var target = this.Target.ToLValue(types);
@@ -148,7 +152,7 @@ namespace Helix.Features.Aggregates {
             return new CMemberAccess() {
                 Target = this.Target.GenerateCode(types, writer),
                 MemberName = this.MemberName,
-                IsPointerAccess = this.IsPointerAccess
+                IsPointerAccess = false
             };
         }
     }
@@ -193,9 +197,8 @@ namespace Helix.Features.Aggregates {
 
             foreach (var (relPath, _) in this.memberType.GetMembers(flow)) {
                 var memPath = new IdentifierPath(this.memberName).Append(relPath);
-                var varPath = targetLifetimes[memPath].Path;
 
-                bundleDict[relPath] = new Lifetime(varPath, 0);
+                bundleDict[relPath] = targetLifetimes[memPath];
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
