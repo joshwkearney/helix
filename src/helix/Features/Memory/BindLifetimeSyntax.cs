@@ -39,7 +39,7 @@
 
 //            writer.RegisterLifetime(this.lifetime, new CMemberAccess() {
 //                Target = new CVariableLiteral(writer.GetVariableName(this.path)),
-//                MemberName = "pool"
+//                MemberName = "region"
 //            });
 
 //            writer.WriteEmptyLine();

@@ -111,7 +111,7 @@ namespace Helix.Features.Memory {
                 writer.WriteStatement(new CVariableDeclaration() {
                     Name = tempName,
                     Type = new CPointerType(innerType),
-                    Assignment = new CVariableLiteral($"({innerType.WriteToC()}*)_pool_malloc(_pool, {allocLifetime.WriteToC()}, sizeof({innerType.WriteToC()}))")
+                    Assignment = new CVariableLiteral($"({innerType.WriteToC()}*)_region_malloc({allocLifetime.WriteToC()}, sizeof({innerType.WriteToC()}))")
                 });
 
                 var assignmentDecl = new CAssignment() {
@@ -142,7 +142,7 @@ namespace Helix.Features.Memory {
             writer.WriteStatement(fatPointerDecl);
             writer.RegisterLifetime(this.lifetime, new CMemberAccess() { 
                 Target = new CVariableLiteral(fatPointerName),
-                MemberName = "pool"
+                MemberName = "region"
             });
 
             writer.WriteEmptyLine();

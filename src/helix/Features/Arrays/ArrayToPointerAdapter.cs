@@ -89,7 +89,7 @@ namespace Helix.Features.Arrays {
                     newData,
                     new CMemberAccess() {
                         Target = target,
-                        MemberName = "pool"
+                        MemberName = "region"
                     }
                 },
                 Type = ptrType

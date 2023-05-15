@@ -149,7 +149,7 @@ namespace Helix.Features.Memory {
 
                 writer.RegisterLifetime(lifetime, new CMemberAccess() {
                     Target = hack,
-                    MemberName = "pool"
+                    MemberName = "region"
                 });
 
                 writer.WriteEmptyLine();

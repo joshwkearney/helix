@@ -190,7 +190,7 @@ namespace Helix.Generation {
                         Type = new CPointerType(inner)
                     },
                     new CParameter() {
-                        Name = "pool",
+                        Name = "region",
                         Type = this.ConvertType(PrimitiveType.Int)
                     },
                     new CParameter() {
@@ -239,7 +239,7 @@ namespace Helix.Generation {
                         Type = new CPointerType(inner)
                     },
                     new CParameter() {
-                        Name = "pool",
+                        Name = "region",
                         Type = this.ConvertType(PrimitiveType.Int)
                     }
                 }

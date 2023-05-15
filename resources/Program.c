@@ -6,19 +6,16 @@ typedef unsigned int _helix_bool;
 typedef unsigned int _helix_void;
 typedef unsigned int _helix_int;
 
-typedef struct Pool Pool;
+extern int _region_create();
+extern void* _region_malloc(int region, int size);
+extern void _region_delete(int region);
 
-extern Pool* _pool_create();
-extern void* _pool_malloc(Pool* pool, int pool_index, int size);
-extern int _pool_get_index(Pool* pool);
-extern void _pool_delete();
 typedef struct Point Point;
 typedef struct Point$ptr Point$ptr;
 typedef struct Point$ptr$array Point$ptr$array;
-typedef struct int$ptr int$ptr;
 typedef struct Point$ptr$ptr Point$ptr$ptr;
 
-Point$ptr main(Pool* _pool, Point$ptr$array array, int$ptr ptr);
+Point$ptr test(int _return_region, Point$ptr$array array);
 
 struct Point {
     int x;
@@ -27,47 +24,41 @@ struct Point {
 
 struct Point$ptr {
     Point* data;
-    int pool;
+    int region;
 };
 
 struct Point$ptr$array {
     Point$ptr* data;
-    int pool;
+    int region;
     int count;
-};
-
-struct int$ptr {
-    int* data;
-    int pool;
 };
 
 struct Point$ptr$ptr {
     Point$ptr* data;
-    int pool;
+    int region;
 };
 
-Point$ptr main(Pool* _pool, Point$ptr$array array, int$ptr ptr) {
-    int $A = _pool_get_index(_pool);
-    int $B = (array.pool);
-    int $C = (ptr.pool);
+Point$ptr test(int _return_region, Point$ptr$array array) {
+    int $A = _return_region;
+    int $B = (array.region);
 
-    int $G = $A;
-    $G = (($G <= $B) ? $G : $B);
+    int $F = $A;
+    $F = (($F <= $B) ? $F : $B);
 
     /* Line 2: New 'Point*' */
-    Point* $F = (Point*)_pool_malloc(_pool, $G, sizeof(Point));
-    (*$F) = (Point){ 0U, 0U };
-    Point$ptr $H = (Point$ptr){ $F, $G };
-    int $I = ($H.pool);
+    Point* $E = (Point*)_region_malloc($F, sizeof(Point));
+    (*$E) = (Point){ 6U, 8U };
+    Point$ptr $G = (Point$ptr){ $E, $F };
+    int $H = ($G.region);
 
     /* Line 2: New variable declaration 'test' */
-    Point$ptr test = $H;
+    Point$ptr test = $G;
 
-    /* Line 4: Array to pointer conversion */
-    Point$ptr$ptr $J = (Point$ptr$ptr){ ((array.data) + 10U), (array.pool) };
+    /* Line 3: Array to pointer conversion */
+    Point$ptr$ptr $I = (Point$ptr$ptr){ ((array.data) + 10U), (array.region) };
 
-    /* Line 4: Assignment statement */
-    (*($J.data)) = test;
+    /* Line 3: Assignment statement */
+    (*($I.data)) = test;
 
     return test;
 }

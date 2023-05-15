@@ -234,8 +234,8 @@ namespace Helix.Features.Functions {
                     Name = writer.GetVariableName(this.Signature.Path.Append(x.Name))
                 })
                 .Prepend(new CParameter() {
-                    Name = "_pool",
-                    Type = new CNamedType("Pool*")
+                    Name = "_return_region",
+                    Type = new CNamedType("int")
                 })
                 .ToArray();
 
@@ -246,7 +246,7 @@ namespace Helix.Features.Functions {
             // Register the heap lifetime for the body to use
             bodyWriter.RegisterLifetime(
                 Lifetime.Heap, 
-                new CVariableLiteral("_pool_get_index(_pool)"));
+                new CVariableLiteral("_return_region"));
 
             // Register the parameter member paths
             foreach (var par in this.Signature.Parameters) {
@@ -263,7 +263,7 @@ namespace Helix.Features.Functions {
 
                     bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
                         Target = new CVariableLiteral(writer.GetVariableName(path)),
-                        MemberName = "pool"
+                        MemberName = "region"
                     });
                 }
             }

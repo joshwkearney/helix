@@ -91,8 +91,8 @@ namespace Helix.Features.Functions {
                     Name = writer.GetVariableName(this.Signature.Path.Append(x.Name))
                 })
                 .Prepend(new CParameter() {
-                    Name = "_pool",
-                    Type = new CNamedType("Pool*")
+                    Name = "_region",
+                    Type = new CNamedType("int")
                 })
                 .ToArray();
 

@@ -16,7 +16,7 @@ Fix syntax highlighting
 Add "until" to for loops and make "to" inclusive
 
 ### The Lifetimes Update
-	Reimplement lvalues
+	DONE - Reimplement lvalues
 	Add back address of operator
 	Invalidate variables if aliasing could occur
 	Infer region allocation for let/var
