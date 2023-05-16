@@ -197,8 +197,9 @@ namespace Helix {
             var roots = flow
                 .LifetimeGraph
                 .GetOutlivedLifetimes(flow.VariableLifetimes[this.path])
-                .Where(x => x.Kind != LifetimeKind.Inferencee)
-                .Where(x => x != Lifetime.Stack)
+                .Where(x => !x.Path.StartsWith(this.path))
+                //.Where(x => x.Kind != LifetimeKind.Inferencee)
+                //.Where(x => x != Lifetime.Stack)
                 .ToValueList();
 
             // This removes redundant roots that are outlived by other roots

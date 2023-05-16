@@ -42,11 +42,6 @@ namespace Helix.Syntax {
                 return this;
             }
 
-            if (this.WrappedSyntax.IsTypeChecked(types)) {
-                this.SetReturnType(this.WrappedSyntax.GetReturnType(types), types);
-                return this;
-            }
-
             foreach (var deco in Decorators) {
                 deco.PreCheckTypes(this, types);
             }

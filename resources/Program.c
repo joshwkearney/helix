@@ -10,34 +10,30 @@ extern int _region_create();
 extern void* _region_malloc(int region, int size);
 extern void _region_delete(int region);
 
-typedef struct Point Point;
-typedef struct Point$ptr Point$ptr;
-typedef struct Point$ptr$ptr Point$ptr$ptr;
+typedef struct int$ptr int$ptr;
+typedef struct int$ptr$ptr int$ptr$ptr;
 
-void test(int _return_region, Point$ptr$ptr z);
+void test(int _return_region, int$ptr$ptr a, int$ptr$ptr b);
 
-struct Point {
-    int x;
-    int y;
-};
-
-struct Point$ptr {
-    Point* data;
+struct int$ptr {
+    int* data;
     int region;
 };
 
-struct Point$ptr$ptr {
-    Point$ptr* data;
+struct int$ptr$ptr {
+    int$ptr* data;
     int region;
 };
 
-void test(int _return_region, Point$ptr$ptr z) {
-    /* Line 2: New variable declaration 'y' */
-    Point* y = (Point*)_region_malloc((z.region), sizeof(Point));
-    (*y) = (Point){ 0U, 0U };
+void test(int _return_region, int$ptr$ptr a, int$ptr$ptr b) {
+    /* Line 2: New variable declaration 'c' */
+    int$ptr$ptr c = a;
 
-    /* Line 4: Assignment statement */
-    (*(z.data)) = (Point$ptr){ y, (z.region) };
+    /* Line 4: New variable declaration 'd' */
+    int d = 0U;
+
+    /* Line 5: Assignment statement */
+    (*(c.data)) = (int$ptr){ (&d), get_smallest_lifetime() };
 }
 
 #if __cplusplus

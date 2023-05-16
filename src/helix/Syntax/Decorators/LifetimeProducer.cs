@@ -32,7 +32,7 @@ namespace Helix.Syntax.Decorators {
         }
 
         public virtual void PreAnalyzeFlow(ISyntaxTree syntax, FlowFrame flow) {
-            var baseLifetime = new Lifetime(this.LifetimePath, 0, LifetimeKind);
+            var baseLifetime = new Lifetime(this.LifetimePath, 0, this.LifetimeKind);
 
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly

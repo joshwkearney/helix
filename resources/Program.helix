@@ -1,7 +1,8 @@
-﻿func test(let z as Point**) as void {
-	var y = new Point;
-
-	z* = &y;
+﻿func test(let a as int**, let b as int**) as void {
+	var c = a;
+	
+	var d = new int;
+	c* = &d;
 };
 
 struct Point {

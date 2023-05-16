@@ -181,7 +181,7 @@ namespace Helix.Features.Memory {
             foreach (var (relPath, _) in pointerType.InnerType.GetMembers(flow)) {
                 // We are returning lifetimes that represent the minimum region
                 // required to store something in this pointer
-                var lifetime = new Lifetime(pointerLifetime.Path.Append(relPath), 0);
+                var lifetime = flow.VariableLifetimes[pointerLifetime.Path.Append(relPath)];
 
                 bundleDict[relPath] = lifetime;
 

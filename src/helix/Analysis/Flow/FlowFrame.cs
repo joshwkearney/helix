@@ -61,5 +61,16 @@ namespace Helix.Analysis.Flow {
 
             return result;
         }
+
+        public ValueList<Lifetime> GetRoots(IdentifierPath lifetimePath) {
+            var roots = this
+                .LifetimeGraph
+                .GetOutlivedLifetimes(this.VariableLifetimes[lifetimePath])
+                .Where(x => x.Kind != LifetimeKind.Inferencee);
+
+            roots = this.ReduceRootSet(roots);
+
+            return roots.ToValueList();
+        }
     }
 }
