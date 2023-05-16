@@ -192,15 +192,32 @@ namespace Helix.Features.Variables {
                 // will exist whether or not we write into it, since this is a dereferenced write.
                 // That means that for the purposes of lifetime analysis, the target lifetime is
                 // independent of the assigned lifetimes.
-                foreach (var (path, type) in this.assign.GetReturnType(flow).GetMembers(flow)) {
-                    var targetLifetime = targetBundle[path];
-                    var assignLifetime = assignBundle[path];
+            foreach (var (path, type) in this.assign.GetReturnType(flow).GetMembers(flow)) {
+                var targetLifetime = targetBundle[path];
+                var assignLifetime = assignBundle[path];
 
-                    if (!type.IsValueType(flow)) {
-                        flow.LifetimeGraph.RequireOutlives(assignLifetime, targetLifetime);
+                foreach (var assignRoot in flow.GetRoots(assignLifetime.Path)) {
+                    foreach (var targetRoot in flow.GetRoots(targetLifetime.Path)) {
+                        if (flow.LifetimeGraph.DoesOutlive(assignRoot, targetRoot)) {
+                            continue;
+                        }
+
+                        throw new LifetimeException(
+                            this.Location,
+                            "Unsafe Memory Store",
+                            $"Unable to verify that the assigned value outlives its container. " +
+                            $"The region '{assignRoot}' is not known to outlive the region '{targetRoot}', " + 
+                            $"so this assignment cannot proceed safely. \n\nTo resolve this error, " + 
+                            $"you can try implementing a '.copy()' method on the type '{type}' to allow " +
+                            $"its values to be copied between regions, or you can try adding explict " +
+                            $"region annotations to your code.");
                     }
                 }
-          //  }
+
+                if (!type.IsValueType(flow)) {
+                    flow.LifetimeGraph.RequireOutlives(assignLifetime, targetLifetime);
+                }
+            }
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }

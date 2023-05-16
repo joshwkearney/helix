@@ -15,5 +15,14 @@ namespace Helix.Analysis {
         public VariablePath AppendMember(string comp) {
             return new VariablePath(this.Variable, this.Member.Append(comp));
         }
+
+        public override string ToString() {
+            if (this.Member.Segments.Any()) {
+                return this.Variable.ToString() + ":" + this.Member.ToString();
+            }
+            else {
+                return this.Variable.ToString();
+            }
+        }
     }
 }

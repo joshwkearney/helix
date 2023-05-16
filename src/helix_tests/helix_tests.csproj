@@ -20,16 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Programs\bad_lifetimes_3.helix">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Programs\bad_lifetimes_2.helix">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Programs\good_lifetimes.helix">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Programs\bad_lifetimes_1.helix">
+    <None Update="Programs\bad_lifetimes.helix">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

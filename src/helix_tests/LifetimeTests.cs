@@ -5,16 +5,12 @@ using Helix.Analysis.Flow;
 namespace helix_tests {
     [TestClass]
     public class LifetimeTests {
-       /* [TestMethod]
+       [TestMethod]
         public void TestBadLifetimes() {
-            int numTests = 3;
-
-            for (int i = 1; i <= numTests; i++) {
-                Assert.ThrowsException<LifetimeException>(() => {
-                    CompileFile($"bad_lifetimes_{i}.helix");
-                });
-            }
-        }*/
+            Assert.ThrowsException<HelixException>(() => {
+                CompileFile($"bad_lifetimes.helix");
+            });
+        }
 
         [TestMethod]
         public void TestGoodLifetimes() => CompileFile("good_lifetimes.helix");

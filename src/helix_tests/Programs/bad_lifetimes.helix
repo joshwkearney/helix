@@ -1,0 +1,13 @@
+﻿func test1(let a as int**, let b as int*) {
+	a* = b;	
+};
+
+func test2(let a as int*) as int* {
+	a;
+};
+
+func test3(let a as int***) as void {
+	var b = 45;
+
+	a** = &b;
+};

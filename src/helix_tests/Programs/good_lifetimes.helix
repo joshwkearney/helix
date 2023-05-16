@@ -50,3 +50,9 @@ func test6(let arr as int*[]) as int* {
 func test7(let arr as int*[]) as void {
 	arr[0] = arr[1];
 };
+
+func test8(let a as int**) {
+	var c = 10;
+
+	a* = &c;	
+};
