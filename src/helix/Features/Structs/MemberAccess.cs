@@ -125,14 +125,17 @@ namespace Helix.Features.Aggregates {
             this.Target.AnalyzeFlow(flow);
 
             var memberType = this.GetReturnType(flow);
-            var targetLifetimes = this.Target.GetLifetimes(flow).Components;
+            var targetLifetimes = this.Target.GetLifetimes(flow);
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
-            foreach (var (relPath, _) in memberType.GetMembers(flow)) {
+            foreach (var (relPath, type) in memberType.GetMembers(flow)) {
                 var memPath = new IdentifierPath(this.MemberName).Append(relPath);
                 var varPath = targetLifetimes[memPath].Path;
                     
-                if (flow.VariableValueLifetimes.TryGetValue(varPath, out var lifetime)) {
+                if (type.IsValueType(flow)) {
+                    bundleDict[relPath] = Lifetime.None;
+                }
+                else if (flow.VariableValueLifetimes.TryGetValue(varPath, out var lifetime)) {
                     bundleDict[relPath] = lifetime;
                 }
                 else {
@@ -191,7 +194,7 @@ namespace Helix.Features.Aggregates {
 
             this.target.AnalyzeFlow(flow);
 
-            var targetLifetimes = this.target.GetLifetimes(flow).Components;
+            var targetLifetimes = this.target.GetLifetimes(flow);
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             foreach (var (relPath, _) in this.memberType.GetMembers(flow)) {

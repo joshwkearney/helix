@@ -194,12 +194,12 @@ namespace Helix {
         }
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+            var basePath = new VariablePath(this.path);
+
             var roots = flow
                 .LifetimeGraph
-                .GetOutlivedLifetimes(flow.VariableLifetimes[this.path])
-                .Where(x => !x.Path.StartsWith(this.path))
-                //.Where(x => x.Kind != LifetimeKind.Inferencee)
-                //.Where(x => x != Lifetime.Stack)
+                .GetOutlivedLifetimes(flow.VariableLocationLifetimes[basePath])
+                .Where(x => !x.Path.Variable.StartsWith(basePath.Variable))
                 .ToValueList();
 
             // This removes redundant roots that are outlived by other roots

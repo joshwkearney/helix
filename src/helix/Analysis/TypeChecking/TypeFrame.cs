@@ -15,7 +15,7 @@ namespace Helix.Analysis.TypeChecking {
         // Frame-specific things
         public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
 
-        public IDictionary<IdentifierPath, Lifetime> LifetimeRoots { get; }
+        public IDictionary<VariablePath, Lifetime> LifetimeRoots { get; }
 
         // Global things
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
@@ -30,7 +30,7 @@ namespace Helix.Analysis.TypeChecking {
 
         public TypeFrame() {
             Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            LifetimeRoots = new Dictionary<IdentifierPath, Lifetime>();
+            LifetimeRoots = new Dictionary<VariablePath, Lifetime>();
 
             SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
@@ -48,7 +48,7 @@ namespace Helix.Analysis.TypeChecking {
         public TypeFrame(TypeFrame prev) {
             Variables = prev.Variables; //new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
             SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
-            LifetimeRoots = new StackedDictionary<IdentifierPath, Lifetime>(prev.LifetimeRoots);
+            LifetimeRoots = new StackedDictionary<VariablePath, Lifetime>(prev.LifetimeRoots);
 
             Functions = prev.Functions;
             Structs = prev.Structs;

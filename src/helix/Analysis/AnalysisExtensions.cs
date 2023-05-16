@@ -1,5 +1,6 @@
 ﻿using Helix.Syntax;
 using Helix.Analysis.Types;
+using Helix.Analysis.Flow;
 
 namespace Helix.Analysis {
     public static class AnalysisExtensions {
@@ -15,14 +16,14 @@ namespace Helix.Analysis {
             types.ReturnTypes[syntax] = type;
         }
 
-        public static Dictionary<IdentifierPath, HelixType> GetMembers(this HelixType type, ITypedFrame types) {
+        public static Bundle<HelixType> GetMembers(this HelixType type, ITypedFrame types) {
             var dict = new Dictionary<IdentifierPath, HelixType>();
 
             foreach (var (memPath, memType) in GetMemberPaths(type, types)) {
                 dict[memPath] = memType;
             }
 
-            return dict;
+            return new Bundle<HelixType>(dict);
         }
 
         private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPaths(

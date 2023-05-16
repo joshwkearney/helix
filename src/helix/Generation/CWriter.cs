@@ -12,8 +12,6 @@ namespace Helix.Generation {
 
         public string GetVariableName(IdentifierPath path);
 
-        public void RegisterMemberPath(IdentifierPath varPath, IdentifierPath memberPath);
-
         public void ResetTempNames();
 
         public void WriteDeclaration1(ICStatement decl);
@@ -25,6 +23,17 @@ namespace Helix.Generation {
         public void WriteDeclaration4(ICStatement decl);
 
         public ICSyntax ConvertType(HelixType type);
+
+        // Mixins
+        public string GetVariableName(VariablePath path) {
+            var name = this.GetVariableName(path.Variable);
+
+            foreach (var segment in path.Member.Segments) {
+                name += "." + segment;
+            }
+
+            return name;
+        }
     }
 
     public class CWriter : ICWriter {
@@ -92,16 +101,6 @@ namespace Helix.Generation {
             }
 
             return value;
-        }
-
-        public void RegisterMemberPath(IdentifierPath varPath, IdentifierPath memberPath) {
-            var varName = this.GetVariableName(varPath);
-
-            if (memberPath.Segments.Any()) {
-                var path = varPath.Append(memberPath);
-
-                this.pathNames[path] = varName + "." + string.Join(".", memberPath.Segments);
-            }
         }
 
         public void WriteDeclaration1(ICStatement decl) {

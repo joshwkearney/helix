@@ -87,19 +87,20 @@ namespace Helix.Features.Memory {
             this.target.AnalyzeFlow(flow);
 
             var pointerType = this.target.AssertIsPointer(flow);
-            var pointerLifetime = this.target.GetLifetimes(flow).Components[new IdentifierPath()];
+            var pointerLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             foreach (var (relPath, type) in pointerType.InnerType.GetMembers(flow)) {
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
                 }
-                else { 
+                else {
                     // This value's lifetime actually isn't the pointer's lifetime, but some
                     // other lifetime that outlives the pointer. It's important to represent
                     // this value like this because we can't store things into it that just
                     // outlive the pointer
-                    var lifetime = new Lifetime(this.tempPath.Append(relPath), 0);
+                    var memPath = this.tempPath.AppendMember(relPath);
+                    var lifetime = new Lifetime(memPath, 0);
 
                     bundleDict[relPath] = lifetime;
 
@@ -175,13 +176,14 @@ namespace Helix.Features.Memory {
             this.target.AnalyzeFlow(flow);
 
             var pointerType = this.target.AssertIsPointer(flow);
-            var pointerLifetime = this.target.GetLifetimes(flow).Components[new IdentifierPath()];
+            var pointerLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             foreach (var (relPath, _) in pointerType.InnerType.GetMembers(flow)) {
                 // We are returning lifetimes that represent the minimum region
                 // required to store something in this pointer
-                var lifetime = flow.VariableLifetimes[pointerLifetime.Path.Append(relPath)];
+                var memPath = pointerLifetime.Path.AppendMember(relPath);
+                var lifetime = flow.VariableLocationLifetimes[memPath];
 
                 bundleDict[relPath] = lifetime;
 

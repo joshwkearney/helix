@@ -193,8 +193,8 @@ namespace Helix.Features.Variables {
                 // That means that for the purposes of lifetime analysis, the target lifetime is
                 // independent of the assigned lifetimes.
                 foreach (var (path, type) in this.assign.GetReturnType(flow).GetMembers(flow)) {
-                    var targetLifetime = targetBundle.Components[path];
-                    var assignLifetime = assignBundle.Components[path];
+                    var targetLifetime = targetBundle[path];
+                    var assignLifetime = assignBundle[path];
 
                     if (!type.IsValueType(flow)) {
                         flow.LifetimeGraph.RequireOutlives(assignLifetime, targetLifetime);

@@ -66,7 +66,7 @@ namespace Helix.Features.FlowControl {
 
             // Add a dependency on the heap for every lifetime in the result
             if (!this.GetReturnType(flow).IsValueType(flow)) {
-                foreach (var time in flow.Lifetimes[this.payload].Lifetimes) {
+                foreach (var time in flow.Lifetimes[this.payload].Values) {
                     flow.LifetimeGraph.RequireOutlives(time, Lifetime.Heap);
                 }
             }

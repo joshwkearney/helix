@@ -160,7 +160,7 @@ namespace Helix.Features.Aggregates {
                 value.AnalyzeFlow(flow);
 
                 // Go through each member of this field
-                foreach (var (relPath, lifetime) in value.GetLifetimes(flow).Components) {
+                foreach (var (relPath, lifetime) in value.GetLifetimes(flow)) {
                     var memPath = new IdentifierPath(name).Append(relPath);
 
                     // Add this member to the lifetime dict

@@ -46,7 +46,7 @@ namespace Helix.Features.Memory {
 
             target.AnalyzeFlow(flow);
 
-            var lifetime = target.GetLifetimes(flow).Components[new IdentifierPath()];
+            var lifetime = target.GetLifetimes(flow)[new IdentifierPath()];
             var dict = new Dictionary<IdentifierPath, Lifetime>() { { new IdentifierPath(), lifetime } };
 
             this.SetLifetimes(new LifetimeBundle(dict), flow);
@@ -56,7 +56,7 @@ namespace Helix.Features.Memory {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
                     target.GenerateCode(types, writer),
-                    writer.GetLifetime(this.GetLifetimes(types).Components[new IdentifierPath()])
+                    writer.GetLifetime(this.GetLifetimes(types)[new IdentifierPath()])
                 },
                 Type = writer.ConvertType(this.GetReturnType(types))
             };

@@ -33,29 +33,9 @@ namespace Helix.Generation {
         }
 
         public ICStatementWriter WriteStatement(ICSyntax syntax) {
-            return this.WriteStatement(new CSyntaxStatement() { 
+            return this.WriteStatement(new CSyntaxStatement() {
                 Value = syntax
             });
-        }
-
-        public void RegisterLifetimes(IdentifierPath basePath, LifetimeBundle bundle, ICSyntax syntax) {
-            // This registers each new lifetime and member path that results from this dereference
-            foreach (var (relPath, lifetime) in bundle.Components) {
-                this.RegisterMemberPath(basePath, relPath);
-
-                foreach (var segment in relPath.Segments) {
-                    syntax = new CMemberAccess() {
-                        Target = syntax,
-                        MemberName = segment,
-                        IsPointerAccess = true
-                    };
-                }
-
-                this.RegisterLifetime(lifetime, new CMemberAccess() {
-                    Target = syntax,
-                    MemberName = "region"
-                });
-            }
         }
     }
 
@@ -178,10 +158,6 @@ namespace Helix.Generation {
         public ICSyntax ConvertType(HelixType type) => this.prev.ConvertType(type);
 
         public void ResetTempNames() => this.prev.ResetTempNames();
-
-        public void RegisterMemberPath(IdentifierPath varPath, IdentifierPath memberPath) {
-            this.prev.RegisterMemberPath(varPath, memberPath);
-        }
 
         public void RegisterVariableKind(IdentifierPath path, CVariableKind kind) {
             this.variableKinds[path] = kind;

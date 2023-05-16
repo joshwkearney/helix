@@ -143,11 +143,11 @@ namespace Helix.Features.FlowControl {
             // This is required because the lifetimes that were used inside of the if body
             // may not be availible outside of it, so we need to reuinify around a new lifetime
             foreach (var (relPath, type) in resultType.GetMembers(flow)) {
-                var bodyLifetimes = new[] { flow.Lifetimes[iftrue].Components[relPath] }
-                    .Append(flow.Lifetimes[iffalse].Components[relPath])
+                var bodyLifetimes = new[] { flow.Lifetimes[iftrue][relPath] }
+                    .Append(flow.Lifetimes[iffalse][relPath])
                     .ToValueList();
 
-                var path = this.tempPath.Append(relPath);
+                var path = this.tempPath.AppendMember(relPath);
                 var resultLifetime = new Lifetime(path, 0);
 
                 lifetimeBundle.Add(relPath, resultLifetime);
@@ -186,11 +186,6 @@ namespace Helix.Features.FlowControl {
             var tempName = writer.GetVariableName(this.tempPath);
             var returnType = this.GetReturnType(types);
             
-            // Register our member paths with the code generator
-            foreach (var (relPath, _) in returnType.GetMembers(types)) {
-                writer.RegisterMemberPath(this.tempPath, relPath);
-            }
-
             if (returnType != PrimitiveType.Void) {
                 affirmWriter.WriteStatement(new CAssignment() {
                     Left = new CVariableLiteral(tempName),

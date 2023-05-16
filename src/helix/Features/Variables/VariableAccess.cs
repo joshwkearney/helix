@@ -119,20 +119,19 @@ namespace Helix.Features.Variables {
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
             foreach (var (relPath, type) in sig.Type.GetMembers(flow)) {
-                var memPath = this.VariablePath.Append(relPath);
+                var memPath = this.VariablePath.AppendMember(relPath);
 
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
                 }
-
-                if (flow.VariableValueLifetimes.TryGetValue(memPath, out var bundle)) {
+                else if (flow.VariableValueLifetimes.TryGetValue(memPath, out var bundle)) {
                     // We know what's in this variable, so return it as a more specific answer
                     bundleDict[relPath] = bundle;
                 }
                 else {
                     // Not sure what's in the variable, so just return the variable's lifetime to
                     // be safe
-                    bundleDict[relPath] = flow.VariableLifetimes[memPath];
+                    bundleDict[relPath] = flow.VariableLocationLifetimes[memPath];
                 }
             }
 
@@ -172,9 +171,11 @@ namespace Helix.Features.Variables {
             var sig = flow.Variables[this.VariablePath];
             var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
 
-            foreach (var (memPath, _) in sig.Type.GetMembers(flow)) {
+            foreach (var (relPath, _) in sig.Type.GetMembers(flow)) {
+                var memPath = this.VariablePath.AppendMember(relPath);
+
                 // TODO: This will break when variable invalidating is implemented
-                bundleDict[memPath] = flow.VariableLifetimes[this.VariablePath.Append(memPath)];
+                bundleDict[relPath] = flow.VariableLocationLifetimes[memPath];
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

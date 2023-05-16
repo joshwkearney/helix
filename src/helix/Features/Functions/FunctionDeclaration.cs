@@ -195,7 +195,8 @@ namespace Helix.Features.Functions {
             // Here we need to make sure that the return value can outlive the heap
             // We're going to find all roots that are contributing to the return value
             // and confirm that each one outlives the heap
-            var roots = this.body.GetLifetimes(flow).Lifetimes
+            var roots = this.body.GetLifetimes(flow)
+                .Values
                 .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
                 .Where(x => x.Kind != LifetimeKind.Inferencee)
                 .ToArray();
@@ -216,7 +217,7 @@ namespace Helix.Features.Functions {
             }
 
             // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in flow.Lifetimes[body].Lifetimes) {
+            foreach (var lifetime in flow.Lifetimes[body].Values) {
                 flow.LifetimeGraph.RequireOutlives(lifetime, Lifetime.Heap);
             }
 
@@ -258,18 +259,11 @@ namespace Helix.Features.Functions {
                 Lifetime.Heap, 
                 new CVariableLiteral("_return_region"));
 
-            // Register the parameter member paths
-            foreach (var par in this.Signature.Parameters) {
-                foreach (var (relPath, type) in par.Type.GetMembers(types)) {
-                    writer.RegisterMemberPath(this.Signature.Path.Append(par.Name), relPath);
-                }
-            }
-
             // Register the parameter lifetimes
             foreach (var par in this.Signature.Parameters) {
                 foreach (var (relPath, _) in par.Type.GetMembers(types)) {
-                    var path = this.Signature.Path.Append(par.Name).Append(relPath);
-                    var lifetime = types.VariableLifetimes[path];
+                    var path = new VariablePath(this.Signature.Path.Append(par.Name), relPath);
+                    var lifetime = types.VariableLocationLifetimes[path];
 
                     bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
                         Target = new CVariableLiteral(writer.GetVariableName(path)),

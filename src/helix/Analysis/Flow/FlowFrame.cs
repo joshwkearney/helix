@@ -20,9 +20,9 @@ namespace Helix.Analysis.Flow {
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         // Frame-specific things
-        public IDictionary<IdentifierPath, Lifetime> VariableLifetimes { get; }
+        public IDictionary<VariablePath, Lifetime> VariableLocationLifetimes { get; }
 
-        public IDictionary<IdentifierPath, Lifetime> VariableValueLifetimes { get; }
+        public IDictionary<VariablePath, Lifetime> VariableValueLifetimes { get; }
 
         public FlowFrame(TypeFrame frame) {
             ReturnTypes = frame.ReturnTypes;
@@ -33,8 +33,8 @@ namespace Helix.Analysis.Flow {
             LifetimeGraph = new();
             Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
 
-            VariableLifetimes = new Dictionary<IdentifierPath, Lifetime>();
-            VariableValueLifetimes = new Dictionary<IdentifierPath, Lifetime>();
+            VariableLocationLifetimes = new Dictionary<VariablePath, Lifetime>();
+            VariableValueLifetimes = new Dictionary<VariablePath, Lifetime>();
         }
 
         public FlowFrame(FlowFrame prev) {
@@ -46,15 +46,15 @@ namespace Helix.Analysis.Flow {
             LifetimeGraph = prev.LifetimeGraph;
             Lifetimes = prev.Lifetimes;
 
-            VariableLifetimes = new StackedDictionary<IdentifierPath, Lifetime>(prev.VariableLifetimes);
-            VariableValueLifetimes = new StackedDictionary<IdentifierPath, Lifetime>(prev.VariableValueLifetimes);
+            VariableLocationLifetimes = new StackedDictionary<VariablePath, Lifetime>(prev.VariableLocationLifetimes);
+            VariableValueLifetimes = new StackedDictionary<VariablePath, Lifetime>(prev.VariableValueLifetimes);
         }
 
         public IEnumerable<Lifetime> ReduceRootSet(IEnumerable<Lifetime> roots) {
             var result = new List<Lifetime>();
 
             foreach (var root in roots) {
-                if (!roots.Where(x => x != root).Any(x => this.LifetimeGraph.DoesOutlive(x, root))) {
+                if (roots.Where(x => x != root).All(x => !this.LifetimeGraph.DoesOutlive(x, root))) {
                     result.Add(root);
                 }
             }
@@ -62,10 +62,12 @@ namespace Helix.Analysis.Flow {
             return result;
         }
 
-        public ValueList<Lifetime> GetRoots(IdentifierPath lifetimePath) {
+        public ValueList<Lifetime> GetRoots(VariablePath lifetimePath) {
+            var lifetime = this.VariableLocationLifetimes[lifetimePath];
+
             var roots = this
                 .LifetimeGraph
-                .GetOutlivedLifetimes(this.VariableLifetimes[lifetimePath])
+                .GetOutlivedLifetimes(lifetime)
                 .Where(x => x.Kind != LifetimeKind.Inferencee);
 
             roots = this.ReduceRootSet(roots);
