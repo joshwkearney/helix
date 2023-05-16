@@ -4,10 +4,9 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Features.Primitives;
-using Helix.Analysis.Lifetimes;
-using System;
-using helix.FlowAnalysis;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Features.Aggregates {
     public class NewStructSyntax : ISyntaxTree {
@@ -37,7 +36,7 @@ namespace Helix.Features.Aggregates {
             this.IsPure = this.values.All(x => x.IsPure);
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             var names = new string[this.names.Count];
             int missingCounter = 0;
 
@@ -59,7 +58,7 @@ namespace Helix.Features.Aggregates {
 
                 // Make sure we don't have too many arguments
                 if (missingCounter >= this.sig.Members.Count) {
-                    throw new TypeCheckingException(
+                    throw new TypeException(
                         this.Location,
                         "Invalid Initialization",
                         "This initializer has provided too many "
@@ -79,7 +78,7 @@ namespace Helix.Features.Aggregates {
 
             // Make sure there are no duplicate names
             if (dups.Any()) {
-                throw new TypeCheckingException(
+                throw new TypeException(
                     this.Location,
                     "Invalid Struct Initialization",
                     $"This initializer contains the duplicate member '{dups.First()}'");
@@ -92,7 +91,7 @@ namespace Helix.Features.Aggregates {
 
             // Make sure that all members are defined in the struct
             if (undefinedFields.Any()) {
-                throw new TypeCheckingException(
+                throw new TypeException(
                     this.Location,
                     "Invalid Struct Initialization",
                     $"The member '{undefinedFields.First()}' does not exist in the "
@@ -112,7 +111,7 @@ namespace Helix.Features.Aggregates {
 
             // Make sure that all the missing members have a default value
             if (requiredAbsentFields.Any()) {
-                throw new TypeCheckingException(
+                throw new TypeException(
                     this.Location,
                     "Invalid Struct Initialization",
                     $"The unspecified struct member '{requiredAbsentFields.First()}' does not have a default "
@@ -132,7 +131,7 @@ namespace Helix.Features.Aggregates {
                     value = new VoidLiteral(this.Location);
                 }
 
-                value = value.CheckTypes(types).ConvertTo(mem.Type, types);
+                value = value.CheckTypes(types).ConvertTypeTo(mem.Type, types);
                 allValues.Add(value);
             }
 
@@ -142,9 +141,9 @@ namespace Helix.Features.Aggregates {
             return result;
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
             if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
+                throw TypeException.RValueRequired(this.Location);
             }
 
             return this;

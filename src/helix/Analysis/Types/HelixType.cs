@@ -1,4 +1,6 @@
-﻿using helix.Syntax;
+﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -42,11 +44,11 @@ namespace Helix.Analysis.Types {
     public abstract record HelixType { 
         public abstract PassingSemantics GetSemantics(ITypedFrame types);
 
-        public abstract UnificationKind TestUnification(HelixType other, EvalFrame types);
+        public abstract UnificationKind TestUnification(HelixType other, TypeFrame types);
 
         public abstract ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax,
                                            UnificationKind unificationKind,
-                                           EvalFrame types);
+                                           TypeFrame types);
 
         public virtual HelixType ToMutableType() {
             return this;
@@ -56,19 +58,19 @@ namespace Helix.Analysis.Types {
             return new TypeSyntaxWrapper(loc, this);
         }
 
-        public virtual IEnumerable<HelixType> GetContainedTypes(EvalFrame frame) {
+        public virtual IEnumerable<HelixType> GetContainedTypes(TypeFrame frame) {
             yield return this;
         }
 
-        public bool CanConvertTo(HelixType other, EvalFrame types) {
+        public bool CanConvertTo(HelixType other, TypeFrame types) {
             return this.TestUnification(other, types).IsSubsetOf(UnificationKind.Convert);
         }
 
-        public ISyntaxTree ConvertTo(HelixType other, ISyntaxTree syntax, EvalFrame types) {
+        public ISyntaxTree ConvertTo(HelixType other, ISyntaxTree syntax, TypeFrame types) {
             return this.UnifyTo(other, syntax, UnificationKind.Convert, types);
         }
 
-        public bool CanConvertFrom(HelixType other, EvalFrame types) {
+        public bool CanConvertFrom(HelixType other, TypeFrame types) {
             return this.CanConvertTo(other, types) || other.CanConvertTo(this, types);
         }
 
@@ -76,7 +78,7 @@ namespace Helix.Analysis.Types {
             return this.GetSemantics(types) == PassingSemantics.ValueType;
         }
 
-        public HelixType ConvertFrom(HelixType other, EvalFrame types) {
+        public HelixType ConvertFrom(HelixType other, TypeFrame types) {
             if (this.CanConvertTo(other, types)) {
                 return other;
             }
@@ -88,7 +90,7 @@ namespace Helix.Analysis.Types {
             }
         }
 
-        public bool HasDefaultValue(EvalFrame types) {
+        public bool HasDefaultValue(TypeFrame types) {
             return PrimitiveType.Void.CanConvertTo(this, types);
         }
 
@@ -106,13 +108,13 @@ namespace Helix.Analysis.Types {
                 this.type = type;
             }
 
-            public Option<HelixType> AsType(EvalFrame types) => this.type;
+            public Option<HelixType> AsType(TypeFrame types) => this.type;
 
-            public ISyntaxTree CheckTypes(EvalFrame types) {
+            public ISyntaxTree CheckTypes(TypeFrame types) {
                 throw new InvalidOperationException();
             }
 
-            public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+            public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
                 throw new InvalidOperationException();
             }
 

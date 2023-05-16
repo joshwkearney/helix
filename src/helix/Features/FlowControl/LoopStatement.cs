@@ -1,16 +1,12 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Features.FlowControl;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.Primitives;
-using System.Net;
-using Helix.Analysis.Lifetimes;
-using Helix.Features.Variables;
-using Helix.Features.Memory;
-using System;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -63,20 +59,20 @@ namespace Helix.Features.FlowControl {
             this.body = body;
         }
 
-        public Option<ISyntaxTree> ToRValue(EvalFrame types) {
+        public Option<ISyntaxTree> ToRValue(TypeFrame types) {
             if (!types.ReturnTypes.ContainsKey(this)) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
+                throw TypeException.RValueRequired(this.Location);
             }
 
             return this;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (types.ReturnTypes.ContainsKey(this)) {
                 return this;
             }
 
-            var bodyTypes = new EvalFrame(types);
+            var bodyTypes = new TypeFrame(types);
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = (ISyntaxTree)new LoopStatement(this.Location, body);
 

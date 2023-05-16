@@ -1,16 +1,13 @@
-﻿using helix.FlowAnalysis;
-using helix.Syntax;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
-using System.Globalization;
-using System.IO;
-using System.Xml.Linq;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -22,7 +19,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Variables {                                                                                
+namespace Helix.Features.Variables {
     public record VariableAccessParseSyntax : ISyntaxTree {
         public string Name { get; }
 
@@ -37,7 +34,7 @@ namespace Helix.Features.Variables {
             this.Name = name;
         }
 
-        public Option<HelixType> AsType(EvalFrame types) {
+        public Option<HelixType> AsType(TypeFrame types) {
             // If we're pointing at a type then return it
             if (types.TryResolveName(this.Location.Scope, this.Name, out var syntax)) {
                 if (syntax.AsType(types).TryGetValue(out var type)) {
@@ -48,10 +45,10 @@ namespace Helix.Features.Variables {
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             // Make sure this name exists
             if (!types.TryResolvePath(this.Location.Scope, this.Name, out var path)) {
-                throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
+                throw TypeException.VariableUndefined(this.Location, this.Name);
             }
 
             if (path == new IdentifierPath("void")) {
@@ -68,7 +65,7 @@ namespace Helix.Features.Variables {
                 return new VariableAccessSyntax(this.Location, path).CheckTypes(types);
             }
 
-            throw TypeCheckingErrors.VariableUndefined(this.Location, this.Name);
+            throw TypeException.VariableUndefined(this.Location, this.Name);
         }
     }
 
@@ -88,7 +85,7 @@ namespace Helix.Features.Variables {
             this.VariablePath = path;
         }
 
-        public virtual ISyntaxTree CheckTypes(EvalFrame types) {
+        public virtual ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
@@ -106,16 +103,16 @@ namespace Helix.Features.Variables {
             return this;
         }
 
-        public virtual ISyntaxTree ToLValue(EvalFrame types) {
+        public virtual ISyntaxTree ToLValue(TypeFrame types) {
             // Make sure this variable is writable
             if (!types.Variables.ContainsKey(this.VariablePath) || !types.Variables[this.VariablePath].IsWritable) {
-                throw TypeCheckingErrors.WritingToConstVariable(this.Location);
+                throw TypeException.WritingToConstVariable(this.Location);
             }
 
             return new VariableAccessLValue(this.Location, this.VariablePath).CheckTypes(types);
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public virtual void AnalyzeFlow(FlowFrame flow) {
             var sig = flow.Variables[this.VariablePath];
@@ -158,9 +155,9 @@ namespace Helix.Features.Variables {
     public record VariableAccessLValue : VariableAccessSyntax {
         public VariableAccessLValue(TokenLocation loc, IdentifierPath path) : base(loc, path) { }
 
-        public override ISyntaxTree ToLValue(EvalFrame types) => this;
+        public override ISyntaxTree ToLValue(TypeFrame types) => this;
 
-        public override ISyntaxTree CheckTypes(EvalFrame types) {
+        public override ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }

@@ -1,8 +1,9 @@
-﻿using helix.Syntax;
-using Helix.Analysis;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Parsing;
 
-namespace Helix.Features.Aggregates {
+namespace Helix.Features.Aggregates
+{
     public record StructParseSignature {
         public string Name { get; }
 
@@ -16,13 +17,13 @@ namespace Helix.Features.Aggregates {
             this.Location = loc;
         }
 
-        public StructSignature ResolveNames(EvalFrame types) {
+        public StructSignature ResolveNames(TypeFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.Name);
             var mems = new List<AggregateMember>();
 
             foreach (var mem in this.Members) {
                 if (!mem.MemberType.AsType(types).TryGetValue(out var type)) {
-                    throw TypeCheckingErrors.ExpectedTypeExpression(mem.Location);
+                    throw TypeException.ExpectedTypeExpression(mem.Location);
                 }
 
                 mems.Add(new AggregateMember(mem.MemberName, type, mem.IsWritable));

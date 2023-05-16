@@ -1,6 +1,7 @@
 ﻿using Helix.Parsing;
-using Helix.Analysis;
 using Helix.Generation;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix {
     public class HelixCompiler {
@@ -22,7 +23,7 @@ namespace Helix {
                 .Replace("\t", "    ");
 
             var parser = new Parser(input);
-            var types = new EvalFrame();
+            var types = new TypeFrame();
             var flow = new FlowFrame(types);
             var writer = new CWriter(this.header, types.TypeDeclarations);
             var parseStats = parser.Parse();

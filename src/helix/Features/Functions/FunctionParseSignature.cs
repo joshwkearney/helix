@@ -1,5 +1,5 @@
-﻿using helix.Syntax;
-using Helix.Analysis;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Features.Functions {
@@ -19,17 +19,17 @@ namespace Helix.Features.Functions {
             this.Parameters = pars;
         }
 
-        public FunctionSignature ResolveNames(EvalFrame types) {
+        public FunctionSignature ResolveNames(TypeFrame types) {
             var path = this.Location.Scope.Append(this.Name);
             var pars = new List<FunctionParameter>();
 
             if (!this.ReturnType.AsType(types).TryGetValue(out var retType)) {
-                throw TypeCheckingErrors.ExpectedTypeExpression(this.ReturnType.Location);
+                throw TypeException.ExpectedTypeExpression(this.ReturnType.Location);
             }
 
             foreach (var par in this.Parameters) {
                 if (!par.Type.AsType(types).TryGetValue(out var parType)) {
-                    throw TypeCheckingErrors.ExpectedTypeExpression(par.Location);
+                    throw TypeException.ExpectedTypeExpression(par.Location);
                 }
 
                 pars.Add(new FunctionParameter(par.Name, parType, par.IsWritable));

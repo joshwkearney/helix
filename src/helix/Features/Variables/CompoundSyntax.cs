@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.FlowAnalysis;
-using helix.Syntax;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
@@ -29,7 +24,7 @@ namespace Helix.Features.Variables {
             this.IsPure = args.All(x => x.IsPure);
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             var result = new CompoundSyntax(
                 this.Location,
                 this.args.Select(x => x.CheckTypes(types)).ToArray());
@@ -39,7 +34,7 @@ namespace Helix.Features.Variables {
             return result;
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
             this.SetLifetimes(new LifetimeBundle(), flow);

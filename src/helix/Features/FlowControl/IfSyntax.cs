@@ -7,9 +7,9 @@ using Helix.Generation;
 using Helix.Parsing;
 using System.Reflection;
 using Helix.Features.Variables;
-using Helix.Analysis.Lifetimes;
-using Helix.Features.Memory;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -78,20 +78,20 @@ namespace Helix.Features.FlowControl {
             this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (types.ReturnTypes.ContainsKey(this)) {
                 return this;
             }
 
-            var iftrueTypes = new EvalFrame(types);
-            var iffalseTypes = new EvalFrame(types);
+            var iftrueTypes = new TypeFrame(types);
+            var iffalseTypes = new TypeFrame(types);
 
-            var cond = this.cond.CheckTypes(types).ToRValue(types).ConvertTo(PrimitiveType.Bool, types);
+            var cond = this.cond.CheckTypes(types).ToRValue(types).ConvertTypeTo(PrimitiveType.Bool, types);
             var iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
             var iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
 
-            iftrue = iftrue.ConvertFrom(iffalse, types);
-            iffalse = iffalse.ConvertFrom(iftrue, types);
+            iftrue = iftrue.ConvertTypeFrom(iffalse, types);
+            iffalse = iffalse.ConvertTypeFrom(iftrue, types);
 
             //var newLifetimes = this.CalculateModifiedVariables(iftrueTypes, iffalseTypes, types);            
 
@@ -115,7 +115,7 @@ namespace Helix.Features.FlowControl {
             return result;
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
             if (types.ReturnTypes.ContainsKey(this)) {
                 return this;
             }
@@ -142,7 +142,7 @@ namespace Helix.Features.FlowControl {
             // If we are returning a reference type then we need to calculate a new lifetime
             // This is required because the lifetimes that were used inside of the if body
             // may not be availible outside of it, so we need to reuinify around a new lifetime
-            foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(resultType, flow)) {
+            foreach (var (relPath, type) in resultType.GetMembers(flow)) {
                 var bodyLifetimes = new[] { flow.Lifetimes[iftrue].Components[relPath] }
                     .Append(flow.Lifetimes[iffalse].Components[relPath])
                     .ToValueList();
@@ -187,7 +187,7 @@ namespace Helix.Features.FlowControl {
             var returnType = this.GetReturnType(types);
             
             // Register our member paths with the code generator
-            foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(returnType, types)) {
+            foreach (var (relPath, _) in returnType.GetMembers(types)) {
                 writer.RegisterMemberPath(this.tempPath, relPath);
             }
 

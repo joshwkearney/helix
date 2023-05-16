@@ -1,4 +1,5 @@
-﻿using helix.Syntax;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 
 namespace Helix.Analysis.Types {
     public record PointerType : HelixType {
@@ -15,7 +16,7 @@ namespace Helix.Analysis.Types {
             return PassingSemantics.ReferenceType;
         }
 
-        public override UnificationKind TestUnification(HelixType other, EvalFrame types) {
+        public override UnificationKind TestUnification(HelixType other, TypeFrame types) {
             if (other is PointerType pointer) {
                 // If we have the same inner type both read-only and read-write
                 // pointers are punnable
@@ -37,7 +38,7 @@ namespace Helix.Analysis.Types {
         }
 
         public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax,
-                                            UnificationKind unify, EvalFrame types) {
+                                            UnificationKind unify, TypeFrame types) {
             if (this.TestUnification(other, types).IsSubsetOf(unify)) {
                 // Pointer types only pun, so this just returning the original
                 // syntax will be ok
@@ -52,7 +53,7 @@ namespace Helix.Analysis.Types {
             return this.InnerType + (this.IsWritable ? "*" : "^");
         }
 
-        public override IEnumerable<HelixType> GetContainedTypes(EvalFrame frame) {
+        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame frame) {
             yield return this;
             yield return this.InnerType;
         }

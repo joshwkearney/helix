@@ -1,5 +1,4 @@
-﻿using System.Data.Common;
-using Helix.Analysis;
+﻿using Helix.Analysis;
 
 namespace Helix.Parsing {
     public class Lexer {
@@ -55,7 +54,7 @@ namespace Helix.Parsing {
                 }
             }
             else {
-                throw ParsingErrors.EndOfFile(this.Location);
+                throw ParseException.EndOfFile(this.Location);
             }
         }
 
@@ -71,7 +70,7 @@ namespace Helix.Parsing {
                 }
             }
             else {
-                throw ParsingErrors.EndOfFile(this.Location);
+                throw ParseException.EndOfFile(this.Location);
             }
         }
 
@@ -87,7 +86,7 @@ namespace Helix.Parsing {
                 }
             }
             else {
-                throw ParsingErrors.EndOfFile(this.Location);
+                throw ParseException.EndOfFile(this.Location);
             }
         }
 
@@ -103,7 +102,7 @@ namespace Helix.Parsing {
                 }
             }
             else {
-                throw ParsingErrors.EndOfFile(this.Location);
+                throw ParseException.EndOfFile(this.Location);
             }
         }
 
@@ -124,7 +123,7 @@ namespace Helix.Parsing {
                 return new Token(TokenKind.IntLiteral, loc, strNum);
             }
             else {
-                throw ParsingErrors.InvalidNumber(loc, strNum);
+                throw ParseException.InvalidNumber(loc, strNum);
             }
         }
 
@@ -158,7 +157,7 @@ namespace Helix.Parsing {
 
             // Get the character
             if (pos >= this.text.Length || !char.IsLetterOrDigit(Current)) {
-                throw ParsingErrors.UnexpectedCharacter(Location, Current);
+                throw ParseException.UnexpectedCharacter(Location, Current);
             }
 
             int c = (int)Current;
@@ -166,7 +165,7 @@ namespace Helix.Parsing {
             // Advance past the second '
             pos++;
             if (pos >= this.text.Length || Current != '\'') {
-                throw ParsingErrors.UnexpectedCharacter(Location, Current);
+                throw ParseException.UnexpectedCharacter(Location, Current);
             }
 
             return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, line, scope), c.ToString());
@@ -312,7 +311,7 @@ namespace Helix.Parsing {
                 return new Token(TokenKind.Whitespace, Location, Current.ToString());
             }           
             else {
-                throw ParsingErrors.UnexpectedCharacter(Location, Current);
+                throw ParseException.UnexpectedCharacter(Location, Current);
             }
         }
 

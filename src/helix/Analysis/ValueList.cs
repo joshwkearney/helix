@@ -58,7 +58,7 @@ namespace Helix.Analysis {
         }
     }
 
-    public static partial class AnalysisExtensions {
+    public static partial class TypeCheckingExtensions {
         public static ValueList<T> ToValueList<T>(this IEnumerable<T> sequence) => new ValueList<T>(sequence);
     }
 }

@@ -1,9 +1,8 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis;
 using Helix.Analysis.Types;
-using Helix.Features.Aggregates;
 using Helix.Generation.CSyntax;
 using Helix.Generation.Syntax;
 

@@ -1,10 +1,8 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Types;
-using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
-using Helix.Generation.Syntax;
-using helix.Syntax;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -42,14 +40,14 @@ namespace Helix.Features.Primitives {
             this.IsPure = this.target.IsPure && this.arg.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             var arg = this.arg.CheckTypes(types).ToRValue(types);
 
             if (!this.target.AsType(types).TryGetValue(out var targetType)) {
-                throw TypeCheckingErrors.ExpectedTypeExpression(this.target.Location);
+                throw TypeException.ExpectedTypeExpression(this.target.Location);
             }
 
-            arg = arg.ConvertTo(targetType, types);
+            arg = arg.ConvertTypeTo(targetType, types);
 
             return arg;
         }

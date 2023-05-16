@@ -5,14 +5,10 @@ using Helix.Features.Variables;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.Aggregates;
-using Helix.Features.Primitives;
-using Helix.Analysis.Lifetimes;
-using Helix.Features.FlowControl;
-using Helix.Features.Memory;
-using System.IO;
-using helix.FlowAnalysis;
-using helix.Syntax;
-using helix.Syntax.Decorators;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Syntax.Decorators;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -75,7 +71,7 @@ namespace Helix {
                 .Decorate(new ShadowingPreventer(names));
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);
             if (this.isWritable) {
@@ -92,7 +88,7 @@ namespace Helix {
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
             var basePath = this.Location.Scope.Append(this.names[0]);
-            foreach (var (compPath, compType) in VariablesHelper.GetMemberPaths(assignType, types)) {
+            foreach (var (compPath, compType) in assignType.GetMembers(types)) {
                 var path = basePath.Append(compPath);
                 var sig = new VariableSignature(path, compType, this.isWritable);
 
@@ -117,23 +113,23 @@ namespace Helix {
                 .CheckTypes(types);
         }
 
-        private ISyntaxTree Destructure(HelixType assignType, EvalFrame types) {
+        private ISyntaxTree Destructure(HelixType assignType, TypeFrame types) {
             if (assignType is not NamedType named) {
-                throw new TypeCheckingException(
+                throw new TypeException(
                     this.Location,
                     "Invalid Desconstruction",
                     $"Cannot deconstruct non-struct type '{ assignType }'");
             }
 
             if (!types.Structs.TryGetValue(named.Path, out var sig)) {
-                throw new TypeCheckingException(
+                throw new TypeException(
                     this.Location,
                     "Invalid Desconstruction",
                     $"Cannot deconstruct non-struct type '{assignType}'");
             }
 
             if (sig.Members.Count != this.names.Count) {
-                throw new TypeCheckingException(
+                throw new TypeException(
                     this.Location,
                     "Invalid Desconstruction",
                     "The number of variables provided does not match " 
@@ -187,9 +183,9 @@ namespace Helix {
             this.allowedRoots = allowedRoots;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) => this;
+        public ISyntaxTree CheckTypes(TypeFrame types) => this;
 
-        public ISyntaxTree ToRValue(EvalFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
             this.assign.AnalyzeFlow(flow);

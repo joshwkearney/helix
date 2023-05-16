@@ -5,9 +5,9 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.FlowControl;
-using Helix.Features.Variables;
-using Helix.Analysis.Lifetimes;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -205,13 +205,13 @@ namespace Helix.Features.Primitives {
             this.IsPure = this.left.IsPure && this.right.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             // Delegate type resolution
             var left = this.left.CheckTypes(types).ToRValue(types);
             var right = this.right.CheckTypes(types).ToRValue(types);
 
-            left = left.ConvertFrom(right, types);
-            right = right.ConvertFrom(left, types);
+            left = left.ConvertTypeFrom(right, types);
+            right = right.ConvertTypeFrom(left, types);
 
             var leftType = types.ReturnTypes[left];
             var rightType = types.ReturnTypes[right];
@@ -219,25 +219,25 @@ namespace Helix.Features.Primitives {
 
             // Check if left is a valid type
             if (leftType != PrimitiveType.Int && leftType != PrimitiveType.Bool) {
-                throw TypeCheckingErrors.UnexpectedType(this.left.Location, leftType);
+                throw TypeException.UnexpectedType(this.left.Location, leftType);
             }
 
             // Check if right is a valid type
             if (rightType != PrimitiveType.Int && rightType != PrimitiveType.Bool) {
-                throw TypeCheckingErrors.UnexpectedType(this.right.Location, rightType);
+                throw TypeException.UnexpectedType(this.right.Location, rightType);
             }
 
             // Make sure this is a valid operation
             if (leftType == PrimitiveType.Int) {
                 if (!intOperations.TryGetValue(this.op, out var ret)) {
-                    throw TypeCheckingErrors.UnexpectedType(this.left.Location, leftType);
+                    throw TypeException.UnexpectedType(this.left.Location, leftType);
                 }
 
                 returnType = ret;
             }
             else if (leftType == PrimitiveType.Bool) {
                 if (!boolOperations.TryGetValue(this.op, out var ret)) {
-                    throw TypeCheckingErrors.UnexpectedType(this.left.Location, leftType);
+                    throw TypeException.UnexpectedType(this.left.Location, leftType);
                 }
 
                 returnType = ret;
@@ -259,9 +259,9 @@ namespace Helix.Features.Primitives {
             flow.Lifetimes[this] = new LifetimeBundle();
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
             if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
+                throw TypeException.RValueRequired(this.Location);
             }
 
             return this;

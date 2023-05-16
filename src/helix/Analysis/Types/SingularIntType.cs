@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.Syntax;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 
@@ -23,11 +19,11 @@ namespace Helix.Analysis.Types {
             return new IntLiteral(loc, this.Value);
         }
 
-        public override UnificationKind TestUnification(HelixType other, EvalFrame types) {
+        public override UnificationKind TestUnification(HelixType other, TypeFrame types) {
             return PrimitiveType.Int.TestUnification(other, types);
         }
 
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, UnificationKind unify, EvalFrame types) {
+        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, UnificationKind unify, TypeFrame types) {
             return PrimitiveType.Int.UnifyTo(other, syntax, unify, types);
         }
 

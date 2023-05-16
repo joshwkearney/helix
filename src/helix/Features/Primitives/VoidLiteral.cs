@@ -1,11 +1,11 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Lifetimes;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -29,15 +29,15 @@ namespace Helix.Features.Primitives {
             this.Location = loc;
         }
 
-        public Option<HelixType> AsType(EvalFrame types) => PrimitiveType.Void;
+        public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             types.ReturnTypes[this] = PrimitiveType.Void;
 
             return this;
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
             flow.Lifetimes[this] = new LifetimeBundle();

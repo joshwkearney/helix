@@ -4,11 +4,9 @@ using Helix.Generation;
 using Helix.Features.FlowControl;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Features.Primitives;
-using Helix.Analysis.Lifetimes;
-using System;
-using helix.FlowAnalysis;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -61,7 +59,7 @@ namespace Helix.Features.FlowControl {
         public BlockSyntax(ISyntaxTree statement, bool isTypeChecked = false)
             : this(statement.Location, new[] { statement }, isTypeChecked) { }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
@@ -91,9 +89,9 @@ namespace Helix.Features.FlowControl {
             this.SetLifetimes(bundle, flow);
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
+                throw TypeException.RValueRequired(this.Location);
             }
 
             return this;

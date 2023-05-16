@@ -1,18 +1,13 @@
-﻿using helix.FlowAnalysis;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
 using Helix.Analysis.Types;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.Syntax;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
-namespace helix.Features.Memory {
+namespace Helix.Features.Memory {
     public class AddressOfSyntax : ISyntaxTree {
         private readonly ISyntaxTree target;
 
@@ -27,7 +22,7 @@ namespace helix.Features.Memory {
             this.target = target;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
@@ -40,7 +35,7 @@ namespace helix.Features.Memory {
             return result;
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
             return this;
         }
 

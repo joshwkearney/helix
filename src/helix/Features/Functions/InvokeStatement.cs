@@ -4,11 +4,9 @@ using Helix.Generation;
 using Helix.Features.Functions;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Features.Primitives;
-using Helix.Features.Variables;
-using Helix.Analysis.Lifetimes;
-using System;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -52,18 +50,18 @@ namespace Helix.Features.Functions {
             this.args = args;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
             // Make sure the target is a function
             if (targetType is not NamedType named || !types.Functions.TryGetValue(named.Path, out var sig)) {
-                throw TypeCheckingErrors.ExpectedFunctionType(this.target.Location, targetType);
+                throw TypeException.ExpectedFunctionType(this.target.Location, targetType);
             }
 
             // Make sure the arg count lines up
             if (this.args.Count != sig.Parameters.Count) {
-                throw TypeCheckingErrors.ParameterCountMismatch(
+                throw TypeException.ParameterCountMismatch(
                     this.Location, 
                     sig.Parameters.Count, 
                     this.args.Count);
@@ -75,7 +73,7 @@ namespace Helix.Features.Functions {
             for (int i = 0; i < this.args.Count; i++) {
                 var expectedType = sig.Parameters[i].Type;
 
-                newArgs[i] = this.args[i].CheckTypes(types).ConvertTo(expectedType, types);
+                newArgs[i] = this.args[i].CheckTypes(types).ConvertTypeTo(expectedType, types);
             }
 
             // TODO: Fix this
@@ -152,9 +150,9 @@ namespace Helix.Features.Functions {
             this.args = args;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) => this;
+        public ISyntaxTree CheckTypes(TypeFrame types) => this;
 
-        public ISyntaxTree ToRValue(EvalFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
             foreach (var arg in this.args) {

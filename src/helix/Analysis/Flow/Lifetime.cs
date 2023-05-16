@@ -1,7 +1,4 @@
-﻿using Helix.Parsing;
-using System.IO;
-
-namespace Helix.Analysis.Lifetimes {
+﻿namespace Helix.Analysis.Flow {
     public enum LifetimeKind {
         Inferencee, Other
     }

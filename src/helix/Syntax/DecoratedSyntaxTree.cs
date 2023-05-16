@@ -1,12 +1,12 @@
-﻿using helix.FlowAnalysis;
-using Helix;
-using Helix.Analysis;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 
-namespace helix.Syntax {
+namespace Helix.Syntax {
     public class DecoratedSyntaxTree : ISyntaxTree {
         public IEnumerable<ISyntaxDecorator> Decorators { get; }
 
@@ -27,13 +27,13 @@ namespace helix.Syntax {
             return new DecoratedSyntaxTree(newInner, Decorators);
         }
 
-        public Option<HelixType> AsType(EvalFrame types) => WrappedSyntax.AsType(types);
+        public Option<HelixType> AsType(TypeFrame types) => WrappedSyntax.AsType(types);
 
-        public ISyntaxTree ToRValue(EvalFrame types) => WrappedSyntax.ToRValue(types);
+        public ISyntaxTree ToRValue(TypeFrame types) => WrappedSyntax.ToRValue(types);
 
-        public ISyntaxTree ToLValue(EvalFrame types) => WrappedSyntax.ToLValue(types);
+        public ISyntaxTree ToLValue(TypeFrame types) => WrappedSyntax.ToLValue(types);
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }

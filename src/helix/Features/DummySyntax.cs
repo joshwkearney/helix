@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.Syntax;
-using Helix.Analysis;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -21,11 +16,11 @@ namespace Helix.Features {
             this.Location = loc;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

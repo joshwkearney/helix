@@ -1,12 +1,7 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Types;
-using Helix.Generation;
-using Helix.Features.FlowControl;
+﻿using Helix.Features.FlowControl;
 using Helix.Features.Primitives;
 using Helix.Features.Variables;
-using Helix.Generation.Syntax;
-using System.Linq.Expressions;
-using helix.Syntax;
+using Helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {

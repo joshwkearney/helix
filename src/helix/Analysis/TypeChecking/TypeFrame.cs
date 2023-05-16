@@ -1,17 +1,15 @@
-﻿using helix.Syntax;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Syntax;
+using Helix.Analysis.Flow;
 using Helix.Analysis.Types;
 using Helix.Features;
 using Helix.Features.Aggregates;
 using Helix.Features.Functions;
-using Helix.Features.Variables;
 using Helix.Generation;
-using System.Runtime.CompilerServices;
 
-namespace Helix.Analysis {
+namespace Helix.Analysis.TypeChecking {
     public delegate void DeclarationCG(ICWriter writer);
 
-    public class EvalFrame : ITypedFrame {
+    public class TypeFrame : ITypedFrame {
         private int tempCounter = 0;
 
         // Frame-specific things
@@ -30,43 +28,43 @@ namespace Helix.Analysis {
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
-        public EvalFrame() {
-            this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            this.LifetimeRoots = new Dictionary<IdentifierPath, Lifetime>();
+        public TypeFrame() {
+            Variables = new Dictionary<IdentifierPath, VariableSignature>();
+            LifetimeRoots = new Dictionary<IdentifierPath, Lifetime>();
 
-            this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
+            SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
                 { new IdentifierPath("int"), new TypeSyntax(default, PrimitiveType.Int) },
                 { new IdentifierPath("bool"), new TypeSyntax(default, PrimitiveType.Bool) }
             };
 
-            this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
-            this.Structs = new Dictionary<IdentifierPath, StructSignature>();
+            Functions = new Dictionary<IdentifierPath, FunctionSignature>();
+            Structs = new Dictionary<IdentifierPath, StructSignature>();
 
-            this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
-            this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
+            TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
+            ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
         }
 
-        public EvalFrame(EvalFrame prev) {
-            this.Variables = prev.Variables; //new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
-            this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
-            this.LifetimeRoots = new StackedDictionary<IdentifierPath, Lifetime>(prev.LifetimeRoots);
+        public TypeFrame(TypeFrame prev) {
+            Variables = prev.Variables; //new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
+            SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
+            LifetimeRoots = new StackedDictionary<IdentifierPath, Lifetime>(prev.LifetimeRoots);
 
-            this.Functions = prev.Functions;
-            this.Structs = prev.Structs;
+            Functions = prev.Functions;
+            Structs = prev.Structs;
 
-            this.TypeDeclarations = prev.TypeDeclarations;
-            this.ReturnTypes = prev.ReturnTypes;
+            TypeDeclarations = prev.TypeDeclarations;
+            ReturnTypes = prev.ReturnTypes;
         }
 
         public string GetVariableName() {
-            return "$t_" + this.tempCounter++;
+            return "$t_" + tempCounter++;
         }
 
         public bool TryResolvePath(IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
                 path = scope.Append(name);
-                if (this.SyntaxValues.ContainsKey(path)) {
+                if (SyntaxValues.ContainsKey(path)) {
                     return true;
                 }
 
@@ -80,7 +78,7 @@ namespace Helix.Analysis {
         }
 
         public IdentifierPath ResolvePath(IdentifierPath scope, string path) {
-            if (this.TryResolvePath(scope, path, out var value)) {
+            if (TryResolvePath(scope, path, out var value)) {
                 return value;
             }
 
@@ -89,16 +87,16 @@ namespace Helix.Analysis {
         }
 
         public bool TryResolveName(IdentifierPath scope, string name, out ISyntaxTree value) {
-            if (!this.TryResolvePath(scope, name, out var path)) {
+            if (!TryResolvePath(scope, name, out var path)) {
                 value = null;
                 return false;
             }
 
-            return this.SyntaxValues.TryGetValue(path, out value);
+            return SyntaxValues.TryGetValue(path, out value);
         }
 
         public ISyntaxTree ResolveName(IdentifierPath scope, string name) {
-            return this.SyntaxValues[this.ResolvePath(scope, name)];
+            return SyntaxValues[ResolvePath(scope, name)];
         }
     }
 }

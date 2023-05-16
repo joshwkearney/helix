@@ -1,4 +1,5 @@
-﻿using helix.Syntax;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 
 namespace Helix.Analysis.Types {
     public record NamedType : HelixType {
@@ -31,7 +32,7 @@ namespace Helix.Analysis.Types {
             return this.Path.Segments.Last();
         }
 
-        public override IEnumerable<HelixType> GetContainedTypes(EvalFrame types) {
+        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame types) {
             if (types.Structs.TryGetValue(this.Path, out var sig)) {
                 return sig.Members
                     .SelectMany(x => x.Type.GetContainedTypes(types))
@@ -41,7 +42,7 @@ namespace Helix.Analysis.Types {
             return new[] { this };
         }
 
-        public override UnificationKind TestUnification(HelixType other, EvalFrame types) {
+        public override UnificationKind TestUnification(HelixType other, TypeFrame types) {
             if (this == other) {
                 return UnificationKind.Pun;
             }
@@ -50,7 +51,7 @@ namespace Helix.Analysis.Types {
             }
         }
 
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, UnificationKind unificationKind, EvalFrame types) {
+        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, UnificationKind unificationKind, TypeFrame types) {
             if (this.TestUnification(other, types).IsSubsetOf(unificationKind)) {
                 return syntax;
             }

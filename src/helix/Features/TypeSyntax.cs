@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.Syntax;
-using Helix.Analysis;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
@@ -25,13 +20,13 @@ namespace Helix.Features {
             this.type = type;
         }
 
-        public Option<HelixType> AsType(EvalFrame types) => this.type;
+        public Option<HelixType> AsType(TypeFrame types) => this.type;
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
 
-        public ICSyntax GenerateCode(EvalFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             throw new InvalidOperationException();
         }
     }

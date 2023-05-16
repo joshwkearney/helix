@@ -1,14 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.Syntax;
-using Helix.Analysis;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis.Types;
-using Helix.Features.Arrays;
-using Helix.Generation;
-using Helix.Generation.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Features.Arrays {
@@ -31,13 +23,13 @@ namespace Helix.Features.Arrays {
             this.IsWritable = isWritable;
         }
 
-        Option<HelixType> ISyntaxTree.AsType(EvalFrame types) {
+        Option<HelixType> ISyntaxTree.AsType(TypeFrame types) {
             return this.inner
                 .AsType(types)
                 .Select(x => new ArrayType(x, this.IsWritable))
                 .Select(x => (HelixType)x);
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) => this;
+        public ISyntaxTree CheckTypes(TypeFrame types) => this;
     }
 }

@@ -1,6 +1,4 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 
 namespace Helix.Analysis {
     public record struct VariableSignature {

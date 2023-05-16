@@ -4,12 +4,10 @@ using Helix.Generation;
 using Helix.Features.Aggregates;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Lifetimes;
-using Helix.Features.Variables;
-using System;
+using Helix.Analysis.Flow;
 using System.Reflection;
-using helix.FlowAnalysis;
-using helix.Syntax;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -47,7 +45,7 @@ namespace Helix.Features.Aggregates {
             this.isWritable = isWritable;
         }
 
-        public virtual ISyntaxTree CheckTypes(EvalFrame types) {
+        public virtual ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
@@ -93,10 +91,10 @@ namespace Helix.Features.Aggregates {
                 }               
             }
 
-            throw TypeCheckingErrors.MemberUndefined(this.Location, targetType, this.MemberName);
+            throw TypeException.MemberUndefined(this.Location, targetType, this.MemberName);
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
@@ -104,13 +102,13 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public ISyntaxTree ToLValue(EvalFrame types) {
+        public ISyntaxTree ToLValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 
             if (!this.isWritable) {
-                throw TypeCheckingErrors.LValueRequired(this.Location);
+                throw TypeException.LValueRequired(this.Location);
             }
 
             var target = this.Target.ToLValue(types);
@@ -177,7 +175,7 @@ namespace Helix.Features.Aggregates {
             this.memberType = memberType;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }

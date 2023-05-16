@@ -4,9 +4,10 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Lifetimes;
-using helix.Features.Memory;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Features.Memory;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -64,7 +65,7 @@ namespace Helix.Features.Primitives {
             this.arg = arg;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
                 var left = new IntLiteral(this.Location, 0);
 
@@ -79,7 +80,7 @@ namespace Helix.Features.Primitives {
             else if (this.op == UnaryOperatorKind.Not) {
                 var arg = this.arg
                     .CheckTypes(types)
-                    .ConvertTo(PrimitiveType.Bool, types);
+                    .ConvertTypeTo(PrimitiveType.Bool, types);
 
                 var result = new UnaryNotSyntax(
                     this.Location,
@@ -109,9 +110,9 @@ namespace Helix.Features.Primitives {
             this.target = target;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) => this;
+        public ISyntaxTree CheckTypes(TypeFrame types) => this;
 
-        public ISyntaxTree ToRValue(EvalFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             return new CNot() {

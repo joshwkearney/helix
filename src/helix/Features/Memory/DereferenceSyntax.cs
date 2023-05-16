@@ -1,12 +1,9 @@
-﻿using System;
-using helix.FlowAnalysis;
-using helix.Syntax;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Features.Memory;
-using Helix.Features.Primitives;
-using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -43,13 +40,13 @@ namespace Helix.Features.Memory {
             this.tempPath = tempPath;
         }
 
-        public Option<HelixType> AsType(EvalFrame types) {
+        public Option<HelixType> AsType(TypeFrame types) {
             return this.target.AsType(types)
                 .Select(x => new PointerType(x, true))
                 .Select(x => (HelixType)x);
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
@@ -71,7 +68,7 @@ namespace Helix.Features.Memory {
             return result;
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
@@ -79,7 +76,7 @@ namespace Helix.Features.Memory {
             return this;
         }
 
-        public ISyntaxTree ToLValue(EvalFrame types) {
+        public ISyntaxTree ToLValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
@@ -162,7 +159,7 @@ namespace Helix.Features.Memory {
             this.target = target;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
@@ -171,7 +168,7 @@ namespace Helix.Features.Memory {
             return this;
         }
 
-        public ISyntaxTree ToLValue(EvalFrame types) {
+        public ISyntaxTree ToLValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }

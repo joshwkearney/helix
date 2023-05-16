@@ -1,13 +1,10 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Parsing;
-using Helix.Generation.Syntax;
-using Helix.Generation;
 using Helix.Features.Aggregates;
 using Helix.Features.Memory;
-using Helix.Analysis.Lifetimes;
-using helix.Syntax;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -83,16 +80,16 @@ namespace Helix.Features.Memory {
             this.IsPure = type.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             // If the supplied type isn't a type, then try to check this as a new value expression
             if (!this.type.AsType(types).TryGetValue(out var type)) {
-                throw TypeCheckingErrors.ExpectedTypeExpression(this.type.Location);              
+                throw TypeException.ExpectedTypeExpression(this.type.Location);              
             }
 
             // Make sure we are not supplying members to a primitive type
             if (type is not NamedType) {
                 if (this.names.Count > 0) {
-                    throw new TypeCheckingException(
+                    throw new TypeException(
                         this.Location,
                         "Member Not Defined",
                         $"The type '{type}' does not contain the member '{this.names[0]}'");
@@ -117,7 +114,7 @@ namespace Helix.Features.Memory {
             }
             else if (type is NamedType named) {
                 if (!types.Structs.TryGetValue(named.Path, out var sig)) {
-                    throw TypeCheckingErrors.ExpectedStructType(this.type.Location, type);
+                    throw TypeException.ExpectedStructType(this.type.Location, type);
                 }
 
                 var result = new NewStructSyntax(
@@ -129,7 +126,7 @@ namespace Helix.Features.Memory {
                 return result.CheckTypes(types);
             }
             else {
-                throw new TypeCheckingException(
+                throw new TypeException(
                     this.Location,
                     "Invalid Initialization",
                     $"The type '{type}' does not have a default value and cannot be initialized.");

@@ -1,5 +1,6 @@
 using Helix;
 using Helix.Analysis;
+using Helix.Analysis.Flow;
 
 namespace helix_tests {
     [TestClass]

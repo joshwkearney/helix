@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Helix.Analysis.Lifetimes {
+﻿namespace Helix.Analysis.Flow {
     public class LifetimeBundle {
         public IReadOnlyDictionary<IdentifierPath, Lifetime> Components { get; }
 

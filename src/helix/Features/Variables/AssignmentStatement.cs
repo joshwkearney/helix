@@ -1,10 +1,8 @@
-﻿using helix.FlowAnalysis;
-using helix.Syntax;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis.Types;
-using Helix.Features.FlowControl;
-using Helix.Features.Memory;
 using Helix.Features.Primitives;
 using Helix.Features.Variables;
 using Helix.Generation;
@@ -76,7 +74,7 @@ namespace Helix.Features.Variables {
             this.assign = assign;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (types.ReturnTypes.ContainsKey(this)) {
                 return this;
             }
@@ -87,7 +85,7 @@ namespace Helix.Features.Variables {
             var assign = this.assign
                 .CheckTypes(types)
                 .ToRValue(types)
-                .ConvertTo(targetType, types);            
+                .ConvertTypeTo(targetType, types);            
 
             var result = new AssignmentStatement(
                 this.Location,
@@ -98,10 +96,10 @@ namespace Helix.Features.Variables {
             return result;
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
             // We need to be type checked to be an r-value
             if (!types.ReturnTypes.ContainsKey(this)) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
+                throw TypeException.RValueRequired(this.Location);
             }
 
             return this;

@@ -1,6 +1,6 @@
-﻿using helix.FlowAnalysis;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Features.Variables;
 using Helix.Parsing;
@@ -15,14 +15,14 @@ namespace Helix.Features.Functions {
                 .ToArray();
 
             if (dups.Any()) {
-                throw TypeCheckingErrors.IdentifierDefined(loc, dups.First());
+                throw TypeException.IdentifierDefined(loc, dups.First());
             }
         }
 
-        public static void DeclareName(FunctionParseSignature sig, EvalFrame types) {
+        public static void DeclareName(FunctionParseSignature sig, TypeFrame types) {
             // Make sure this name isn't taken
             if (types.TryResolvePath(sig.Location.Scope, sig.Name, out _)) {
-                throw TypeCheckingErrors.IdentifierDefined(sig.Location, sig.Name);
+                throw TypeException.IdentifierDefined(sig.Location, sig.Name);
             }
 
             // Declare this function
@@ -31,7 +31,7 @@ namespace Helix.Features.Functions {
             types.SyntaxValues[path] = new TypeSyntax(sig.Location, new NamedType(path));
         }
 
-        public static void DeclareParameterTypes(TokenLocation loc, FunctionSignature sig, EvalFrame types) {
+        public static void DeclareParameterTypes(TokenLocation loc, FunctionSignature sig, TypeFrame types) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];

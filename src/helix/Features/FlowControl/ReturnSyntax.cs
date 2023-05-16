@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.Syntax;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Features.FlowControl;
-using Helix.Features.Primitives;
-using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -49,15 +43,15 @@ namespace Helix.Features.FlowControl {
             this.isTypeChecked = isTypeChecked;
         }
 
-        public ISyntaxTree ToRValue(EvalFrame frame) {
+        public ISyntaxTree ToRValue(TypeFrame frame) {
             if (!this.isTypeChecked) {
-                throw TypeCheckingErrors.RValueRequired(this.Location);
+                throw TypeException.RValueRequired(this.Location);
             }
 
             return this;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             var sig = types.Functions[this.func];
             var payload = this.payload.CheckTypes(types).ToRValue(types);
             var result = new ReturnSyntax(this.Location, payload, this.func, true);

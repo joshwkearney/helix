@@ -1,11 +1,11 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Lifetimes;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -33,11 +33,11 @@ namespace Helix.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<HelixType> AsType(EvalFrame types) {
+        public Option<HelixType> AsType(TypeFrame types) {
             return new SingularBoolType(this.Value);
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             types.ReturnTypes[this] = new SingularBoolType(this.Value);
             return this;
         }
@@ -46,7 +46,7 @@ namespace Helix.Features.Primitives {
             flow.Lifetimes[this] = new LifetimeBundle();
         }
 
-        public ISyntaxTree ToRValue(EvalFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value ? 1 : 0);

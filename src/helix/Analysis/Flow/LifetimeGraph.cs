@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Immutable;
 
-namespace Helix.Analysis.Lifetimes {
+namespace Helix.Analysis.Flow {
     public class LifetimeGraph {
         private readonly Dictionary<Lifetime, ISet<Lifetime>> outlivesGraph = new();
         private readonly Dictionary<Lifetime, ISet<Lifetime>> reverseOutlivesGraph = new();

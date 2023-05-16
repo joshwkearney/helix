@@ -1,12 +1,13 @@
-﻿using Helix.Analysis;
+﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 
-namespace helix.Syntax {
+namespace Helix.Syntax {
     public interface ISyntaxDecorator {
-        public void PreCheckTypes(ISyntaxTree syntax, EvalFrame types) { }
+        public void PreCheckTypes(ISyntaxTree syntax, TypeFrame types) { }
 
-        public void PostCheckTypes(ISyntaxTree syntax, EvalFrame types) { }
+        public void PostCheckTypes(ISyntaxTree syntax, TypeFrame types) { }
 
         public void PreAnalyzeFlow(ISyntaxTree syntax, FlowFrame flow) { }
 

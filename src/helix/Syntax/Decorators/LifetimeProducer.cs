@@ -1,17 +1,11 @@
-﻿using helix.FlowAnalysis;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace helix.Syntax.Decorators {
+namespace Helix.Syntax.Decorators {
     public class LifetimeProducer : ISyntaxDecorator {
         public IdentifierPath LifetimePath { get; }
 
@@ -25,7 +19,7 @@ namespace helix.Syntax.Decorators {
             LifetimeKind = kind;
         }
 
-        public virtual void PostCheckTypes(ISyntaxTree syntax, EvalFrame types) {
+        public virtual void PostCheckTypes(ISyntaxTree syntax, TypeFrame types) {
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
             foreach (var (compPath, _) in LifetimeType.GetMembers(types)) {

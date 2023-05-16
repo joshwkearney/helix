@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using Helix.Features.Aggregates;
 using Helix.Generation.Syntax;
 
 namespace Helix.Generation.CSyntax {

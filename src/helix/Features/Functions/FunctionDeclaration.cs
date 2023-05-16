@@ -9,10 +9,9 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.Variables;
-using Helix.Analysis.Lifetimes;
-using System;
-using helix.FlowAnalysis;
-using helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Syntax;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -102,7 +101,7 @@ namespace Helix.Features.Functions {
             this.body = body;
         }
 
-        public void DeclareNames(EvalFrame types) {
+        public void DeclareNames(TypeFrame types) {
             FunctionsHelper.CheckForDuplicateParameters(
                 this.Location, 
                 this.signature.Parameters.Select(x => x.Name));
@@ -110,19 +109,19 @@ namespace Helix.Features.Functions {
             FunctionsHelper.DeclareName(this.signature, types);
         }
 
-        public void DeclareTypes(EvalFrame types) {
+        public void DeclareTypes(TypeFrame types) {
             var sig = this.signature.ResolveNames(types);
 
             // Declare this function
             types.Functions[sig.Path] = sig;
         }
         
-        public IDeclaration CheckTypes(EvalFrame types) {
+        public IDeclaration CheckTypes(TypeFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.signature.Name);
             var sig = types.Functions[path];
 
             // Set the scope for type checking the body
-            types = new EvalFrame(types);
+            types = new TypeFrame(types);
 
             // Declare parameters
             FunctionsHelper.DeclareParameterTypes(this.Location, sig, types);
@@ -143,7 +142,7 @@ namespace Helix.Features.Functions {
 
             body = body.CheckTypes(types)
                 .ToRValue(types)
-                .ConvertTo(sig.ReturnType, types);
+                .ConvertTypeTo(sig.ReturnType, types);
 
 #if DEBUG
             // Debug check: make sure that every syntax tree has a return type
@@ -172,15 +171,15 @@ namespace Helix.Features.Functions {
             this.body = body;
         }
 
-        public void DeclareNames(EvalFrame names) {
+        public void DeclareNames(TypeFrame names) {
             throw new InvalidOperationException();
         }
 
-        public void DeclareTypes(EvalFrame paths) {
+        public void DeclareTypes(TypeFrame paths) {
             throw new InvalidOperationException();
         }
 
-        public IDeclaration CheckTypes(EvalFrame types) {
+        public IDeclaration CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
 
@@ -261,14 +260,14 @@ namespace Helix.Features.Functions {
 
             // Register the parameter member paths
             foreach (var par in this.Signature.Parameters) {
-                foreach (var (relPath, type) in VariablesHelper.GetMemberPaths(par.Type, types)) {
+                foreach (var (relPath, type) in par.Type.GetMembers(types)) {
                     writer.RegisterMemberPath(this.Signature.Path.Append(par.Name), relPath);
                 }
             }
 
             // Register the parameter lifetimes
             foreach (var par in this.Signature.Parameters) {
-                foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
+                foreach (var (relPath, _) in par.Type.GetMembers(types)) {
                     var path = this.Signature.Path.Append(par.Name).Append(relPath);
                     var lifetime = types.VariableLifetimes[path];
 
@@ -281,7 +280,7 @@ namespace Helix.Features.Functions {
 
             // Register the parameters as local variables
             foreach (var par in this.Signature.Parameters) {
-                foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(par.Type, types)) {
+                foreach (var (relPath, _) in par.Type.GetMembers(types)) {
                     var path = this.Signature.Path.Append(par.Name).Append(relPath);
 
                     bodyWriter.RegisterVariableKind(path, CVariableKind.Local);

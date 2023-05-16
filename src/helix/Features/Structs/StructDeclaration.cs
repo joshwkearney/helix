@@ -1,12 +1,12 @@
-﻿using Helix.Analysis;
-using Helix.Generation;
+﻿using Helix.Generation;
 using Helix.Generation.CSyntax;
 using Helix.Features.Aggregates;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Types;
-using System.IO;
-using helix.Syntax;
+using Helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -61,10 +61,10 @@ namespace Helix.Features.Aggregates {
             this.signature = sig;
         }
 
-        public void DeclareNames(EvalFrame names) {
+        public void DeclareNames(TypeFrame names) {
             // Make sure this name isn't taken
             if (names.TryResolvePath(this.Location.Scope, this.signature.Name, out _)) {
-                throw TypeCheckingErrors.IdentifierDefined(this.Location, this.signature.Name);
+                throw TypeException.IdentifierDefined(this.Location, this.signature.Name);
             }
 
             var path = this.Location.Scope.Append(this.signature.Name);
@@ -80,7 +80,7 @@ namespace Helix.Features.Aggregates {
             //}
         }
 
-        public void DeclareTypes(EvalFrame types) {
+        public void DeclareTypes(TypeFrame types) {
             var sig = this.signature.ResolveNames(types);
             var structType = new NamedType(sig.Path);
 
@@ -91,7 +91,7 @@ namespace Helix.Features.Aggregates {
             types.TypeDeclarations[structType] = writer => this.RealCodeGenerator(sig, writer);
         }
 
-        public IDeclaration CheckTypes(EvalFrame types) {
+        public IDeclaration CheckTypes(TypeFrame types) {
             var sig = this.signature.ResolveNames(types);
             var structType = new NamedType(sig.Path);
 
@@ -103,7 +103,7 @@ namespace Helix.Features.Aggregates {
 
             // Make sure this is not a recursive struct or union
             if (isRecursive) {
-                throw TypeCheckingErrors.CircularValueObject(this.Location, structType);
+                throw TypeException.CircularValueObject(this.Location, structType);
             }
 
             return this;

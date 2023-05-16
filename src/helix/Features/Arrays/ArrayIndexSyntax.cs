@@ -1,18 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.Syntax;
-using Helix.Analysis;
-using Helix.Analysis.Lifetimes;
+﻿using Helix.Analysis;
+using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Features.Arrays;
 using Helix.Features.Memory;
-using Helix.Features.Primitives;
-using Helix.Features.Variables;
-using Helix.Generation;
-using Helix.Generation.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Parsing {
@@ -58,7 +49,7 @@ namespace Helix.Features.Arrays {
             this.IsPure = this.target.IsPure && this.index.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
@@ -70,11 +61,11 @@ namespace Helix.Features.Arrays {
             var index = this.index
                 .CheckTypes(types)
                 .ToRValue(types)
-                .ConvertTo(PrimitiveType.Int, types);
+                .ConvertTypeTo(PrimitiveType.Int, types);
 
             // Make sure we have an array
             if (types.ReturnTypes[target] is not ArrayType arrayType) {
-                throw TypeCheckingErrors.ExpectedArrayType(
+                throw TypeException.ExpectedArrayType(
                     this.target.Location, 
                     types.ReturnTypes[target]);
             }

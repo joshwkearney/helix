@@ -1,5 +1,5 @@
-﻿using helix.Syntax;
-using Helix.Features.Aggregates;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Features.FlowControl;
 using Helix.Features.Memory;
 using Helix.Features.Primitives;
@@ -25,7 +25,7 @@ namespace Helix.Analysis.Types {
             return PassingSemantics.ValueType;
         }
 
-        public override UnificationKind TestUnification(HelixType other, EvalFrame types) {
+        public override UnificationKind TestUnification(HelixType other, TypeFrame types) {
             if (this == other) {
                 return UnificationKind.Pun;
             }
@@ -48,7 +48,7 @@ namespace Helix.Analysis.Types {
         }
 
         public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax,
-                                            UnificationKind unify, EvalFrame types) {
+                                            UnificationKind unify, TypeFrame types) {
             var test = this.TestUnification(other, types);
 
             if (test.IsSubsetOf(unify)) {

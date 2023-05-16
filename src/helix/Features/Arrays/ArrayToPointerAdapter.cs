@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using helix.Syntax;
+﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 using Helix.Analysis;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Generation;
-using Helix.Generation.CSyntax;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 
@@ -43,9 +39,9 @@ namespace Helix.Features.Arrays {
         public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target)
             : this(arrayType, target, new IntLiteral(target.Location, 0)) { }
 
-        ISyntaxTree ISyntaxTree.ToRValue(EvalFrame types) => this;
+        ISyntaxTree ISyntaxTree.ToRValue(TypeFrame types) => this;
 
-        public ISyntaxTree CheckTypes(EvalFrame types) {
+        public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }

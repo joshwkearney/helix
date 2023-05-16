@@ -1,18 +1,19 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.CSyntax;
 using Helix.Features.Functions;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using helix.Syntax;
+using Helix.Syntax;
+using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
         private IDeclaration ExternFunctionDeclaration() {
             var start = this.Advance(TokenKind.ExternKeyword);
             var sig = this.FunctionSignature();
-            var end = this.Advance(TokenKind.Semicolon);        
+            var end = this.Advance(TokenKind.Semicolon);
             var loc = start.Location.Span(end.Location);
 
             return new ExternFunctionParseDeclaration(loc, sig);
@@ -31,15 +32,15 @@ namespace Helix.Features.Functions {
             this.Signature = sig;
         }
 
-        public void DeclareNames(EvalFrame names) {
+        public void DeclareNames(TypeFrame names) {
             FunctionsHelper.CheckForDuplicateParameters(
-                this.Location, 
+                this.Location,
                 this.Signature.Parameters.Select(x => x.Name));
 
             FunctionsHelper.DeclareName(this.Signature, names);
         }
 
-        public void DeclareTypes(EvalFrame types) {
+        public void DeclareTypes(TypeFrame types) {
             var sig = this.Signature.ResolveNames(types);
             var decl = new ExternFunctionDeclaration(this.Location, sig);
 
@@ -50,14 +51,14 @@ namespace Helix.Features.Functions {
             types.Functions[sig.Path] = sig;
         }
 
-        public IDeclaration CheckTypes(EvalFrame types) {
+        public IDeclaration CheckTypes(TypeFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.Signature.Name);
             var sig = types.Functions[path];
 
             return new ExternFunctionDeclaration(this.Location, sig);
         }
 
-        public void GenerateCode(EvalFrame types, ICWriter writer) => throw new InvalidOperationException();
+        public void GenerateCode(TypeFrame types, ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record ExternFunctionDeclaration : IDeclaration {
@@ -70,15 +71,15 @@ namespace Helix.Features.Functions {
             this.Signature = sig;
         }
 
-        public void DeclareNames(EvalFrame names) {
+        public void DeclareNames(TypeFrame names) {
             throw new InvalidOperationException();
         }
 
-        public void DeclareTypes(EvalFrame types) {
+        public void DeclareTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
 
-        public IDeclaration CheckTypes(EvalFrame types) => this;
+        public IDeclaration CheckTypes(TypeFrame types) => this;
 
         public void GenerateCode(FlowFrame types, ICWriter writer) {
             var returnType = this.Signature.ReturnType == PrimitiveType.Void

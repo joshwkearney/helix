@@ -1,7 +1,5 @@
-﻿using helix.Syntax;
+﻿using Helix.Syntax;
 using Helix.Analysis;
-using Helix.Features.FlowControl;
-using Helix.Features.Primitives;
 using Helix.Features.Variables;
 
 namespace Helix.Parsing {
@@ -43,7 +41,7 @@ namespace Helix.Parsing {
             var tok = this.lexer.GetToken(this.scope);
 
             if (tok.Kind == TokenKind.EOF) {
-                throw ParsingErrors.EndOfFile(new TokenLocation());
+                throw ParseException.EndOfFile(new TokenLocation());
             }
 
             return tok;
@@ -53,7 +51,7 @@ namespace Helix.Parsing {
             var tok = this.Advance();
 
             if (tok.Kind != kind) {
-                throw ParsingErrors.UnexpectedToken(kind, tok);
+                throw ParseException.UnexpectedToken(kind, tok);
             }
 
             return tok;
@@ -71,7 +69,7 @@ namespace Helix.Parsing {
                 return this.ExternFunctionDeclaration();
             }
 
-            throw ParsingErrors.UnexpectedToken(this.Advance());
+            throw ParseException.UnexpectedToken(this.Advance());
         }
 
         /** Expression Parsing **/
@@ -150,7 +148,7 @@ namespace Helix.Parsing {
             else {
                 var next = this.Advance();
 
-                throw ParsingErrors.UnexpectedToken(next);
+                throw ParseException.UnexpectedToken(next);
             }
         }        
 
