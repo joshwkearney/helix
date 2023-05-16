@@ -29,12 +29,21 @@ namespace Helix.Syntax {
 
         public Option<HelixType> AsType(TypeFrame types) => WrappedSyntax.AsType(types);
 
-        public ISyntaxTree ToRValue(TypeFrame types) => WrappedSyntax.ToRValue(types);
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            return this.ReplaceWrappedSyntax(this.WrappedSyntax.ToRValue(types)).CheckTypes(types);
+        }
 
-        public ISyntaxTree ToLValue(TypeFrame types) => WrappedSyntax.ToLValue(types);
+        public ISyntaxTree ToLValue(TypeFrame types) {
+            return this.ReplaceWrappedSyntax(this.WrappedSyntax.ToLValue(types)).CheckTypes(types);
+        }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
+                return this;
+            }
+
+            if (this.WrappedSyntax.IsTypeChecked(types)) {
+                this.SetReturnType(this.WrappedSyntax.GetReturnType(types), types);
                 return this;
             }
 
@@ -49,7 +58,7 @@ namespace Helix.Syntax {
                 deco.PostCheckTypes(result, types);
             }
 
-            result = ReplaceWrappedSyntax(result);
+            result = this.ReplaceWrappedSyntax(result);
             result.SetReturnType(returnType, types);
 
             return result;

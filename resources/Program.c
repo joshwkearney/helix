@@ -14,7 +14,7 @@ typedef struct Point Point;
 typedef struct Point$ptr Point$ptr;
 typedef struct Point$ptr$ptr Point$ptr$ptr;
 
-Point$ptr test(int _return_region, Point$ptr$ptr z);
+void test(int _return_region, Point$ptr$ptr z);
 
 struct Point {
     int x;
@@ -31,19 +31,13 @@ struct Point$ptr$ptr {
     int region;
 };
 
-Point$ptr test(int _return_region, Point$ptr$ptr z) {
-    /* Line 2: Region calculation */
-    int $B = _return_region;
-    $B = (($B <= (z.region)) ? $B : (z.region));
-
-    /* Line 2: New variable declaration 'x' */
-    Point* x = (Point*)_region_malloc($B, sizeof(Point));
-    (*x) = (Point){ 4U, 8U };
+void test(int _return_region, Point$ptr$ptr z) {
+    /* Line 2: New variable declaration 'y' */
+    Point* y = (Point*)_region_malloc((z.region), sizeof(Point));
+    (*y) = (Point){ 0U, 0U };
 
     /* Line 4: Assignment statement */
-    (*(z.data)) = (Point$ptr){ x, $B };
-
-    return (Point$ptr){ x, $B };
+    (*(z.data)) = (Point$ptr){ y, (z.region) };
 }
 
 #if __cplusplus

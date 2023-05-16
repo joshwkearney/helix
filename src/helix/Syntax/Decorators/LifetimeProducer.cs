@@ -14,35 +14,34 @@ namespace Helix.Syntax.Decorators {
         public LifetimeKind LifetimeKind { get; }
 
         public LifetimeProducer(IdentifierPath path, HelixType baseType, LifetimeKind kind) {
-            LifetimePath = path;
-            LifetimeType = baseType;
-            LifetimeKind = kind;
+            this.LifetimePath = path;
+            this.LifetimeType = baseType;
+            this.LifetimeKind = kind;
         }
 
         public virtual void PostCheckTypes(ISyntaxTree syntax, TypeFrame types) {
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
-            foreach (var (compPath, _) in LifetimeType.GetMembers(types)) {
-                var memPath = LifetimePath.Append(compPath);
-                var lifetime = new Lifetime(memPath, 0, LifetimeKind);
+            foreach (var (relPath, _) in this.LifetimeType.GetMembers(types)) {
+                var memPath = LifetimePath.Append(relPath);
+                var lifetime = new Lifetime(memPath, 0, this.LifetimeKind);
 
                 // Add this variable's lifetime
                 types.LifetimeRoots[memPath] = lifetime;
             }
         }
 
-        public virtual void PostAnalyzeFlow(ISyntaxTree syntax, FlowFrame flow) {
-            var baseLifetime = new Lifetime(LifetimePath, 0, LifetimeKind);
+        public virtual void PreAnalyzeFlow(ISyntaxTree syntax, FlowFrame flow) {
+            var baseLifetime = new Lifetime(this.LifetimePath, 0, LifetimeKind);
 
             // Go through all the variables and sub variables and set up the lifetimes
             // correctly
-            foreach (var (relPath, _) in LifetimeType.GetMembers(flow)) {
-                var memPath = LifetimePath.Append(relPath);
-                var varLifetime = new Lifetime(memPath, 0, LifetimeKind);
+            foreach (var (relPath, _) in this.LifetimeType.GetMembers(flow)) {
+                var memPath = this.LifetimePath.Append(relPath);
+                var varLifetime = new Lifetime(memPath, 0, this.LifetimeKind);
 
                 // Make sure we say the main lifetime outlives all of the member lifetimes
                 flow.LifetimeGraph.RequireOutlives(baseLifetime, varLifetime);
-                flow.LifetimeGraph.RequireOutlives(varLifetime, baseLifetime);
 
                 // Add this variable members's lifetime
                 flow.VariableLifetimes[memPath] = varLifetime;
@@ -53,7 +52,7 @@ namespace Helix.Syntax.Decorators {
             // TODO: Make this better
             // Register our member paths so the code generator knows how to get to them            
             foreach (var (relPath, _) in LifetimeType.GetMembers(flow)) {
-                writer.RegisterMemberPath(LifetimePath, relPath);
+                writer.RegisterMemberPath(this.LifetimePath, relPath);
             }
 
             // Figure out the c vlaue for our new lifetime based on the lifetimes it
@@ -65,12 +64,44 @@ namespace Helix.Syntax.Decorators {
 
             roots = flow.ReduceRootSet(roots);
 
-            var cLifetime = writer.CalculateSmallestLifetime(syntax.Location, roots);
+            if (this.LifetimeKind == LifetimeKind.Inferencee) {
+                // This lifetime is inferred, which means it is being calculated from previous
+                // lifetimes
+                var cLifetime = writer.CalculateSmallestLifetime(syntax.Location, roots);
 
-            foreach (var (relPath, type) in LifetimeType.GetMembers(flow)) {
-                var memPath = this.LifetimePath.Append(relPath);
+                foreach (var (relPath, type) in this.LifetimeType.GetMembers(flow)) {
+                    var memPath = this.LifetimePath.Append(relPath);
 
-                writer.RegisterLifetime(flow.VariableLifetimes[memPath], cLifetime);
+                    writer.RegisterLifetime(flow.VariableLifetimes[memPath], cLifetime);
+                }
+            }
+            else {
+                // This is a new lifetime declaration
+                foreach (var (relPath, type) in this.LifetimeType.GetMembers(flow)) {
+                    var memPath = this.LifetimePath.Append(relPath);
+                    var memAccess = result;
+
+                    // Only register lifetimes that exist
+                    if (type.IsValueType(flow)) {
+                        continue;
+                    }
+
+                    foreach (var segment in relPath.Segments) {
+                        memAccess = new CMemberAccess() {
+                            IsPointerAccess = false,
+                            MemberName = segment,
+                            Target = memAccess
+                        };
+                    }
+
+                    memAccess = new CMemberAccess() {
+                        IsPointerAccess = false,
+                        MemberName = "region",
+                        Target = memAccess
+                    };
+
+                    writer.RegisterLifetime(flow.VariableLifetimes[memPath], memAccess);
+                }
             }
         }
     }
@@ -85,8 +116,8 @@ namespace Helix.Syntax.Decorators {
             AssignSyntax = assign;
         }
 
-        public override void PostAnalyzeFlow(ISyntaxTree syntax, FlowFrame flow) {
-            base.PostAnalyzeFlow(syntax, flow);
+        public void PostAnalyzeFlow(ISyntaxTree syntax, FlowFrame flow) {
+            base.PreAnalyzeFlow(syntax, flow);
 
             var assignBundle = AssignSyntax.GetLifetimes(flow);
 

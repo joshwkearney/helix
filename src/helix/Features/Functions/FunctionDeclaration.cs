@@ -298,7 +298,7 @@ namespace Helix.Features.Functions {
             }
 
             // If the body ends with an empty line, trim it
-            if (body.Last().IsEmpty) {
+            if (body.Any() && body.Last().IsEmpty) {
                 body = body.SkipLast(1).ToList();
             }
 

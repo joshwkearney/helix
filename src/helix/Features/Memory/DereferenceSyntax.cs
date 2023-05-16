@@ -7,6 +7,7 @@ using Helix.Features.Memory;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Syntax.Decorators;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -55,17 +56,11 @@ namespace Helix.Features.Memory {
             var pointerType = target.AssertIsPointer(types);
             var result = new DereferenceSyntax(this.Location, target, this.tempPath);
 
-            foreach (var (relPath, type) in pointerType.InnerType.GetMembers(types)) {
-                // Add new roots to the current root set
-                if (!type.IsValueType(types)) {
-                    var lifetime = new Lifetime(this.tempPath.Append(relPath), 0);
+            result.SetReturnType(pointerType.InnerType, types);
 
-                    types.LifetimeRoots[lifetime.Path] = lifetime;
-                }
-            }
-
-            types.ReturnTypes[result] = pointerType.InnerType;
-            return result;
+            return result
+                .Decorate(new LifetimeProducer(this.tempPath, pointerType.InnerType, LifetimeKind.Other))
+                .CheckTypes(types);
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
@@ -137,10 +132,6 @@ namespace Helix.Features.Memory {
             });
 
             writer.WriteEmptyLine();
-
-            var result = new CVariableLiteral(writer.GetVariableName(this.tempPath));
-            writer.RegisterLifetimes(this.tempPath, this.GetLifetimes(types), result);
-
             return new CVariableLiteral(tempName);
         }        
     }
