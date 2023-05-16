@@ -11,13 +11,20 @@ extern void* _region_malloc(int region, int size);
 extern void _region_delete(int region);
 
 typedef struct int$ptr int$ptr;
+typedef struct int$ptr$array int$ptr$array;
 typedef struct int$ptr$ptr int$ptr$ptr;
 
-void test(int _return_region, int$ptr$ptr a, int$ptr$ptr b);
+void test7(int _return_region, int$ptr$array arr);
 
 struct int$ptr {
     int* data;
     int region;
+};
+
+struct int$ptr$array {
+    int$ptr* data;
+    int region;
+    int count;
 };
 
 struct int$ptr$ptr {
@@ -25,15 +32,18 @@ struct int$ptr$ptr {
     int region;
 };
 
-void test(int _return_region, int$ptr$ptr a, int$ptr$ptr b) {
-    /* Line 2: New variable declaration 'c' */
-    int$ptr$ptr c = a;
+void test7(int _return_region, int$ptr$array arr) {
+    /* Line 2: Array to pointer conversion */
+    int$ptr$ptr $A = (int$ptr$ptr){ ((arr.data) + 0U), (arr.region) };
 
-    /* Line 4: New variable declaration 'd' */
-    int d = 0U;
+    /* Line 2: Array to pointer conversion */
+    int$ptr$ptr $B = (int$ptr$ptr){ ((arr.data) + 1U), (arr.region) };
 
-    /* Line 5: Assignment statement */
-    (*(c.data)) = (int$ptr){ (&d), get_smallest_lifetime() };
+    /* Line 2: Pointer dereference */
+    int$ptr $array_index_1 = (*($B.data));
+
+    /* Line 2: Assignment statement */
+    (*($A.data)) = $array_index_1;
 }
 
 #if __cplusplus

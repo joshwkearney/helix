@@ -1,11 +1,3 @@
-﻿func test(let a as int**, let b as int**) as void {
-	var c = a;
-	
-	var d = new int;
-	c* = &d;
-};
-
-struct Point {
-	var x as int;
-	var y as int;
+﻿func test7(let arr as int*[]) as void {
+	arr[0] = arr[1];
 };

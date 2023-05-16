@@ -1,65 +1,52 @@
-﻿func loop_test_1(let a as int*) as int* {
-	var b = 10;
-	var c = a;
-	var d = a;
+﻿func test1() as int* {
+	var x = 45;
 
-	for i = 0 to 2 {
-		c = d;
-		//d = &b;
-	};
-
-	c;
+	&x;
 };
 
-func loop_test_2(let a as int*) as int* {
-	var b = 10;
-	var c = a;
-	var d = a;
-
-	//for i = 0 to 2 {
-		c = d;
-		d = &b;
-	//};
-
-	c;
+struct Test2Struct {
+	var field as int**;
 };
 
-func ptr_test_1(let a as int**, let b as int*) {
-	var c = 10;
-	let d = *a;
+func test2(var n as Test2Struct) {
+	var x = n.field**;
 
-	*a = d;	
+	n.field* = &x;
 };
 
-func struct_test_1(let a as TestStruct1) as TestStruct1* {
-	a.x;
+struct Test3Struct {
+	let field as int;
 };
 
-func struct_test_2(let a as TestStruct1) as TestStruct1 {
-	*a.x;
+func test3(let arg as Test3Struct) as int {
+	arg.field;
 };
 
-func struct_test_3(let a as TestStruct1) as int* {
-	&a.y.x;
+struct Test4Struct {
+	let next as Test4Struct*;
+	let data as int;
 };
 
-func struct_test_4(let a as TestStruct1*) as int* {
-	&a.y.x;
-};
-
-func struct_test_5(let a as TestStruct1*) as int* {
-	var A = put TestStruct1 { x= a };
+func test4(let a as Test4Struct*) as int {
+	var A = new Test4Struct { next= a };
 	let B = &A;
 
-	&B.x.x.y.y;
+	B*.next*.next*.data;
 };
 
-struct TestStruct1 {
-	let x as TestStruct1*;
-	let y as TestStruct2;
+func test5(let arr as int*[]) as void {
+	var x = 45;
+
+	arr[0] = &x;
 };
 
-struct TestStruct2 {
-	var x as int;
-	var y as int;
+func test6(let arr as int*[]) as int* {
+	var x = 45;
+
+	arr[0] = &x;
+	&x;
+};
+
+func test7(let arr as int*[]) as void {
+	arr[0] = arr[1];
 };

@@ -10,7 +10,7 @@ try {
     Console.WriteLine(parse);
 }
 catch (HelixException ex) {
-    Console.WriteLine(ex.CreateConsoleMessage(contents));
+    Console.WriteLine(ex.Message);
 }
 
 Console.Read();

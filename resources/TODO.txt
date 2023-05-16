@@ -18,7 +18,10 @@ Add "until" to for loops and make "to" inclusive
 ### The Lifetimes Update
 	DONE - Reimplement lvalues
 	DONE - Add back address of operator
-	- Invalidate variables if aliasing could occur in assignments
+	Revive lifetime testing suite
+	Refactor IdentifierPath to VariablePath
+	Add content and location fields to Lifetime
+	Invalidate variables if aliasing could occur in assignments
 	DONE - Infer region allocation for let/var
 	Infer region allocation for function parameters
 	DONE - Remove new expression
