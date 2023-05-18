@@ -9,3 +9,6 @@ func test4(let a as Test4Struct*) as int {
 
 	B*.next*.next*.data;
 };
+
+
+

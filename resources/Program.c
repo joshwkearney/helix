@@ -6,6 +6,8 @@ typedef unsigned int _helix_bool;
 typedef unsigned int _helix_void;
 typedef unsigned int _helix_int;
 
+
+extern int _region_min();
 extern int _region_create();
 extern void* _region_malloc(int region, int size);
 extern void _region_delete(int region);
@@ -30,7 +32,7 @@ int test4(int _return_region, Test4Struct$ptr a) {
     Test4Struct A = (Test4Struct){ a, 0U };
 
     /* Line 8: New variable declaration 'B' */
-    Test4Struct$ptr B = (Test4Struct$ptr){ (&A), get_smallest_lifetime() };
+    Test4Struct$ptr B = (Test4Struct$ptr){ (&A), _region_min() };
 
     /* Line 10: Pointer dereference */
     Test4Struct $deref_2 = (*(B.data));

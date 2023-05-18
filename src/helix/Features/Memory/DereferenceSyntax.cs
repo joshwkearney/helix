@@ -116,7 +116,7 @@ namespace Helix.Features.Memory {
             // this.target is already type checked
             var pointerType = this.target.AssertIsPointer(types);
 
-            types.DeclareValueLifetimeRoots(this.tempPath, pointerType.InnerType, LifetimeRole.Relational);
+            types.DeclareValueLifetimeRoots(this.tempPath, pointerType.InnerType, LifetimeRole.Root);
             this.SetReturnType(pointerType.InnerType, types);
 
             return this;
@@ -147,7 +147,7 @@ namespace Helix.Features.Memory {
                     // this value like this because we can't store things into it that only
                     // outlive the pointer
                     var memPath = this.tempPath.AppendMember(relPath);
-                    var lifetime = new Lifetime(memPath, 0, LifetimeTarget.StoredValue, LifetimeRole.Relational);
+                    var lifetime = new Lifetime(memPath, 0, LifetimeSubject.StoredValue, LifetimeRole.Root);
 
                     bundleDict[relPath] = lifetime;
 

@@ -137,7 +137,7 @@ namespace Helix.Generation {
             var lifetimeList = lifetimes.ToValueList();
 
             if (lifetimeList.Count == 0) {
-                return new CVariableLiteral("get_smallest_lifetime()");
+                return new CVariableLiteral("_region_min()");
             }
             else if (lifetimeList.Count == 1) {
                 return this.GetLifetime(lifetimeList[0]);

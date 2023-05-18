@@ -112,7 +112,7 @@ namespace Helix.Analysis.TypeChecking {
                 var locationLifetime = new Lifetime(
                     memPath, 
                     0, 
-                    LifetimeTarget.Location, 
+                    LifetimeSubject.Location, 
                     role);
 
                 // Add this variable's lifetime
@@ -133,7 +133,7 @@ namespace Helix.Analysis.TypeChecking {
                 var valueLifetime = new Lifetime(
                     memPath, 
                     0, 
-                    LifetimeTarget.StoredValue, 
+                    LifetimeSubject.StoredValue, 
                     role);
 
                 // Add this variable's lifetime

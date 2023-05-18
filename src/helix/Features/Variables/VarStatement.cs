@@ -90,8 +90,8 @@ namespace Helix {
 
             // Declare all our stuff
             types.DeclareVariableSignatures(basePath, assignType, this.isWritable);
-            types.DeclareLocationLifetimeRoots(basePath, assignType, LifetimeRole.Inference);
-            types.DeclareValueLifetimeRoots(basePath, assignType, LifetimeRole.Inference);
+            types.DeclareLocationLifetimeRoots(basePath, assignType, LifetimeRole.Alias);
+            types.DeclareValueLifetimeRoots(basePath, assignType, LifetimeRole.Alias);
 
             // Put this variable's value in the main table
             types.SyntaxValues[basePath] = assign;
@@ -185,8 +185,8 @@ namespace Helix {
             var assignType = this.assignSyntax.GetReturnType(flow);
             var assignBundle = this.assignSyntax.GetLifetimes(flow);
 
-            flow.DeclareLocationLifetimes(this.path, assignType, LifetimeRole.Inference);
-            flow.DeclareValueLifetimes(this.path, assignType, assignBundle, LifetimeRole.Inference);
+            flow.DeclareLocationLifetimes(this.path, assignType, LifetimeRole.Alias);
+            flow.DeclareValueLifetimes(this.path, assignType, assignBundle, LifetimeRole.Alias);
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }
@@ -238,7 +238,7 @@ namespace Helix {
 
             // Register all of our value lifetimes. We don't need to register any location 
             // lifetimes because they don't exist, as we are stack allocated
-            writer.RegisterLocationLifetimes(this.path, assignType, new CVariableLiteral("get_smallest_lifetime()"), flow);
+            writer.RegisterLocationLifetimes(this.path, assignType, new CVariableLiteral("_region_min()"), flow);
             writer.RegisterValueLifetimes(this.path, assignType, assign, flow);
         }
 
