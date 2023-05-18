@@ -278,7 +278,7 @@ namespace Helix.Features.Functions {
                 foreach (var (relPath, _) in par.Type.GetMembers(types)) {
                     var path = this.Signature.Path.Append(par.Name).Append(relPath);
 
-                    bodyWriter.RegisterVariableKind(path, CVariableKind.Local);
+                    bodyWriter.VariableKinds[path] = CVariableKind.Local;
                 }
             }
 

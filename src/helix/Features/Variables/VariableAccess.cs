@@ -141,7 +141,7 @@ namespace Helix.Features.Variables {
         public virtual ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             ICSyntax result = new CVariableLiteral(writer.GetVariableName(this.VariablePath));
 
-            if (writer.GetVariableKind(this.VariablePath) == CVariableKind.Allocated) {
+            if (writer.VariableKinds[this.VariablePath] == CVariableKind.Allocated) {
                 result = new CPointerDereference() {
                     Target = result
                 };

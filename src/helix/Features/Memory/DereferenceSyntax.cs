@@ -183,13 +183,6 @@ namespace Helix.Features.Memory {
             });
 
             writer.WriteEmptyLine();
-
-            writer.RegisterValueLifetimes(
-                this.tempPath, 
-                pointerType.InnerType, 
-                new CVariableLiteral(tempName), 
-                types);
-
             return new CVariableLiteral(tempName);
         }
     }

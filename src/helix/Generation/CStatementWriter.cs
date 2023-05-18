@@ -11,19 +11,13 @@ namespace Helix.Generation {
     }
 
     public interface ICStatementWriter : ICWriter {
+        public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; }
+
         public ICStatementWriter WriteStatement(ICStatement stat);
 
         public ICStatementWriter WriteEmptyLine();
 
-        public ICSyntax WriteImpureExpression(ICSyntax type, ICSyntax expr);
-
-        public void RegisterLifetime(Lifetime lifetime, ICSyntax value);
-
         public ICSyntax GetLifetime(Lifetime lifetime, FlowFrame flow);
-
-        public void RegisterVariableKind(IdentifierPath path, CVariableKind kind);
-
-        public CVariableKind GetVariableKind(IdentifierPath path);
 
         public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, FlowFrame flow);
 
@@ -38,45 +32,18 @@ namespace Helix.Generation {
             });
         }
 
-        public void RegisterValueLifetimes(IdentifierPath basePath, HelixType baseType, 
-                                           ICSyntax assign, FlowFrame flow) {
-            // This is a new lifetime declaration
-            foreach (var (relPath, type) in baseType.GetMembers(flow)) {
-                var memPath = basePath.AppendMember(relPath);
-                var memAccess = assign;
+        public ICSyntax WriteImpureExpression(ICSyntax type, ICSyntax expr) {
+            var name = this.GetVariableName();
 
-                // Only register lifetimes that exist
-                if (type.IsValueType(flow)) {
-                    this.RegisterLifetime(flow.StoredValueLifetimes[memPath], assign);
+            var stat = new CVariableDeclaration() {
+                Type = type,
+                Name = name,
+                Assignment = Option.Some(expr)
+            };
 
-                    continue;
-                }
+            this.WriteStatement(stat);
 
-                foreach (var segment in relPath.Segments) {
-                    memAccess = new CMemberAccess() {
-                        IsPointerAccess = false,
-                        MemberName = segment,
-                        Target = memAccess
-                    };
-                }
-
-                memAccess = new CMemberAccess() {
-                    IsPointerAccess = false,
-                    MemberName = "region",
-                    Target = memAccess
-                };
-
-                this.RegisterLifetime(flow.StoredValueLifetimes[memPath], memAccess);
-            }
-        }
-
-        public void RegisterLocationLifetimes(IdentifierPath basePath, HelixType baseType, 
-                                              ICSyntax allocLifetime, FlowFrame flow) {
-            foreach (var (relPath, _) in baseType.GetMembers(flow)) {
-                var memPath = basePath.AppendMember(relPath);
-
-                this.RegisterLifetime(flow.LocationLifetimes[memPath], allocLifetime);
-            }
+            return new CVariableLiteral(name);
         }
     }
 
@@ -87,6 +54,9 @@ namespace Helix.Generation {
         private readonly Dictionary<Lifetime, ICSyntax> lifetimes = new();
         private readonly Dictionary<ValueSet<Lifetime>, ICSyntax> lifetimeCombinations = new();
         private readonly Dictionary<IdentifierPath, CVariableKind> variableKinds = new();
+
+        public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; } 
+            = new Dictionary<IdentifierPath, CVariableKind>();
 
         public CStatementWriter(ICWriter prev, IList<ICStatement> stats) {
             this.prev = prev;
@@ -105,20 +75,6 @@ namespace Helix.Generation {
             }
 
             return this;
-        }
-
-        public ICSyntax WriteImpureExpression(ICSyntax type, ICSyntax expr) {
-            var name = this.GetVariableName();
-
-            var stat = new CVariableDeclaration() {
-                Type = type,
-                Name = name,
-                Assignment = Option.Some(expr)
-            };
-
-            this.WriteStatement(stat);
-
-            return new CVariableLiteral(name);
         }
 
         public void RegisterLifetime(Lifetime lifetime, ICSyntax value) {
@@ -203,13 +159,5 @@ namespace Helix.Generation {
         public ICSyntax ConvertType(HelixType type) => this.prev.ConvertType(type);
 
         public void ResetTempNames() => this.prev.ResetTempNames();
-
-        public void RegisterVariableKind(IdentifierPath path, CVariableKind kind) {
-            this.variableKinds[path] = kind;
-        }
-
-        public CVariableKind GetVariableKind(IdentifierPath path) {
-            return this.variableKinds[path];
-        }
     }
 }

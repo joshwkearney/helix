@@ -235,12 +235,7 @@ namespace Helix {
 
             writer.WriteStatement(stat);
             writer.WriteEmptyLine();
-            writer.RegisterVariableKind(this.path, CVariableKind.Local);
-
-            // Register all of our value lifetimes. We don't need to register any location 
-            // lifetimes because they don't exist, as we are stack allocated
-            writer.RegisterLocationLifetimes(this.path, assignType, new CVariableLiteral("_region_min()"), flow);
-            writer.RegisterValueLifetimes(this.path, assignType, assign, flow);
+            writer.VariableKinds[this.path] = CVariableKind.Local;
         }
 
         private void GenerateRegionAllocation(ICSyntax assign, ICSyntax allocLifetime, 
@@ -264,11 +259,7 @@ namespace Helix {
 
             writer.WriteStatement(assignmentDecl);
             writer.WriteEmptyLine();
-            writer.RegisterVariableKind(this.path, CVariableKind.Allocated);
-
-            // Register all our lifetimes
-            writer.RegisterLocationLifetimes(this.path, assignType, allocLifetime, flow);
-            writer.RegisterValueLifetimes(this.path, assignType, assign, flow);
+            writer.VariableKinds[this.path] = CVariableKind.Allocated;
         }
     }
 }
