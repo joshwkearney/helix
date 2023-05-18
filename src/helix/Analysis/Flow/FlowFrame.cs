@@ -101,6 +101,12 @@ namespace Helix.Analysis.Flow {
                     assignBundle[relPath],
                     valueLifetime);
 
+                // Both directions are required because these lifetimes are equivalent. Skipping
+                // this introduces bugs when storing things into pointers
+                this.LifetimeGraph.RequireOutlives(
+                    valueLifetime,
+                    assignBundle[relPath]);
+
                 // Add this variable lifetimes to the current frame
                 this.StoredValueLifetimes[memPath] = valueLifetime;
             }

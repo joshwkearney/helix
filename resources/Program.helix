@@ -1,7 +1,6 @@
-﻿struct Test3Struct {
-	let field as int;
-};
+﻿func test9(let a as int**, let b as int**) as void {
+	var c = a;	
+	var d = new int;
 
-func test3(let arg as Test3Struct) as int {
-	arg.field;
+	c* = &d;
 };

@@ -66,9 +66,9 @@ func test8(let a as int**) {
 };
 
 // ###
-//func test9(let a as int**, let b as int**) as void {
-//	var c = a;	
-//	var d = new int;
+func test9(let a as int**, let b as int**) as void {
+	var c = a;	
+	var d = new int;
 
-//	c* = &d;
-//};
+	c* = &d;
+};
