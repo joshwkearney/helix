@@ -35,7 +35,7 @@ namespace Helix.Parsing {
                 if (this.TryAdvance(TokenKind.Assignment)) {
                     break;
                 }
-                else { 
+                else {
                     this.Advance(TokenKind.Comma);
                 }
             }
@@ -98,8 +98,8 @@ namespace Helix {
             types.SyntaxValues[basePath] = assign;
 
             var result = new VarStatement(
-                this.Location, 
-                basePath, 
+                this.Location,
+                basePath,
                 assign,
                 allowedRoots);
 
@@ -113,7 +113,7 @@ namespace Helix {
                 throw new TypeException(
                     this.Location,
                     "Invalid Desconstruction",
-                    $"Cannot deconstruct non-struct type '{ assignType }'");
+                    $"Cannot deconstruct non-struct type '{assignType}'");
             }
 
             if (!types.Structs.TryGetValue(named.Path, out var sig)) {
@@ -127,7 +127,7 @@ namespace Helix {
                 throw new TypeException(
                     this.Location,
                     "Invalid Desconstruction",
-                    "The number of variables provided does not match " 
+                    "The number of variables provided does not match "
                         + $"the number of members on struct type '{named}'");
             }
 
@@ -194,29 +194,18 @@ namespace Helix {
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var basePath = this.path.ToVariablePath();
-            var roots = flow.GetRoots(flow.LocationLifetimes[basePath]).ToValueSet();
-
-            if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
-                throw new LifetimeException(
-                    this.Location,
-                    "Lifetime Inference Failed",
-                    "The lifetime of this new object allocation has failed because it is " +
-                    "dependent on a root that does not exist at this point in the program and " +
-                    "must be calculated at runtime. Please try moving the allocation " +
-                    "closer to the site of its use.");
-            }
-
             var assign = this.assignSyntax.GenerateCode(flow, writer);
-            var allocLifetime = writer.CalculateSmallestLifetime(this.Location, roots, flow);
+            var allocLifetime = flow.LocationLifetimes[basePath].GenerateCode(flow, writer);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
-            if (roots.Count == 0) {
-                this.GenerateStackAllocation(assign, flow, writer);
+            if (flow.GetRoots(flow.LocationLifetimes[basePath]).Any()) {
+                this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
+
             }
             else {
-                this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
+                this.GenerateStackAllocation(assign, flow, writer);
             }
 
             return new CIntLiteral(0);
@@ -238,7 +227,7 @@ namespace Helix {
             writer.VariableKinds[this.path] = CVariableKind.Local;
         }
 
-        private void GenerateRegionAllocation(ICSyntax assign, ICSyntax allocLifetime, 
+        private void GenerateRegionAllocation(ICSyntax assign, ICSyntax allocLifetime,
                                               FlowFrame flow, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
             var assignType = this.assignSyntax.GetReturnType(flow);
