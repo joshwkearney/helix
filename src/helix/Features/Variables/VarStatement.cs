@@ -193,7 +193,7 @@ namespace Helix {
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var basePath = this.path.ToVariablePath();
-            var roots = flow.GetRoots(flow.LocationLifetimes[basePath]).ToValueList();
+            var roots = flow.GetRoots(flow.LocationLifetimes[basePath]).ToValueSet();
 
             if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
                 throw new LifetimeException(

@@ -145,7 +145,7 @@ namespace Helix.Features.FlowControl {
             foreach (var (relPath, type) in resultType.GetMembers(flow)) {
                 var bodyLifetimes = new[] { flow.Lifetimes[iftrue][relPath] }
                     .Append(flow.Lifetimes[iffalse][relPath])
-                    .ToValueList();
+                    .ToValueSet();
 
                 var path = this.tempPath.AppendMember(relPath);
                // var resultLifetime = new Lifetime(path, 0);

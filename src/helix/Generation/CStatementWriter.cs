@@ -85,7 +85,7 @@ namespace Helix.Generation {
         private readonly IList<ICStatement> stats;
 
         private readonly Dictionary<Lifetime, ICSyntax> lifetimes = new();
-        private readonly Dictionary<ValueList<Lifetime>, ICSyntax> lifetimeCombinations = new();
+        private readonly Dictionary<ValueSet<Lifetime>, ICSyntax> lifetimeCombinations = new();
         private readonly Dictionary<IdentifierPath, CVariableKind> variableKinds = new();
 
         public CStatementWriter(ICWriter prev, IList<ICStatement> stats) {
@@ -136,13 +136,13 @@ namespace Helix.Generation {
         }
 
         public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes) {
-            var lifetimeList = lifetimes.ToValueList();
+            var lifetimeList = lifetimes.ToValueSet();
 
             if (lifetimeList.Count == 0) {
                 return new CVariableLiteral("_region_min()");
             }
             else if (lifetimeList.Count == 1) {
-                return this.GetLifetime(lifetimeList[0]);
+                return this.GetLifetime(lifetimeList.First());
             }
             else if (this.lifetimeCombinations.TryGetValue(lifetimeList, out var value)) {
                 return value;
