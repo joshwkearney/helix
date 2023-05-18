@@ -1,14 +1,7 @@
-﻿struct Test4Struct {
-	let next as Test4Struct*;
-	let data as int;
+﻿struct Test3Struct {
+	let field as int;
 };
 
-func test4(let a as Test4Struct*) as int {
-	var A = new Test4Struct { next= a };
-	let B = &A;
-
-	B*.next*.next*.data;
+func test3(let arg as Test3Struct) as int {
+	arg.field;
 };
-
-
-

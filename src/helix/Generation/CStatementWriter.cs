@@ -47,6 +47,8 @@ namespace Helix.Generation {
 
                 // Only register lifetimes that exist
                 if (type.IsValueType(flow)) {
+                    this.RegisterLifetime(flow.StoredValueLifetimes[memPath], assign);
+
                     continue;
                 }
 

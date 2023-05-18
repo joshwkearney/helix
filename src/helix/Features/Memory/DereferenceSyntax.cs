@@ -138,15 +138,17 @@ namespace Helix.Features.Memory {
             // Build a return bundle composed of lifetimes that outlive the pointer's lifetime
             // This loop replaces flow.DeclareValueLifetimes() because some custom logic is needed
             foreach (var (relPath, type) in pointerType.InnerType.GetMembers(flow)) {
+                var memPath = this.tempPath.AppendMember(relPath);
+
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
+                    flow.StoredValueLifetimes[memPath] = Lifetime.None;
                 }
                 else {
                     // This value's lifetime actually isn't the pointer's lifetime, but some
                     // other lifetime that outlives the pointer. It's important to represent
                     // this value like this because we can't store things into it that only
                     // outlive the pointer
-                    var memPath = this.tempPath.AppendMember(relPath);
                     var lifetime = new Lifetime(memPath, 0, LifetimeSubject.StoredValue, LifetimeRole.Root);
 
                     bundleDict[relPath] = lifetime;

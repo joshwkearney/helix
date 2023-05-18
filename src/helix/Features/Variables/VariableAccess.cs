@@ -175,7 +175,7 @@ namespace Helix.Features.Variables {
                 var memPath = this.VariablePath.AppendMember(relPath);
 
                 // TODO: This will break when variable invalidating is implemented
-                bundleDict[relPath] = flow.LocationLifetimes[memPath];
+                bundleDict[relPath] = flow.StoredValueLifetimes[memPath];
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
