@@ -63,7 +63,7 @@ namespace Helix.Features.Memory {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
                     target.GenerateCode(types, writer),
-                    writer.GetLifetime(this.GetLifetimes(types)[new IdentifierPath()])
+                    writer.GetLifetime(this.GetLifetimes(types)[new IdentifierPath()], types)
                 },
                 Type = writer.ConvertType(this.GetReturnType(types))
             };

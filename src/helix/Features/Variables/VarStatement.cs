@@ -207,7 +207,7 @@ namespace Helix {
             }
 
             var assign = this.assignSyntax.GenerateCode(flow, writer);
-            var allocLifetime = writer.CalculateSmallestLifetime(this.Location, roots);
+            var allocLifetime = writer.CalculateSmallestLifetime(this.Location, roots, flow);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");

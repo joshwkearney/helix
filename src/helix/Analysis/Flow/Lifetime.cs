@@ -80,7 +80,7 @@ namespace Helix.Analysis.Flow {
                     "closer to the site of its use.");
             }
 
-            return writer.CalculateSmallestLifetime(this.Location, roots);
+            return writer.CalculateSmallestLifetime(this.Location, roots, flow);
         }
     }
 

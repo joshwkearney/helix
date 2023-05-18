@@ -1,6 +1,6 @@
-﻿func test9(let a as int**, let b as int**) as void {
-	var c = a;	
-	var d = new int;
+﻿func test6(let arr as int*[]) as int* {
+	var x = 45;
 
-	c* = &d;
+	arr[0] = &x;
+	&x;
 };

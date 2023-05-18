@@ -19,13 +19,13 @@ namespace Helix.Generation {
 
         public void RegisterLifetime(Lifetime lifetime, ICSyntax value);
 
-        public ICSyntax GetLifetime(Lifetime lifetime);
+        public ICSyntax GetLifetime(Lifetime lifetime, FlowFrame flow);
 
         public void RegisterVariableKind(IdentifierPath path, CVariableKind kind);
 
         public CVariableKind GetVariableKind(IdentifierPath path);
 
-        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes);
+        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, FlowFrame flow);
 
         // Mixins
         public ICStatementWriter WriteComment(string comment) {
@@ -125,31 +125,35 @@ namespace Helix.Generation {
             this.lifetimes[lifetime] = value;
         }
 
-        public ICSyntax GetLifetime(Lifetime lifetime) {
+        public ICSyntax GetLifetime(Lifetime lifetime, FlowFrame flow) {
             if (this.prev is CStatementWriter statWriter) {
                 if (statWriter.lifetimes.TryGetValue(lifetime, out var value)) {
                     return value;
                 }
             }
 
+            if (!this.lifetimes.ContainsKey(lifetime)) {
+                this.lifetimes[lifetime] = lifetime.GenerateCode(flow, this);
+            }
+
             return this.lifetimes[lifetime];
         }
 
-        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes) {
+        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, FlowFrame flow) {
             var lifetimeList = lifetimes.ToValueSet();
 
             if (lifetimeList.Count == 0) {
                 return new CVariableLiteral("_region_min()");
             }
             else if (lifetimeList.Count == 1) {
-                return this.GetLifetime(lifetimeList.First());
+                return this.GetLifetime(lifetimeList.First(), flow);
             }
             else if (this.lifetimeCombinations.TryGetValue(lifetimeList, out var value)) {
                 return value;
             }
 
             var values = lifetimes
-                .Select(x => GetLifetime(x))
+                .Select(x => GetLifetime(x, flow))
                 .ToArray();
 
             var tempName = this.GetVariableName();
