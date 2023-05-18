@@ -194,29 +194,17 @@ namespace Helix {
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var basePath = this.path.ToVariablePath();
-            var roots = flow.GetRoots(flow.LocationLifetimes[basePath]).ToValueSet();
-
-            if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
-                throw new LifetimeException(
-                    this.Location,
-                    "Lifetime Inference Failed",
-                    "The lifetime of this new object allocation has failed because it is " +
-                    "dependent on a root that does not exist at this point in the program and " +
-                    "must be calculated at runtime. Please try moving the allocation " +
-                    "closer to the site of its use.");
-            }
-
             var assign = this.assignSyntax.GenerateCode(flow, writer);
-            var allocLifetime = writer.CalculateSmallestLifetime(this.Location, roots, flow);
+            var allocLifetime = flow.VariableLifetimes[basePath].GenerateCode(flow, writer);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
-            if (roots.Count == 0) {
-                this.GenerateStackAllocation(assign, flow, writer);
+            if (flow.GetRoots(flow.VariableLifetimes[basePath]).Any()) {
+                this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
             }
             else {
-                this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
+                this.GenerateStackAllocation(assign, flow, writer);
             }
 
             return new CIntLiteral(0);
