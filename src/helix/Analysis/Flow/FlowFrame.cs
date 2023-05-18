@@ -4,6 +4,7 @@ using Helix.Analysis.Types;
 using Helix.Features.Aggregates;
 using Helix.Features.Functions;
 using System.Security.AccessControl;
+using Helix.Parsing;
 
 namespace Helix.Analysis.Flow {
     public class FlowFrame : ITypedFrame {
@@ -74,13 +75,18 @@ namespace Helix.Analysis.Flow {
             return roots;
         }
 
-        public void DeclareLocationLifetimes(IdentifierPath basePath, HelixType baseType, LifetimeRole role) {
+        public void DeclareInferredLocationLifetimes(
+            IdentifierPath basePath, 
+            HelixType baseType, 
+            TokenLocation loc,
+            ValueSet<Lifetime> allowedRoots) {
+
             foreach (var (relPath, type) in baseType.GetMembers(this)) {
                 var memPath = basePath.AppendMember(relPath);
 
                 // Even though the lifetime of the variable itself will be inferred, the lifetime
                 // of the value stored in that variable is NOT inferred. 
-                var locationLifetime = new Lifetime(memPath, 0, LifetimeSubject.Location, role);
+                var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots);
 
                 // Add this variable lifetimes to the current frame
                 this.LocationLifetimes[memPath] = locationLifetime;
@@ -93,7 +99,7 @@ namespace Helix.Analysis.Flow {
 
                 // Even though the lifetime of the variable itself will be inferred, the lifetime
                 // of the value stored in that variable is NOT inferred. 
-                var valueLifetime = new Lifetime(memPath, 0, LifetimeSubject.StoredValue, role);
+                var valueLifetime = new ValueLifetime(memPath, role, 0);
 
                 // Add a dependency between whatever is being assigned to this variable and the
                 // variable's value

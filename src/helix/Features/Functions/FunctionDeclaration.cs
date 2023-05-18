@@ -198,11 +198,11 @@ namespace Helix.Features.Functions {
             var roots = this.body.GetLifetimes(flow)
                 .Values
                 .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
-                .ToArray();
+                .ToValueSet();
 
             roots = flow.ReduceRootSet(roots)
                 .Where(x => x.Kind != LifetimeRole.Alias)
-                .ToArray();
+                .ToValueSet();
 
             // Make sure all the roots outlive the heap
             if (!roots.All(x => flow.LifetimeGraph.DoesOutlive(x, Lifetime.Heap))) {

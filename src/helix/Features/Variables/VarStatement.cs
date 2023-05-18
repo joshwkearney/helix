@@ -87,10 +87,11 @@ namespace Helix {
             }
 
             var basePath = this.Location.Scope.Append(this.names[0]);
+            var allowedRoots = types.LifetimeRoots.ToValueSet();
 
             // Declare all our stuff
             types.DeclareVariableSignatures(basePath, assignType, this.isWritable);
-            types.DeclareLocationLifetimeRoots(basePath, assignType, LifetimeRole.Alias);
+            types.DeclareInferredLocationLifetimeRoots(basePath, assignType, this.Location, allowedRoots);
             types.DeclareValueLifetimeRoots(basePath, assignType, LifetimeRole.Alias);
 
             // Put this variable's value in the main table
@@ -99,8 +100,8 @@ namespace Helix {
             var result = new VarStatement(
                 this.Location, 
                 basePath, 
-                assign, 
-                types.LifetimeRoots.ToHashSet());
+                assign,
+                allowedRoots);
 
             result.SetReturnType(PrimitiveType.Void, types);
 
@@ -159,7 +160,7 @@ namespace Helix {
     public record VarStatement : ISyntaxTree {
         private readonly ISyntaxTree assignSyntax;
         private readonly IdentifierPath path;
-        private readonly IReadOnlySet<Lifetime> allowedRoots;
+        private readonly ValueSet<Lifetime> allowedRoots;
 
         public TokenLocation Location { get; }
 
@@ -168,7 +169,7 @@ namespace Helix {
         public bool IsPure => false;
 
         public VarStatement(TokenLocation loc, IdentifierPath path,
-                            ISyntaxTree assign, IReadOnlySet<Lifetime> allowedRoots) {
+                            ISyntaxTree assign, ValueSet<Lifetime> allowedRoots) {
             this.Location = loc;
             this.path = path;
             this.assignSyntax = assign;
@@ -185,7 +186,7 @@ namespace Helix {
             var assignType = this.assignSyntax.GetReturnType(flow);
             var assignBundle = this.assignSyntax.GetLifetimes(flow);
 
-            flow.DeclareLocationLifetimes(this.path, assignType, LifetimeRole.Alias);
+            flow.DeclareInferredLocationLifetimes(this.path, assignType, this.Location, this.allowedRoots);
             flow.DeclareValueLifetimes(this.path, assignType, assignBundle, LifetimeRole.Alias);
 
             this.SetLifetimes(new LifetimeBundle(), flow);

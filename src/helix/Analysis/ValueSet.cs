@@ -71,6 +71,13 @@ namespace Helix.Analysis {
     }
 
     public static partial class TypeCheckingExtensions {
-        public static ValueSet<T> ToValueSet<T>(this IEnumerable<T> sequence) => new(sequence);
+        public static ValueSet<T> ToValueSet<T>(this IEnumerable<T> sequence) {
+            if (sequence is ValueSet<T> set) {
+                return set;
+            }
+            else {
+                return new ValueSet<T>(sequence);
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@ using Helix.Features;
 using Helix.Features.Aggregates;
 using Helix.Features.Functions;
 using Helix.Generation;
+using Helix.Parsing;
 
 namespace Helix.Analysis.TypeChecking {
     public delegate void DeclarationCG(ICWriter writer);
@@ -99,7 +100,12 @@ namespace Helix.Analysis.TypeChecking {
             return SyntaxValues[ResolvePath(scope, name)];
         }
 
-        public void DeclareLocationLifetimeRoots(IdentifierPath basePath, HelixType baseType, LifetimeRole role) {
+        public void DeclareInferredLocationLifetimeRoots(
+            IdentifierPath basePath, 
+            HelixType baseType, 
+            TokenLocation loc,
+            IEnumerable<Lifetime> allowedRoots) {
+
             foreach (var (relPath, type) in baseType.GetMembers(this)) {
                 if (type.IsValueType(this)) {
                     continue;
@@ -109,11 +115,10 @@ namespace Helix.Analysis.TypeChecking {
 
                 // Even though the lifetime of the variable itself will be inferred, the lifetime
                 // of the value stored in that variable is NOT inferred. 
-                var locationLifetime = new Lifetime(
+                var locationLifetime = new InferredLocationLifetime(
+                    loc,
                     memPath, 
-                    0, 
-                    LifetimeSubject.Location, 
-                    role);
+                    allowedRoots);
 
                 // Add this variable's lifetime
                 this.LifetimeRoots.Add(locationLifetime);
@@ -130,11 +135,10 @@ namespace Helix.Analysis.TypeChecking {
 
                 // Even though the lifetime of the variable itself will be inferred, the lifetime
                 // of the value stored in that variable is NOT inferred. 
-                var valueLifetime = new Lifetime(
+                var valueLifetime = new ValueLifetime(
                     memPath, 
-                    0, 
-                    LifetimeSubject.StoredValue, 
-                    role);
+                    role,
+                    0);
 
                 // Add this variable's lifetime
                 this.LifetimeRoots.Add(valueLifetime);

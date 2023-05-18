@@ -149,7 +149,7 @@ namespace Helix.Features.Memory {
                     // other lifetime that outlives the pointer. It's important to represent
                     // this value like this because we can't store things into it that only
                     // outlive the pointer
-                    var lifetime = new Lifetime(memPath, 0, LifetimeSubject.StoredValue, LifetimeRole.Root);
+                    var lifetime = new ValueLifetime(memPath, LifetimeRole.Root, 0);
 
                     bundleDict[relPath] = lifetime;
 
