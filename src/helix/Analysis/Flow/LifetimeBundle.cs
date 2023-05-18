@@ -40,6 +40,6 @@ namespace Helix.Analysis.Flow {
         public LifetimeBundle(IReadOnlyDictionary<IdentifierPath, Lifetime> lifetimes) 
             : base(lifetimes) { }
 
-        public LifetimeBundle() : this(new Dictionary<IdentifierPath, Lifetime>()) { }
+        public LifetimeBundle() : this(new Dictionary<IdentifierPath, Lifetime>() { { new IdentifierPath(), Lifetime.None } }) { }
     }
 }

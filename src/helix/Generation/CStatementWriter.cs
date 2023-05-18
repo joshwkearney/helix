@@ -37,6 +37,45 @@ namespace Helix.Generation {
                 Value = syntax
             });
         }
+
+        public void RegisterValueLifetimes(IdentifierPath basePath, HelixType baseType, 
+                                           ICSyntax assign, FlowFrame flow) {
+            // This is a new lifetime declaration
+            foreach (var (relPath, type) in baseType.GetMembers(flow)) {
+                var memPath = basePath.AppendMember(relPath);
+                var memAccess = assign;
+
+                // Only register lifetimes that exist
+                if (type.IsValueType(flow)) {
+                    continue;
+                }
+
+                foreach (var segment in relPath.Segments) {
+                    memAccess = new CMemberAccess() {
+                        IsPointerAccess = false,
+                        MemberName = segment,
+                        Target = memAccess
+                    };
+                }
+
+                memAccess = new CMemberAccess() {
+                    IsPointerAccess = false,
+                    MemberName = "region",
+                    Target = memAccess
+                };
+
+                this.RegisterLifetime(flow.StoredValueLifetimes[memPath], memAccess);
+            }
+        }
+
+        public void RegisterLocationLifetimes(IdentifierPath basePath, HelixType baseType, 
+                                              ICSyntax allocLifetime, FlowFrame flow) {
+            foreach (var (relPath, _) in baseType.GetMembers(flow)) {
+                var memPath = basePath.AppendMember(relPath);
+
+                this.RegisterLifetime(flow.LocationLifetimes[memPath], allocLifetime);
+            }
+        }
     }
 
     public class CStatementWriter : ICStatementWriter {
@@ -95,7 +134,7 @@ namespace Helix.Generation {
         }
 
         public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes) {
-            var lifetimeList = lifetimes.Where(x => x != Lifetime.Stack).ToValueList();
+            var lifetimeList = lifetimes.ToValueList();
 
             if (lifetimeList.Count == 0) {
                 return new CVariableLiteral("get_smallest_lifetime()");

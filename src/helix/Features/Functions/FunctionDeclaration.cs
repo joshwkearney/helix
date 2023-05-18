@@ -127,8 +127,8 @@ namespace Helix.Features.Functions {
             FunctionsHelper.DeclareParameterTypes(this.Location, sig, types);
 
             // Declare a "heap" lifetime used for function returns
-            types.LifetimeRoots[Lifetime.Heap.Path] = Lifetime.Heap;
-            types.LifetimeRoots[Lifetime.Stack.Path] = Lifetime.Stack;
+            types.LifetimeRoots.Add(Lifetime.Heap);
+            //types.LifetimeRoots[Lifetime.Stack.Path] = Lifetime.Stack;
 
             // Check types
             var body = this.body;
@@ -198,10 +198,11 @@ namespace Helix.Features.Functions {
             var roots = this.body.GetLifetimes(flow)
                 .Values
                 .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
-                .Where(x => x.Kind != LifetimeKind.Inferencee)
                 .ToArray();
 
-            roots = flow.ReduceRootSet(roots).ToArray();
+            roots = flow.ReduceRootSet(roots)
+                .Where(x => x.Kind != LifetimeRole.Inference)
+                .ToArray();
 
             // Make sure all the roots outlive the heap
             if (!roots.All(x => flow.LifetimeGraph.DoesOutlive(x, Lifetime.Heap))) {
@@ -262,8 +263,8 @@ namespace Helix.Features.Functions {
             // Register the parameter lifetimes
             foreach (var par in this.Signature.Parameters) {
                 foreach (var (relPath, _) in par.Type.GetMembers(types)) {
-                    var path = new VariablePath(this.Signature.Path.Append(par.Name), relPath);
-                    var lifetime = types.VariableLocationLifetimes[path];
+                    var path = this.Signature.Path.Append(par.Name).AppendMember(relPath);
+                    var lifetime = types.LocationLifetimes[path];
 
                     bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
                         Target = new CVariableLiteral(writer.GetVariableName(path)),

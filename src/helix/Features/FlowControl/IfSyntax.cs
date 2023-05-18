@@ -148,9 +148,9 @@ namespace Helix.Features.FlowControl {
                     .ToValueList();
 
                 var path = this.tempPath.AppendMember(relPath);
-                var resultLifetime = new Lifetime(path, 0);
+               // var resultLifetime = new Lifetime(path, 0);
 
-                lifetimeBundle.Add(relPath, resultLifetime);
+                //lifetimeBundle.Add(relPath, resultLifetime);
 
                 // TODO: Fix this
                 // Make sure that our new lifetime is derived from the body lifetimes, and that
@@ -170,7 +170,7 @@ namespace Helix.Features.FlowControl {
             // TODO: Add bindings
             // CalculateModifiedVariables();
 
-            flow.Lifetimes[this] = new LifetimeBundle(lifetimeBundle);
+            //flow.Lifetimes[this] = new LifetimeBundle(lifetimeBundle);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

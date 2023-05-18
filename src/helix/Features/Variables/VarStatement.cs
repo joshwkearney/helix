@@ -7,8 +7,9 @@ using Helix.Generation.Syntax;
 using Helix.Features.Aggregates;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
-using Helix.Syntax.Decorators;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.FlowControl;
+using System.Xml.Linq;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -42,7 +43,7 @@ namespace Helix.Parsing {
             var assign = this.TopExpression();
             var loc = startLok.Span(assign.Location);
 
-            return VarParseStatement.Create(loc, names, assign, isWritable);
+            return new VarParseStatement(loc, names, assign, isWritable);
         }
     }
 }
@@ -59,16 +60,11 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        private VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
+        public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
             this.Location = loc;
             this.names = names;
             this.assign = assign;
             this.isWritable = isWritable;
-        }
-
-        public static ISyntaxTree Create(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
-            return new VarParseStatement(loc, names, assign, isWritable)
-                .Decorate(new ShadowingPreventer(names));
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
@@ -85,32 +81,30 @@ namespace Helix {
                 return this.Destructure(assignType, types);
             }
 
-            // Go through all the variables and sub variables and set up the lifetimes
-            // correctly
-            var basePath = this.Location.Scope.Append(this.names[0]);
-            foreach (var (compPath, compType) in assignType.GetMembers(types)) {
-                var path = basePath.Append(compPath);
-                var sig = new VariableSignature(path, compType, this.isWritable);
-
-                // Add this variable's lifetime
-                types.Variables[path] = sig;
+            // Make sure we're not shadowing anybody
+            if (types.TryResolveName(this.Location.Scope, this.names[0], out _)) {
+                throw TypeException.IdentifierDefined(this.Location, this.names[0]);
             }
+
+            var basePath = this.Location.Scope.Append(this.names[0]);
+
+            // Declare all our stuff
+            types.DeclareVariableSignatures(basePath, assignType, this.isWritable);
+            types.DeclareLocationLifetimeRoots(basePath, assignType, LifetimeRole.Inference);
+            types.DeclareValueLifetimeRoots(basePath, assignType, LifetimeRole.Inference);
 
             // Put this variable's value in the main table
             types.SyntaxValues[basePath] = assign;
 
-            ISyntaxTree result = new VarStatement(
+            var result = new VarStatement(
                 this.Location, 
                 basePath, 
-                assignType, 
                 assign, 
-                types.LifetimeRoots.Values.ToHashSet());
+                types.LifetimeRoots.ToHashSet());
 
             result.SetReturnType(PrimitiveType.Void, types);
 
-            return result
-                .Decorate(new AssignedLifetimeProducer(basePath, assignType, LifetimeKind.Inferencee, assign))
-                .CheckTypes(types);
+            return result;
         }
 
         private ISyntaxTree Destructure(HelixType assignType, TypeFrame types) {
@@ -137,7 +131,7 @@ namespace Helix {
             }
 
             var tempName = types.GetVariableName();
-            var tempStat = VarParseStatement.Create(
+            var tempStat = new VarParseStatement(
                 this.Location,
                 new[] { tempName },
                 this.assign,
@@ -149,7 +143,7 @@ namespace Helix {
                 var literal = new VariableAccessParseSyntax(this.Location, tempName);
                 var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name, this.isWritable);
 
-                var assign = VarParseStatement.Create(
+                var assign = new VarParseStatement(
                     this.Location,
                     new[] { this.names[i] },
                     access,
@@ -163,23 +157,21 @@ namespace Helix {
     }
 
     public record VarStatement : ISyntaxTree {
-        private readonly ISyntaxTree assign;
+        private readonly ISyntaxTree assignSyntax;
         private readonly IdentifierPath path;
-        private readonly HelixType varType;
         private readonly IReadOnlySet<Lifetime> allowedRoots;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.assign };
+        public IEnumerable<ISyntaxTree> Children => new[] { this.assignSyntax };
 
         public bool IsPure => false;
 
-        public VarStatement(TokenLocation loc, IdentifierPath path, HelixType varType, 
+        public VarStatement(TokenLocation loc, IdentifierPath path,
                             ISyntaxTree assign, IReadOnlySet<Lifetime> allowedRoots) {
             this.Location = loc;
             this.path = path;
-            this.assign = assign;
-            this.varType = varType;
+            this.assignSyntax = assign;
             this.allowedRoots = allowedRoots;
         }
 
@@ -188,23 +180,20 @@ namespace Helix {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
-            this.assign.AnalyzeFlow(flow);
+            this.assignSyntax.AnalyzeFlow(flow);
+
+            var assignType = this.assignSyntax.GetReturnType(flow);
+            var assignBundle = this.assignSyntax.GetLifetimes(flow);
+
+            flow.DeclareLocationLifetimes(this.path, assignType, LifetimeRole.Inference);
+            flow.DeclareValueLifetimes(this.path, assignType, assignBundle, LifetimeRole.Inference);
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
-            var basePath = new VariablePath(this.path);
-
-            var roots = flow
-                .LifetimeGraph
-                .GetOutlivedLifetimes(flow.VariableLocationLifetimes[basePath])
-                .Where(x => !x.Path.Variable.StartsWith(basePath.Variable))
-                .ToValueList();
-
-            // This removes redundant roots that are outlived by other roots
-            // We only need to allocate on the longest-lived of our roots
-            roots = flow.ReduceRootSet(roots).ToValueList();
+            var basePath = this.path.ToVariablePath();
+            var roots = flow.GetRoots(flow.LocationLifetimes[basePath]).ToValueList();
 
             if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
                 throw new LifetimeException(
@@ -216,51 +205,69 @@ namespace Helix {
                     "closer to the site of its use.");
             }
 
-            var isStack = roots.Count == 0 || (roots.Count == 1 && roots[0] == Lifetime.Stack);
-            var name = writer.GetVariableName(this.path);
-            var assign = this.assign.GenerateCode(flow, writer);
-            var cReturnType = writer.ConvertType(varType);
-
+            var assign = this.assignSyntax.GenerateCode(flow, writer);
             var allocLifetime = writer.CalculateSmallestLifetime(this.Location, roots);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
-            if (isStack) {
-                // TODO: Register lifetimes here too. Need to fix CalculateSmallestLifetime()
-
-                var stat = new CVariableDeclaration() {
-                    Type = cReturnType,
-                    Name = name,
-                    Assignment = Option.Some(assign)
-                };
-
-                writer.WriteStatement(stat);
-                writer.WriteEmptyLine();
-                writer.RegisterVariableKind(this.path, CVariableKind.Local);
+            if (roots.Count == 0) {
+                this.GenerateStackAllocation(assign, flow, writer);
             }
             else {
-                //this.producer.RegisterLifetimes(flow, writer, allocLifetime);
-
-                writer.WriteStatement(new CVariableDeclaration() {
-                    Name = name,
-                    Type = new CPointerType(cReturnType),
-                    Assignment = new CVariableLiteral($"({cReturnType.WriteToC()}*)_region_malloc({allocLifetime.WriteToC()}, sizeof({cReturnType.WriteToC()}))")
-                });
-
-                var assignmentDecl = new CAssignment() {
-                    Left = new CPointerDereference() {
-                        Target = new CVariableLiteral(name)
-                    },
-                    Right = assign
-                };
-
-                writer.WriteStatement(assignmentDecl);
-                writer.WriteEmptyLine();
-                writer.RegisterVariableKind(this.path, CVariableKind.Allocated);
+                this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
             }
 
             return new CIntLiteral(0);
+        }
+
+        private void GenerateStackAllocation(ICSyntax assign, FlowFrame flow, ICStatementWriter writer) {
+            var name = writer.GetVariableName(this.path);
+            var assignType = this.assignSyntax.GetReturnType(flow);
+            var cReturnType = writer.ConvertType(assignType);
+
+            var stat = new CVariableDeclaration() {
+                Type = cReturnType,
+                Name = name,
+                Assignment = Option.Some(assign)
+            };
+
+            writer.WriteStatement(stat);
+            writer.WriteEmptyLine();
+            writer.RegisterVariableKind(this.path, CVariableKind.Local);
+
+            // Register all of our value lifetimes. We don't need to register any location 
+            // lifetimes because they don't exist, as we are stack allocated
+            writer.RegisterLocationLifetimes(this.path, assignType, new CVariableLiteral("get_smallest_lifetime()"), flow);
+            writer.RegisterValueLifetimes(this.path, assignType, assign, flow);
+        }
+
+        private void GenerateRegionAllocation(ICSyntax assign, ICSyntax allocLifetime, 
+                                              FlowFrame flow, ICStatementWriter writer) {
+            var name = writer.GetVariableName(this.path);
+            var assignType = this.assignSyntax.GetReturnType(flow);
+            var cReturnType = writer.ConvertType(assignType);
+
+            writer.WriteStatement(new CVariableDeclaration() {
+                Name = name,
+                Type = new CPointerType(cReturnType),
+                Assignment = new CVariableLiteral($"({cReturnType.WriteToC()}*)_region_malloc({allocLifetime.WriteToC()}, sizeof({cReturnType.WriteToC()}))")
+            });
+
+            var assignmentDecl = new CAssignment() {
+                Left = new CPointerDereference() {
+                    Target = new CVariableLiteral(name)
+                },
+                Right = assign
+            };
+
+            writer.WriteStatement(assignmentDecl);
+            writer.WriteEmptyLine();
+            writer.RegisterVariableKind(this.path, CVariableKind.Allocated);
+
+            // Register all our lifetimes
+            writer.RegisterLocationLifetimes(this.path, assignType, allocLifetime, flow);
+            writer.RegisterValueLifetimes(this.path, assignType, assign, flow);
         }
     }
 }

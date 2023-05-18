@@ -13,20 +13,5 @@
                 yield return item;
             }
         }
-
-        public static DecoratedSyntaxTree Decorate(this ISyntaxTree syntax, IEnumerable<ISyntaxDecorator> decos) {
-            if (syntax is DecoratedSyntaxTree decoSyntax) {
-                return new DecoratedSyntaxTree(
-                    decoSyntax.WrappedSyntax, 
-                    decoSyntax.Decorators.Concat(decos));
-            }
-            else {
-                return new DecoratedSyntaxTree(syntax, decos);
-            }
-        }
-
-        public static DecoratedSyntaxTree Decorate(this ISyntaxTree syntax, ISyntaxDecorator deco) {
-            return syntax.Decorate(new[] { deco });
-        }
     }
 }

@@ -135,7 +135,7 @@ namespace Helix.Features.Aggregates {
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
                 }
-                else if (flow.VariableValueLifetimes.TryGetValue(varPath, out var lifetime)) {
+                else if (flow.StoredValueLifetimes.TryGetValue(varPath, out var lifetime)) {
                     bundleDict[relPath] = lifetime;
                 }
                 else {

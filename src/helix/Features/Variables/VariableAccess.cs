@@ -124,18 +124,18 @@ namespace Helix.Features.Variables {
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
                 }
-                else if (flow.VariableValueLifetimes.TryGetValue(memPath, out var bundle)) {
+                else if (flow.StoredValueLifetimes.TryGetValue(memPath, out var bundle)) {
                     // We know what's in this variable, so return it as a more specific answer
                     bundleDict[relPath] = bundle;
                 }
                 else {
                     // Not sure what's in the variable, so just return the variable's lifetime to
                     // be safe
-                    bundleDict[relPath] = flow.VariableLocationLifetimes[memPath];
+                    bundleDict[relPath] = flow.LocationLifetimes[memPath];
                 }
             }
 
-            flow.Lifetimes[this] = new LifetimeBundle(bundleDict);
+            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
         }
 
         public virtual ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
@@ -175,7 +175,7 @@ namespace Helix.Features.Variables {
                 var memPath = this.VariablePath.AppendMember(relPath);
 
                 // TODO: This will break when variable invalidating is implemented
-                bundleDict[relPath] = flow.VariableLocationLifetimes[memPath];
+                bundleDict[relPath] = flow.LocationLifetimes[memPath];
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

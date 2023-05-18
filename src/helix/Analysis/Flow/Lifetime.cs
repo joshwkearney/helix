@@ -1,6 +1,10 @@
 ﻿namespace Helix.Analysis.Flow {
-    public enum LifetimeKind {
-        Inferencee, Other
+    public enum LifetimeRole {
+        Inference, Relational
+    }
+
+    public enum LifetimeTarget {
+        Location, StoredValue
     }
 
     // The mutation count serves to distinguish lifetimes from different versions of the
@@ -8,25 +12,22 @@
     // whose mutation will have effects that escape the current function scope. Parameters,
     // the implicit heap, and newly dereferenced reference types are all root lifetimes,
     // along with any locals that depend on root lifetimes.
-    public record struct Lifetime(VariablePath Path, int Version, LifetimeKind Kind = LifetimeKind.Other) {
+    public record struct Lifetime(VariablePath Path, int Version, LifetimeTarget Target, LifetimeRole Kind) {
         public static Lifetime Heap { get; } = new Lifetime(
-            new VariablePath(new IdentifierPath("$heap")), 
-            0);
-
-        public static Lifetime Stack { get; } = new Lifetime(
-            new VariablePath(new IdentifierPath("$stack")),
-            0); 
+            new IdentifierPath("$heap").ToVariablePath(), 
+            0,
+            LifetimeTarget.Location,
+            LifetimeRole.Relational);
         
         public static Lifetime None { get; } = new Lifetime(
-            new VariablePath(new IdentifierPath("$none")),
-            0);
+            new IdentifierPath("$none").ToVariablePath(),
+            0,
+            LifetimeTarget.Location,
+            LifetimeRole.Relational);
 
         public override string ToString() {
             if (this == Heap) {
                 return "return_region";
-            }
-            else if (this == Stack) {
-                return "stack";
             }
             else if (this == None) {
                 return "none";

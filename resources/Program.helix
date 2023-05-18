@@ -1,3 +1,11 @@
-﻿func test1(let a as int**, let b as int*) {
-	a* = b;	
+﻿struct Test4Struct {
+	let next as Test4Struct*;
+	let data as int;
+};
+
+func test4(let a as Test4Struct*) as int {
+	var A = new Test4Struct { next= a };
+	let B = &A;
+
+	B*.next*.next*.data;
 };

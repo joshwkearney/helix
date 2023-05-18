@@ -34,6 +34,10 @@ namespace Helix.Analysis {
             return new VariablePath(this, new IdentifierPath(member));
         }
 
+        public VariablePath ToVariablePath() {
+            return new VariablePath(this);
+        }
+
         public IdentifierPath Pop() {
             if (this.Segments.IsEmpty) {
                 return new IdentifierPath();

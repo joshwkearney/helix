@@ -1,9 +1,11 @@
-﻿func test1() as int* {
+﻿// ###
+func test1() as int* {
 	var x = 45;
 
 	&x;
 };
 
+// ###
 struct Test2Struct {
 	var field as int**;
 };
@@ -14,6 +16,7 @@ func test2(var n as Test2Struct) {
 	n.field* = &x;
 };
 
+// ###
 struct Test3Struct {
 	let field as int;
 };
@@ -22,6 +25,7 @@ func test3(let arg as Test3Struct) as int {
 	arg.field;
 };
 
+// ###
 struct Test4Struct {
 	let next as Test4Struct*;
 	let data as int;
@@ -34,12 +38,14 @@ func test4(let a as Test4Struct*) as int {
 	B*.next*.next*.data;
 };
 
+// ###
 func test5(let arr as int*[]) as void {
 	var x = 45;
 
 	arr[0] = &x;
 };
 
+// ###
 func test6(let arr as int*[]) as int* {
 	var x = 45;
 
@@ -47,12 +53,22 @@ func test6(let arr as int*[]) as int* {
 	&x;
 };
 
+// ###
 func test7(let arr as int*[]) as void {
 	arr[0] = arr[1];
 };
 
+// ###
 func test8(let a as int**) {
 	var c = 10;
 
 	a* = &c;	
 };
+
+// ###
+//func test9(let a as int**, let b as int**) as void {
+//	var c = a;	
+//	var d = new int;
+
+//	c* = &d;
+//};

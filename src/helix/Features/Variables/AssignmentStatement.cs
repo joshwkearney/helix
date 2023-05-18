@@ -113,91 +113,20 @@ namespace Helix.Features.Variables {
             this.target.AnalyzeFlow(flow);
             this.assign.AnalyzeFlow(flow);
 
-            // TODO: Implement the below comment
+            var targetBundle = this.target.GetLifetimes(flow);
+            var assignBundle = this.assign.GetLifetimes(flow);
+
             // Check to see if the assigned value has the same origins
             // (or more restricted origins) than the target expression.
             // If the origins are compatible, we can assign with no further
             // issue. If they are different, compile error and make the user
             // clarify regions in the signature
-            //
-            // NOPE: If they are different, then we need to insert a runtime
-            // check. If the lifetimes do not have runtime values, then we
-            // need to throw an error
-
-            var targetType = this.target.GetReturnType(flow);
-            var targetBundle = this.target.GetLifetimes(flow);
-            var assignBundle = this.assign.GetLifetimes(flow);
-
-            // TODO: Put this back
-            //if (!targetLifetime.HasCompatibleRoots(assignLifetime, types)) {
-            //    throw new LifetimeException(
-            //        this.Location,
-            //        "Unsafe Memory Store",
-            //        $"Unable to verify that the assigned value outlives its container. " + 
-            //        "Please declare this function as 'pooling' to check variable " + 
-            //        "lifetimes at runtime or wrap this assignment in an unsafe block.");
-            //}
-
-            // There are two possible behaviors here depending on if we are writing into
-            // a local variable or writing into a remote
-            // memory location. Both use the assignment syntax but have different side
-            // effects when it comes to lifetimes. Writing into a remote memory location
-            // does not effect any lifetimes, except that the assignment lifetimes are now
-            // must outlive the target lifetimes. However, overriding a local pointer or
-            // array variable replaces the current lifetime for that variable, so we need to
-            // increment the mutation counter and create the new lifetime. 
-            //if (this.isLocal) {
-                // Because structs are basically just bags of locals, we could actually be
-                // setting multiple variables with this one assignment if we are assigning
-                // a struct type. Therefore, loop through all the possible variables and
-                // members and set them correctly
-            //    foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(targetType, flow)) {
-                    // Increment the mutation counter for modified local variables so that
-                    // any new accesses to this variable will be forced to get the new 
-                    // lifetime.
-                    //var oldLifetime = targetBundle.Components[relPath];
-
-           //         flow.LifetimeGraph.RequireOutlives(
-           //             assignBundle.Components[relPath],
-           //             Lifetime.Stack);
-
-                    //var newLifetime = new Lifetime(
-                    //    oldLifetime.Path,
-                    //    oldLifetime.MutationCount + 1);
-
-                    // Replace the old variable signature
-                    //flow.VariableLifetimes[newLifetime.Path] = newLifetime;
-
-                    // TODO: Add binding
-                    // We need to generate a variable for this new lifetime in the c
-                    //var binding = new BindLifetimeSyntax(
-                    //    this.Location,
-                    //    newLifetime,
-                    //    newSig.Path);
-
-                    //lifetimeBindings.Add(binding);
-
-                    // Register the new variable lifetime with the graph. Both AddDerived and 
-                    // AddPrecursor are used because the new lifetime is being created as an
-                    // alias for the assigned lifetimes, and the assigned lifetimes will be
-                    // dependent on whatever the new lifetime is dependent on.
-                    //foreach (var assignLifetime in assignBundle.Components[relPath]) {
-                        //flow.LifetimeGraph.AddAlias(oldLifetime, assignBundle.Components[relPath]);
-                    //}
-               // }
-            //}
-            //else {
-                // Add a dependency between every variable in the assignment statement and
-                // the old lifetime. We are using AddDerived only because the target lifetime
-                // will exist whether or not we write into it, since this is a dereferenced write.
-                // That means that for the purposes of lifetime analysis, the target lifetime is
-                // independent of the assigned lifetimes.
             foreach (var (path, type) in this.assign.GetReturnType(flow).GetMembers(flow)) {
                 var targetLifetime = targetBundle[path];
                 var assignLifetime = assignBundle[path];
 
-                foreach (var assignRoot in flow.GetRoots(assignLifetime.Path)) {
-                    foreach (var targetRoot in flow.GetRoots(targetLifetime.Path)) {
+                foreach (var assignRoot in flow.GetRoots(assignLifetime)) {
+                    foreach (var targetRoot in flow.GetRoots(targetLifetime)) {
                         if (flow.LifetimeGraph.DoesOutlive(assignRoot, targetRoot)) {
                             continue;
                         }
@@ -206,18 +135,28 @@ namespace Helix.Features.Variables {
                             this.Location,
                             "Unsafe Memory Store",
                             $"Unable to verify that the assigned value outlives its container. " +
-                            $"The region '{assignRoot}' is not known to outlive the region '{targetRoot}', " + 
-                            $"so this assignment cannot proceed safely. \n\nTo resolve this error, " + 
+                            $"The region '{assignRoot}' is not known to outlive the region '{targetRoot}', " +
+                            $"so this assignment cannot proceed safely. \n\nTo resolve this error, " +
                             $"you can try implementing a '.copy()' method on the type '{type}' to allow " +
                             $"its values to be copied between regions, or you can try adding explict " +
                             $"region annotations to your code.");
                     }
                 }
+            }
+
+            // Add a dependency between every variable in the assignment statement and
+            // the old lifetime. We are using AddDerived only because the target lifetime
+            // will exist whether or not we write into it, since this is a dereferenced write.
+            // That means that for the purposes of lifetime analysis, the target lifetime is
+            // independent of the assigned lifetimes.
+            foreach (var (path, type) in this.assign.GetReturnType(flow).GetMembers(flow)) {
+                var targetLifetime = targetBundle[path];
+                var assignLifetime = assignBundle[path];
 
                 if (!type.IsValueType(flow)) {
                     flow.LifetimeGraph.RequireOutlives(assignLifetime, targetLifetime);
                 }
-            }
+            }                
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }

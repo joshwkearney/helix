@@ -44,13 +44,13 @@ namespace Helix.Features.Functions {
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(types)) {
                     var path = sig.Path.Append(parsePar.Name).AppendMember(relPath);
-                    var lifetime = new Lifetime(path, 0);
+                    var lifetime = new Lifetime(path, 0, LifetimeTarget.Location, LifetimeRole.Relational);
 
                     types.Variables[path.Variable] = new VariableSignature(path.Variable, type, parsePar.IsWritable);
                     types.SyntaxValues[path.Variable] = new VariableAccessSyntax(loc, path.Variable);
 
                     if (!memType.IsValueType(types)) {
-                        types.LifetimeRoots[path] = lifetime;
+                        types.LifetimeRoots.Add(lifetime);
                     }
                 }
             }
@@ -69,10 +69,10 @@ namespace Helix.Features.Functions {
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(flow)) {
                     var path = sig.Path.Append(parsePar.Name).AppendMember(relPath);
-                    var lifetime = new Lifetime(path, 0);
+                    var lifetime = new Lifetime(path, 0, LifetimeTarget.Location, LifetimeRole.Relational);
 
-                    flow.LifetimeGraph.RequireOutlives(Lifetime.Stack, lifetime);
-                    flow.VariableLocationLifetimes[path] = lifetime;
+                    //flow.LifetimeGraph.RequireOutlives(Lifetime.Stack, lifetime);
+                    flow.LocationLifetimes[path] = lifetime;
                 }
             }
         }

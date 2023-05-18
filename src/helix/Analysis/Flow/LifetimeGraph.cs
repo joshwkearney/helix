@@ -44,6 +44,7 @@ namespace Helix.Analysis.Flow {
 
             var visited = new HashSet<Lifetime>();
             var stack = new Stack<Lifetime>(new[] { time });
+            var result = new List<Lifetime>();
 
             while (stack.Count > 0) {
                 var item = stack.Pop();
@@ -55,7 +56,7 @@ namespace Helix.Analysis.Flow {
                     visited.Add(item);
                 }
 
-                yield return item;
+                result.Add(item);
 
                 // Whenever we hit a lifetime that does not outlive any other lifetime,
                 // we have found a root, so add it to the results
@@ -65,6 +66,8 @@ namespace Helix.Analysis.Flow {
                     }
                 }          
             }
+
+            return result;
         }
     }
 }
