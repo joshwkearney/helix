@@ -80,7 +80,7 @@ namespace Helix.Features.Memory {
                 throw new InvalidOperationException();
             }
 
-            return new DereferenceLValue(this.Location, this.target).CheckTypes(types);
+            return new DereferenceLValue(this.Location, this.target, this.tempPath).CheckTypes(types);
         }
     }
 
@@ -188,6 +188,7 @@ namespace Helix.Features.Memory {
     }
 
     public record DereferenceLValue : ISyntaxTree {
+        private readonly IdentifierPath tempPath;
         private readonly ISyntaxTree target;
 
         public TokenLocation Location { get; }
@@ -196,9 +197,10 @@ namespace Helix.Features.Memory {
 
         public bool IsPure => this.target.IsPure;
 
-        public DereferenceLValue(TokenLocation loc, ISyntaxTree target) {
+        public DereferenceLValue(TokenLocation loc, ISyntaxTree target, IdentifierPath tempPath) {
             this.Location = loc;
             this.target = target;
+            this.tempPath = tempPath;
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
@@ -223,8 +225,25 @@ namespace Helix.Features.Memory {
                 return;
             }
 
+            // This function will be slightly weird
+            // We can't return the target's lvalue directly because that would be like
+            // we're setting the variable itself, when really we're setting whatever it's
+            // pointing at. Therefore, we need to create a new lifetime that points in
+            // both directions at the target's lvalue so that the mutation checker in
+            // assignment syntax won't think we're setting a local and will properly check
+            // for aliasing
+
             this.target.AnalyzeFlow(flow);
-            this.SetLifetimes(this.target.GetLifetimes(flow), flow);
+            var targetLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
+
+            var dict = new Dictionary<IdentifierPath, Lifetime>();
+            var lifetime = new ValueLifetime(this.tempPath.ToVariablePath(), LifetimeRole.Alias, 0);
+
+            dict[new IdentifierPath()] = lifetime;
+            this.SetLifetimes(new LifetimeBundle(dict), flow);
+
+            flow.LifetimeGraph.RequireOutlives(targetLifetime, lifetime);
+            flow.LifetimeGraph.RequireOutlives(lifetime, targetLifetime);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

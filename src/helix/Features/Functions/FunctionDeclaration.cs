@@ -202,7 +202,7 @@ namespace Helix.Features.Functions {
                 .ToValueSet();
 
             roots = flow.ReduceRootSet(roots)
-                .Where(x => x.Kind != LifetimeRole.Alias)
+                .Where(x => x.Role != LifetimeRole.Alias)
                 .ToValueSet();
 
             // Make sure all the roots outlive the heap

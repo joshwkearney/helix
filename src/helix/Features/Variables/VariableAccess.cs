@@ -168,7 +168,7 @@ namespace Helix.Features.Variables {
             foreach (var (relPath, _) in sig.Type.GetMembers(flow)) {
                 var memPath = this.VariablePath.AppendMember(relPath);
 
-                bundleDict[relPath] = flow.VariableLifetimes[memPath].RValue;
+                bundleDict[relPath] = flow.VariableLifetimes[memPath].LValue;
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

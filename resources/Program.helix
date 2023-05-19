@@ -1,5 +1,5 @@
-﻿func test1() as int* {
+﻿func test5(let arr as int*[]) as void {
 	var x = 45;
 
-	&x;
+	arr[0] = &x;
 };

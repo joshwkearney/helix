@@ -67,7 +67,7 @@ namespace Helix.Analysis.Flow {
             var roots = this
                 .LifetimeGraph
                 .GetOutlivedLifetimes(lifetime)
-                .Where(x => x.Kind != LifetimeRole.Alias);
+                .Where(x => x.Role != LifetimeRole.Alias);
 
             roots = this.ReduceRootSet(roots);
 
@@ -82,9 +82,6 @@ namespace Helix.Analysis.Flow {
 
             foreach (var (relPath, _) in baseType.GetMembers(this)) {
                 var memPath = basePath.AppendMember(relPath);
-
-                // Even though the lifetime of the variable itself will be inferred, the lifetime
-                // of the value stored in that variable is NOT inferred. 
                 var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots);
 
                 // Add this variable lifetimes to the current frame
@@ -95,9 +92,6 @@ namespace Helix.Analysis.Flow {
         public void DeclareValueLifetimes(IdentifierPath basePath, HelixType baseType, LifetimeBundle assignBundle, LifetimeRole role) {
             foreach (var (relPath, _) in baseType.GetMembers(this)) {
                 var memPath = basePath.AppendMember(relPath);
-
-                // Even though the lifetime of the variable itself will be inferred, the lifetime
-                // of the value stored in that variable is NOT inferred. 
                 var valueLifetime = new ValueLifetime(memPath, role, 0);
 
                 // Add a dependency between whatever is being assigned to this variable and the

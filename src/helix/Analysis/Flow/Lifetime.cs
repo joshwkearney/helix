@@ -27,7 +27,7 @@ namespace Helix.Analysis.Flow {
 
         public abstract VariablePath Path { get; }
 
-        public abstract LifetimeRole Kind { get; }
+        public abstract LifetimeRole Role { get; }
 
         public abstract int Version { get; }
 
@@ -35,7 +35,7 @@ namespace Helix.Analysis.Flow {
     }
 
     public record StackLocationLifetime : Lifetime {
-        public override LifetimeRole Kind => LifetimeRole.Root;
+        public override LifetimeRole Role => LifetimeRole.Root;
 
         public override int Version => 0;
 
@@ -57,7 +57,7 @@ namespace Helix.Analysis.Flow {
 
         public override VariablePath Path { get; }
 
-        public override LifetimeRole Kind => LifetimeRole.Alias;
+        public override LifetimeRole Role => LifetimeRole.Alias;
 
         public override int Version => 0;
 
@@ -88,13 +88,13 @@ namespace Helix.Analysis.Flow {
     public record ValueLifetime : Lifetime {
         public override VariablePath Path { get; }
 
-        public override LifetimeRole Kind { get; }
+        public override LifetimeRole Role { get; }
 
         public override int Version { get; }
 
         public ValueLifetime(VariablePath varPath, LifetimeRole role, int version) {
             this.Path = varPath;
-            this.Kind = role;
+            this.Role = role;
             this.Version = version;
         }
 

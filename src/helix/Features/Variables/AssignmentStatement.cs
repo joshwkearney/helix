@@ -144,6 +144,8 @@ namespace Helix.Features.Variables {
                 }
             }
 
+            this.CheckAliasing(this.assign.GetReturnType(flow), targetBundle, assignBundle, flow);
+
             // Add a dependency between every variable in the assignment statement and
             // the old lifetime. We are using AddDerived only because the target lifetime
             // will exist whether or not we write into it, since this is a dereferenced write.
@@ -179,6 +181,36 @@ namespace Helix.Features.Variables {
             writer.WriteEmptyLine();
 
             return new CIntLiteral(0);
+        }
+
+        private void CheckAliasing(HelixType baseType, LifetimeBundle targets, LifetimeBundle assigns, FlowFrame flow) {
+            foreach (var (relPath, type) in baseType.GetMembers(flow)) {
+                var target = targets[relPath];
+                var assign = assigns[relPath];
+
+                // If target is a local variable location, there is no danger to aliasing
+                if (flow.VariableLifetimes.ContainsKey(target.Path)) {
+                    var oldValue = flow.VariableLifetimes[target.Path].RValue;
+                    var newValue = new ValueLifetime(oldValue.Path, oldValue.Role, oldValue.Version + 1);
+
+                    // However, we still need to increment the mutation counter and register the new lifetime
+                    flow.VariableLifetimes[newValue.Path] = flow.VariableLifetimes[newValue.Path].WithRValue(newValue);
+
+                    // Make sure our new value lifetime outlives the variable
+                    flow.LifetimeGraph.RequireOutlives(newValue, target);
+
+                    // Set the lifetime of the new value equal to that of what is being assigned
+                    flow.LifetimeGraph.RequireOutlives(newValue, assign);
+                    flow.LifetimeGraph.RequireOutlives(assign, newValue);
+
+                    continue;
+                }
+
+
+                // Otherwise, we are writing to a pointer or array, which can be aliased
+                //var targetRoots = flow.GetRoots(target);
+                //var assignRoots = flow.GetRoots(assign);
+            }
         }
     }
 }
