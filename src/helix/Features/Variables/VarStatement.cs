@@ -10,6 +10,7 @@ using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.FlowControl;
 using System.Xml.Linq;
+using Helix.Collections;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -35,7 +36,7 @@ namespace Helix.Parsing {
                 if (this.TryAdvance(TokenKind.Assignment)) {
                     break;
                 }
-                else { 
+                else {
                     this.Advance(TokenKind.Comma);
                 }
             }
@@ -87,20 +88,21 @@ namespace Helix {
             }
 
             var basePath = this.Location.Scope.Append(this.names[0]);
+            var allowedRoots = types.LifetimeRoots.ToValueSet();
 
             // Declare all our stuff
             types.DeclareVariableSignatures(basePath, assignType, this.isWritable);
-            types.DeclareLocationLifetimeRoots(basePath, assignType, LifetimeRole.Alias);
+            types.DeclareInferredLocationLifetimeRoots(basePath, assignType, this.Location, allowedRoots);
             types.DeclareValueLifetimeRoots(basePath, assignType, LifetimeRole.Alias);
 
             // Put this variable's value in the main table
             types.SyntaxValues[basePath] = assign;
 
             var result = new VarStatement(
-                this.Location, 
-                basePath, 
-                assign, 
-                types.LifetimeRoots.ToHashSet());
+                this.Location,
+                basePath,
+                assign,
+                allowedRoots);
 
             result.SetReturnType(PrimitiveType.Void, types);
 
@@ -112,7 +114,7 @@ namespace Helix {
                 throw new TypeException(
                     this.Location,
                     "Invalid Desconstruction",
-                    $"Cannot deconstruct non-struct type '{ assignType }'");
+                    $"Cannot deconstruct non-struct type '{assignType}'");
             }
 
             if (!types.Structs.TryGetValue(named.Path, out var sig)) {
@@ -126,7 +128,7 @@ namespace Helix {
                 throw new TypeException(
                     this.Location,
                     "Invalid Desconstruction",
-                    "The number of variables provided does not match " 
+                    "The number of variables provided does not match "
                         + $"the number of members on struct type '{named}'");
             }
 
@@ -159,7 +161,7 @@ namespace Helix {
     public record VarStatement : ISyntaxTree {
         private readonly ISyntaxTree assignSyntax;
         private readonly IdentifierPath path;
-        private readonly IReadOnlySet<Lifetime> allowedRoots;
+        private readonly ValueSet<Lifetime> allowedRoots;
 
         public TokenLocation Location { get; }
 
@@ -168,7 +170,7 @@ namespace Helix {
         public bool IsPure => false;
 
         public VarStatement(TokenLocation loc, IdentifierPath path,
-                            ISyntaxTree assign, IReadOnlySet<Lifetime> allowedRoots) {
+                            ISyntaxTree assign, ValueSet<Lifetime> allowedRoots) {
             this.Location = loc;
             this.path = path;
             this.assignSyntax = assign;
@@ -185,7 +187,7 @@ namespace Helix {
             var assignType = this.assignSyntax.GetReturnType(flow);
             var assignBundle = this.assignSyntax.GetLifetimes(flow);
 
-            flow.DeclareLocationLifetimes(this.path, assignType, LifetimeRole.Alias);
+            flow.DeclareInferredLocationLifetimes(this.path, assignType, this.Location, this.allowedRoots);
             flow.DeclareValueLifetimes(this.path, assignType, assignBundle, LifetimeRole.Alias);
 
             this.SetLifetimes(new LifetimeBundle(), flow);
@@ -193,29 +195,18 @@ namespace Helix {
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var basePath = this.path.ToVariablePath();
-            var roots = flow.GetRoots(flow.LocationLifetimes[basePath]).ToValueList();
-
-            if (roots.Any() && roots.Any(x => !this.allowedRoots.Contains(x))) {
-                throw new LifetimeException(
-                    this.Location,
-                    "Lifetime Inference Failed",
-                    "The lifetime of this new object allocation has failed because it is " +
-                    "dependent on a root that does not exist at this point in the program and " +
-                    "must be calculated at runtime. Please try moving the allocation " +
-                    "closer to the site of its use.");
-            }
-
             var assign = this.assignSyntax.GenerateCode(flow, writer);
-            var allocLifetime = writer.CalculateSmallestLifetime(this.Location, roots);
+            var allocLifetime = flow.VariableLifetimes[basePath].LValue.GenerateCode(flow, writer);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
-            if (roots.Count == 0) {
-                this.GenerateStackAllocation(assign, flow, writer);
+            if (flow.GetRoots(flow.VariableLifetimes[basePath].LValue).Any()) {
+                this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
+
             }
             else {
-                this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
+                this.GenerateStackAllocation(assign, flow, writer);
             }
 
             return new CIntLiteral(0);
@@ -234,15 +225,10 @@ namespace Helix {
 
             writer.WriteStatement(stat);
             writer.WriteEmptyLine();
-            writer.RegisterVariableKind(this.path, CVariableKind.Local);
-
-            // Register all of our value lifetimes. We don't need to register any location 
-            // lifetimes because they don't exist, as we are stack allocated
-            writer.RegisterLocationLifetimes(this.path, assignType, new CVariableLiteral("_region_min()"), flow);
-            writer.RegisterValueLifetimes(this.path, assignType, assign, flow);
+            writer.VariableKinds[this.path] = CVariableKind.Local;
         }
 
-        private void GenerateRegionAllocation(ICSyntax assign, ICSyntax allocLifetime, 
+        private void GenerateRegionAllocation(ICSyntax assign, ICSyntax allocLifetime,
                                               FlowFrame flow, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
             var assignType = this.assignSyntax.GetReturnType(flow);
@@ -263,11 +249,7 @@ namespace Helix {
 
             writer.WriteStatement(assignmentDecl);
             writer.WriteEmptyLine();
-            writer.RegisterVariableKind(this.path, CVariableKind.Allocated);
-
-            // Register all our lifetimes
-            writer.RegisterLocationLifetimes(this.path, assignType, allocLifetime, flow);
-            writer.RegisterValueLifetimes(this.path, assignType, assign, flow);
+            writer.VariableKinds[this.path] = CVariableKind.Allocated;
         }
     }
 }

@@ -44,13 +44,15 @@ namespace Helix.Features.Functions {
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(types)) {
                     var path = sig.Path.Append(parsePar.Name).AppendMember(relPath);
-                    var lifetime = new Lifetime(path, 0, LifetimeSubject.Location, LifetimeRole.Root);
+                    var locationLifetime = new StackLocationLifetime(path);
+                    var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, 0);
 
                     types.Variables[path.Variable] = new VariableSignature(path.Variable, type, parsePar.IsWritable);
                     types.SyntaxValues[path.Variable] = new VariableAccessSyntax(loc, path.Variable);
 
                     if (!memType.IsValueType(types)) {
-                        types.LifetimeRoots.Add(lifetime);
+                        types.LifetimeRoots.Add(locationLifetime);
+                        types.LifetimeRoots.Add(valueLifetime);
                     }
                 }
             }
@@ -69,10 +71,11 @@ namespace Helix.Features.Functions {
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(flow)) {
                     var path = sig.Path.Append(parsePar.Name).AppendMember(relPath);
-                    var lifetime = new Lifetime(path, 0, LifetimeSubject.Location, LifetimeRole.Root);
+                    var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, 0);
+                    var locationLifetime = new StackLocationLifetime(path);
 
-                    //flow.LifetimeGraph.RequireOutlives(Lifetime.Stack, lifetime);
-                    flow.LocationLifetimes[path] = lifetime;
+                    flow.LifetimeGraph.RequireOutlives(valueLifetime, locationLifetime);
+                    flow.VariableLifetimes[path] = new LifetimeBounds(valueLifetime, locationLifetime);
                 }
             }
         }

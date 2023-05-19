@@ -6,12 +6,15 @@ using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Helix.Analysis {
-    public class StackedSet<T> : ISet<T> {
+namespace Helix.Collections
+{
+    public class StackedSet<T> : ISet<T>
+    {
         private readonly ISet<T> values = new HashSet<T>();
         private readonly ISet<T> prev;
 
-        public StackedSet(ISet<T> prev) {
+        public StackedSet(ISet<T> prev)
+        {
             this.prev = prev;
         }
 

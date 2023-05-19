@@ -1,6 +1,7 @@
 using Helix;
 using Helix.Analysis;
 using Helix.Analysis.Flow;
+using System.Diagnostics;
 
 namespace helix_tests {
     [TestClass]
@@ -36,8 +37,9 @@ namespace helix_tests {
         private static void CompileProgram(string contents) {
             var header = File.ReadAllText("../../../../../Resources/Helix.h");
             var parse = new HelixCompiler(header, contents);
+            var output = parse.Compile();
 
-            parse.Compile();
+            Console.WriteLine(output);
         }
 
         private static IEnumerable<string> GetTests(string file) {

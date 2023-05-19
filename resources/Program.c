@@ -13,30 +13,20 @@ extern void* _region_malloc(int region, int size);
 extern void _region_delete(int region);
 
 typedef struct int$ptr int$ptr;
-typedef struct int$ptr$ptr int$ptr$ptr;
 
-void test9(int _return_region, int$ptr$ptr a, int$ptr$ptr b);
+int$ptr test1(int _return_region);
 
 struct int$ptr {
     int* data;
     int region;
 };
 
-struct int$ptr$ptr {
-    int$ptr* data;
-    int region;
-};
+int$ptr test1(int _return_region) {
+    /* Line 2: New variable declaration 'x' */
+    int* x = (int*)_region_malloc(_return_region, sizeof(int));
+    (*x) = 45U;
 
-void test9(int _return_region, int$ptr$ptr a, int$ptr$ptr b) {
-    /* Line 2: New variable declaration 'c' */
-    int$ptr$ptr c = a;
-
-    /* Line 3: New variable declaration 'd' */
-    int* d = (int*)_region_malloc((a.region), sizeof(int));
-    (*d) = 0U;
-
-    /* Line 5: Assignment statement */
-    (*(c.data)) = (int$ptr){ d, (a.region) };
+    return (int$ptr){ x, _return_region };
 }
 
 #if __cplusplus

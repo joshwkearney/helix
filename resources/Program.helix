@@ -1,6 +1,5 @@
-﻿func test9(let a as int**, let b as int**) as void {
-	var c = a;	
-	var d = new int;
+﻿func test1() as int* {
+	var x = 45;
 
-	c* = &d;
+	&x;
 };

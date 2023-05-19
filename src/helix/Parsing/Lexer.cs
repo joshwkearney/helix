@@ -36,21 +36,21 @@ namespace Helix.Parsing {
 
         private char Current => this.text[this.pos];
 
-        private TokenLocation Location => new(pos, 1, this.line, this.scope);
+        private TokenLocation Location => new(this.pos, 1, this.line, this.scope);
 
         public Lexer(string text) {
             this.text = text;
         }
 
         private Token GetLessThanOrArrowOrLessThanOrEqualTo() {
-            if (pos + 1 < this.text.Length) {
-                if (text[pos + 1] == '=') {
-                    pos++;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
-                    return new Token(TokenKind.LessThanOrEqualTo, new TokenLocation(pos - 1, 2, this.line, scope), "<=");
+                    return new Token(TokenKind.LessThanOrEqualTo, new TokenLocation(this.pos - 1, 2, this.line, this.scope), "<=");
                 }
                 else {
-                    return new Token(TokenKind.LessThan, Location, "<");
+                    return new Token(TokenKind.LessThan, this.Location, "<");
                 }
             }
             else {
@@ -59,14 +59,14 @@ namespace Helix.Parsing {
         }
 
         private Token GetEqualsOrYieldsOrAssignment() {
-            if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '=') {
-                    pos++;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
-                    return new Token(TokenKind.Equals, new TokenLocation(pos - 1, 2, line, scope), "==");
+                    return new Token(TokenKind.Equals, new TokenLocation(this.pos - 1, 2, this.line, this.scope), "==");
                 }
                 else {
-                    return new Token(TokenKind.Assignment, Location, "=");
+                    return new Token(TokenKind.Assignment, this.Location, "=");
                 }
             }
             else {
@@ -75,14 +75,14 @@ namespace Helix.Parsing {
         }
 
         private Token GetGreaterThanOrGreaterThanOrEqualTo() {
-            if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '=') {
-                    pos++;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
-                    return new Token(TokenKind.GreaterThanOrEqualTo, new TokenLocation(pos - 1, 2, line, scope), ">=");
+                    return new Token(TokenKind.GreaterThanOrEqualTo, new TokenLocation(this.pos - 1, 2, this.line, this.scope), ">=");
                 }
                 else {
-                    return new Token(TokenKind.GreaterThan, Location, ">");
+                    return new Token(TokenKind.GreaterThan, this.Location, ">");
                 }
             }
             else {
@@ -91,14 +91,14 @@ namespace Helix.Parsing {
         }
 
         private Token GetNotOrNotEqual() {
-            if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '=') {
-                    pos++;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
-                    return new Token(TokenKind.NotEquals, new TokenLocation(pos - 1, 2, line, scope), "!=");
+                    return new Token(TokenKind.NotEquals, new TokenLocation(this.pos - 1, 2, this.line, this.scope), "!=");
                 }
                 else {
-                    return new Token(TokenKind.Not, Location, "!");
+                    return new Token(TokenKind.Not, this.Location, "!");
                 }
             }
             else {
@@ -107,17 +107,17 @@ namespace Helix.Parsing {
         }
 
         private Token GetNumber() {
-            int start = pos;
+            int start = this.pos;
             string strNum = "";
 
-            while (pos < this.text.Length && char.IsDigit(Current)) {
-                strNum += this.text[pos];
-                pos++;
+            while (this.pos < this.text.Length && char.IsDigit(this.Current)) {
+                strNum += this.text[this.pos];
+                this.pos++;
             }
 
-            pos--;
+            this.pos--;
 
-            var loc = new TokenLocation(start, strNum.Length, line, scope);
+            var loc = new TokenLocation(start, strNum.Length, this.line, this.scope);
 
             if (int.TryParse(strNum, out int num)) {
                 return new Token(TokenKind.IntLiteral, loc, strNum);
@@ -128,17 +128,17 @@ namespace Helix.Parsing {
         }
 
         private Token GetIdentifier() {
-            int start = pos;
+            int start = this.pos;
             string id = "";
 
-            while (pos < this.text.Length && (char.IsLetterOrDigit(Current) || Current == '_')) {
-                id += this.text[pos];
-                pos++;
+            while (this.pos < this.text.Length && (char.IsLetterOrDigit(this.Current) || this.Current == '_')) {
+                id += this.text[this.pos];
+                this.pos++;
             }
 
-            pos--;
+            this.pos--;
 
-            var location = new TokenLocation(start, id.Length, line, scope);
+            var location = new TokenLocation(start, id.Length, this.line, this.scope);
 
             if (keywords.TryGetValue(id, out var kind)) {
                 return new Token(kind, location, id);
@@ -153,174 +153,174 @@ namespace Helix.Parsing {
 
         private Token GetCharLiteral() {
             // Advance past the first '
-            int start = pos++;
+            int start = this.pos++;
 
             // Get the character
-            if (pos >= this.text.Length || !char.IsLetterOrDigit(Current)) {
-                throw ParseException.UnexpectedCharacter(Location, Current);
+            if (this.pos >= this.text.Length || !char.IsLetterOrDigit(this.Current)) {
+                throw ParseException.UnexpectedCharacter(this.Location, this.Current);
             }
 
-            int c = (int)Current;
+            int c = (int)this.Current;
 
             // Advance past the second '
-            pos++;
-            if (pos >= this.text.Length || Current != '\'') {
-                throw ParseException.UnexpectedCharacter(Location, Current);
+            this.pos++;
+            if (this.pos >= this.text.Length || this.Current != '\'') {
+                throw ParseException.UnexpectedCharacter(this.Location, this.Current);
             }
 
-            return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, line, scope), c.ToString());
+            return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, this.line, this.scope), c.ToString());
         }
 
         private Token GetSlashOrCommentOrDivideAssignment() {
-            if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '/') {
-                    int start = pos;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '/') {
+                    int start = this.pos;
 
-                    while (pos < text.Length && text[pos] != '\n') {
-                        pos++;
+                    while (this.pos < this.text.Length && this.text[this.pos] != '\n') {
+                        this.pos++;
                     }
 
-                    pos--;
+                    this.pos--;
 
-                    var location = new TokenLocation(start, pos - start + 1, line, scope);
+                    var location = new TokenLocation(start, this.pos - start + 1, this.line, this.scope);
                     return new Token(TokenKind.Whitespace, location, "");
                 }
-                else if (text[pos + 1] == '=') {
-                    pos++;
+                else if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
                     return new Token(
                         TokenKind.DivideAssignment, 
-                        new TokenLocation(pos - 1, 2, line, scope), "/=");
+                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "/=");
                 }
             }
 
-            return new Token(TokenKind.Divide, Location, "/");            
+            return new Token(TokenKind.Divide, this.Location, "/");            
         }
 
         private Token GetPlusOrPlusAssignment() {
-            if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '=') {
-                    pos++;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
                     return new Token(
                         TokenKind.PlusAssignment,
-                        new TokenLocation(pos - 1, 2, line, scope), "+=");
+                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "+=");
                 }
             }
 
-            return new Token(TokenKind.Plus, Location, "+");
+            return new Token(TokenKind.Plus, this.Location, "+");
         }
 
         private Token GetMinusOrMinusAssignment() {
-            if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '=') {
-                    pos++;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
                     return new Token(
                         TokenKind.MinusAssignment,
-                        new TokenLocation(pos - 1, 2, line, scope), "-=");
+                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "-=");
                 }
-                else if (text[pos + 1] == '>') {
-                    pos++;
+                else if (this.text[this.pos + 1] == '>') {
+                    this.pos++;
 
-                    return new Token(TokenKind.Yields, new TokenLocation(pos - 1, 2, line, scope), "->");
+                    return new Token(TokenKind.Yields, new TokenLocation(this.pos - 1, 2, this.line, this.scope), "->");
                 }
             }
 
-            return new Token(TokenKind.Minus, Location, "-");
+            return new Token(TokenKind.Minus, this.Location, "-");
         }
 
         private Token GetStarOrStarAssignment() {
-            if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '=') {
-                    pos++;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
                     return new Token(
                         TokenKind.StarAssignment,
-                        new TokenLocation(pos - 1, 2, line, scope), "*=");
+                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "*=");
                 }
             }
 
-            return new Token(TokenKind.Star, Location, "*");
+            return new Token(TokenKind.Star, this.Location, "*");
         }
 
         private Token GetModuloOrModuloAssignment() {
-            if (pos + 1 < text.Length) {
-                if (text[pos + 1] == '=') {
-                    pos++;
+            if (this.pos + 1 < this.text.Length) {
+                if (this.text[this.pos + 1] == '=') {
+                    this.pos++;
 
                     return new Token(
                         TokenKind.ModuloAssignment,
-                        new TokenLocation(pos - 1, 2, line, scope), "%=");
+                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "%=");
                 }
             }
 
-            return new Token(TokenKind.Modulo, Location, "%");
+            return new Token(TokenKind.Modulo, this.Location, "%");
         }
 
         private Token GetTokenHelper() {
-            if (pos >= text.Length) {
+            if (this.pos >= this.text.Length) {
                 return new Token(TokenKind.EOF, new TokenLocation(), "");
             }
 
-            if (symbols.TryGetValue(Current, out var kind)) {
-                return new Token(kind, Location, Current.ToString());
+            if (symbols.TryGetValue(this.Current, out var kind)) {
+                return new Token(kind, this.Location, this.Current.ToString());
             }
 
-            if (Current == '=') {
+            if (this.Current == '=') {
                 return this.GetEqualsOrYieldsOrAssignment();
             }
-            else if (Current == '<') {
+            else if (this.Current == '<') {
                 return this.GetLessThanOrArrowOrLessThanOrEqualTo();
             }
-            else if (Current == '>') {
+            else if (this.Current == '>') {
                 return this.GetGreaterThanOrGreaterThanOrEqualTo();
             }
-            else if (Current == '!') {
+            else if (this.Current == '!') {
                 return this.GetNotOrNotEqual();
             }
-            else if (Current == '\'') {
+            else if (this.Current == '\'') {
                 return this.GetCharLiteral();
             }
-            else if (Current == '+') {
+            else if (this.Current == '+') {
                 return this.GetPlusOrPlusAssignment();
             }
-            else if (Current == '-') {
+            else if (this.Current == '-') {
                 return this.GetMinusOrMinusAssignment();
             }
-            else if (Current == '*') {
+            else if (this.Current == '*') {
                 return this.GetStarOrStarAssignment();
             }
-            else if (Current == '/') {
+            else if (this.Current == '/') {
                 return this.GetSlashOrCommentOrDivideAssignment();
             }
-            else if (Current == '%') {
+            else if (this.Current == '%') {
                 return this.GetModuloOrModuloAssignment();
             }
-            else if (char.IsDigit(Current)) {
+            else if (char.IsDigit(this.Current)) {
                 return this.GetNumber();
             }
-            else if (char.IsLetter(Current)) {
+            else if (char.IsLetter(this.Current)) {
                 return this.GetIdentifier();
             }
-            else if (Current == '\n') {
-                line++;
-                return new Token(TokenKind.Whitespace, Location, Current.ToString());
+            else if (this.Current == '\n') {
+                this.line++;
+                return new Token(TokenKind.Whitespace, this.Location, this.Current.ToString());
             }
-            else if (char.IsWhiteSpace(Current)) {
-                return new Token(TokenKind.Whitespace, Location, Current.ToString());
+            else if (char.IsWhiteSpace(this.Current)) {
+                return new Token(TokenKind.Whitespace, this.Location, this.Current.ToString());
             }           
             else {
-                throw ParseException.UnexpectedCharacter(Location, Current);
+                throw ParseException.UnexpectedCharacter(this.Location, this.Current);
             }
         }
 
         public Token GetToken(IdentifierPath scope) {
             this.scope = scope;
 
-            while (pos < this.text.Length) {
+            while (this.pos < this.text.Length) {
                 var tok = this.GetTokenHelper();
-                pos++;
+                this.pos++;
 
                 if (tok.Kind != TokenKind.Whitespace) {
                     return tok;
@@ -329,7 +329,7 @@ namespace Helix.Parsing {
 
             return new Token(
                 TokenKind.EOF, 
-                new TokenLocation(pos, 0, line, scope),
+                new TokenLocation(this.pos, 0, this.line, scope),
                 string.Empty);
         }
 

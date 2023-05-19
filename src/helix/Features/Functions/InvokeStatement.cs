@@ -136,7 +136,7 @@ namespace Helix.Features.Functions {
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => args;
+        public IEnumerable<ISyntaxTree> Children => this.args;
 
         public bool IsPure => false;
 

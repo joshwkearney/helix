@@ -19,7 +19,7 @@ namespace Helix.Parsing {
             return new DereferenceSyntax(
                 loc, 
                 first, 
-                this.scope.Append("$deref_" + dereferenceCounter++));
+                this.scope.Append("$deref_" + this.dereferenceCounter++));
         }
     }
 }
@@ -142,20 +142,20 @@ namespace Helix.Features.Memory {
 
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
-                    flow.StoredValueLifetimes[memPath] = Lifetime.None;
+                    flow.VariableLifetimes[memPath] = flow.VariableLifetimes[memPath].WithRValue(Lifetime.None);
                 }
                 else {
                     // This value's lifetime actually isn't the pointer's lifetime, but some
                     // other lifetime that outlives the pointer. It's important to represent
                     // this value like this because we can't store things into it that only
                     // outlive the pointer
-                    var lifetime = new Lifetime(memPath, 0, LifetimeSubject.StoredValue, LifetimeRole.Root);
+                    var lifetime = new ValueLifetime(memPath, LifetimeRole.Root, 0);
 
                     bundleDict[relPath] = lifetime;
 
                     // The lifetime that is stored in the pointer must outlive the pointer itself
                     flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);
-                    flow.StoredValueLifetimes[memPath] = lifetime;
+                    flow.VariableLifetimes[memPath] = flow.VariableLifetimes[memPath].WithRValue(lifetime);
                 }
             }
 
@@ -183,13 +183,6 @@ namespace Helix.Features.Memory {
             });
 
             writer.WriteEmptyLine();
-
-            writer.RegisterValueLifetimes(
-                this.tempPath, 
-                pointerType.InnerType, 
-                new CVariableLiteral(tempName), 
-                types);
-
             return new CVariableLiteral(tempName);
         }
     }
@@ -231,7 +224,7 @@ namespace Helix.Features.Memory {
             }
 
             this.target.AnalyzeFlow(flow);
-            this.SetLifetimes(target.GetLifetimes(flow), flow);
+            this.SetLifetimes(this.target.GetLifetimes(flow), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

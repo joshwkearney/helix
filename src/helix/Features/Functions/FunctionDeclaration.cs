@@ -12,6 +12,7 @@ using Helix.Features.Variables;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Collections;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -198,11 +199,11 @@ namespace Helix.Features.Functions {
             var roots = this.body.GetLifetimes(flow)
                 .Values
                 .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
-                .ToArray();
+                .ToValueSet();
 
             roots = flow.ReduceRootSet(roots)
                 .Where(x => x.Kind != LifetimeRole.Alias)
-                .ToArray();
+                .ToValueSet();
 
             // Make sure all the roots outlive the heap
             if (!roots.All(x => flow.LifetimeGraph.DoesOutlive(x, Lifetime.Heap))) {
@@ -218,13 +219,13 @@ namespace Helix.Features.Functions {
             }
 
             // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in flow.Lifetimes[body].Values) {
+            foreach (var lifetime in flow.Lifetimes[this.body].Values) {
                 flow.LifetimeGraph.RequireOutlives(lifetime, Lifetime.Heap);
             }
 
 #if DEBUG
             // Debug check: Make sure every part of the syntax tree has a lifetime
-            foreach (var expr in body.GetAllChildren()) {
+            foreach (var expr in this.body.GetAllChildren()) {
                 if (!flow.Lifetimes.ContainsKey(expr)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
                 }
@@ -255,30 +256,12 @@ namespace Helix.Features.Functions {
             var body = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, body);
 
-            // Register the heap lifetime for the body to use
-            bodyWriter.RegisterLifetime(
-                Lifetime.Heap, 
-                new CVariableLiteral("_return_region"));
-
-            // Register the parameter lifetimes
-            foreach (var par in this.Signature.Parameters) {
-                foreach (var (relPath, _) in par.Type.GetMembers(types)) {
-                    var path = this.Signature.Path.Append(par.Name).AppendMember(relPath);
-                    var lifetime = types.LocationLifetimes[path];
-
-                    bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
-                        Target = new CVariableLiteral(writer.GetVariableName(path)),
-                        MemberName = "region"
-                    });
-                }
-            }
-
             // Register the parameters as local variables
             foreach (var par in this.Signature.Parameters) {
                 foreach (var (relPath, _) in par.Type.GetMembers(types)) {
                     var path = this.Signature.Path.Append(par.Name).Append(relPath);
 
-                    bodyWriter.RegisterVariableKind(path, CVariableKind.Local);
+                    bodyWriter.VariableKinds[path] = CVariableKind.Local;
                 }
             }
 

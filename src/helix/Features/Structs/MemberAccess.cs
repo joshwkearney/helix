@@ -135,11 +135,8 @@ namespace Helix.Features.Aggregates {
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
                 }
-                else if (flow.StoredValueLifetimes.TryGetValue(varPath, out var lifetime)) {
-                    bundleDict[relPath] = lifetime;
-                }
                 else {
-                    bundleDict[relPath] = targetLifetimes[memPath];
+                    bundleDict[relPath] = flow.VariableLifetimes[varPath].RValue;
                 }
             }
 
@@ -193,17 +190,7 @@ namespace Helix.Features.Aggregates {
             }
 
             this.target.AnalyzeFlow(flow);
-
-            var targetLifetimes = this.target.GetLifetimes(flow);
-            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
-
-            foreach (var (relPath, _) in this.memberType.GetMembers(flow)) {
-                var memPath = new IdentifierPath(this.memberName).Append(relPath);
-
-                bundleDict[relPath] = targetLifetimes[memPath];
-            }
-
-            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+            this.SetLifetimes(this.target.GetLifetimes(flow), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

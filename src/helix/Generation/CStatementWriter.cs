@@ -1,6 +1,7 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Flow;
 using Helix.Analysis.Types;
+using Helix.Collections;
 using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -11,21 +12,15 @@ namespace Helix.Generation {
     }
 
     public interface ICStatementWriter : ICWriter {
+        public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; }
+
         public ICStatementWriter WriteStatement(ICStatement stat);
 
         public ICStatementWriter WriteEmptyLine();
 
-        public ICSyntax WriteImpureExpression(ICSyntax type, ICSyntax expr);
+        public ICSyntax GetLifetime(Lifetime lifetime, FlowFrame flow);
 
-        public void RegisterLifetime(Lifetime lifetime, ICSyntax value);
-
-        public ICSyntax GetLifetime(Lifetime lifetime);
-
-        public void RegisterVariableKind(IdentifierPath path, CVariableKind kind);
-
-        public CVariableKind GetVariableKind(IdentifierPath path);
-
-        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes);
+        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, FlowFrame flow);
 
         // Mixins
         public ICStatementWriter WriteComment(string comment) {
@@ -36,75 +31,6 @@ namespace Helix.Generation {
             return this.WriteStatement(new CSyntaxStatement() {
                 Value = syntax
             });
-        }
-
-        public void RegisterValueLifetimes(IdentifierPath basePath, HelixType baseType, 
-                                           ICSyntax assign, FlowFrame flow) {
-            // This is a new lifetime declaration
-            foreach (var (relPath, type) in baseType.GetMembers(flow)) {
-                var memPath = basePath.AppendMember(relPath);
-                var memAccess = assign;
-
-                // Only register lifetimes that exist
-                if (type.IsValueType(flow)) {
-                    this.RegisterLifetime(flow.StoredValueLifetimes[memPath], assign);
-
-                    continue;
-                }
-
-                foreach (var segment in relPath.Segments) {
-                    memAccess = new CMemberAccess() {
-                        IsPointerAccess = false,
-                        MemberName = segment,
-                        Target = memAccess
-                    };
-                }
-
-                memAccess = new CMemberAccess() {
-                    IsPointerAccess = false,
-                    MemberName = "region",
-                    Target = memAccess
-                };
-
-                this.RegisterLifetime(flow.StoredValueLifetimes[memPath], memAccess);
-            }
-        }
-
-        public void RegisterLocationLifetimes(IdentifierPath basePath, HelixType baseType, 
-                                              ICSyntax allocLifetime, FlowFrame flow) {
-            foreach (var (relPath, _) in baseType.GetMembers(flow)) {
-                var memPath = basePath.AppendMember(relPath);
-
-                this.RegisterLifetime(flow.LocationLifetimes[memPath], allocLifetime);
-            }
-        }
-    }
-
-    public class CStatementWriter : ICStatementWriter {
-        private readonly ICWriter prev;
-        private readonly IList<ICStatement> stats;
-
-        private readonly Dictionary<Lifetime, ICSyntax> lifetimes = new();
-        private readonly Dictionary<ValueList<Lifetime>, ICSyntax> lifetimeCombinations = new();
-        private readonly Dictionary<IdentifierPath, CVariableKind> variableKinds = new();
-
-        public CStatementWriter(ICWriter prev, IList<ICStatement> stats) {
-            this.prev = prev;
-            this.stats = stats;
-        }
-
-        public ICStatementWriter WriteStatement(ICStatement stat) {
-            stats.Add(stat);
-
-            return this;
-        }
-
-        public ICStatementWriter WriteEmptyLine() {
-            if (this.stats.Any() && !this.stats.Last().IsEmpty) {
-                this.WriteStatement(new CEmptyLine());
-            }
-
-            return this;
         }
 
         public ICSyntax WriteImpureExpression(ICSyntax type, ICSyntax expr) {
@@ -120,36 +46,66 @@ namespace Helix.Generation {
 
             return new CVariableLiteral(name);
         }
+    }
 
-        public void RegisterLifetime(Lifetime lifetime, ICSyntax value) {
-            this.lifetimes[lifetime] = value;
+    public class CStatementWriter : ICStatementWriter {
+        private readonly ICWriter prev;
+        private readonly IList<ICStatement> stats;
+
+        private readonly Dictionary<Lifetime, ICSyntax> lifetimes = new();
+        private readonly Dictionary<ValueSet<Lifetime>, ICSyntax> lifetimeCombinations = new();
+
+        public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; } 
+            = new Dictionary<IdentifierPath, CVariableKind>();
+
+        public CStatementWriter(ICWriter prev, IList<ICStatement> stats) {
+            this.prev = prev;
+            this.stats = stats;
         }
 
-        public ICSyntax GetLifetime(Lifetime lifetime) {
+        public ICStatementWriter WriteStatement(ICStatement stat) {
+            this.stats.Add(stat);
+
+            return this;
+        }
+
+        public ICStatementWriter WriteEmptyLine() {
+            if (this.stats.Any() && !this.stats.Last().IsEmpty) {
+                this.WriteStatement(new CEmptyLine());
+            }
+
+            return this;
+        }
+
+        public ICSyntax GetLifetime(Lifetime lifetime, FlowFrame flow) {
             if (this.prev is CStatementWriter statWriter) {
                 if (statWriter.lifetimes.TryGetValue(lifetime, out var value)) {
                     return value;
                 }
             }
 
+            if (!this.lifetimes.ContainsKey(lifetime)) {
+                this.lifetimes[lifetime] = lifetime.GenerateCode(flow, this);
+            }
+
             return this.lifetimes[lifetime];
         }
 
-        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes) {
-            var lifetimeList = lifetimes.ToValueList();
+        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, FlowFrame flow) {
+            var lifetimeList = lifetimes.ToValueSet();
 
             if (lifetimeList.Count == 0) {
                 return new CVariableLiteral("_region_min()");
             }
             else if (lifetimeList.Count == 1) {
-                return this.GetLifetime(lifetimeList[0]);
+                return this.GetLifetime(lifetimeList.First(), flow);
             }
             else if (this.lifetimeCombinations.TryGetValue(lifetimeList, out var value)) {
                 return value;
             }
 
             var values = lifetimes
-                .Select(x => GetLifetime(x))
+                .Select(x => this.GetLifetime(x, flow))
                 .ToArray();
 
             var tempName = this.GetVariableName();
@@ -199,13 +155,5 @@ namespace Helix.Generation {
         public ICSyntax ConvertType(HelixType type) => this.prev.ConvertType(type);
 
         public void ResetTempNames() => this.prev.ResetTempNames();
-
-        public void RegisterVariableKind(IdentifierPath path, CVariableKind kind) {
-            this.variableKinds[path] = kind;
-        }
-
-        public CVariableKind GetVariableKind(IdentifierPath path) {
-            return this.variableKinds[path];
-        }
     }
 }

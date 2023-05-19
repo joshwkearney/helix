@@ -72,3 +72,14 @@ func test9(let a as int**, let b as int**) as void {
 
 	c* = &d;
 };
+
+// ###
+func test10() as int* {
+	var x = 5;
+	var y = 10;
+
+	var z = &x;
+	z = &y;
+
+	z;
+};

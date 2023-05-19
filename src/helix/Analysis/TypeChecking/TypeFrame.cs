@@ -5,6 +5,8 @@ using Helix.Features;
 using Helix.Features.Aggregates;
 using Helix.Features.Functions;
 using Helix.Generation;
+using Helix.Parsing;
+using Helix.Collections;
 
 namespace Helix.Analysis.TypeChecking {
     public delegate void DeclarationCG(ICWriter writer);
@@ -29,42 +31,42 @@ namespace Helix.Analysis.TypeChecking {
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
         public TypeFrame() {
-            Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            LifetimeRoots = new HashSet<Lifetime>();
+            this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
+            this.LifetimeRoots = new HashSet<Lifetime>();
 
-            SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
+            this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
                 { new IdentifierPath("int"), new TypeSyntax(default, PrimitiveType.Int) },
                 { new IdentifierPath("bool"), new TypeSyntax(default, PrimitiveType.Bool) }
             };
 
-            Functions = new Dictionary<IdentifierPath, FunctionSignature>();
-            Structs = new Dictionary<IdentifierPath, StructSignature>();
+            this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
+            this.Structs = new Dictionary<IdentifierPath, StructSignature>();
 
-            TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
-            ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
+            this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
+            this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
         }
 
         public TypeFrame(TypeFrame prev) {
-            Variables = prev.Variables; //new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
-            SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
-            LifetimeRoots = new StackedSet<Lifetime>(prev.LifetimeRoots);
+            this.Variables = prev.Variables;
+            this.SyntaxValues = prev.SyntaxValues.ToStackedDictionary();
+            this.LifetimeRoots = prev.LifetimeRoots.ToStackedSet();
 
-            Functions = prev.Functions;
-            Structs = prev.Structs;
+            this.Functions = prev.Functions;
+            this.Structs = prev.Structs;
 
-            TypeDeclarations = prev.TypeDeclarations;
-            ReturnTypes = prev.ReturnTypes;
+            this.TypeDeclarations = prev.TypeDeclarations;
+            this.ReturnTypes = prev.ReturnTypes;
         }
 
         public string GetVariableName() {
-            return "$t_" + tempCounter++;
+            return "$t_" + this.tempCounter++;
         }
 
         public bool TryResolvePath(IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
                 path = scope.Append(name);
-                if (SyntaxValues.ContainsKey(path)) {
+                if (this.SyntaxValues.ContainsKey(path)) {
                     return true;
                 }
 
@@ -78,7 +80,7 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         public IdentifierPath ResolvePath(IdentifierPath scope, string path) {
-            if (TryResolvePath(scope, path, out var value)) {
+            if (this.TryResolvePath(scope, path, out var value)) {
                 return value;
             }
 
@@ -87,19 +89,24 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         public bool TryResolveName(IdentifierPath scope, string name, out ISyntaxTree value) {
-            if (!TryResolvePath(scope, name, out var path)) {
+            if (!this.TryResolvePath(scope, name, out var path)) {
                 value = null;
                 return false;
             }
 
-            return SyntaxValues.TryGetValue(path, out value);
+            return this.SyntaxValues.TryGetValue(path, out value);
         }
 
         public ISyntaxTree ResolveName(IdentifierPath scope, string name) {
-            return SyntaxValues[ResolvePath(scope, name)];
+            return this.SyntaxValues[this.ResolvePath(scope, name)];
         }
 
-        public void DeclareLocationLifetimeRoots(IdentifierPath basePath, HelixType baseType, LifetimeRole role) {
+        public void DeclareInferredLocationLifetimeRoots(
+            IdentifierPath basePath, 
+            HelixType baseType, 
+            TokenLocation loc,
+            IEnumerable<Lifetime> allowedRoots) {
+
             foreach (var (relPath, type) in baseType.GetMembers(this)) {
                 if (type.IsValueType(this)) {
                     continue;
@@ -109,11 +116,10 @@ namespace Helix.Analysis.TypeChecking {
 
                 // Even though the lifetime of the variable itself will be inferred, the lifetime
                 // of the value stored in that variable is NOT inferred. 
-                var locationLifetime = new Lifetime(
+                var locationLifetime = new InferredLocationLifetime(
+                    loc,
                     memPath, 
-                    0, 
-                    LifetimeSubject.Location, 
-                    role);
+                    allowedRoots);
 
                 // Add this variable's lifetime
                 this.LifetimeRoots.Add(locationLifetime);
@@ -130,11 +136,10 @@ namespace Helix.Analysis.TypeChecking {
 
                 // Even though the lifetime of the variable itself will be inferred, the lifetime
                 // of the value stored in that variable is NOT inferred. 
-                var valueLifetime = new Lifetime(
+                var valueLifetime = new ValueLifetime(
                     memPath, 
-                    0, 
-                    LifetimeSubject.StoredValue, 
-                    role);
+                    role,
+                    0);
 
                 // Add this variable's lifetime
                 this.LifetimeRoots.Add(valueLifetime);

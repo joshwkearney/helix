@@ -27,7 +27,7 @@ namespace Helix.Syntax {
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
-            throw TypeException.RValueRequired(Location);
+            throw TypeException.RValueRequired(this.Location);
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Helix.Syntax {
         /// has been allocated, which any assigned values must outlive
         /// </summary>
         public ISyntaxTree ToLValue(TypeFrame types) {
-            throw TypeException.LValueRequired(Location);
+            throw TypeException.LValueRequired(this.Location);
         }
     }
 }
