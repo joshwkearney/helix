@@ -6,6 +6,7 @@ using Helix.Features.Aggregates;
 using Helix.Features.Functions;
 using Helix.Generation;
 using Helix.Parsing;
+using Helix.Collections;
 
 namespace Helix.Analysis.TypeChecking {
     public delegate void DeclarationCG(ICWriter writer);

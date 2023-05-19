@@ -5,6 +5,7 @@ using Helix.Features.Aggregates;
 using Helix.Features.Functions;
 using System.Security.AccessControl;
 using Helix.Parsing;
+using Helix.Collections;
 
 namespace Helix.Analysis.Flow {
     public class FlowFrame : ITypedFrame {
