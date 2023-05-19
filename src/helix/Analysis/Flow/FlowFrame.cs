@@ -28,29 +28,29 @@ namespace Helix.Analysis.Flow {
         public IDictionary<VariablePath, Lifetime> StoredValueLifetimes { get; }
 
         public FlowFrame(TypeFrame frame) {
-            ReturnTypes = frame.ReturnTypes;
-            Variables = frame.Variables;
-            Functions = frame.Functions;
-            Structs = frame.Structs;
+            this.ReturnTypes = frame.ReturnTypes;
+            this.Variables = frame.Variables;
+            this.Functions = frame.Functions;
+            this.Structs = frame.Structs;
 
-            LifetimeGraph = new();
-            Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
+            this.LifetimeGraph = new();
+            this.Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
 
-            LocationLifetimes = new Dictionary<VariablePath, Lifetime>();
-            StoredValueLifetimes = new Dictionary<VariablePath, Lifetime>();
+            this.LocationLifetimes = new Dictionary<VariablePath, Lifetime>();
+            this.StoredValueLifetimes = new Dictionary<VariablePath, Lifetime>();
         }
 
         public FlowFrame(FlowFrame prev) {
-            ReturnTypes = prev.ReturnTypes;
-            Variables = prev.Variables;
-            Functions = prev.Functions;
-            Structs = prev.Structs;
+            this.ReturnTypes = prev.ReturnTypes;
+            this.Variables = prev.Variables;
+            this.Functions = prev.Functions;
+            this.Structs = prev.Structs;
 
-            LifetimeGraph = prev.LifetimeGraph;
-            Lifetimes = prev.Lifetimes;
+            this.LifetimeGraph = prev.LifetimeGraph;
+            this.Lifetimes = prev.Lifetimes;
 
-            LocationLifetimes = new StackedDictionary<VariablePath, Lifetime>(prev.LocationLifetimes);
-            StoredValueLifetimes = new StackedDictionary<VariablePath, Lifetime>(prev.StoredValueLifetimes);
+            this.LocationLifetimes = new StackedDictionary<VariablePath, Lifetime>(prev.LocationLifetimes);
+            this.StoredValueLifetimes = new StackedDictionary<VariablePath, Lifetime>(prev.StoredValueLifetimes);
         }
 
         public IEnumerable<Lifetime> ReduceRootSet(IEnumerable<Lifetime> roots) {

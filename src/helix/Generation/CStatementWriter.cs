@@ -64,7 +64,7 @@ namespace Helix.Generation {
         }
 
         public ICStatementWriter WriteStatement(ICStatement stat) {
-            stats.Add(stat);
+            this.stats.Add(stat);
 
             return this;
         }
@@ -109,7 +109,7 @@ namespace Helix.Generation {
             }
 
             var values = lifetimes
-                .Select(x => GetLifetime(x, flow))
+                .Select(x => this.GetLifetime(x, flow))
                 .ToArray();
 
             var tempName = this.GetVariableName();

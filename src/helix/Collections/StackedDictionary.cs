@@ -17,87 +17,87 @@ namespace Helix.Collections
         {
             get
             {
-                if (values.TryGetValue(key, out var value))
+                if (this.values.TryGetValue(key, out var value))
                 {
                     return value;
                 }
                 else
                 {
-                    return prev[key];
+                    return this.prev[key];
                 }
             }
             set
             {
-                values[key] = value;
+                this.values[key] = value;
             }
         }
 
         public ICollection<T> Keys
         {
-            get => values.Keys;
+            get => this.values.Keys;
         }
 
         public ICollection<E> Values
         {
-            get => values.Values;
+            get => this.values.Values;
         }
 
-        public int Count => values.Count;
+        public int Count => this.values.Count;
 
         public bool IsReadOnly => false;
 
         public void Add(T key, E value)
         {
-            values.Add(key, value);
+            this.values.Add(key, value);
         }
 
-        public void Add(KeyValuePair<T, E> item) => Add(item.Key, item.Value);
+        public void Add(KeyValuePair<T, E> item) => this.Add(item.Key, item.Value);
 
         public void Clear()
         {
-            values.Clear();
+            this.values.Clear();
         }
 
         public bool Contains(KeyValuePair<T, E> item)
         {
-            return values.Contains(item) || prev.Contains(item);
+            return this.values.Contains(item) || this.prev.Contains(item);
         }
 
         public bool ContainsKey(T key)
         {
-            return values.ContainsKey(key) || prev.ContainsKey(key);
+            return this.values.ContainsKey(key) || this.prev.ContainsKey(key);
         }
 
         public void CopyTo(KeyValuePair<T, E>[] array, int arrayIndex)
         {
-            values.CopyTo(array, arrayIndex);
+            this.values.CopyTo(array, arrayIndex);
         }
 
         public IEnumerator<KeyValuePair<T, E>> GetEnumerator()
         {
-            return values.GetEnumerator();
+            return this.values.GetEnumerator();
         }
 
         public bool Remove(T key)
         {
-            return values.Remove(key);
+            return this.values.Remove(key);
         }
 
         public bool Remove(KeyValuePair<T, E> item)
         {
-            return values.Remove(item);
+            return this.values.Remove(item);
         }
 
         public bool TryGetValue(T key, [MaybeNullWhen(false)] out E value)
         {
-            if (values.TryGetValue(key, out value))
+            if (this.values.TryGetValue(key, out value))
             {
                 return true;
             }
 
-            return prev.TryGetValue(key, out value);
+            return this.prev.TryGetValue(key, out value);
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }
 }

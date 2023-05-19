@@ -18,44 +18,44 @@ namespace Helix.Collections
             this.prev = prev;
         }
 
-        public int Count => values.Count;
+        public int Count => this.values.Count;
 
-        public bool IsReadOnly => values.IsReadOnly;
+        public bool IsReadOnly => this.values.IsReadOnly;
 
-        public bool Add(T item) => values.Add(item);
+        public bool Add(T item) => this.values.Add(item);
 
-        public void Clear() => values.Clear();
+        public void Clear() => this.values.Clear();
 
-        public bool Contains(T item) => values.Contains(item) || prev.Contains(item);
+        public bool Contains(T item) => this.values.Contains(item) || this.prev.Contains(item);
 
-        public void CopyTo(T[] array, int arrayIndex) => values.CopyTo(array, arrayIndex);
+        public void CopyTo(T[] array, int arrayIndex) => this.values.CopyTo(array, arrayIndex);
 
-        public void ExceptWith(IEnumerable<T> other) => values.ExceptWith(other);
+        public void ExceptWith(IEnumerable<T> other) => this.values.ExceptWith(other);
 
-        public IEnumerator<T> GetEnumerator() => values.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => this.values.GetEnumerator();
 
-        public void IntersectWith(IEnumerable<T> other) => values.IntersectWith(other);
+        public void IntersectWith(IEnumerable<T> other) => this.values.IntersectWith(other);
 
-        public bool IsProperSubsetOf(IEnumerable<T> other) => values.IsProperSubsetOf(other);
+        public bool IsProperSubsetOf(IEnumerable<T> other) => this.values.IsProperSubsetOf(other);
 
-        public bool IsProperSupersetOf(IEnumerable<T> other) => values.IsProperSupersetOf(other);
+        public bool IsProperSupersetOf(IEnumerable<T> other) => this.values.IsProperSupersetOf(other);
 
-        public bool IsSubsetOf(IEnumerable<T> other) => values.IsSubsetOf(other);
+        public bool IsSubsetOf(IEnumerable<T> other) => this.values.IsSubsetOf(other);
 
-        public bool IsSupersetOf(IEnumerable<T> other) => values.IsSupersetOf(other);
+        public bool IsSupersetOf(IEnumerable<T> other) => this.values.IsSupersetOf(other);
 
-        public bool Overlaps(IEnumerable<T> other) => values.Overlaps(other);
+        public bool Overlaps(IEnumerable<T> other) => this.values.Overlaps(other);
 
-        public bool Remove(T item) => values.Remove(item);
+        public bool Remove(T item) => this.values.Remove(item);
 
-        public bool SetEquals(IEnumerable<T> other) => values.SetEquals(other);
+        public bool SetEquals(IEnumerable<T> other) => this.values.SetEquals(other);
 
-        public void SymmetricExceptWith(IEnumerable<T> other) => values.SymmetricExceptWith(other);
+        public void SymmetricExceptWith(IEnumerable<T> other) => this.values.SymmetricExceptWith(other);
 
-        public void UnionWith(IEnumerable<T> other) => values.UnionWith(other);
+        public void UnionWith(IEnumerable<T> other) => this.values.UnionWith(other);
 
-        void ICollection<T>.Add(T item) => values.Add(item);
+        void ICollection<T>.Add(T item) => this.values.Add(item);
 
-        IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => this.values.GetEnumerator();
     }
 }

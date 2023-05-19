@@ -218,13 +218,13 @@ namespace Helix.Features.Functions {
             }
 
             // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in flow.Lifetimes[body].Values) {
+            foreach (var lifetime in flow.Lifetimes[this.body].Values) {
                 flow.LifetimeGraph.RequireOutlives(lifetime, Lifetime.Heap);
             }
 
 #if DEBUG
             // Debug check: Make sure every part of the syntax tree has a lifetime
-            foreach (var expr in body.GetAllChildren()) {
+            foreach (var expr in this.body.GetAllChildren()) {
                 if (!flow.Lifetimes.ContainsKey(expr)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
                 }

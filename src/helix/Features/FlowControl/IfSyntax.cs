@@ -137,14 +137,14 @@ namespace Helix.Features.FlowControl {
             this.iffalse.AnalyzeFlow(iffalseFlow);
 
             var lifetimeBundle = new Dictionary<IdentifierPath, Lifetime>();
-            var resultType = flow.ReturnTypes[iftrue];
+            var resultType = flow.ReturnTypes[this.iftrue];
 
             // If we are returning a reference type then we need to calculate a new lifetime
             // This is required because the lifetimes that were used inside of the if body
             // may not be availible outside of it, so we need to reuinify around a new lifetime
             foreach (var (relPath, type) in resultType.GetMembers(flow)) {
-                var bodyLifetimes = new[] { flow.Lifetimes[iftrue][relPath] }
-                    .Append(flow.Lifetimes[iffalse][relPath])
+                var bodyLifetimes = new[] { flow.Lifetimes[this.iftrue][relPath] }
+                    .Append(flow.Lifetimes[this.iffalse][relPath])
                     .ToValueSet();
 
                 var path = this.tempPath.AppendMember(relPath);

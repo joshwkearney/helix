@@ -65,10 +65,10 @@ namespace Helix.Features.Aggregates {
                             + $"arguments for the type '{new NamedType(this.sig.Path)}'");
                 }
 
-                names[i] = sig.Members[missingCounter++].Name;
+                names[i] = this.sig.Members[missingCounter++].Name;
             }
 
-            var type = new NamedType(sig.Path);
+            var type = new NamedType(this.sig.Path);
 
             var dups = names
                 .GroupBy(x => x)
@@ -86,7 +86,7 @@ namespace Helix.Features.Aggregates {
 
             var undefinedFields = names
                 .Select(x => x)
-                .Except(sig.Members.Select(x => x.Name))
+                .Except(this.sig.Members.Select(x => x.Name))
                 .ToArray();
 
             // Make sure that all members are defined in the struct
@@ -98,10 +98,10 @@ namespace Helix.Features.Aggregates {
                         + $"struct type '{type}'");
             }
 
-            var absentFields = sig.Members
+            var absentFields = this.sig.Members
                 .Select(x => x.Name)
                 .Except(names)
-                .Select(x => sig.Members.First(y => x == y.Name))
+                .Select(x => this.sig.Members.First(y => x == y.Name))
                 .ToArray();
 
             var requiredAbsentFields = absentFields
@@ -122,11 +122,11 @@ namespace Helix.Features.Aggregates {
                 .Zip(this.values)
                 .ToDictionary(x => x.First, x => x.Second);
 
-            var allNames = sig.Members.Select(x => x.Name).ToArray();
+            var allNames = this.sig.Members.Select(x => x.Name).ToArray();
             var allValues = new List<ISyntaxTree>();
 
             // Unify the arguments to the correct type
-            foreach (var mem in sig.Members) {
+            foreach (var mem in this.sig.Members) {
                 if (!presentFields.TryGetValue(mem.Name, out var value)) {
                     value = new VoidLiteral(this.Location);
                 }

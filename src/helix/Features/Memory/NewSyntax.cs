@@ -56,7 +56,7 @@ namespace Helix.Features.Memory {
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => this.values.Prepend(type);
+        public IEnumerable<ISyntaxTree> Children => this.values.Prepend(this.type);
 
         public bool IsPure { get; }
 

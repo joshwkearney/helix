@@ -13,7 +13,7 @@ namespace Helix.Features.Variables {
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => args;
+        public IEnumerable<ISyntaxTree> Children => this.args;
 
         public bool IsPure { get; }
 

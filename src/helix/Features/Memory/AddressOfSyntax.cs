@@ -13,12 +13,12 @@ namespace Helix.Features.Memory {
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { target };
+        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
 
-        public bool IsPure => target.IsPure;
+        public bool IsPure => this.target.IsPure;
 
         public AddressOfSyntax(TokenLocation loc, ISyntaxTree target) {
-            Location = loc;
+            this.Location = loc;
             this.target = target;
         }
 
@@ -29,7 +29,7 @@ namespace Helix.Features.Memory {
 
             var target = this.target.CheckTypes(types).ToLValue(types);
             var ptrType = (PointerType)target.GetReturnType(types);
-            var result = new AddressOfSyntax(Location, target);
+            var result = new AddressOfSyntax(this.Location, target);
 
             result.SetReturnType(ptrType, types);
             return result;
@@ -44,9 +44,9 @@ namespace Helix.Features.Memory {
                 return;
             }
 
-            target.AnalyzeFlow(flow);
+            this.target.AnalyzeFlow(flow);
 
-            var valueLifetime = target.GetLifetimes(flow)[new IdentifierPath()];
+            var valueLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
 
             // Make sure we're taking the address of a variable
             if (!flow.LocationLifetimes.TryGetValue(valueLifetime.Path, out var locationLifetime)) {
@@ -62,7 +62,7 @@ namespace Helix.Features.Memory {
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
-                    target.GenerateCode(types, writer),
+                    this.target.GenerateCode(types, writer),
                     writer.GetLifetime(this.GetLifetimes(types)[new IdentifierPath()], types)
                 },
                 Type = writer.ConvertType(this.GetReturnType(types))

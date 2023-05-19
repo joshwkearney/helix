@@ -55,7 +55,7 @@ namespace Helix.Features.Primitives {
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { arg };
+        public IEnumerable<ISyntaxTree> Children => new[] { this.arg };
 
         public bool IsPure => this.arg.IsPure;
 

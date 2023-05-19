@@ -19,7 +19,7 @@ namespace Helix.Parsing {
             return new DereferenceSyntax(
                 loc, 
                 first, 
-                this.scope.Append("$deref_" + dereferenceCounter++));
+                this.scope.Append("$deref_" + this.dereferenceCounter++));
         }
     }
 }
@@ -224,7 +224,7 @@ namespace Helix.Features.Memory {
             }
 
             this.target.AnalyzeFlow(flow);
-            this.SetLifetimes(target.GetLifetimes(flow), flow);
+            this.SetLifetimes(this.target.GetLifetimes(flow), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
