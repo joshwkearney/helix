@@ -142,7 +142,7 @@ namespace Helix.Features.Memory {
 
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
-                    flow.StoredValueLifetimes[memPath] = Lifetime.None;
+                    flow.VariableLifetimes[memPath] = flow.VariableLifetimes[memPath].WithRValue(Lifetime.None);
                 }
                 else {
                     // This value's lifetime actually isn't the pointer's lifetime, but some
@@ -155,7 +155,7 @@ namespace Helix.Features.Memory {
 
                     // The lifetime that is stored in the pointer must outlive the pointer itself
                     flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);
-                    flow.StoredValueLifetimes[memPath] = lifetime;
+                    flow.VariableLifetimes[memPath] = flow.VariableLifetimes[memPath].WithRValue(lifetime);
                 }
             }
 

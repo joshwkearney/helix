@@ -48,9 +48,9 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         public TypeFrame(TypeFrame prev) {
-            this.Variables = prev.Variables; //new StackedDictionary<IdentifierPath, VariableSignature>(prev.Variables);
-            this.SyntaxValues = new StackedDictionary<IdentifierPath, ISyntaxTree>(prev.SyntaxValues);
-            this.LifetimeRoots = new StackedSet<Lifetime>(prev.LifetimeRoots);
+            this.Variables = prev.Variables;
+            this.SyntaxValues = prev.SyntaxValues.ToStackedDictionary();
+            this.LifetimeRoots = prev.LifetimeRoots.ToStackedSet();
 
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;

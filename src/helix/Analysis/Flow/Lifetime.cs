@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis.Flow;
+using Helix.Collections;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -99,6 +100,13 @@ namespace Helix.Analysis.Flow {
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var targetName = writer.GetVariableName(this.Path.Variable);
+
+            if (this == Heap) {
+                targetName = "_return_region";
+            }
+            else if (this == None) {
+                targetName = "_region_min()";
+            }
 
             return new CMemberAccess() {
                 IsPointerAccess = false,

@@ -1,6 +1,7 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Flow;
 using Helix.Analysis.Types;
+using Helix.Collections;
 using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -53,7 +54,6 @@ namespace Helix.Generation {
 
         private readonly Dictionary<Lifetime, ICSyntax> lifetimes = new();
         private readonly Dictionary<ValueSet<Lifetime>, ICSyntax> lifetimeCombinations = new();
-        private readonly Dictionary<IdentifierPath, CVariableKind> variableKinds = new();
 
         public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; } 
             = new Dictionary<IdentifierPath, CVariableKind>();
@@ -75,10 +75,6 @@ namespace Helix.Generation {
             }
 
             return this;
-        }
-
-        public void RegisterLifetime(Lifetime lifetime, ICSyntax value) {
-            this.lifetimes[lifetime] = value;
         }
 
         public ICSyntax GetLifetime(Lifetime lifetime, FlowFrame flow) {

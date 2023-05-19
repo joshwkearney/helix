@@ -23,9 +23,7 @@ namespace Helix.Analysis.Flow {
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         // Frame-specific things
-        public IDictionary<VariablePath, Lifetime> LocationLifetimes { get; }
-
-        public IDictionary<VariablePath, Lifetime> StoredValueLifetimes { get; }
+        public IDictionary<VariablePath, LifetimeBounds> VariableLifetimes { get; }
 
         public FlowFrame(TypeFrame frame) {
             this.ReturnTypes = frame.ReturnTypes;
@@ -36,8 +34,7 @@ namespace Helix.Analysis.Flow {
             this.LifetimeGraph = new();
             this.Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
 
-            this.LocationLifetimes = new Dictionary<VariablePath, Lifetime>();
-            this.StoredValueLifetimes = new Dictionary<VariablePath, Lifetime>();
+            this.VariableLifetimes = new DefaultDictionary<VariablePath, LifetimeBounds>(_ => LifetimeBounds.Empty);
         }
 
         public FlowFrame(FlowFrame prev) {
@@ -49,8 +46,9 @@ namespace Helix.Analysis.Flow {
             this.LifetimeGraph = prev.LifetimeGraph;
             this.Lifetimes = prev.Lifetimes;
 
-            this.LocationLifetimes = new StackedDictionary<VariablePath, Lifetime>(prev.LocationLifetimes);
-            this.StoredValueLifetimes = new StackedDictionary<VariablePath, Lifetime>(prev.StoredValueLifetimes);
+            this.VariableLifetimes = prev.VariableLifetimes
+                .ToStackedDictionary()
+                .ToDefaultDictionary(_ => LifetimeBounds.Empty);
         }
 
         public IEnumerable<Lifetime> ReduceRootSet(IEnumerable<Lifetime> roots) {
@@ -82,7 +80,7 @@ namespace Helix.Analysis.Flow {
             TokenLocation loc,
             ValueSet<Lifetime> allowedRoots) {
 
-            foreach (var (relPath, type) in baseType.GetMembers(this)) {
+            foreach (var (relPath, _) in baseType.GetMembers(this)) {
                 var memPath = basePath.AppendMember(relPath);
 
                 // Even though the lifetime of the variable itself will be inferred, the lifetime
@@ -90,12 +88,12 @@ namespace Helix.Analysis.Flow {
                 var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots);
 
                 // Add this variable lifetimes to the current frame
-                this.LocationLifetimes[memPath] = locationLifetime;
+                this.VariableLifetimes[memPath] = this.VariableLifetimes[memPath].WithLValue(locationLifetime);
             }
         }
 
         public void DeclareValueLifetimes(IdentifierPath basePath, HelixType baseType, LifetimeBundle assignBundle, LifetimeRole role) {
-            foreach (var (relPath, type) in baseType.GetMembers(this)) {
+            foreach (var (relPath, _) in baseType.GetMembers(this)) {
                 var memPath = basePath.AppendMember(relPath);
 
                 // Even though the lifetime of the variable itself will be inferred, the lifetime
@@ -115,7 +113,7 @@ namespace Helix.Analysis.Flow {
                     assignBundle[relPath]);
 
                 // Add this variable lifetimes to the current frame
-                this.StoredValueLifetimes[memPath] = valueLifetime;
+                this.VariableLifetimes[memPath] = this.VariableLifetimes[memPath].WithRValue(valueLifetime);
             }
         }
     }

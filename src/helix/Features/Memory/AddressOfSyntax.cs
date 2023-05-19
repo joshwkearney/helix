@@ -49,12 +49,12 @@ namespace Helix.Features.Memory {
             var valueLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
 
             // Make sure we're taking the address of a variable
-            if (!flow.LocationLifetimes.TryGetValue(valueLifetime.Path, out var locationLifetime)) {
+            if (!flow.VariableLifetimes.TryGetValue(valueLifetime.Path, out var locationBounds)) {
                 // TODO: Add more specific error message
                 throw TypeException.ExpectedVariableType(this.Location, this.target.GetReturnType(flow));
             }
 
-            var dict = new Dictionary<IdentifierPath, Lifetime>() { { new IdentifierPath(), locationLifetime } };
+            var dict = new Dictionary<IdentifierPath, Lifetime>() { { new IdentifierPath(), locationBounds.LValue } };
 
             this.SetLifetimes(new LifetimeBundle(dict), flow);
         }

@@ -12,6 +12,7 @@ using Helix.Features.Variables;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Collections;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -254,24 +255,6 @@ namespace Helix.Features.Functions {
             var funcName = writer.GetVariableName(this.Signature.Path);
             var body = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, body);
-
-            // Register the heap lifetime for the body to use
-            bodyWriter.RegisterLifetime(
-                Lifetime.Heap, 
-                new CVariableLiteral("_return_region"));
-
-            // Register the parameter lifetimes
-            foreach (var par in this.Signature.Parameters) {
-                foreach (var (relPath, _) in par.Type.GetMembers(types)) {
-                    var path = this.Signature.Path.Append(par.Name).AppendMember(relPath);
-                    var lifetime = types.LocationLifetimes[path];
-
-                    bodyWriter.RegisterLifetime(lifetime, new CMemberAccess() {
-                        Target = new CVariableLiteral(writer.GetVariableName(path)),
-                        MemberName = "region"
-                    });
-                }
-            }
 
             // Register the parameters as local variables
             foreach (var par in this.Signature.Parameters) {

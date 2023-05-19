@@ -22,7 +22,7 @@ namespace Helix.Analysis {
 
         public int Count => this.items.Count;
 
-        public ValueSet<T> Add(T item) => new ValueSet<T>(this.items.Add(item));
+        public ValueSet<T> Add(T item) => new(this.items.Add(item));
 
         public bool Contains(T item) => this.items.Contains(item);
 
@@ -67,17 +67,6 @@ namespace Helix.Analysis {
 
         public static bool operator !=(ValueSet<T> list1, ValueSet<T> list2) {
             return !list1.Equals(list2);
-        }
-    }
-
-    public static partial class TypeCheckingExtensions {
-        public static ValueSet<T> ToValueSet<T>(this IEnumerable<T> sequence) {
-            if (sequence is ValueSet<T> set) {
-                return set;
-            }
-            else {
-                return new ValueSet<T>(sequence);
-            }
         }
     }
 }

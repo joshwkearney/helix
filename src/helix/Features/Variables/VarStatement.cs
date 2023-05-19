@@ -10,6 +10,7 @@ using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.FlowControl;
 using System.Xml.Linq;
+using Helix.Collections;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -195,12 +196,12 @@ namespace Helix {
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var basePath = this.path.ToVariablePath();
             var assign = this.assignSyntax.GenerateCode(flow, writer);
-            var allocLifetime = flow.LocationLifetimes[basePath].GenerateCode(flow, writer);
+            var allocLifetime = flow.VariableLifetimes[basePath].LValue.GenerateCode(flow, writer);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
-            if (flow.GetRoots(flow.LocationLifetimes[basePath]).Any()) {
+            if (flow.GetRoots(flow.VariableLifetimes[basePath].LValue).Any()) {
                 this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
 
             }
