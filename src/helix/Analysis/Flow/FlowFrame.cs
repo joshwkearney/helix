@@ -54,11 +54,26 @@ namespace Helix.Analysis.Flow {
         }
 
         public IEnumerable<Lifetime> ReduceRootSet(IEnumerable<Lifetime> roots) {
-            var result = new List<Lifetime>();
+            var result = new List<Lifetime>(roots);
 
             foreach (var root in roots) {
-                if (roots.Where(x => x != root).All(x => !this.LifetimeGraph.DoesOutlive(x, root))) {
-                    result.Add(root);
+                foreach (var otherRoot in roots) {
+                    // Don't compare a lifetime against itself
+                    if (root == otherRoot) {
+                        continue;
+                    }
+
+                    // If these two lifetimes are equivalent (ie, they are supposed to
+                    // outlive each other), then keep both as roots
+                    if (this.LifetimeGraph.GetEquivalentLifetimes(root).Contains(otherRoot)) {
+                        continue;
+                    }
+
+                    // If the other root is outlived by this root (and they're not equivalent),
+                    // then remove it because "root" is a more useful, longer-lived root
+                    if (this.LifetimeGraph.DoesOutlive(root, otherRoot)) {
+                        result.Remove(otherRoot);
+                    }
                 }
             }
 
@@ -86,11 +101,15 @@ namespace Helix.Analysis.Flow {
             // TODO: Do the same check for read-only struct fields
 
             var locationLifetime = this.LocalLifetimes[varPath].LValue;
-            var roots = this.GetRoots(locationLifetime);
+            var descendents = this
+                .LifetimeGraph
+                .GetOutlivedLifetimes(locationLifetime)
+                .Where(x => x != locationLifetime)
+                .ToValueSet();
 
             // If this variable was never aliased by an addressof operator, it could not have
             // been mutated behind our backs
-            if (!roots.Any()) {
+            if (!descendents.Any()) {
                 return false;
             }
 

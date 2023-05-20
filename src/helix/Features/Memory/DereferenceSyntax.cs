@@ -162,6 +162,7 @@ namespace Helix.Features.Memory {
                     // Think of this as optimizing dereferencing an addressof operator.
                     if (equivalents.Any()) {
                         bundleDict[relPath] = equivalents.First();
+
                         continue;
                     }
                 }

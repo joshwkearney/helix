@@ -13,7 +13,6 @@ extern void* _region_malloc(int region, int size);
 extern void _region_delete(int region);
 
 typedef struct int$ptr int$ptr;
-typedef struct int$ptr$ptr int$ptr$ptr;
 
 int$ptr test10(int _return_region);
 
@@ -22,27 +21,21 @@ struct int$ptr {
     int region;
 };
 
-struct int$ptr$ptr {
-    int$ptr* data;
-    int region;
-};
-
 int$ptr test10(int _return_region) {
-    /* Line 2: New variable declaration 'a' */
-    int* a = (int*)_region_malloc((_return_region.region), sizeof(int));
-    (*a) = 10U;
+    /* Line 2: New variable declaration 'x' */
+    int* x = (int*)_region_malloc((_return_region.region), sizeof(int));
+    (*x) = 5U;
 
-    /* Line 3: New variable declaration 'b' */
-    int$ptr* b = (int$ptr*)_region_malloc((_return_region.region), sizeof(int$ptr));
-    (*b) = (int$ptr){ a, (_return_region.region) };
+    /* Line 3: New variable declaration 'y' */
+    int y = 10U;
 
-    /* Line 4: New variable declaration 'c' */
-    int$ptr$ptr c = (int$ptr$ptr){ b, (_return_region.region) };
+    /* Line 5: New variable declaration 'z' */
+    int$ptr z = (int$ptr){ x, (_return_region.region) };
 
-    /* Line 6: Pointer dereference */
-    int$ptr $deref_1 = (*(c.data));
+    /* Line 6: Assignment statement */
+    (*(z.data)) = 10U;
 
-    return $deref_1;
+    return z;
 }
 
 #if __cplusplus

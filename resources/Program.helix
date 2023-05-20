@@ -1,7 +1,9 @@
 ﻿func test10() as int* {
-	var a = 10;
-	var b = &a;
-	var c = &b;
+	var x = 5;
+	var y = 10;
 
-	c*;
+	var z = &x;
+	z* = 10;
+
+	z;
 };

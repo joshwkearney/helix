@@ -125,19 +125,19 @@ namespace Helix.Features.Variables {
                     continue;
                 }
 
-                var locationLifetime = flow.LocalLifetimes[memPath].LValue;
+                //var locationLifetime = flow.LocalLifetimes[memPath].LValue;
 
-                if (flow.AliasMutationPossible(memPath)) {
-                    // Unless we can prove that this variable has not aliased since its
-                    // last access, we have to assume it changed
-                    var newLifetime = flow.LocalLifetimes[memPath].RValue.IncrementVersion();
+                //if (flow.AliasMutationPossible(memPath)) {
+                //    // Unless we can prove that this variable has not aliased since its
+                //    // last access, we have to assume it changed
+                //    var newLifetime = flow.LocalLifetimes[memPath].RValue.IncrementVersion();
 
-                    // If that is the case, we need to swap out this variable's lifetime with a new
-                    // one because this could represent a changed value, so the flow analysis should
-                    // reflect that
-                    flow.LocalLifetimes[memPath].RValue = newLifetime;
-                    flow.LifetimeGraph.RequireOutlives(newLifetime, locationLifetime);
-                }
+                //    // If that is the case, we need to swap out this variable's lifetime with a new
+                //    // one because this could represent a changed value, so the flow analysis should
+                //    // reflect that
+                //    flow.LocalLifetimes[memPath].RValue = newLifetime;
+                //    flow.LifetimeGraph.RequireOutlives(newLifetime, locationLifetime);
+                //}
 
                 bundleDict[relPath] = flow.LocalLifetimes[memPath].RValue;
             }
