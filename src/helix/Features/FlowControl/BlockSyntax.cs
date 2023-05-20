@@ -64,7 +64,7 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            var stats = this.Statements.Select(x => x.CheckTypes(types)).ToArray();
+            var stats = this.Statements.Select(x => x.CheckTypes(types).ToRValue(types)).ToArray();
             var result = new BlockSyntax(this.Location, stats, true);
             var returnType = stats
                 .LastOrNone()

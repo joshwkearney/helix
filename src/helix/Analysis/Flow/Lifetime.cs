@@ -31,22 +31,29 @@ namespace Helix.Analysis.Flow {
 
         public abstract int Version { get; }
 
+        public abstract Lifetime IncrementVersion();
+
         public abstract ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer);
     }
 
     public record StackLocationLifetime : Lifetime {
         public override LifetimeRole Role => LifetimeRole.Root;
 
-        public override int Version => 0;
+        public override int Version { get; }
 
         public override VariablePath Path { get; }
 
-        public StackLocationLifetime(VariablePath varPath) {
+        public StackLocationLifetime(VariablePath varPath, int version = 0) {
             this.Path = varPath;
+            this.Version = version;
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             return new CVariableLiteral("_region_min()");
+        }
+
+        public override Lifetime IncrementVersion() {
+            return new StackLocationLifetime(this.Path, this.Version + 1);
         }
     }
 
@@ -59,12 +66,14 @@ namespace Helix.Analysis.Flow {
 
         public override LifetimeRole Role => LifetimeRole.Alias;
 
-        public override int Version => 0;
+        public override int Version { get; }
 
-        public InferredLocationLifetime(TokenLocation loc, VariablePath varPath, IEnumerable<Lifetime> allowedRoots) {
+        public InferredLocationLifetime(TokenLocation loc, VariablePath varPath, 
+                                        IEnumerable<Lifetime> allowedRoots, int version = 0) {
             this.Location = loc;
             this.Path = varPath;
             this.AllowedRoots = allowedRoots.ToValueSet();
+            this.Version = version;
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
@@ -82,6 +91,10 @@ namespace Helix.Analysis.Flow {
             }
 
             return writer.CalculateSmallestLifetime(this.Location, roots, flow);
+        }
+
+        public override Lifetime IncrementVersion() {
+            return new InferredLocationLifetime(this.Location, this.Path, this.AllowedRoots, this.Version + 1);
         }
     }
 
@@ -113,6 +126,10 @@ namespace Helix.Analysis.Flow {
                 Target = new CVariableLiteral(targetName),
                 MemberName = "region"
             };
+        }
+
+        public override Lifetime IncrementVersion() {
+            return new ValueLifetime(this.Path, this.Role, this.Version + 1);
         }
     }
 }

@@ -67,7 +67,8 @@ namespace Helix.Analysis.Flow {
             var roots = this
                 .LifetimeGraph
                 .GetOutlivedLifetimes(lifetime)
-                .Where(x => x.Role != LifetimeRole.Alias);
+                .Where(x => x.Role != LifetimeRole.Alias)
+                .Where(x => x != lifetime);
 
             roots = this.ReduceRootSet(roots);
 
