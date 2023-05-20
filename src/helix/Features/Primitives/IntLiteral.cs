@@ -44,7 +44,7 @@ namespace Helix.Features.Primitives {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            flow.Lifetimes[this] = new LifetimeBundle();
+            flow.SyntaxLifetimes[this] = new LifetimeBundle();
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;

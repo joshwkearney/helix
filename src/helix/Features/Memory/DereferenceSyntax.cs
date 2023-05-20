@@ -115,8 +115,6 @@ namespace Helix.Features.Memory {
 
             // this.target is already type checked
             var pointerType = this.target.AssertIsPointer(types);
-
-            types.DeclareValueLifetimeRoots(this.tempPath, pointerType.InnerType, LifetimeRole.Root);
             this.SetReturnType(pointerType.InnerType, types);
 
             return this;
@@ -142,20 +140,23 @@ namespace Helix.Features.Memory {
 
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
-                    flow.VariableLifetimes[memPath] = flow.VariableLifetimes[memPath].WithRValue(Lifetime.None);
+                    flow.LocalLifetimes[memPath] = flow.LocalLifetimes[memPath].WithRValue(Lifetime.None);
                 }
                 else {
                     // This value's lifetime actually isn't the pointer's lifetime, but some
                     // other lifetime that outlives the pointer. It's important to represent
-                    // this value like this because we can't store things into it that only
+                    // the value like this because we can't store things into it that only
                     // outlive the pointer
-                    var lifetime = new ValueLifetime(memPath, LifetimeRole.Root, 0);
+                    var lifetime = new ValueLifetime(memPath, LifetimeRole.Root, false);
 
-                    bundleDict[relPath] = lifetime;
+                    // Make sure we add this as a root
+                    flow.LifetimeRoots.Add(lifetime);
 
                     // The lifetime that is stored in the pointer must outlive the pointer itself
                     flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);
-                    flow.VariableLifetimes[memPath] = flow.VariableLifetimes[memPath].WithRValue(lifetime);
+                    flow.LocalLifetimes[memPath] = flow.LocalLifetimes[memPath].WithRValue(lifetime);
+
+                    bundleDict[relPath] = lifetime;
                 }
             }
 
@@ -237,7 +238,7 @@ namespace Helix.Features.Memory {
             var targetLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
 
             var dict = new Dictionary<IdentifierPath, Lifetime>();
-            var lifetime = new ValueLifetime(this.tempPath.ToVariablePath(), LifetimeRole.Alias, 0);
+            var lifetime = new ValueLifetime(this.tempPath.ToVariablePath(), LifetimeRole.Alias, false);
 
             dict[new IdentifierPath()] = lifetime;
             this.SetLifetimes(new LifetimeBundle(dict), flow);

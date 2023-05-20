@@ -136,7 +136,7 @@ namespace Helix.Features.Aggregates {
                     bundleDict[relPath] = Lifetime.None;
                 }
                 else {
-                    bundleDict[relPath] = flow.VariableLifetimes[varPath].RValue;
+                    bundleDict[relPath] = flow.LocalLifetimes[varPath].RValue;
                 }
             }
 

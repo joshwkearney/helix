@@ -84,7 +84,7 @@ namespace Helix.Features.FlowControl {
         public void AnalyzeFlow(FlowFrame flow) {
             this.body.AnalyzeFlow(flow);
 
-            flow.Lifetimes[this] = new LifetimeBundle();
+            flow.SyntaxLifetimes[this] = new LifetimeBundle();
 
             // TODO: Redo all of this
             // Get a list of all the mutable variables that could change in this loop body

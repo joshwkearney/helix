@@ -127,23 +127,21 @@ namespace Helix.Features.Variables {
                     continue;
                 }
 
-                var locationLifetime = flow.VariableLifetimes[memPath].LValue;
-                var roots = flow.GetRoots(locationLifetime);
+                var locationLifetime = flow.LocalLifetimes[memPath].LValue;
 
-                // TODO: Make this more nuanced
-                if (roots.Any()) {
+                if (flow.AliasMutationPossible(memPath)) {
                     // Unless we can prove that this variable has not aliased since its
                     // last access, we have to assume it changed
-                    var newLifetime = flow.VariableLifetimes[memPath].RValue.IncrementVersion();
+                    var newLifetime = flow.LocalLifetimes[memPath].RValue.IncrementVersion();
 
                     // If that is the case, we need to swap out this variable's lifetime with a new
                     // one because this could represent a changed value, so the flow analysis should
                     // reflect that
-                    flow.VariableLifetimes[memPath] = flow.VariableLifetimes[memPath].WithRValue(newLifetime);
+                    flow.LocalLifetimes[memPath] = flow.LocalLifetimes[memPath].WithRValue(newLifetime);
                     flow.LifetimeGraph.RequireOutlives(newLifetime, locationLifetime);
                 }
 
-                bundleDict[relPath] = flow.VariableLifetimes[memPath].RValue;
+                bundleDict[relPath] = flow.LocalLifetimes[memPath].RValue;
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
@@ -185,7 +183,7 @@ namespace Helix.Features.Variables {
             foreach (var (relPath, _) in sig.Type.GetMembers(flow)) {
                 var memPath = this.VariablePath.AppendMember(relPath);
 
-                bundleDict[relPath] = flow.VariableLifetimes[memPath].LValue;
+                bundleDict[relPath] = flow.LocalLifetimes[memPath].LValue;
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

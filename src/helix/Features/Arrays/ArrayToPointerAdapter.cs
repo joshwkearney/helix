@@ -58,7 +58,7 @@ namespace Helix.Features.Arrays {
             this.target.AnalyzeFlow(flow);
             this.offset.AnalyzeFlow(flow);
 
-            flow.Lifetimes[this] = flow.Lifetimes[this.target];
+            flow.SyntaxLifetimes[this] = flow.SyntaxLifetimes[this.target];
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

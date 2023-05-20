@@ -17,8 +17,6 @@ namespace Helix.Analysis.TypeChecking {
         // Frame-specific things
         public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
 
-        public ISet<Lifetime> LifetimeRoots { get; }
-
         // Global things
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
 
@@ -32,7 +30,6 @@ namespace Helix.Analysis.TypeChecking {
 
         public TypeFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-            this.LifetimeRoots = new HashSet<Lifetime>();
 
             this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
                 { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
@@ -50,7 +47,6 @@ namespace Helix.Analysis.TypeChecking {
         public TypeFrame(TypeFrame prev) {
             this.Variables = prev.Variables;
             this.SyntaxValues = prev.SyntaxValues.ToStackedDictionary();
-            this.LifetimeRoots = prev.LifetimeRoots.ToStackedSet();
 
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;
@@ -101,50 +97,6 @@ namespace Helix.Analysis.TypeChecking {
             return this.SyntaxValues[this.ResolvePath(scope, name)];
         }
 
-        public void DeclareInferredLocationLifetimeRoots(
-            IdentifierPath basePath, 
-            HelixType baseType, 
-            TokenLocation loc,
-            IEnumerable<Lifetime> allowedRoots) {
-
-            foreach (var (relPath, type) in baseType.GetMembers(this)) {
-                if (type.IsValueType(this)) {
-                    continue;
-                }
-
-                var memPath = basePath.AppendMember(relPath);
-
-                // Even though the lifetime of the variable itself will be inferred, the lifetime
-                // of the value stored in that variable is NOT inferred. 
-                var locationLifetime = new InferredLocationLifetime(
-                    loc,
-                    memPath, 
-                    allowedRoots);
-
-                // Add this variable's lifetime
-                this.LifetimeRoots.Add(locationLifetime);
-            }
-        }
-
-        public void DeclareValueLifetimeRoots(IdentifierPath basePath, HelixType baseType, LifetimeRole role) {
-            foreach (var (relPath, type) in baseType.GetMembers(this)) {
-                if (type.IsValueType(this)) {
-                    continue;
-                }
-
-                var memPath = basePath.AppendMember(relPath);
-
-                // Even though the lifetime of the variable itself will be inferred, the lifetime
-                // of the value stored in that variable is NOT inferred. 
-                var valueLifetime = new ValueLifetime(
-                    memPath, 
-                    role,
-                    0);
-
-                // Add this variable's lifetime
-                this.LifetimeRoots.Add(valueLifetime);
-            }
-        }
         public void DeclareVariableSignatures(IdentifierPath basePath, HelixType baseType, bool isWritable) {
             foreach (var (compPath, compType) in baseType.GetMembers(this)) {
                 var path = basePath.Append(compPath);
@@ -154,6 +106,5 @@ namespace Helix.Analysis.TypeChecking {
                 this.Variables[path] = sig;
             }
         }
-
     }
 }

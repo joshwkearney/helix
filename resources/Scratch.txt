@@ -10,6 +10,18 @@ Point += struct {
 };
 
 
+
+
+Principles:
+- Simplicity is king
+- Heisenberg's language features
+- Implicit is better than explicit
+- Correctness as a spectrum
+- Interface-oriented programming
+- Structured programming
+
+
+
 Basic parallel constructs:
 1. A way to spawn async threads. "async" keyword. No await. Awaits inserted automatically. No function colors
 2. A way to communicate between threads. Channels? Reactive programming over channels?

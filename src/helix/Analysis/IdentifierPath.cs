@@ -9,6 +9,8 @@ namespace Helix.Analysis {
             get => this.segments ?? ImmutableList<string>.Empty;
         }
 
+        public bool IsEmpty => !this.segments.Any();
+
         public IdentifierPath(params string[] segments) : this((IEnumerable<string>)segments) { }
 
         public IdentifierPath(IEnumerable<string> segments) {

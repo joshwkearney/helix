@@ -18,11 +18,13 @@ namespace Helix.Analysis.Flow {
         public static Lifetime Heap { get; } = new ValueLifetime(
             new IdentifierPath("$heap").ToVariablePath(),
             LifetimeRole.Root,
+            false,
             0);
 
         public static Lifetime None { get; } = new ValueLifetime(
             new IdentifierPath("$none").ToVariablePath(),
             LifetimeRole.Root,
+            false,
             0);
 
         public abstract VariablePath Path { get; }
@@ -30,6 +32,8 @@ namespace Helix.Analysis.Flow {
         public abstract LifetimeRole Role { get; }
 
         public abstract int Version { get; }
+
+        public abstract bool IsLocal { get; }
 
         public abstract Lifetime IncrementVersion();
 
@@ -43,9 +47,12 @@ namespace Helix.Analysis.Flow {
 
         public override VariablePath Path { get; }
 
-        public StackLocationLifetime(VariablePath varPath, int version = 0) {
+        public override bool IsLocal { get; }
+
+        public StackLocationLifetime(VariablePath varPath, bool isLocal, int version = 0) {
             this.Path = varPath;
             this.Version = version;
+            this.IsLocal = isLocal;
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
@@ -53,7 +60,7 @@ namespace Helix.Analysis.Flow {
         }
 
         public override Lifetime IncrementVersion() {
-            return new StackLocationLifetime(this.Path, this.Version + 1);
+            return new StackLocationLifetime(this.Path, this.IsLocal, this.Version + 1);
         }
     }
 
@@ -68,12 +75,17 @@ namespace Helix.Analysis.Flow {
 
         public override int Version { get; }
 
+        public override bool IsLocal { get; }
+
         public InferredLocationLifetime(TokenLocation loc, VariablePath varPath, 
-                                        IEnumerable<Lifetime> allowedRoots, int version = 0) {
+                                        IEnumerable<Lifetime> allowedRoots, 
+                                        bool isLocal,
+                                        int version = 0) {
             this.Location = loc;
             this.Path = varPath;
             this.AllowedRoots = allowedRoots.ToValueSet();
             this.Version = version;
+            this.IsLocal = isLocal;
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
@@ -94,7 +106,8 @@ namespace Helix.Analysis.Flow {
         }
 
         public override Lifetime IncrementVersion() {
-            return new InferredLocationLifetime(this.Location, this.Path, this.AllowedRoots, this.Version + 1);
+            return new InferredLocationLifetime(this.Location, this.Path, this.AllowedRoots, 
+                                                this.IsLocal, this.Version + 1);
         }
     }
 
@@ -105,10 +118,13 @@ namespace Helix.Analysis.Flow {
 
         public override int Version { get; }
 
-        public ValueLifetime(VariablePath varPath, LifetimeRole role, int version) {
+        public override bool IsLocal { get; }
+
+        public ValueLifetime(VariablePath varPath, LifetimeRole role, bool isLocal, int version = 0) {
             this.Path = varPath;
             this.Role = role;
             this.Version = version;
+            this.IsLocal = isLocal;
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
@@ -129,7 +145,7 @@ namespace Helix.Analysis.Flow {
         }
 
         public override Lifetime IncrementVersion() {
-            return new ValueLifetime(this.Path, this.Role, this.Version + 1);
+            return new ValueLifetime(this.Path, this.Role, this.IsLocal, this.Version + 1);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Helix.Analysis.Flow {
         // General things
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
-        public IDictionary<ISyntaxTree, LifetimeBundle> Lifetimes { get; }
+        public IDictionary<ISyntaxTree, LifetimeBundle> SyntaxLifetimes { get; }
 
         public LifetimeGraph LifetimeGraph { get; }
 
@@ -23,7 +23,9 @@ namespace Helix.Analysis.Flow {
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         // Frame-specific things
-        public IDictionary<VariablePath, LifetimeBounds> VariableLifetimes { get; }
+        public IDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; }
+
+        public ISet<Lifetime> LifetimeRoots { get; }
 
         public FlowFrame(TypeFrame frame) {
             this.ReturnTypes = frame.ReturnTypes;
@@ -32,9 +34,10 @@ namespace Helix.Analysis.Flow {
             this.Structs = frame.Structs;
 
             this.LifetimeGraph = new();
-            this.Lifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
+            this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
 
-            this.VariableLifetimes = new DefaultDictionary<VariablePath, LifetimeBounds>(_ => LifetimeBounds.Empty);
+            this.LocalLifetimes = new DefaultDictionary<VariablePath, LifetimeBounds>(_ => LifetimeBounds.Empty);
+            this.LifetimeRoots = new HashSet<Lifetime>();
         }
 
         public FlowFrame(FlowFrame prev) {
@@ -44,11 +47,10 @@ namespace Helix.Analysis.Flow {
             this.Structs = prev.Structs;
 
             this.LifetimeGraph = prev.LifetimeGraph;
-            this.Lifetimes = prev.Lifetimes;
+            this.SyntaxLifetimes = prev.SyntaxLifetimes;
 
-            this.VariableLifetimes = prev.VariableLifetimes
-                .ToStackedDictionary()
-                .ToDefaultDictionary(_ => LifetimeBounds.Empty);
+            this.LocalLifetimes = prev.LocalLifetimes.ToStackedDictionary();
+            this.LifetimeRoots = prev.LifetimeRoots.ToStackedSet();
         }
 
         public IEnumerable<Lifetime> ReduceRootSet(IEnumerable<Lifetime> roots) {
@@ -75,41 +77,28 @@ namespace Helix.Analysis.Flow {
             return roots;
         }
 
-        public void DeclareInferredLocationLifetimes(
-            IdentifierPath basePath, 
-            HelixType baseType, 
-            TokenLocation loc,
-            ValueSet<Lifetime> allowedRoots) {
-
-            foreach (var (relPath, _) in baseType.GetMembers(this)) {
-                var memPath = basePath.AppendMember(relPath);
-                var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots);
-
-                // Add this variable lifetimes to the current frame
-                this.VariableLifetimes[memPath] = this.VariableLifetimes[memPath].WithLValue(locationLifetime);
+        public bool AliasMutationPossible(VariablePath varPath) {
+            // Read-only variables can't be mutated
+            if (varPath.Member.IsEmpty && !this.Variables[varPath.Variable].IsWritable) {
+                return false;
             }
-        }
 
-        public void DeclareValueLifetimes(IdentifierPath basePath, HelixType baseType, LifetimeBundle assignBundle, LifetimeRole role) {
-            foreach (var (relPath, _) in baseType.GetMembers(this)) {
-                var memPath = basePath.AppendMember(relPath);
-                var valueLifetime = new ValueLifetime(memPath, role, 0);
+            // TODO: Do the same check for read-only struct fields
 
-                // Add a dependency between whatever is being assigned to this variable and the
-                // variable's value
-                this.LifetimeGraph.RequireOutlives(
-                    assignBundle[relPath],
-                    valueLifetime);
+            var locationLifetime = this.LocalLifetimes[varPath].LValue;
+            var roots = this.GetRoots(locationLifetime);
 
-                // Both directions are required because these lifetimes are equivalent. Skipping
-                // this introduces bugs when storing things into pointers
-                this.LifetimeGraph.RequireOutlives(
-                    valueLifetime,
-                    assignBundle[relPath]);
-
-                // Add this variable lifetimes to the current frame
-                this.VariableLifetimes[memPath] = this.VariableLifetimes[memPath].WithRValue(valueLifetime);
+            // If this variable was never aliased by an addressof operator, it could not have
+            // been mutated behind our backs
+            if (!roots.Any()) {
+                return false;
             }
+
+            // TODO: If all of our roots were not modified either, then we're still fine
+            // If all of our roots' values do not escape to a context where they could
+            // be mutated, we're fine
+
+            return true;
         }
     }
 }

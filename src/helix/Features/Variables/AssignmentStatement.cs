@@ -106,7 +106,7 @@ namespace Helix.Features.Variables {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            if (flow.Lifetimes.ContainsKey(this)) {
+            if (flow.SyntaxLifetimes.ContainsKey(this)) {
                 return;
             }
 
@@ -184,11 +184,11 @@ namespace Helix.Features.Variables {
         }
 
         private static void CheckAliasing(HelixType baseType, LifetimeBundle targets, LifetimeBundle assigns, FlowFrame flow) {
-            foreach (var (relPath, type) in baseType.GetMembers(flow)) {
+            foreach (var (relPath, _) in baseType.GetMembers(flow)) {
                 var target = targets[relPath];
                 var assign = assigns[relPath];
 
-                if (flow.VariableLifetimes.ContainsKey(target.Path)) {
+                if (target.IsLocal) {
                     // If target is a local variable location, there is no danger to aliasing.
                     // We still need to increment the mutation counter and register the new lifetime
                     UpdateMutableVariableValue(target, assign, flow);
@@ -215,11 +215,10 @@ namespace Helix.Features.Variables {
 
         private static void UpdateMutableVariableValue(Lifetime target, Lifetime assign, FlowFrame flow) {
             // Get the old value lifetime, and create a new one
-            var oldValue = flow.VariableLifetimes[target.Path].RValue;
-            var newValue = new ValueLifetime(oldValue.Path, oldValue.Role, oldValue.Version + 1);
+            var newValue = flow.LocalLifetimes[target.Path].RValue.IncrementVersion();
 
             // Replace the old value with the new one
-            flow.VariableLifetimes[newValue.Path] = flow.VariableLifetimes[newValue.Path].WithRValue(newValue);
+            flow.LocalLifetimes[newValue.Path] = flow.LocalLifetimes[newValue.Path].WithRValue(newValue);
             flow.LifetimeGraph.RequireOutlives(newValue, target);
 
             // Set the lifetime of the new value equal to that of what is being assigned

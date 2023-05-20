@@ -1,12 +1,6 @@
-﻿func test10() as int* {
-	var a = 10;
-	var b = 15;
+﻿func test6(let arr as int*[]) as int* {
+	var x = 45;
 
-	var x = &a;
-	var y = &b;
-
-	var C = &x;
-	var D = &y;
-
-	C*;
+	arr[0] = &x;
+	&x;
 };

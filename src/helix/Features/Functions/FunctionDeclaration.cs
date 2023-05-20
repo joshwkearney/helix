@@ -128,7 +128,7 @@ namespace Helix.Features.Functions {
             FunctionsHelper.DeclareParameterTypes(this.Location, sig, types);
 
             // Declare a "heap" lifetime used for function returns
-            types.LifetimeRoots.Add(Lifetime.Heap);
+            //types.LifetimeRoots.Add(Lifetime.Heap);
             //types.LifetimeRoots[Lifetime.Stack.Path] = Lifetime.Stack;
 
             // Check types
@@ -186,16 +186,22 @@ namespace Helix.Features.Functions {
 
         public void AnalyzeFlow(FlowFrame flow) {
             // Set the scope for type checking the body
-            var bodyTypes = new FlowFrame(flow);
+            // TODO: Figure out why this is breaking things
+            // flow = new FlowFrame(flow);
 
             // Declare parameters
             FunctionsHelper.DeclareParameterFlow(this.Location, this.Signature, flow);
+
+            // Make sure we include the heap in the root set
+            flow.LifetimeRoots.Add(Lifetime.Heap);
 
             this.body.AnalyzeFlow(flow);
 
             // Here we need to make sure that the return value can outlive the heap
             // We're going to find all roots that are contributing to the return value
             // and confirm that each one outlives the heap
+
+            // TODO: Figure out why this can't just use flow.GetRoots()
             var roots = this.body.GetLifetimes(flow)
                 .Values
                 .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
@@ -219,14 +225,14 @@ namespace Helix.Features.Functions {
             }
 
             // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in flow.Lifetimes[this.body].Values) {
+            foreach (var lifetime in flow.SyntaxLifetimes[this.body].Values) {
                 flow.LifetimeGraph.RequireOutlives(lifetime, Lifetime.Heap);
             }
 
 #if DEBUG
             // Debug check: Make sure every part of the syntax tree has a lifetime
             foreach (var expr in this.body.GetAllChildren()) {
-                if (!flow.Lifetimes.ContainsKey(expr)) {
+                if (!flow.SyntaxLifetimes.ContainsKey(expr)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
                 }
             }

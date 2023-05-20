@@ -160,7 +160,7 @@ namespace Helix.Features.Functions {
             }
 
             // TODO: Fix this
-            flow.Lifetimes[this] = new LifetimeBundle();
+            flow.SyntaxLifetimes[this] = new LifetimeBundle();
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

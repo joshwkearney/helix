@@ -62,11 +62,11 @@ namespace Helix.Features.FlowControl {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            flow.Lifetimes[this] = new LifetimeBundle();
+            flow.SyntaxLifetimes[this] = new LifetimeBundle();
 
             // Add a dependency on the heap for every lifetime in the result
             if (!this.GetReturnType(flow).IsValueType(flow)) {
-                foreach (var time in flow.Lifetimes[this.payload].Values) {
+                foreach (var time in flow.SyntaxLifetimes[this.payload].Values) {
                     flow.LifetimeGraph.RequireOutlives(time, Lifetime.Heap);
                 }
             }
