@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 
 namespace Helix.Collections {
-    public class StackedDictionary<T, E> : IDictionary<T, E> where T : notnull {
+    public class StackedDictionary<T, E> : IDictionary<T, E>, IReadOnlyDictionary<T, E> {
         private readonly IDictionary<T, E> values = new Dictionary<T, E>();
         private readonly IDictionary<T, E> prev;
 
@@ -31,6 +31,10 @@ namespace Helix.Collections {
         public ICollection<E> Values {
             get => this.values.Values;
         }
+
+        IEnumerable<T> IReadOnlyDictionary<T, E>.Keys => this.Keys;
+
+        IEnumerable<E> IReadOnlyDictionary<T, E>.Values => this.Values;
 
         public int Count => this.values.Count;
 

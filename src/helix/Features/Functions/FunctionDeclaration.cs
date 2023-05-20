@@ -127,10 +127,6 @@ namespace Helix.Features.Functions {
             // Declare parameters
             FunctionsHelper.DeclareParameterTypes(this.Location, sig, types);
 
-            // Declare a "heap" lifetime used for function returns
-            //types.LifetimeRoots.Add(Lifetime.Heap);
-            //types.LifetimeRoots[Lifetime.Stack.Path] = Lifetime.Stack;
-
             // Check types
             var body = this.body;
 
@@ -185,12 +181,11 @@ namespace Helix.Features.Functions {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            // Set the scope for type checking the body
-            // TODO: Figure out why this is breaking things
-            // flow = new FlowFrame(flow);
+            // Set the scope for flow analyzing the body
+            flow = new FlowFrame(flow);
 
             // Declare parameters
-            FunctionsHelper.DeclareParameterFlow(this.Location, this.Signature, flow);
+            FunctionsHelper.DeclareParameterFlow(this.Signature, flow);
 
             // Make sure we include the heap in the root set
             flow.LifetimeRoots.Add(Lifetime.Heap);

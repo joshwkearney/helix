@@ -218,7 +218,7 @@ namespace Helix.Features.Variables {
             var newValue = flow.LocalLifetimes[target.Path].RValue.IncrementVersion();
 
             // Replace the old value with the new one
-            flow.LocalLifetimes[newValue.Path] = flow.LocalLifetimes[newValue.Path].WithRValue(newValue);
+            flow.LocalLifetimes[newValue.Path].RValue = newValue;
             flow.LifetimeGraph.RequireOutlives(newValue, target);
 
             // Set the lifetime of the new value equal to that of what is being assigned

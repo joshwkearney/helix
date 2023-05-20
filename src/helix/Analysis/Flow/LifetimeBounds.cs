@@ -1,15 +1,14 @@
 ﻿namespace Helix.Analysis.Flow {
-    public record LifetimeBounds(Lifetime RValue, Lifetime LValue) {
-        public static LifetimeBounds Empty { get; } = new LifetimeBounds();
+    public class LifetimeBounds {
+        public Lifetime RValue { get; set; } = Lifetime.None;
 
-        public LifetimeBounds() : this(Lifetime.None, Lifetime.None) { }
+        public Lifetime LValue { get; set; } = Lifetime.None;
 
-        public LifetimeBounds WithRValue(Lifetime rval) {
-            return new LifetimeBounds(rval, this.LValue);
-        }
+        public LifetimeBounds() { }
 
-        public LifetimeBounds WithLValue(Lifetime lval) {
-            return new LifetimeBounds(this.RValue, lval);
+        public LifetimeBounds(Lifetime lval, Lifetime rval) {
+            this.RValue = rval;
+            this.LValue = lval;
         }
     }
 }

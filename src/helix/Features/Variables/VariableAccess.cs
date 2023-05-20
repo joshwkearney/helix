@@ -70,8 +70,6 @@ namespace Helix.Features.Variables {
     }
 
     public record VariableAccessSyntax : ISyntaxTree {
-        private static int tempCounter = 0;
-
         public IdentifierPath VariablePath { get; }
 
         public TokenLocation Location { get; }
@@ -137,7 +135,7 @@ namespace Helix.Features.Variables {
                     // If that is the case, we need to swap out this variable's lifetime with a new
                     // one because this could represent a changed value, so the flow analysis should
                     // reflect that
-                    flow.LocalLifetimes[memPath] = flow.LocalLifetimes[memPath].WithRValue(newLifetime);
+                    flow.LocalLifetimes[memPath].RValue = newLifetime;
                     flow.LifetimeGraph.RequireOutlives(newLifetime, locationLifetime);
                 }
 

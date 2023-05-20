@@ -53,7 +53,7 @@ namespace Helix.Features.Functions {
             }
         }
 
-        public static void DeclareParameterFlow(TokenLocation loc, FunctionSignature sig, FlowFrame flow) {
+        public static void DeclareParameterFlow(FunctionSignature sig, FlowFrame flow) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
@@ -69,11 +69,11 @@ namespace Helix.Features.Functions {
                     var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, true);
                     var locationLifetime = new StackLocationLifetime(path, true);
 
-                    flow.LifetimeRoots.Add(valueLifetime);
-                    flow.LifetimeRoots.Add(locationLifetime);
-
                     flow.LifetimeGraph.RequireOutlives(valueLifetime, locationLifetime);
-                    flow.LocalLifetimes[path] = new LifetimeBounds(valueLifetime, locationLifetime);
+                    flow.LocalLifetimes[path] = new LifetimeBounds(locationLifetime, valueLifetime);
+
+                    flow.LifetimeRoots.Add(locationLifetime);
+                    flow.LifetimeRoots.Add(valueLifetime);
                 }
             }
         }

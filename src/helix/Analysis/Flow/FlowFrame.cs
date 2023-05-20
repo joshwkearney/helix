@@ -36,7 +36,7 @@ namespace Helix.Analysis.Flow {
             this.LifetimeGraph = new();
             this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
 
-            this.LocalLifetimes = new DefaultDictionary<VariablePath, LifetimeBounds>(_ => LifetimeBounds.Empty);
+            this.LocalLifetimes = new Dictionary<VariablePath, LifetimeBounds>();
             this.LifetimeRoots = new HashSet<Lifetime>();
         }
 
@@ -49,7 +49,7 @@ namespace Helix.Analysis.Flow {
             this.LifetimeGraph = prev.LifetimeGraph;
             this.SyntaxLifetimes = prev.SyntaxLifetimes;
 
-            this.LocalLifetimes = prev.LocalLifetimes.ToStackedDictionary();
+            this.LocalLifetimes = prev.LocalLifetimes;
             this.LifetimeRoots = prev.LifetimeRoots.ToStackedSet();
         }
 

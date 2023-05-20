@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Helix.Collections {
-    public class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue> {
+    public class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> {
         private readonly IDictionary<TKey, TValue> inner;
         private readonly Func<TKey, TValue> valueFactory;
 
@@ -39,6 +39,10 @@ namespace Helix.Collections {
         public int Count => this.inner.Count;
 
         public bool IsReadOnly => this.inner.IsReadOnly;
+
+        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => this.Keys;
+
+        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => this.Values;
 
         public void Add(TKey key, TValue value) => this.inner.Add(key, value);
 

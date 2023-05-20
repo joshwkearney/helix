@@ -198,8 +198,12 @@ namespace Helix {
                 var memPath = basePath.AppendMember(relPath);
                 var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots, true);
 
+                if (!flow.LocalLifetimes.ContainsKey(memPath)) {
+                    flow.LocalLifetimes[memPath] = new LifetimeBounds();
+                }
+
                 // Add this variable lifetimes to the current frame
-                flow.LocalLifetimes[memPath] = flow.LocalLifetimes[memPath].WithLValue(locationLifetime);
+                flow.LocalLifetimes[memPath].LValue = locationLifetime;
             }
         }
 
@@ -226,8 +230,12 @@ namespace Helix {
                     valueLifetime,
                     assignBundle[relPath]);
 
+                if (!flow.LocalLifetimes.ContainsKey(memPath)) {
+                    flow.LocalLifetimes[memPath] = new LifetimeBounds();
+                }
+
                 // Add this variable lifetimes to the current frame
-                flow.LocalLifetimes[memPath] = flow.LocalLifetimes[memPath].WithRValue(valueLifetime);
+                flow.LocalLifetimes[memPath].RValue = valueLifetime;
             }
         }
 
