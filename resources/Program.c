@@ -14,19 +14,15 @@ extern void _region_delete(int region);
 
 typedef struct int$ptr int$ptr;
 
-int$ptr test1(int _return_region);
+int$ptr test2(int _return_region, int$ptr a);
 
 struct int$ptr {
     int* data;
     int region;
 };
 
-int$ptr test1(int _return_region) {
-    /* Line 2: New variable declaration 'x' */
-    int* x = (int*)_region_malloc((_return_region.region), sizeof(int));
-    (*x) = 45U;
-
-    return (int$ptr){ x, (_return_region.region) };
+int$ptr test2(int _return_region, int$ptr a) {
+    return a;
 }
 
 #if __cplusplus

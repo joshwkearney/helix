@@ -1,9 +1,3 @@
-﻿struct Test2Struct {
-	var field as int**;
-};
-
-func test2(var n as Test2Struct) {
-	var x = n.field**;
-
-	n.field* = &x;
+﻿func test2(let a as int*) as int* {
+	a;
 };

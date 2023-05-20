@@ -191,38 +191,7 @@ namespace Helix.Features.Functions {
             flow.LifetimeRoots.Add(Lifetime.Heap);
 
             this.body.AnalyzeFlow(flow);
-
-            // Here we need to make sure that the return value can outlive the heap
-            // We're going to find all roots that are contributing to the return value
-            // and confirm that each one outlives the heap
-
-            // TODO: Figure out why this can't just use flow.GetRoots()
-            var roots = this.body.GetLifetimes(flow)
-                .Values
-                .SelectMany(x => flow.LifetimeGraph.GetPrecursorLifetimes(x))
-                .ToValueSet();
-
-            roots = flow.ReduceRootSet(roots)
-                .Where(x => x.Role != LifetimeRole.Alias)
-                .ToValueSet();
-
-            // Make sure all the roots outlive the heap
-            if (!roots.All(x => flow.LifetimeGraph.DoesOutlive(x, Lifetime.Heap))) {
-                throw new LifetimeException(
-                   this.Location,
-                   "Lifetime Inference Failed",
-                   "This value cannot be returned from the function because the region it is allocated " 
-                   + "on might not outlive the function's return region. The problematic regions are: " 
-                   + $"'{ string.Join(", ", roots) }'.\n\nTo fix this error, you can try implementing a '.copy()' method " 
-                   + $"on the type '{this.Signature.ReturnType}' so that it can be moved between regions, " 
-                   + "or you can try adding explicit region annotations to the function's signature " 
-                   + "to help the compiler prove that this return value is safe.");
-            }
-
-            // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in flow.SyntaxLifetimes[this.body].Values) {
-                flow.LifetimeGraph.RequireOutlives(lifetime, Lifetime.Heap);
-            }
+            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.Signature, this.body, flow);
 
 #if DEBUG
             // Debug check: Make sure every part of the syntax tree has a lifetime

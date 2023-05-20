@@ -7,6 +7,7 @@ using Helix.Features.FlowControl;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Features.Functions;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -22,10 +23,10 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.FlowControl {
+namespace Helix.Features.Functions {
     public record ReturnSyntax : ISyntaxTree {
         private readonly ISyntaxTree payload;
-        private readonly IdentifierPath func;
+        private readonly IdentifierPath funcPath;
         private readonly bool isTypeChecked = false;
 
         public TokenLocation Location { get; }
@@ -39,7 +40,7 @@ namespace Helix.Features.FlowControl {
 
             this.Location = loc;
             this.payload = payload;
-            this.func = func;
+            this.funcPath = func;
             this.isTypeChecked = isTypeChecked;
         }
 
@@ -52,9 +53,9 @@ namespace Helix.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            var sig = types.Functions[this.func];
+            var sig = types.Functions[this.funcPath];
             var payload = this.payload.CheckTypes(types).ToRValue(types);
-            var result = new ReturnSyntax(this.Location, payload, this.func, true);
+            var result = new ReturnSyntax(this.Location, payload, this.funcPath, true);
 
             types.ReturnTypes[result] = PrimitiveType.Void;
 
@@ -62,14 +63,10 @@ namespace Helix.Features.FlowControl {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            flow.SyntaxLifetimes[this] = new LifetimeBundle();
+            var sig = flow.Functions[this.funcPath];
 
-            // Add a dependency on the heap for every lifetime in the result
-            if (!this.GetReturnType(flow).IsValueType(flow)) {
-                foreach (var time in flow.SyntaxLifetimes[this.payload].Values) {
-                    flow.LifetimeGraph.RequireOutlives(time, Lifetime.Heap);
-                }
-            }
+            flow.SyntaxLifetimes[this] = new LifetimeBundle();
+            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, this.payload, flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
