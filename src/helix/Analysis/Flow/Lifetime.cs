@@ -109,7 +109,7 @@ namespace Helix.Analysis.Flow {
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var targetName = writer.GetVariableName(this.Path.Variable);
-            var roots = flow.GetRoots(this).ToValueSet();
+            var roots = flow.GetMaximumRoots(this).ToValueSet();
 
             if (roots.Any() && roots.Any(x => !this.AllowedRoots.Contains(x))) {
                 throw new LifetimeException(

@@ -125,8 +125,8 @@ namespace Helix.Features.Variables {
                 var targetLifetime = targetBundle[path];
                 var assignLifetime = assignBundle[path];
 
-                foreach (var assignRoot in flow.GetRoots(assignLifetime)) {
-                    foreach (var targetRoot in flow.GetRoots(targetLifetime)) {
+                foreach (var assignRoot in flow.GetMaximumRoots(assignLifetime)) {
+                    foreach (var targetRoot in flow.GetMaximumRoots(targetLifetime)) {
                         if (flow.LifetimeGraph.DoesOutlive(assignRoot, targetRoot)) {
                             continue;
                         }

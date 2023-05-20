@@ -251,7 +251,7 @@ namespace Helix {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
-            if (flow.GetRoots(flow.LocalLifetimes[basePath].LValue).Any()) {
+            if (flow.GetMaximumRoots(flow.LocalLifetimes[basePath].LValue).Any()) {
                 this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
 
             }

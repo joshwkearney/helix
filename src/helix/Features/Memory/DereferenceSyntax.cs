@@ -7,6 +7,7 @@ using Helix.Features.Memory;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Collections;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -260,13 +261,40 @@ namespace Helix.Features.Memory {
             this.target.AnalyzeFlow(flow);
             var targetLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
 
+            // If we are dereferencing a pointer and the following three conditions hold,
+            // we don't have to make up a new lifetime: 1) We're dereferencing a local variable
+            // 2) That local variable could not have been mutated by an alias since the last 
+            //// time it was set 3) That local variable is storing the location of another variable
+            if (targetLifetime.Origin == LifetimeOrigin.LocalValue && !flow.AliasMutationPossible(targetLifetime.Path)) {
+                var valueLifetime = flow.LocalLifetimes[targetLifetime.Path].RValue;
+
+                var roots = flow.GetMinimumPrecursors(valueLifetime).ToValueSet();
+
+                /*     var equivalents = flow
+                         .LifetimeGraph
+                         .GetEquivalentLifetimes(valueLifetime)
+                         .Append(valueLifetime)
+                         .Where(x => x.Role == LifetimeRole.Root);*/
+
+                // If all three are true, we can return the location of the that variable
+                // whose location is currently stored in the variable we're dereferencing.
+                // Think of this as optimizing dereferencing an addressof operator.
+                if (roots.Any()) {
+                    var dict2 = new Dictionary<IdentifierPath, Lifetime>();
+
+                    dict2[new IdentifierPath()] = roots.First();
+                    this.SetLifetimes(new LifetimeBundle(dict2), flow);
+
+                    return;
+                }
+            }
+
             var dict = new Dictionary<IdentifierPath, Lifetime>();
-            var lifetime = new ValueLifetime(this.tempPath.ToVariablePath(), LifetimeRole.Alias, LifetimeOrigin.TempValue);
+            var lifetime = new ValueLifetime(this.tempPath.ToVariablePath(), LifetimeRole.Root, LifetimeOrigin.TempValue);
 
             dict[new IdentifierPath()] = lifetime;
             this.SetLifetimes(new LifetimeBundle(dict), flow);
 
-            flow.LifetimeGraph.RequireOutlives(targetLifetime, lifetime);
             flow.LifetimeGraph.RequireOutlives(lifetime, targetLifetime);
         }
 

@@ -6,6 +6,7 @@ using Helix.Features.Functions;
 using System.Security.AccessControl;
 using Helix.Parsing;
 using Helix.Collections;
+using System.Linq;
 
 namespace Helix.Analysis.Flow {
     public class FlowFrame : ITypedFrame {
@@ -53,7 +54,7 @@ namespace Helix.Analysis.Flow {
             this.LifetimeRoots = prev.LifetimeRoots.ToStackedSet();
         }
 
-        public IEnumerable<Lifetime> ReduceRootSet(IEnumerable<Lifetime> roots) {
+        private IEnumerable<Lifetime> MaximizeRootSet(IEnumerable<Lifetime> roots) {
             var result = new List<Lifetime>(roots);
 
             foreach (var root in roots) {
@@ -80,19 +81,62 @@ namespace Helix.Analysis.Flow {
             return result;
         }
 
-        public IEnumerable<Lifetime> GetRoots(Lifetime lifetime) {
+        private IEnumerable<Lifetime> MinimizeRootSet(IEnumerable<Lifetime> roots) {
+            var result = new List<Lifetime>(roots);
+
+            foreach (var root in roots) {
+                foreach (var otherRoot in roots) {
+                    // Don't compare a lifetime against itself
+                    if (root == otherRoot) {
+                        continue;
+                    }
+
+                    // If these two lifetimes are equivalent (ie, they are supposed to
+                    // outlive each other), then keep both as roots
+                    if (this.LifetimeGraph.GetEquivalentLifetimes(root).Contains(otherRoot)) {
+                        continue;
+                    }
+
+                    // If the other root is outlived by this root (and they're not equivalent),
+                    // then remove it because "root" is a more useful, longer-lived root
+                    if (this.LifetimeGraph.DoesOutlive(root, otherRoot)) {
+                        result.Remove(root);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public IEnumerable<Lifetime> GetMaximumRoots(Lifetime lifetime) {
             var roots = this
                 .LifetimeGraph
                 .GetOutlivedLifetimes(lifetime)
                 .Where(x => x.Role != LifetimeRole.Alias)
                 .Where(x => x != lifetime);
 
-            roots = this.ReduceRootSet(roots);
+            roots = this.MaximizeRootSet(roots);
+
+            return roots;
+        }
+
+        public IEnumerable<Lifetime> GetMinimumPrecursors(Lifetime lifetime) {
+            var roots = this
+                .LifetimeGraph
+                .GetPrecursorLifetimes(lifetime);
+                //.Where(x => x.Role != LifetimeRole.Alias)
+                //.Where(x => x != lifetime);
+
+            roots = this.MinimizeRootSet(roots);
 
             return roots;
         }
 
         public bool AliasMutationPossible(VariablePath varPath) {
+            if (!this.Variables.ContainsKey(varPath.Variable)) {
+                return false;
+            }
+
             // Read-only variables can't be mutated
             if (varPath.Member.IsEmpty && !this.Variables[varPath.Variable].IsWritable) {
                 return false;
@@ -113,9 +157,13 @@ namespace Helix.Analysis.Flow {
                 return false;
             }
 
-            // TODO: If all of our roots were not modified either, then we're still fine
-            // If all of our roots' values do not escape to a context where they could
-            // be mutated, we're fine
+            if (descendents.Any(x => x.Role == LifetimeRole.Root)) {
+                return true;
+            }
+
+            if (descendents.All(x => !this.AliasMutationPossible(x.Path))) {
+                return false;
+            }
 
             return true;
         }
