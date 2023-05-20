@@ -1,3 +1,7 @@
-﻿func test2(let a as int*) as int* {
-	a;
+﻿func test10() as int* {
+	var a = 10;
+	var b = &a;
+	var c = &b;
+
+	c*;
 };

@@ -141,23 +141,45 @@ namespace Helix.Features.Memory {
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = Lifetime.None;
                     flow.LocalLifetimes[memPath] = new LifetimeBounds();
+
+                    continue;
                 }
-                else {
-                    // This value's lifetime actually isn't the pointer's lifetime, but some
-                    // other lifetime that outlives the pointer. It's important to represent
-                    // the value like this because we can't store things into it that only
-                    // outlive the pointer
-                    var lifetime = new ValueLifetime(memPath, LifetimeRole.Root, false);
 
-                    // Make sure we add this as a root
-                    flow.LifetimeRoots.Add(lifetime);
+                // If we are dereferencing a pointer and the following three conditions hold,
+                // we don't have to make up a new lifetime: 1) We're dereferencing a local variable
+                // 2) That local variable could not have been mutated by an alias since the last 
+                // time it was set 3) That local variable is storing the location of another variable
+                if (pointerLifetime.Origin == LifetimeOrigin.LocalValue && !flow.AliasMutationPossible(pointerLifetime.Path)) {
+                    var valueLifetime = flow.LocalLifetimes[pointerLifetime.Path].RValue;
 
-                    // The lifetime that is stored in the pointer must outlive the pointer itself
-                    flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);
-                    flow.LocalLifetimes[memPath] = new LifetimeBounds(Lifetime.None, lifetime);
+                    var equivalents = flow
+                        .LifetimeGraph
+                        .GetEquivalentLifetimes(valueLifetime)
+                        .Where(x => x.Origin == LifetimeOrigin.LocalLocation); ;
 
-                    bundleDict[relPath] = lifetime;
+                    // If all three are true, we can return the location of the that variable
+                    // whose location is currently stored in the variable we're dereferencing.
+                    // Think of this as optimizing dereferencing an addressof operator.
+                    if (equivalents.Any()) {
+                        bundleDict[relPath] = equivalents.First();
+                        continue;
+                    }
                 }
+
+                // This value's lifetime actually isn't the pointer's lifetime, but some
+                // other lifetime that outlives the pointer. It's important to represent
+                // the value like this because we can't store things into it that only
+                // outlive the pointer
+                var lifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
+
+                // Make sure we add this as a root
+                flow.LifetimeRoots.Add(lifetime);
+
+                // The lifetime that is stored in the pointer must outlive the pointer itself
+                flow.LifetimeGraph.RequireOutlives(lifetime, pointerLifetime);
+                flow.LocalLifetimes[memPath] = new LifetimeBounds(Lifetime.None, lifetime);
+
+                bundleDict[relPath] = lifetime;
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
@@ -238,7 +260,7 @@ namespace Helix.Features.Memory {
             var targetLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
 
             var dict = new Dictionary<IdentifierPath, Lifetime>();
-            var lifetime = new ValueLifetime(this.tempPath.ToVariablePath(), LifetimeRole.Alias, false);
+            var lifetime = new ValueLifetime(this.tempPath.ToVariablePath(), LifetimeRole.Alias, LifetimeOrigin.TempValue);
 
             dict[new IdentifierPath()] = lifetime;
             this.SetLifetimes(new LifetimeBundle(dict), flow);

@@ -83,3 +83,12 @@ func test10() as int* {
 
 	z;
 };
+
+// ###
+func test11() as int* {
+	var a = 10;
+	var b = &a;
+	var c = &b;
+
+	c*;
+};

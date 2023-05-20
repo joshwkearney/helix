@@ -196,7 +196,7 @@ namespace Helix {
 
             foreach (var (relPath, _) in baseType.GetMembers(flow)) {
                 var memPath = basePath.AppendMember(relPath);
-                var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots, true);
+                var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots, LifetimeOrigin.LocalLocation);
 
                 if (!flow.LocalLifetimes.ContainsKey(memPath)) {
                     flow.LocalLifetimes[memPath] = new LifetimeBounds();
@@ -216,7 +216,8 @@ namespace Helix {
 
             foreach (var (relPath, _) in baseType.GetMembers(flow)) {
                 var memPath = basePath.AppendMember(relPath);
-                var valueLifetime = new ValueLifetime(memPath, role, true);
+                var locationLifetime = flow.LocalLifetimes[memPath].LValue;
+                var valueLifetime = new ValueLifetime(memPath, role, LifetimeOrigin.LocalValue);
 
                 // Add a dependency between whatever is being assigned to this variable and the
                 // variable's value
@@ -229,6 +230,9 @@ namespace Helix {
                 flow.LifetimeGraph.RequireOutlives(
                     valueLifetime,
                     assignBundle[relPath]);
+
+                // The value of a variable must outlive its location
+                flow.LifetimeGraph.RequireOutlives(valueLifetime, locationLifetime);
 
                 if (!flow.LocalLifetimes.ContainsKey(memPath)) {
                     flow.LocalLifetimes[memPath] = new LifetimeBounds();

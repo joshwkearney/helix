@@ -188,7 +188,7 @@ namespace Helix.Features.Variables {
                 var target = targets[relPath];
                 var assign = assigns[relPath];
 
-                if (target.IsLocal) {
+                if (target.Origin == LifetimeOrigin.LocalValue) {
                     // If target is a local variable location, there is no danger to aliasing.
                     // We still need to increment the mutation counter and register the new lifetime
                     UpdateMutableVariableValue(target, assign, flow);

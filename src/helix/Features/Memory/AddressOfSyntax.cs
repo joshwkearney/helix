@@ -48,8 +48,8 @@ namespace Helix.Features.Memory {
 
             var valueLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
 
-            // Make sure we're taking the address of a variable
-            if (!valueLifetime.IsLocal) {
+            // Make sure we're taking the address of a variable location
+            if (valueLifetime.Origin == LifetimeOrigin.LocalValue) {
                 // TODO: Add more specific error message
                 throw TypeException.ExpectedVariableType(this.Location, this.target.GetReturnType(flow));
             }

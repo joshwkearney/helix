@@ -34,6 +34,13 @@ namespace Helix.Analysis.Flow {
             return TraverseGraph(time, this.reverseOutlivesGraph);
         }
 
+        public IEnumerable<Lifetime> GetEquivalentLifetimes(Lifetime time) {
+            return this.GetOutlivedLifetimes(time)
+                .Where(x => this.DoesOutlive(x, time))
+                .Where(x => x != time);
+        }
+
+
         public bool DoesOutlive(Lifetime first, Lifetime second) {
             return this.GetOutlivedLifetimes(first).Contains(second);
         }
