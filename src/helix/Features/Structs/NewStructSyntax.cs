@@ -12,7 +12,7 @@ namespace Helix.Features.Aggregates {
     public class NewStructSyntax : ISyntaxTree {
         private readonly bool isTypeChecked;
         private readonly StructSignature sig;
-        private readonly IReadOnlyList<string?> names;
+        private readonly IReadOnlyList<string> names;
         private readonly IReadOnlyList<ISyntaxTree> values;
 
         public TokenLocation Location { get; }
@@ -24,7 +24,7 @@ namespace Helix.Features.Aggregates {
         public NewStructSyntax(
             TokenLocation loc, 
             StructSignature sig,
-            IReadOnlyList<string?> names,
+            IReadOnlyList<string> names,
             IReadOnlyList<ISyntaxTree> values, bool isTypeChecked = false) {
 
             this.Location = loc;

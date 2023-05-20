@@ -17,11 +17,11 @@ namespace Helix.Parsing {
                 return new NewSyntax(loc, targetType);
             }
 
-            var names = new List<string?>();
+            var names = new List<string>();
             var values = new List<ISyntaxTree>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                string? name = null;
+                string name = null;
 
                 if (this.Peek(TokenKind.Identifier)) {
                     name = this.Advance(TokenKind.Identifier).Value;
@@ -48,10 +48,8 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.Memory {
     public class NewSyntax : ISyntaxTree {
-        private static int tempCounter = 0;
-
         private readonly ISyntaxTree type;
-        private readonly IReadOnlyList<string?> names;
+        private readonly IReadOnlyList<string> names;
         private readonly IReadOnlyList<ISyntaxTree> values;
 
         public TokenLocation Location { get; }
@@ -61,7 +59,7 @@ namespace Helix.Features.Memory {
         public bool IsPure { get; }
 
         public NewSyntax(TokenLocation loc, ISyntaxTree type,
-            IReadOnlyList<string?> names, IReadOnlyList<ISyntaxTree> values) {
+            IReadOnlyList<string> names, IReadOnlyList<ISyntaxTree> values) {
 
             this.Location = loc;
             this.type = type;

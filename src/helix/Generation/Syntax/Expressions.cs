@@ -10,9 +10,9 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CCompoundExpression : ICSyntax {
-        public IEnumerable<ICSyntax>? Arguments { get; init; } = null;
+        public IEnumerable<ICSyntax> Arguments { get; init; } = null;
 
-        public ICSyntax? Type { get; init; } = null;
+        public ICSyntax Type { get; init; } = null;
 
         public string WriteToC() {
             var args = string.Join(", ", this.Arguments!.Select(x => x.WriteToC()));
@@ -22,9 +22,9 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CBinaryExpression() : ICSyntax {
-        public ICSyntax? Left { get; init; } = null;
+        public ICSyntax Left { get; init; } = null;
 
-        public ICSyntax? Right { get; init; } = null;
+        public ICSyntax Right { get; init; } = null;
 
         public BinaryOperationKind? Operation { get; init; } = null;
 
@@ -52,11 +52,11 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CTernaryExpression() : ICSyntax {
-        public ICSyntax? Condition { get; init; } = null;
+        public ICSyntax Condition { get; init; } = null;
 
-        public ICSyntax? PositiveBranch { get; init; } = null;
+        public ICSyntax PositiveBranch { get; init; } = null;
 
-        public ICSyntax? NegativeBranch { get; init; } = null;
+        public ICSyntax NegativeBranch { get; init; } = null;
 
         public string WriteToC() {            
             return "(" + this.Condition!.WriteToC() 
@@ -70,7 +70,7 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CPointerDereference() : ICSyntax {
-        public ICSyntax? Target { get; init; } = null;
+        public ICSyntax Target { get; init; } = null;
 
         public string WriteToC() {
             var target = this.Target!.WriteToC();
@@ -84,13 +84,13 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CNot() : ICSyntax {
-        public ICSyntax? Target { get; init; } = null;
+        public ICSyntax Target { get; init; } = null;
 
         public string WriteToC() => "!" + this.Target!.WriteToC();
     }
 
     public record CAddressOf() : ICSyntax {
-        public ICSyntax? Target { get; init; } = null;
+        public ICSyntax Target { get; init; } = null;
 
         public string WriteToC() {
             var target = this.Target!.WriteToC();
@@ -104,7 +104,7 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CInvoke() : ICSyntax {
-        public ICSyntax? Target { get; init; } = null;
+        public ICSyntax Target { get; init; } = null;
 
         public IEnumerable<ICSyntax> Arguments { get; init; } = Array.Empty<ICSyntax>();
 
@@ -116,7 +116,7 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CSizeof() : ICSyntax {
-        public ICSyntax? Target { get; init; } = null;
+        public ICSyntax Target { get; init; } = null;
 
         public string WriteToC() => "sizeof(" + this.Target!.WriteToC() + ")";
     }
@@ -126,9 +126,9 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CMemberAccess() : ICSyntax {
-        public ICSyntax? Target { get; init; } = null;
+        public ICSyntax Target { get; init; } = null;
 
-        public string? MemberName { get; init; } = null;
+        public string MemberName { get; init; } = null;
 
         public bool IsPointerAccess { get; init; } = false;
 
@@ -140,8 +140,8 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CCast() : ICSyntax {
-        public ICSyntax? Type { get; init; } = null;
-        public ICSyntax? Target { get; init; } = null;
+        public ICSyntax Type { get; init; } = null;
+        public ICSyntax Target { get; init; } = null;
 
         public string WriteToC() {
             return "(" + this.Type!.WriteToC() + ")" + this.Target!.WriteToC();

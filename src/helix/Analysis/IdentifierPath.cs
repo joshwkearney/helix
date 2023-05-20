@@ -78,7 +78,7 @@ namespace Helix.Analysis {
             return string.Join('$', this.segments);
         }
 
-        public override bool Equals(object? obj) {
+        public override bool Equals(object obj) {
             if (obj is IdentifierPath path) {
                 return this.Equals(path);
             }

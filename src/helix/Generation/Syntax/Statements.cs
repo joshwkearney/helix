@@ -16,7 +16,7 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CSyntaxStatement : ICStatement {
-        public ICSyntax? Value { get; init; } = null;
+        public ICSyntax Value { get; init; } = null;
 
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
@@ -25,7 +25,7 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CLabel : ICStatement {
-        public string? Value { get; init; } = null;
+        public string Value { get; init; } = null;
 
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
@@ -34,7 +34,7 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CGoto : ICStatement {
-        public string? Value { get; init; } = null;
+        public string Value { get; init; } = null;
 
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
@@ -45,9 +45,9 @@ namespace Helix.Generation.Syntax {
     public record CVariableDeclaration() : ICStatement {
         public Option<ICSyntax> Assignment { get; init; } = Option.None;
 
-        public ICSyntax? Type { get; init; } = null;
+        public ICSyntax Type { get; init; } = null;
 
-        public string? Name { get; init; } = null;
+        public string Name { get; init; } = null;
 
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
@@ -81,7 +81,7 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CIf() : ICStatement {
-        public ICSyntax? Condition { get; init; } = null;
+        public ICSyntax Condition { get; init; } = null;
 
         public IEnumerable<ICStatement> IfTrue { get; init; } = Array.Empty<ICStatement>();
 
@@ -117,9 +117,9 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CAssignment() : ICStatement {
-        public ICSyntax? Left { get; init; } = null;
+        public ICSyntax Left { get; init; } = null;
 
-        public ICSyntax? Right { get; init; } = null;
+        public ICSyntax Right { get; init; } = null;
 
         public void WriteToC(int indentLevel, StringBuilder sb) {
             CHelper.Indent(indentLevel, sb);
@@ -132,7 +132,7 @@ namespace Helix.Generation.Syntax {
     }
 
     public record CWhile() : ICStatement {
-        public ICSyntax? Condition { get; init; } = null;
+        public ICSyntax Condition { get; init; } = null;
 
         public IEnumerable<ICStatement> Body { get; init; } = Array.Empty<ICStatement>();
 

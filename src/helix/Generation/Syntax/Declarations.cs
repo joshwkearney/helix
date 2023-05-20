@@ -2,10 +2,10 @@
 using Helix.Generation.Syntax;
 
 namespace Helix.Generation.CSyntax {
-    public record struct CParameter() {
-        public ICSyntax? Type { get; init; } = null;
+    public readonly record struct CParameter() {
+        public ICSyntax Type { get; init; } = null;
 
-        public string? Name { get; init; } = null;
+        public string Name { get; init; } = null;
     }
 
     public record CFunctionDeclaration() : ICStatement {
@@ -13,7 +13,7 @@ namespace Helix.Generation.CSyntax {
 
         public ICSyntax ReturnType { get; init; } = new CNamedType("void");
 
-        public string? Name { get; init; } = null;
+        public string Name { get; init; } = null;
 
         public bool IsStatic { get; init; } = false;
 
@@ -68,7 +68,7 @@ namespace Helix.Generation.CSyntax {
 
         public bool IsUnion { get; init; } = false;
 
-        public string? Name { get; init; } = null;
+        public string Name { get; init; } = null;
 
         public IReadOnlyList<CParameter> Members {
             init {
@@ -106,7 +106,7 @@ namespace Helix.Generation.CSyntax {
     public record CFunctionPointerDeclaration() : ICStatement {
         public ICSyntax ReturnType { get; init; } = new CNamedType("void");
 
-        public string? Name { get; init; } = null;
+        public string Name { get; init; } = null;
 
         public IReadOnlyList<CParameter> Parameters { get; init; } = Array.Empty<CParameter>();
 

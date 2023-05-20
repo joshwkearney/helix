@@ -44,7 +44,7 @@ namespace Helix.Analysis {
 
         public override int GetHashCode() => this.hashCode;
 
-        public override bool Equals(object? obj) {
+        public override bool Equals(object obj) {
             if (obj is ValueSet<T> other) {
                 return this.Equals(other);
             }
