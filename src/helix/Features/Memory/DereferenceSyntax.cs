@@ -263,29 +263,32 @@ namespace Helix.Features.Memory {
             var derefLiftime = Lifetime.None;
             var targetBounds = this.target.GetLifetimes(flow)[new IdentifierPath()];
 
+            var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
+            dict[new IdentifierPath()] = new LifetimeBounds(derefLiftime, targetBounds.ValueLifetime);
+
             // If we are dereferencing a pointer and the following three conditions hold,
             // we don't have to make up a new lifetime: 1) We're dereferencing a local variable
             // 2) That local variable could not have been mutated by an alias since the last 
             // time it was set 3) That local variable is storing the location of another variable
-            //if (targetBounds.LocationLifetime != Lifetime.None) {
-            //    var valueLifetime = flow.LocalLifetimes[targetBounds.LocationLifetime.Path].ValueLifetime;
+            if (targetBounds.LocationLifetime != Lifetime.None) {
+                var valueLifetime = flow.LocalLifetimes[targetBounds.LocationLifetime.Path].ValueLifetime;
 
-            //    var equivalents = flow
-            //        .LifetimeGraph
-            //        .GetEquivalentLifetimes(valueLifetime)
-            //        .Where(x => x.Origin == LifetimeOrigin.LocalLocation);
+                var equivalents = flow
+                    .LifetimeGraph
+                    .GetEquivalentLifetimes(valueLifetime)
+                    .Where(x => x.Origin == LifetimeOrigin.LocalLocation); ;
 
-            //    // If all three are true, we can return the location of the that variable
-            //    // whose location is currently stored in the variable we're dereferencing.
-            //    // Think of this as optimizing dereferencing an addressof operator.
-            //    if (equivalents.Any()) {
-            //        derefLiftime = equivalents.First();
-            //    }
-            //}
+                // If all three are true, we can return the location of the that variable
+                // whose location is currently stored in the variable we're dereferencing.
+                // Think of this as optimizing dereferencing an addressof operator.
+                if (equivalents.Any()) {
+                    var loc = equivalents.First();
+                    var value = flow.LocalLifetimes[loc.Path].ValueLifetime;
 
-            var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
+                    dict[new IdentifierPath()] = new LifetimeBounds(value, loc);
+                }
+            }
 
-            dict[new IdentifierPath()] = new LifetimeBounds(derefLiftime, targetBounds.ValueLifetime);
             this.SetLifetimes(new LifetimeBundle(dict), flow);
         }
 
