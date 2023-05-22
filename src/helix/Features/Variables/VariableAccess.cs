@@ -111,7 +111,7 @@ namespace Helix.Features.Variables {
             }
 
             var result = new VariableAccessSyntax(this.Location, this.VariablePath, true).CheckTypes(types);
-            result.SetReturnType(new PointerType(this.GetReturnType(types), true), types);
+            result.SetReturnType(new PointerType(this.GetReturnType(types)), types);
 
             return result;
         }

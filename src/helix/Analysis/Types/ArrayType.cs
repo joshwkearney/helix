@@ -5,11 +5,8 @@ namespace Helix.Analysis.Types {
     public record ArrayType : HelixType {
         public HelixType InnerType { get; }
 
-        public bool IsWritable { get; }
-
-        public ArrayType(HelixType innerType, bool isWritable) {
+        public ArrayType(HelixType innerType) {
             this.InnerType = innerType;
-            this.IsWritable = isWritable;
         }
 
         public override PassingSemantics GetSemantics(ITypedFrame types) {
@@ -25,11 +22,10 @@ namespace Helix.Analysis.Types {
                 }
 
                 var isInnerCompatible = this.InnerType.TestUnification(array.InnerType, types) == UnificationKind.Pun;
-                var isWriteCompatible = !this.IsWritable && !array.IsWritable;
 
                 // Otherwise, read-only pointers can be punnable if the inner types
                 // are punnable
-                if (isInnerCompatible && isWriteCompatible) {
+                if (isInnerCompatible) {
                     return UnificationKind.Pun;
                 }
             }

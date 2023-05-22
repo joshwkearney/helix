@@ -180,7 +180,7 @@ namespace Helix.Features.Aggregates {
                 return this;
             }
 
-            this.SetReturnType(new PointerType(this.memberType, true), types);
+            this.SetReturnType(new PointerType(this.memberType), types);
             return this;
         }
 

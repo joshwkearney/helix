@@ -15,7 +15,7 @@ namespace Helix.Parsing {
                 var end = this.Advance(TokenKind.CloseBracket);
                 var loc = start.Location.Span(end.Location);
 
-                return new ArrayTypeSyntax(loc, start, true);
+                return new ArrayTypeSyntax(loc, start);
             }
             else {
                 var index = this.TopExpression();

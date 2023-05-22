@@ -76,57 +76,10 @@ namespace Helix.Features.Functions {
                 newArgs[i] = this.args[i].CheckTypes(types).ConvertTypeTo(expectedType, types);
             }
 
-            // TODO: Fix this
-            var captured = Array.Empty<Lifetime>() as IReadOnlyList<Lifetime>;
-
-            // TODO: Put this back
-            // If there are any reference types in the result that can be found
-            // in any of the arguments then assume we captured that argument.
-            // Note: Pointer and array types are normalized to writable in case
-            // somebody is casting away their readonly-ness
-            //if (!sig.ReturnType.IsValueType(types)) {
-            //    var retRefs = sig.ReturnType
-            //        .GetContainedTypes(types)
-            //        .Where(x => !x.IsValueType(types))
-            //        .Select(NormalizeTypes)
-            //        .ToArray();
-
-            //    foreach (var arg in newArgs) {
-            //        bool overlap = types.ReturnTypes[arg]
-            //            .GetContainedTypes(types)
-            //            .Where(x => !x.IsValueType(types))
-            //            .Select(NormalizeTypes)
-            //            .Intersect(retRefs)
-            //            .Any();
-
-            //        if (overlap) {
-            //            captured = types.Lifetimes[arg];
-            //        }
-            //    }
-            //}
-
-            // TODO: Introduce a new captured variable if the function being called
-            // is "pooling". This is because the new captured variable will have a 
-            // lifetime computed at runtime based on where the function actually allocates
-            // its return value. This new lifetime will be taken from the context struct
-            // passed to the function
-
             var result = new InvokeSyntax(this.Location, sig, newArgs);
             types.ReturnTypes[result] = sig.ReturnType;
 
             return result;            
-        }
-
-        private static HelixType NormalizeTypes(HelixType type) {
-            if (type is PointerType ptr) {
-                return new PointerType(ptr.InnerType, true);
-            }
-            else if (type is ArrayType arr) {
-                return new ArrayType(arr.InnerType, true);
-            }
-            else {
-                return type;
-            }
         }
     }
 
