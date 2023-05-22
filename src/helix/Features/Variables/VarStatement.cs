@@ -217,8 +217,12 @@ namespace Helix {
 
             foreach (var (relPath, memType) in baseType.GetMembers(flow)) {
                 var memPath = basePath.AppendMember(relPath);
-                var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Alias, LifetimeOrigin.LocalValue); 
+                var valueLifetime = Lifetime.None; 
                 var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots, LifetimeOrigin.LocalLocation);
+
+                if (!memType.IsValueType(flow)) {
+                    valueLifetime = new ValueLifetime(memPath, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
+                }
 
                 // Add a dependency between whatever is being assigned to this variable and the
                 // variable's value

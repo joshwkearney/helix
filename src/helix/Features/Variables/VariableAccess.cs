@@ -70,7 +70,7 @@ namespace Helix.Features.Variables {
     }
 
     public record VariableAccessSyntax : ISyntaxTree {
-        private static int rootCounter = 0;
+        private readonly bool isLValue;
 
         public IdentifierPath VariablePath { get; }
 
@@ -80,9 +80,10 @@ namespace Helix.Features.Variables {
 
         public bool IsPure => true;
 
-        public VariableAccessSyntax(TokenLocation loc, IdentifierPath path) {
+        public VariableAccessSyntax(TokenLocation loc, IdentifierPath path, bool isLValue = false) {
             this.Location = loc;
             this.VariablePath = path;
+            this.isLValue = isLValue;
         }
 
         public virtual ISyntaxTree CheckTypes(TypeFrame types) {
@@ -109,44 +110,36 @@ namespace Helix.Features.Variables {
                 throw TypeException.WritingToConstVariable(this.Location);
             }
 
-            return new VariableAccessLValue(this.Location, this.VariablePath).CheckTypes(types);
+            var result = new VariableAccessSyntax(this.Location, this.VariablePath, true).CheckTypes(types);
+            result.SetReturnType(new PointerType(this.GetReturnType(types), true), types);
+
+            return result;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public virtual void AnalyzeFlow(FlowFrame flow) {
+        public void AnalyzeFlow(FlowFrame flow) {
             var sig = flow.Variables[this.VariablePath];
             var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
             foreach (var (relPath, type) in sig.Type.GetMembers(flow)) {
                 var memPath = this.VariablePath.AppendMember(relPath);
+                var locLifetime = flow.LocalLifetimes[memPath].LocationLifetime;
+                var valueLifetime = flow.LocalLifetimes[memPath].ValueLifetime;
 
-                // Ignore value types
-                if (type.IsValueType(flow)) {
-                    bundleDict[relPath] = new LifetimeBounds();
-                    continue;
+#if DEBUG
+                if (type.IsValueType(flow) && valueLifetime != Lifetime.None) {
+                    throw new Exception("Compiler bug");
                 }
+#endif
 
-                //var locationLifetime = flow.LocalLifetimes[memPath].LValue;
-
-                //if (flow.AliasMutationPossible(memPath)) {
-                //    // Unless we can prove that this variable has not aliased since its
-                //    // last access, we have to assume it changed
-                //    var newLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
-
-                //    // Don't mess with existing lifetimes because those are needed for inference, but
-                //    // instead attach a new root to this variable so that anything accessing it will
-                //    // need to grab the lifetime again
-                //    flow.LifetimeGraph.AddAssignment(locationLifetime, newLifetime, type);
-                //}
-
-                bundleDict[relPath] = flow.LocalLifetimes[memPath];
+                bundleDict[relPath] = new LifetimeBounds(valueLifetime, locLifetime);
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
         }
 
-        public virtual ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             ICSyntax result = new CVariableLiteral(writer.GetVariableName(this.VariablePath));
 
             if (writer.VariableKinds[this.VariablePath] == CVariableKind.Allocated) {
@@ -155,43 +148,13 @@ namespace Helix.Features.Variables {
                 };
             }
 
+            if (this.isLValue) {
+                result = new CAddressOf() {
+                    Target = result
+                };
+            }
+
             return result;
-        }
-    }
-
-    public record VariableAccessLValue : VariableAccessSyntax {
-        public VariableAccessLValue(TokenLocation loc, IdentifierPath path) : base(loc, path) { }
-
-        public override ISyntaxTree ToLValue(TypeFrame types) => this;
-
-        public override ISyntaxTree CheckTypes(TypeFrame types) {
-            if (this.IsTypeChecked(types)) {
-                return this;
-            }
-
-            var returnType = new PointerType(types.Variables[this.VariablePath].Type, true);
-
-            this.SetReturnType(returnType, types);
-            return this;
-        }
-
-        public override void AnalyzeFlow(FlowFrame flow) {
-            var sig = flow.Variables[this.VariablePath];
-            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
-
-            foreach (var (relPath, _) in sig.Type.GetMembers(flow)) {
-                var memPath = this.VariablePath.AppendMember(relPath);
-
-                bundleDict[relPath] = flow.LocalLifetimes[memPath];
-            }
-
-            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
-        }
-
-        public override ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
-            return new CAddressOf() {
-                Target = base.GenerateCode(types, writer)
-            };
         }
     }
 }

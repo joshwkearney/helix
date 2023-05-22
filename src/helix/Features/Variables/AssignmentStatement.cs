@@ -162,6 +162,10 @@ namespace Helix.Features.Variables {
 
                 flow.LifetimeGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, type);
                 flow.LifetimeGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, type);
+
+                if (targetBounds.ValueLifetime == Lifetime.None) {
+                    // TODO: Pointer aliasing of doom!
+                }
             }
 
             this.SetLifetimes(new LifetimeBundle(), flow);
