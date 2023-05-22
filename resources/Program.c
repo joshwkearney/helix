@@ -6,7 +6,6 @@ typedef unsigned int _helix_bool;
 typedef unsigned int _helix_void;
 typedef unsigned int _helix_int;
 
-
 extern int _region_min;
 extern int _region_create();
 extern void* _region_malloc(int region, int size);
@@ -14,8 +13,9 @@ extern void _region_delete(int region);
 
 typedef struct int$ptr int$ptr;
 typedef struct int$ptr$ptr int$ptr$ptr;
+typedef struct int$ptr$ptr$ptr int$ptr$ptr$ptr;
 
-int$ptr test12(int _return_region, int$ptr$ptr A);
+void test3(int _return_region, int$ptr$ptr$ptr a);
 
 struct int$ptr {
     int* data;
@@ -27,24 +27,20 @@ struct int$ptr$ptr {
     int region;
 };
 
-int$ptr test12(int _return_region, int$ptr$ptr A) {
-    /* Line 2: New variable declaration 'a' */
-    int a = 5U;
+struct int$ptr$ptr$ptr {
+    int$ptr$ptr* data;
+    int region;
+};
 
-    /* Line 3: New variable declaration 'b' */
-    int* b = (int*)_region_malloc(_return_region, sizeof(int));
-    (*b) = 10U;
+void test3(int _return_region, int$ptr$ptr$ptr a) {
+    /* Line 2: New variable declaration 'b' */
+    int b = 45U;
 
-    /* Line 5: New variable declaration 'x' */
-    int$ptr x = (int$ptr){ (&a), _region_min };
+    /* Line 4: Pointer dereference */
+    int$ptr$ptr $deref_3 = (*(a.data));
 
-    /* Line 6: New variable declaration 'z' */
-    int$ptr$ptr z = (int$ptr$ptr){ (&x), _region_min };
-
-    /* Line 8: Assignment statement */
-    (*(z.data)) = (int$ptr){ b, _return_region };
-
-    return x;
+    /* Line 4: Assignment statement */
+    (*($deref_3.data)) = (int$ptr){ (&b), _region_min };
 }
 
 #if __cplusplus

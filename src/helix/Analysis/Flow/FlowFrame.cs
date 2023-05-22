@@ -15,6 +15,8 @@ namespace Helix.Analysis.Flow {
 
         public IDictionary<ISyntaxTree, LifetimeBundle> SyntaxLifetimes { get; }
 
+        public IDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; }
+
         public LifetimeGraph LifetimeGraph { get; }
 
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
@@ -24,8 +26,6 @@ namespace Helix.Analysis.Flow {
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         // Frame-specific things
-        public IDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; }
-
         public ISet<Lifetime> LifetimeRoots { get; }
 
         public FlowFrame(TypeFrame frame) {
@@ -91,6 +91,45 @@ namespace Helix.Analysis.Flow {
             roots = this.MaximizeRootSet(roots);
 
             return roots;
+        }
+
+
+        public IEnumerable<LifetimeBounds> GetAliasedLocals(Lifetime lifetime, HelixType pointerType) {
+            // THE DEAL WITH ALIASING: Pointers can alias in Helix, which means that
+            // any pointer could be a copy of another pointer OR an address of a local
+            // variable. In Helix it is the responsibility of the pointer dereferencer
+            // to get a fresh value and ensure that any aliasing occuring in the
+            // background didn't affect the local program. The C compiler is also pretty
+            // good at doing this. Anyway, that means the only thing we really have to
+            // be concerned about here is when a pointer aliases a local that is still
+            // in scope. In this case, we need to find that local and update the mutation
+            // count in its lifetime so the lifetime inference algorithm doesn't mix up
+            // the old and new values. There are further aliasing concerns around function
+            // calls, but this is only for assignment.
+
+            // The strategy here will be to do a reverse traversal of the flow graph and
+            // find any local variable locations that must outlive our pointer dereference
+            // that also have the correct type. We will also assume that all roots alias 
+            // each other, so if the lifetime we are starting from came from a root we
+            // have to search from every other root for aliased variables
+
+            var precursors = this.LifetimeGraph.GetPrecursorLifetimes(lifetime)
+                .ToValueSet();
+
+            var results = precursors.Where(x => x.Origin == LifetimeOrigin.LocalLocation);
+
+            if (precursors.Any(x => x.Role == LifetimeRole.Root)) {
+                var descendents = this.LifetimeRoots
+                    .SelectMany(x => this.LifetimeGraph.GetOutlivedLifetimes(lifetime))                    
+                    .Where(x => x.Origin == LifetimeOrigin.LocalLocation);
+
+                results = results.Concat(descendents);
+            }
+
+            return results
+                .Where(x => this.Variables[x.Path.Variable].Type.GetMembers(this).Values.Contains(pointerType))
+                .Select(x => this.LocalLifetimes[x.Path])
+                .ToArray();
         }
     }
 }

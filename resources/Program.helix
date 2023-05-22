@@ -1,11 +1,5 @@
-﻿func test12(let A as int**) as int* {
-	var a = 5;
-	var b = 10;
+﻿func test3(let a as int***) as void {
+	var b = 45;
 
-	var x = &a;
-	var z = &x;
-	
-	z* = &b;
-
-	x;
+	a** = &b;
 };

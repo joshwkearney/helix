@@ -8,6 +8,7 @@ using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Collections;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -145,40 +146,58 @@ namespace Helix.Features.Variables {
                 }
             }
 
-            // Add a dependency between every variable in the assignment statement and
-            // the location lifetime. We are using RequireOutlives in one direction only
-            // because the target lifetime will exist whether or not we write into it,
-            // since this is a dereferenced write. That means that for the purposes of
-            // lifetime analysis, the target lifetime is independent of the assigned lifetimes.
-            foreach (var (path, type) in this.assign.GetReturnType(flow).GetMembers(flow)) {
-                var targetBounds = targetBundle[path];
-                var assignLifetime = assignBundle[path].ValueLifetime;
+            foreach (var (relPath, memType) in this.assign.GetReturnType(flow).GetMembers(flow)) {
+                var targetBounds = targetBundle[relPath];
+                var assignLifetime = assignBundle[relPath].ValueLifetime;
 
-                if (type.IsValueType(flow)) {
+                // Skip value types
+                if (memType.IsValueType(flow)) {
                     continue;
                 }
 
                 if (targetBounds.ValueLifetime == Lifetime.None) {
-                    // TODO: Pointer aliasing of doom!
+                    // Pointer aliasing of doom!
+                    // If we're here it means that this assignment has a pointer to assign to
+                    // but no value, which means we don't know which variable this pointer is
+                    // an alias of. In that case we have to find every possible aliased variable
+                    // and update their value lifetimes in case this assignment modifies them.
+                    // We don't have to worry about locals aliased through a pointer because it
+                    // is the responsibility of the dereferencer to deal with aliasing in that
+                    // case.
+
+                    // Get every possible variable that could be aliased by our target
+                    var aliases = flow.GetAliasedLocals(
+                        targetBounds.LocationLifetime, 
+                        memType);
+
+                    // Add lifetime dependencies as if we are modifying each aliased variable.
+                    foreach (var alias in aliases) {
+                        flow.LifetimeGraph.AddStored(assignLifetime, alias.LocationLifetime, memType);
+                        flow.LifetimeGraph.AddAssignment(assignLifetime, alias.ValueLifetime, memType);
+                    }
+
+                    // Add lifetime dependencies to our target as well
+                    flow.LifetimeGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, memType);
+                    flow.LifetimeGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, memType);
                 }
-                else { 
-                    // Here we are storing into a local variable, so we can replace the
-                    // current value instead of add to it. This is the best-case scenario
-                    // because any lifetime inferences based on the previous value will not
-                    // depend on future use of this variable
+                else {
+                    // Here we are storing into a known local variable, so we can replace its
+                    // current value instead of adding more lifetimes to it. This is the
+                    // best-case scenario because any lifetime inferences based on the previous
+                    // value will not depend on future use of this variable
                     var newValue = targetBounds.ValueLifetime.IncrementVersion();
-                    var newTargetBounds = flow.LocalLifetimes[newValue.Path].WithValue(newValue);
+                    var newTargetBounds = targetBounds.WithValue(newValue);
 
                     // Update this variable's value
                     flow.LocalLifetimes[newValue.Path] = newTargetBounds;
-                    targetBounds = newTargetBounds;
 
                     // Make sure the new value outlives its variable
-                    flow.LifetimeGraph.AddStored(newValue, targetBounds.LocationLifetime, type);
-                }
+                    flow.LifetimeGraph.AddStored(newValue, newTargetBounds.LocationLifetime, memType);
 
-                flow.LifetimeGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, type);
-                flow.LifetimeGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, type);
+                    // Add dependencies between our new target and the assignment lifetimes
+                    flow.LifetimeGraph.AddStored(assignLifetime, newTargetBounds.LocationLifetime, memType);
+                    flow.LifetimeGraph.AddAssignment(assignLifetime, newTargetBounds.ValueLifetime, memType);
+                }
             }
 
             this.SetLifetimes(new LifetimeBundle(), flow);
@@ -202,48 +221,6 @@ namespace Helix.Features.Variables {
             writer.WriteEmptyLine();
 
             return new CIntLiteral(0);
-        }
-
-        private static void CheckAliasing(HelixType baseType, LifetimeBundle targets, LifetimeBundle assigns, FlowFrame flow) {
-            foreach (var (relPath, _) in baseType.GetMembers(flow)) {
-                var target = targets[relPath];
-                var assign = assigns[relPath];
-
-                //if (target.Origin == LifetimeOrigin.LocalLocation) {
-                //    // If target is a local variable location, there is no danger to aliasing.
-                //    // We still need to increment the mutation counter and register the new lifetime
-                //    UpdateMutableVariableValue(target, assign, flow);
-                //}
-                //else {
-                //    // THE DEAL WITH ALIASING: Pointers can alias in Helix, which means that
-                //    // any pointer could be a copy of another pointer OR an address of a local
-                //    // variable. In Helix it is the responsibility of the pointer dereferencer
-                //    // to get a fresh value and ensure that any aliasing occuring in the
-                //    // background didn't affect the local program. The C compiler is also pretty
-                //    // good at doing this. Anyway, that means the only thing we really have to
-                //    // be concerned about here is when a pointer aliases a local that is still
-                //    // in scope. In this case, we need to find that local and update the mutation
-                //    // count in its lifetime so the lifetime inference algorithm doesn't mix up
-                //    // the old and new values. There are further aliasing concerns around function
-                //    // calls, but this is only for assignment.
-                    
-                //    // The strategy here will be to do a reverse traversal of the flow graph and
-                //    // find any local variable locations that must outlive our pointer dereference,
-                //    // which means that 
-                //}
-            }
-        }
-
-        private static void UpdateMutableVariableValue(Lifetime target, Lifetime assign, FlowFrame flow) {
-            //// Get the old value lifetime, and create a new one
-            //var newValue = flow.LocalLifetimes[target.Path].RValue.IncrementVersion();
-
-            //// Replace the old value with the new one
-            //flow.LocalLifetimes[newValue.Path].RValue = newValue;
-            //flow.LifetimeGraph.RequireOutlives(newValue, target);
-
-            //// Set the lifetime of the new value equal to that of what is being assigned
-            //flow.LifetimeGraph.AddAssignment(newValue, assign);
         }
     }
 }

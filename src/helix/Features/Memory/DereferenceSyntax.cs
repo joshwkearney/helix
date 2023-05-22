@@ -258,11 +258,9 @@ namespace Helix.Features.Memory {
 
             this.target.AnalyzeFlow(flow);
 
-            var derefLiftime = Lifetime.None;
             var targetBounds = this.target.GetLifetimes(flow)[new IdentifierPath()];
-
             var dict = new Dictionary<IdentifierPath, LifetimeBounds> {
-                { new IdentifierPath(), new LifetimeBounds(derefLiftime, targetBounds.ValueLifetime) }
+                { new IdentifierPath(), new LifetimeBounds(Lifetime.None, targetBounds.ValueLifetime) }
             };
 
             // If we are dereferencing a pointer and the following three conditions hold,

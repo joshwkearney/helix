@@ -71,11 +71,17 @@ namespace Helix.Features.Functions {
                     var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, LifetimeOrigin.LocalValue);
                     var locationLifetime = new StackLocationLifetime(path, LifetimeOrigin.LocalLocation);
 
-                    flow.LifetimeGraph.AddStored(valueLifetime, locationLifetime, memType);
-                    flow.LocalLifetimes[path] = new LifetimeBounds(valueLifetime, locationLifetime);
+                    if (memType.IsValueType(flow)) {
+                        // Skip value types because they don't have lifetimes anyway
+                        flow.LocalLifetimes[path] = new LifetimeBounds();
+                    }
+                    else {
+                        flow.LifetimeGraph.AddStored(valueLifetime, locationLifetime, memType);
+                        flow.LocalLifetimes[path] = new LifetimeBounds(valueLifetime, locationLifetime);
 
-                    flow.LifetimeRoots.Add(locationLifetime);
-                    flow.LifetimeRoots.Add(valueLifetime);
+                        flow.LifetimeRoots.Add(locationLifetime);
+                        flow.LifetimeRoots.Add(valueLifetime);
+                    }
                 }
             }
         }
