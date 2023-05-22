@@ -145,8 +145,6 @@ namespace Helix.Features.Variables {
                 }
             }
 
-            //CheckAliasing(this.assign.GetReturnType(flow), targetBundle, assignBundle, flow);
-
             // Add a dependency between every variable in the assignment statement and
             // the location lifetime. We are using RequireOutlives in one direction only
             // because the target lifetime will exist whether or not we write into it,
@@ -160,12 +158,27 @@ namespace Helix.Features.Variables {
                     continue;
                 }
 
-                flow.LifetimeGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, type);
-                flow.LifetimeGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, type);
-
                 if (targetBounds.ValueLifetime == Lifetime.None) {
                     // TODO: Pointer aliasing of doom!
                 }
+                else { 
+                    // Here we are storing into a local variable, so we can replace the
+                    // current value instead of add to it. This is the best-case scenario
+                    // because any lifetime inferences based on the previous value will not
+                    // depend on future use of this variable
+                    var newValue = targetBounds.ValueLifetime.IncrementVersion();
+                    var newTargetBounds = flow.LocalLifetimes[newValue.Path].WithValue(newValue);
+
+                    // Update this variable's value
+                    flow.LocalLifetimes[newValue.Path] = newTargetBounds;
+                    targetBounds = newTargetBounds;
+
+                    // Make sure the new value outlives its variable
+                    flow.LifetimeGraph.AddStored(newValue, targetBounds.LocationLifetime, type);
+                }
+
+                flow.LifetimeGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, type);
+                flow.LifetimeGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, type);
             }
 
             this.SetLifetimes(new LifetimeBundle(), flow);

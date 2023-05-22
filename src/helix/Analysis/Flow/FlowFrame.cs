@@ -81,33 +81,6 @@ namespace Helix.Analysis.Flow {
             return result;
         }
 
-        private IEnumerable<Lifetime> MinimizeRootSet(IEnumerable<Lifetime> roots) {
-            var result = new List<Lifetime>(roots);
-
-            foreach (var root in roots) {
-                foreach (var otherRoot in roots) {
-                    // Don't compare a lifetime against itself
-                    if (root == otherRoot) {
-                        continue;
-                    }
-
-                    // If these two lifetimes are equivalent (ie, they are supposed to
-                    // outlive each other), then keep both as roots
-                    if (this.LifetimeGraph.GetEquivalentLifetimes(root).Contains(otherRoot)) {
-                        continue;
-                    }
-
-                    // If the other root is outlived by this root (and they're not equivalent),
-                    // then remove it because "root" is a more useful, longer-lived root
-                    if (this.LifetimeGraph.DoesOutlive(root, otherRoot)) {
-                        result.Remove(root);
-                    }
-                }
-            }
-
-            return result;
-        }
-
         public IEnumerable<Lifetime> GetMaximumRoots(Lifetime lifetime) {
             var roots = this
                 .LifetimeGraph

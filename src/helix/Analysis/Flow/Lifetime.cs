@@ -75,7 +75,7 @@ namespace Helix.Analysis.Flow {
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
-            return new CVariableLiteral("_region_min()");
+            return new CVariableLiteral("_region_min");
         }
 
         public override Lifetime IncrementVersion() {
@@ -147,14 +147,14 @@ namespace Helix.Analysis.Flow {
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
-            var targetName = writer.GetVariableName(this.Path.Variable);
-
             if (this == Heap) {
-                targetName = "_return_region";
+                return new CVariableLiteral("_return_region");
             }
             else if (this == None) {
-                targetName = "_region_min()";
+                return new CVariableLiteral("_region_min");
             }
+
+            var targetName = writer.GetVariableName(this.Path.Variable);
 
             return new CMemberAccess() {
                 IsPointerAccess = false,

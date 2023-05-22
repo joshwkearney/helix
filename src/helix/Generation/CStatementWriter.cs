@@ -95,7 +95,7 @@ namespace Helix.Generation {
             var lifetimeList = lifetimes.ToValueSet();
 
             if (lifetimeList.Count == 0) {
-                return new CVariableLiteral("_region_min()");
+                return new CVariableLiteral("_region_min");
             }
             else if (lifetimeList.Count == 1) {
                 return this.GetLifetime(lifetimeList.First(), flow);

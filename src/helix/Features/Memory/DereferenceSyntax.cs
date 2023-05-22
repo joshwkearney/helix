@@ -81,7 +81,7 @@ namespace Helix.Features.Memory {
                 throw new InvalidOperationException();
             }
 
-            return new DereferenceLValue(this.Location, this.target, this.tempPath).CheckTypes(types);
+            return new DereferenceLValue(this.Location, this.target).CheckTypes(types);
         }
     }
 
@@ -213,7 +213,6 @@ namespace Helix.Features.Memory {
     }
 
     public record DereferenceLValue : ISyntaxTree {
-        private readonly IdentifierPath tempPath;
         private readonly ISyntaxTree target;
 
         public TokenLocation Location { get; }
@@ -222,10 +221,9 @@ namespace Helix.Features.Memory {
 
         public bool IsPure => this.target.IsPure;
 
-        public DereferenceLValue(TokenLocation loc, ISyntaxTree target, IdentifierPath tempPath) {
+        public DereferenceLValue(TokenLocation loc, ISyntaxTree target) {
             this.Location = loc;
             this.target = target;
-            this.tempPath = tempPath;
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
@@ -263,8 +261,9 @@ namespace Helix.Features.Memory {
             var derefLiftime = Lifetime.None;
             var targetBounds = this.target.GetLifetimes(flow)[new IdentifierPath()];
 
-            var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
-            dict[new IdentifierPath()] = new LifetimeBounds(derefLiftime, targetBounds.ValueLifetime);
+            var dict = new Dictionary<IdentifierPath, LifetimeBounds> {
+                { new IdentifierPath(), new LifetimeBounds(derefLiftime, targetBounds.ValueLifetime) }
+            };
 
             // If we are dereferencing a pointer and the following three conditions hold,
             // we don't have to make up a new lifetime: 1) We're dereferencing a local variable
