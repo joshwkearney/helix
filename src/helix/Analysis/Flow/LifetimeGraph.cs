@@ -1,53 +1,70 @@
-﻿using System.Collections.Immutable;
+﻿using Helix.Analysis.Types;
+using Helix.Collections;
+using System.Collections.Immutable;
 
 namespace Helix.Analysis.Flow {
     public class LifetimeGraph {
-        private readonly Dictionary<Lifetime, ISet<Lifetime>> outlivesGraph = new();
-        private readonly Dictionary<Lifetime, ISet<Lifetime>> reverseOutlivesGraph = new();
+        private enum NodeRelationship {
+            Dependence, Equality
+        }
 
-        public void RequireOutlives(Lifetime lifetime, Lifetime outlivedLifetime) {
-            if (lifetime == Lifetime.None || outlivedLifetime == Lifetime.None) {
+        private record Edge(Lifetime Lifetime, HelixType DataType, NodeRelationship EdgeKind) { }
+
+        private readonly IDictionary<Lifetime, ISet<Edge>> outlivesGraph;
+        private readonly IDictionary<Lifetime, ISet<Edge>> reverseOutlivesGraph;
+
+        public LifetimeGraph() {
+            this.outlivesGraph = new Dictionary<Lifetime, ISet<Edge>>()
+                .ToDefaultDictionary(_ => new HashSet<Edge>());
+
+            this.reverseOutlivesGraph = new Dictionary<Lifetime, ISet<Edge>>()
+                .ToDefaultDictionary(_ => new HashSet<Edge>());
+        }
+
+        public void AddAssignment(Lifetime lifetime1, Lifetime lifetime2, HelixType type) {
+            if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None) {
                 return;
             }
 
-            if (lifetime == outlivedLifetime) {
+            this.outlivesGraph[lifetime1].Add(new Edge(lifetime2, type, NodeRelationship.Equality));
+            this.outlivesGraph[lifetime2].Add(new Edge(lifetime1, type, NodeRelationship.Equality));
+
+            this.reverseOutlivesGraph[lifetime1].Add(new Edge(lifetime2, type, NodeRelationship.Equality));
+            this.reverseOutlivesGraph[lifetime2].Add(new Edge(lifetime1, type, NodeRelationship.Equality));
+        }
+
+        public void AddStored(Lifetime lifetime1, Lifetime lifetime2, HelixType storedType) {
+            if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None) {
                 return;
             }
 
-            if (!this.outlivesGraph.TryGetValue(lifetime, out var outlivedList)) {
-                this.outlivesGraph[lifetime] = outlivedList = new HashSet<Lifetime>();
-            }
-
-            if (!this.reverseOutlivesGraph.TryGetValue(outlivedLifetime, out var outlivingList)) {
-                this.reverseOutlivesGraph[outlivedLifetime] = outlivingList = new HashSet<Lifetime>();
-            }
-
-            outlivedList.Add(outlivedLifetime);
-            outlivingList.Add(lifetime);
+            this.outlivesGraph[lifetime1].Add(new Edge(lifetime2, storedType, NodeRelationship.Dependence));
+            this.reverseOutlivesGraph[lifetime2].Add(new Edge(lifetime1, storedType, NodeRelationship.Dependence));
         }
 
         public IEnumerable<Lifetime> GetOutlivedLifetimes(Lifetime time) {
-            return TraverseGraph(time, this.outlivesGraph);
+            return TraverseGraph(time, this.outlivesGraph, _ => true);
         }
 
         public IEnumerable<Lifetime> GetPrecursorLifetimes(Lifetime time) {
-            return TraverseGraph(time, this.reverseOutlivesGraph);
+            return TraverseGraph(time, this.reverseOutlivesGraph, _ => true);
         }
 
         public IEnumerable<Lifetime> GetEquivalentLifetimes(Lifetime time) {
-            return this.GetOutlivedLifetimes(time)
-                .Where(x => this.DoesOutlive(x, time))
-                .Where(x => x != time);
+            return TraverseGraph(
+                time, 
+                this.reverseOutlivesGraph, 
+                edge => edge.EdgeKind == NodeRelationship.Equality);
         }
-
 
         public bool DoesOutlive(Lifetime first, Lifetime second) {
             return this.GetOutlivedLifetimes(first).Contains(second);
         }
 
-        public static IEnumerable<Lifetime> TraverseGraph(
+        private static IEnumerable<Lifetime> TraverseGraph(
             Lifetime time,
-            Dictionary<Lifetime, ISet<Lifetime>> graph) {
+            IDictionary<Lifetime, ISet<Edge>> graph,
+            Func<Edge, bool> canFollow) {
 
             var visited = new HashSet<Lifetime>();
             var stack = new Stack<Lifetime>(new[] { time });
@@ -68,8 +85,10 @@ namespace Helix.Analysis.Flow {
                 // Whenever we hit a lifetime that does not outlive any other lifetime,
                 // we have found a root, so add it to the results
                 if (graph.TryGetValue(item, out var outlivedList) && outlivedList.Any()) {
-                    foreach (var child in outlivedList) {
-                        stack.Push(child);
+                    foreach (var edge in outlivedList) {
+                        if (canFollow(edge)) {
+                            stack.Push(edge.Lifetime);
+                        }
                     }
                 }          
             }

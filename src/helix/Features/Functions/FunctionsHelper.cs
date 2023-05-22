@@ -71,8 +71,8 @@ namespace Helix.Features.Functions {
                     var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, LifetimeOrigin.LocalValue);
                     var locationLifetime = new StackLocationLifetime(path, LifetimeOrigin.LocalLocation);
 
-                    flow.LifetimeGraph.RequireOutlives(valueLifetime, locationLifetime);
-                    flow.LocalLifetimes[path] = new LifetimeBounds(locationLifetime, valueLifetime);
+                    flow.LifetimeGraph.AddStored(valueLifetime, locationLifetime, memType);
+                    flow.LocalLifetimes[path] = new LifetimeBounds(valueLifetime, locationLifetime);
 
                     flow.LifetimeRoots.Add(locationLifetime);
                     flow.LifetimeRoots.Add(valueLifetime);
@@ -98,6 +98,7 @@ namespace Helix.Features.Functions {
             var incompatibleRoots = body
                 .GetLifetimes(flow)
                 .Values
+                .Select(x => x.ValueLifetime)
                 .SelectMany(flow.LifetimeGraph.GetPrecursorLifetimes)
                 .Where(x => x.Role == LifetimeRole.Root)
                 .Where(x => x != Lifetime.Heap)
@@ -118,7 +119,7 @@ namespace Helix.Features.Functions {
 
             // Add a dependency between every returned lifetime and the heap
             foreach (var lifetime in flow.SyntaxLifetimes[body].Values) {
-                flow.LifetimeGraph.RequireOutlives(lifetime, Lifetime.Heap);
+                flow.LifetimeGraph.AddStored(lifetime.ValueLifetime, Lifetime.Heap, body.GetReturnType(flow));
             }
         }
     }

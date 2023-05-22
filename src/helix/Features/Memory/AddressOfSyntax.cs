@@ -45,17 +45,17 @@ namespace Helix.Features.Memory {
             }
 
             this.target.AnalyzeFlow(flow);
-
-            var valueLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
+            var locationLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()].LocationLifetime;
 
             // Make sure we're taking the address of a variable location
-            if (valueLifetime.Origin == LifetimeOrigin.LocalValue) {
+            if (locationLifetime == Lifetime.None) {
                 // TODO: Add more specific error message
                 throw TypeException.ExpectedVariableType(this.Location, this.target.GetReturnType(flow));
             }
 
-            var locationBounds = flow.LocalLifetimes[valueLifetime.Path];
-            var dict = new Dictionary<IdentifierPath, Lifetime>() { { new IdentifierPath(), locationBounds.LValue } };
+            var dict = new Dictionary<IdentifierPath, LifetimeBounds>() { 
+                { new IdentifierPath(), new LifetimeBounds(locationLifetime) } 
+            };
 
             this.SetLifetimes(new LifetimeBundle(dict), flow);
         }
@@ -64,7 +64,7 @@ namespace Helix.Features.Memory {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
                     this.target.GenerateCode(types, writer),
-                    writer.GetLifetime(this.GetLifetimes(types)[new IdentifierPath()], types)
+                    writer.GetLifetime(this.GetLifetimes(types)[new IdentifierPath()].ValueLifetime, types)
                 },
                 Type = writer.ConvertType(this.GetReturnType(types))
             };

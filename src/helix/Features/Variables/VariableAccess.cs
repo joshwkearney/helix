@@ -116,32 +116,31 @@ namespace Helix.Features.Variables {
 
         public virtual void AnalyzeFlow(FlowFrame flow) {
             var sig = flow.Variables[this.VariablePath];
-            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
+            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
             foreach (var (relPath, type) in sig.Type.GetMembers(flow)) {
                 var memPath = this.VariablePath.AppendMember(relPath);
 
                 // Ignore value types
                 if (type.IsValueType(flow)) {
-                    bundleDict[relPath] = Lifetime.None;
+                    bundleDict[relPath] = new LifetimeBounds();
                     continue;
                 }
 
-                var locationLifetime = flow.LocalLifetimes[memPath].LValue;
+                //var locationLifetime = flow.LocalLifetimes[memPath].LValue;
 
-                if (flow.AliasMutationPossible(memPath)) {
-                    // Unless we can prove that this variable has not aliased since its
-                    // last access, we have to assume it changed
-                    var newLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
+                //if (flow.AliasMutationPossible(memPath)) {
+                //    // Unless we can prove that this variable has not aliased since its
+                //    // last access, we have to assume it changed
+                //    var newLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
 
-                    // Don't mess with existing lifetimes because those are needed for inference, but
-                    // instead attach a new root to this variable so that anything accessing it will
-                    // need to grab the lifetime again
-                    flow.LifetimeGraph.RequireOutlives(locationLifetime, newLifetime);
-                    flow.LifetimeGraph.RequireOutlives(newLifetime, locationLifetime);
-                }
+                //    // Don't mess with existing lifetimes because those are needed for inference, but
+                //    // instead attach a new root to this variable so that anything accessing it will
+                //    // need to grab the lifetime again
+                //    flow.LifetimeGraph.AddAssignment(locationLifetime, newLifetime, type);
+                //}
 
-                bundleDict[relPath] = flow.LocalLifetimes[memPath].RValue;
+                bundleDict[relPath] = flow.LocalLifetimes[memPath];
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
@@ -178,12 +177,12 @@ namespace Helix.Features.Variables {
 
         public override void AnalyzeFlow(FlowFrame flow) {
             var sig = flow.Variables[this.VariablePath];
-            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
+            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
             foreach (var (relPath, _) in sig.Type.GetMembers(flow)) {
                 var memPath = this.VariablePath.AppendMember(relPath);
 
-                bundleDict[relPath] = flow.LocalLifetimes[memPath].LValue;
+                bundleDict[relPath] = flow.LocalLifetimes[memPath];
             }
 
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);

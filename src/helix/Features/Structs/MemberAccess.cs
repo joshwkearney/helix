@@ -126,17 +126,17 @@ namespace Helix.Features.Aggregates {
 
             var memberType = this.GetReturnType(flow);
             var targetLifetimes = this.Target.GetLifetimes(flow);
-            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
+            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
             foreach (var (relPath, type) in memberType.GetMembers(flow)) {
                 var memPath = new IdentifierPath(this.MemberName).Append(relPath);
-                var varPath = targetLifetimes[memPath].Path;
+                var varPath = targetLifetimes[memPath].ValueLifetime.Path;
                     
                 if (type.IsValueType(flow)) {
-                    bundleDict[relPath] = Lifetime.None;
+                    bundleDict[relPath] = new LifetimeBounds();
                 }
                 else {
-                    bundleDict[relPath] = flow.LocalLifetimes[varPath].RValue;
+                    bundleDict[relPath] = flow.LocalLifetimes[varPath].AsRValue();
                 }
             }
 

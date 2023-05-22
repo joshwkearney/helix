@@ -119,53 +119,5 @@ namespace Helix.Analysis.Flow {
 
             return roots;
         }
-
-        public IEnumerable<Lifetime> GetMinimumPrecursors(Lifetime lifetime) {
-            var roots = this
-                .LifetimeGraph
-                .GetPrecursorLifetimes(lifetime);
-                //.Where(x => x.Role != LifetimeRole.Alias)
-                //.Where(x => x != lifetime);
-
-            roots = this.MinimizeRootSet(roots);
-
-            return roots;
-        }
-
-        public bool AliasMutationPossible(VariablePath varPath) {
-            if (!this.Variables.ContainsKey(varPath.Variable)) {
-                return false;
-            }
-
-            // Read-only variables can't be mutated
-            if (varPath.Member.IsEmpty && !this.Variables[varPath.Variable].IsWritable) {
-                return false;
-            }
-
-            // TODO: Do the same check for read-only struct fields
-
-            var locationLifetime = this.LocalLifetimes[varPath].LValue;
-            var descendents = this
-                .LifetimeGraph
-                .GetOutlivedLifetimes(locationLifetime)
-                .Where(x => x != locationLifetime)
-                .ToValueSet();
-
-            // If this variable was never aliased by an addressof operator, it could not have
-            // been mutated behind our backs
-            if (!descendents.Any()) {
-                return false;
-            }
-
-            if (descendents.Any(x => x.Role == LifetimeRole.Root)) {
-                return true;
-            }
-
-            if (descendents.All(x => !this.AliasMutationPossible(x.Path))) {
-                return false;
-            }
-
-            return true;
-        }
     }
 }

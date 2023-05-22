@@ -150,7 +150,7 @@ namespace Helix.Features.Aggregates {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var bundleDict = new Dictionary<IdentifierPath, Lifetime>();
+            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
             // Add each member to the lifetime bundle
             for (int i = 0; i < this.names.Count; i++) {
@@ -168,7 +168,7 @@ namespace Helix.Features.Aggregates {
                 }
             }
 
-            bundleDict[new IdentifierPath()] = Lifetime.None;
+            bundleDict[new IdentifierPath()] = new LifetimeBounds();
             this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
         }
 

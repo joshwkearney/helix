@@ -36,10 +36,10 @@ namespace Helix.Analysis.Flow {
         IEnumerator IEnumerable.GetEnumerator() => this.items.GetEnumerator();
     }
 
-    public class LifetimeBundle : Bundle<Lifetime> {
-        public LifetimeBundle(IReadOnlyDictionary<IdentifierPath, Lifetime> lifetimes) 
+    public class LifetimeBundle : Bundle<LifetimeBounds> {
+        public LifetimeBundle(IReadOnlyDictionary<IdentifierPath, LifetimeBounds> lifetimes) 
             : base(lifetimes) { }
 
-        public LifetimeBundle() : this(new Dictionary<IdentifierPath, Lifetime>() { { new IdentifierPath(), Lifetime.None } }) { }
+        public LifetimeBundle() : this(new Dictionary<IdentifierPath, LifetimeBounds>() { { new IdentifierPath(), new LifetimeBounds() } }) { }
     }
 }

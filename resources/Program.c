@@ -13,38 +13,30 @@ extern void* _region_malloc(int region, int size);
 extern void _region_delete(int region);
 
 typedef struct int$ptr int$ptr;
-typedef struct int$ptr$ptr int$ptr$ptr;
 
-int$ptr test12(int _return_region, int$ptr$ptr A);
+int$ptr test10(int _return_region);
 
 struct int$ptr {
     int* data;
     int region;
 };
 
-struct int$ptr$ptr {
-    int$ptr* data;
-    int region;
-};
+int$ptr test10(int _return_region) {
+    /* Line 2: New variable declaration 'x' */
+    int* x = (int*)_region_malloc((_return_region.region), sizeof(int));
+    (*x) = 5U;
 
-int$ptr test12(int _return_region, int$ptr$ptr A) {
-    /* Line 2: New variable declaration 'a' */
-    int a = 5U;
+    /* Line 3: New variable declaration 'y' */
+    int* y = (int*)_region_malloc((_return_region.region), sizeof(int));
+    (*y) = 10U;
 
-    /* Line 3: New variable declaration 'b' */
-    int* b = (int*)_region_malloc((_return_region.region), sizeof(int));
-    (*b) = 10U;
+    /* Line 5: New variable declaration 'z' */
+    int$ptr z = (int$ptr){ x, (_return_region.region) };
 
-    /* Line 5: New variable declaration 'x' */
-    int$ptr x = (int$ptr){ (&a), _region_min() };
+    /* Line 6: Assignment statement */
+    z = (int$ptr){ y, (_return_region.region) };
 
-    /* Line 6: New variable declaration 'z' */
-    int$ptr$ptr z = (int$ptr$ptr){ (&x), _region_min() };
-
-    /* Line 8: Assignment statement */
-    (*(z.data)) = (int$ptr){ b, (_return_region.region) };
-
-    return x;
+    return z;
 }
 
 #if __cplusplus

@@ -181,77 +181,69 @@ namespace Helix {
             var assignBundle = this.assignSyntax.GetLifetimes(flow);
             var allowedRoots = flow.LifetimeRoots.ToValueSet();
 
-            DeclareInferredLocationLifetimes(this.path, assignType, this.Location, allowedRoots, flow);
-            DeclareValueLifetimes(this.path, assignType, assignBundle, LifetimeRole.Alias, flow);
+            //DeclareInferredLocationLifetimes(this.path, assignType, this.Location, allowedRoots, flow);
+            DeclareValueLifetimes(this.path, assignType, assignBundle, this.Location, allowedRoots, flow);
 
             this.SetLifetimes(new LifetimeBundle(), flow);
         }
 
-        private static void DeclareInferredLocationLifetimes(
-            IdentifierPath basePath,
-            HelixType baseType,
-            TokenLocation loc,
-            ValueSet<Lifetime> allowedRoots,
-            FlowFrame flow) {
+        //private static void DeclareInferredLocationLifetimes(
+        //    IdentifierPath basePath,
+        //    HelixType baseType,
+        //    TokenLocation loc,
+        //    ValueSet<Lifetime> allowedRoots,
+        //    FlowFrame flow) {
 
-            foreach (var (relPath, _) in baseType.GetMembers(flow)) {
-                var memPath = basePath.AppendMember(relPath);
-                var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots, LifetimeOrigin.LocalLocation);
+        //    foreach (var (relPath, _) in baseType.GetMembers(flow)) {
+        //        var memPath = basePath.AppendMember(relPath);
+        //        var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots, LifetimeOrigin.LocalLocation);
 
-                if (!flow.LocalLifetimes.ContainsKey(memPath)) {
-                    flow.LocalLifetimes[memPath] = new LifetimeBounds();
-                }
+        //        if (!flow.LocalLifetimes.ContainsKey(memPath)) {
+        //            flow.LocalLifetimes[memPath] = new LifetimeBounds();
+        //        }
 
-                // Add this variable lifetimes to the current frame
-                flow.LocalLifetimes[memPath].LValue = locationLifetime;
-            }
-        }
+        //        // Add this variable lifetimes to the current frame
+        //        flow.LocalLifetimes[memPath] = flow.LocalLifetimes[memPath].WithLocation(locationLifetime);
+        //    }
+        //}
 
         private static void DeclareValueLifetimes(
             IdentifierPath basePath, 
             HelixType baseType, 
             LifetimeBundle assignBundle, 
-            LifetimeRole role,
+            TokenLocation loc,
+            ValueSet<Lifetime> allowedRoots,
             FlowFrame flow) {
 
-            foreach (var (relPath, _) in baseType.GetMembers(flow)) {
+            foreach (var (relPath, memType) in baseType.GetMembers(flow)) {
                 var memPath = basePath.AppendMember(relPath);
-                var locationLifetime = flow.LocalLifetimes[memPath].LValue;
-                var valueLifetime = new ValueLifetime(memPath, role, LifetimeOrigin.LocalValue);
+                var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Alias, LifetimeOrigin.LocalValue); 
+                var locationLifetime = new InferredLocationLifetime(loc, memPath, allowedRoots, LifetimeOrigin.LocalLocation);
 
                 // Add a dependency between whatever is being assigned to this variable and the
                 // variable's value
-                flow.LifetimeGraph.RequireOutlives(
-                    assignBundle[relPath],
-                    valueLifetime);
-
-                // Both directions are required because these lifetimes are equivalent. Skipping
-                // this introduces bugs when storing things into pointers
-                flow.LifetimeGraph.RequireOutlives(
+                flow.LifetimeGraph.AddAssignment(
+                    assignBundle[relPath].ValueLifetime,
                     valueLifetime,
-                    assignBundle[relPath]);
+                    memType);
 
                 // The value of a variable must outlive its location
-                flow.LifetimeGraph.RequireOutlives(valueLifetime, locationLifetime);
-
-                if (!flow.LocalLifetimes.ContainsKey(memPath)) {
-                    flow.LocalLifetimes[memPath] = new LifetimeBounds();
-                }
+                flow.LifetimeGraph.AddStored(valueLifetime, locationLifetime, memType);
 
                 // Add this variable lifetimes to the current frame
-                flow.LocalLifetimes[memPath].RValue = valueLifetime;
+                flow.LocalLifetimes[memPath] = new LifetimeBounds(valueLifetime, locationLifetime);
             }
         }
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var basePath = this.path.ToVariablePath();
             var assign = this.assignSyntax.GenerateCode(flow, writer);
-            var allocLifetime = flow.LocalLifetimes[basePath].LValue.GenerateCode(flow, writer);
+            var allocLifetime = flow.LocalLifetimes[basePath].LocationLifetime.GenerateCode(flow, writer);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
-            if (flow.GetMaximumRoots(flow.LocalLifetimes[basePath].LValue).Any()) {
+            if (flow.GetMaximumRoots(flow.LocalLifetimes[basePath].LocationLifetime).Any()) {
                 this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
 
             }
