@@ -95,7 +95,8 @@ namespace Helix.Generation {
             var lifetimeList = lifetimes.ToValueSet();
 
             if (lifetimeList.Count == 0) {
-                return new CVariableLiteral("_region_min");
+                // TODO: Put back _region_min
+                return new CVariableLiteral("_return_region");
             }
             else if (lifetimeList.Count == 1) {
                 return this.GetLifetime(lifetimeList.First(), flow);
@@ -111,7 +112,7 @@ namespace Helix.Generation {
             var tempName = this.GetVariableName();
             var decl = new CVariableDeclaration() {
                 Name = tempName,
-                Type = new CNamedType("int"),
+                Type = new CNamedType("_Region*"),
                 Assignment = Option.Some(values.First())
             };
 
@@ -124,8 +125,16 @@ namespace Helix.Generation {
                     Left = new CVariableLiteral(tempName),
                     Right = new CTernaryExpression() {
                         Condition = new CBinaryExpression() {
-                            Left = new CVariableLiteral(tempName),
-                            Right = item,
+                            Left = new CMemberAccess() {
+                                Target = new CVariableLiteral(tempName),
+                                MemberName = "depth",
+                                IsPointerAccess = true
+                            },
+                            Right = new CMemberAccess() {
+                                Target = item,
+                                MemberName = "depth",
+                                IsPointerAccess = true
+                            },
                             Operation = BinaryOperationKind.LessThanOrEqualTo
                         },
                         PositiveBranch = new CVariableLiteral(tempName),

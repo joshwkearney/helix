@@ -189,7 +189,7 @@ namespace Helix.Generation {
                     },
                     new CParameter() {
                         Name = "region",
-                        Type = this.ConvertType(PrimitiveType.Int)
+                        Type = new CNamedType("_Region*")
                     },
                     new CParameter() {
                         Name = "count",
@@ -238,7 +238,7 @@ namespace Helix.Generation {
                     },
                     new CParameter() {
                         Name = "region",
-                        Type = this.ConvertType(PrimitiveType.Int)
+                        Type = new CNamedType("_Region*")
                     }
                 }
             };

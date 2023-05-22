@@ -218,7 +218,7 @@ namespace Helix.Features.Functions {
                 })
                 .Prepend(new CParameter() {
                     Name = "_return_region",
-                    Type = new CNamedType("int")
+                    Type = new CNamedType("_Region*")
                 })
                 .ToArray();
 

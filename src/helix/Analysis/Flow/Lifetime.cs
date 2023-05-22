@@ -75,7 +75,8 @@ namespace Helix.Analysis.Flow {
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
-            return new CVariableLiteral("_region_min");
+            // TODO: Put back _region_min
+            return new CVariableLiteral("_return_region");
         }
 
         public override Lifetime IncrementVersion() {
@@ -151,7 +152,8 @@ namespace Helix.Analysis.Flow {
                 return new CVariableLiteral("_return_region");
             }
             else if (this == None) {
-                return new CVariableLiteral("_region_min");
+                // TODO: Put back _region_min
+                return new CVariableLiteral("_return_region");
             }
 
             var targetName = writer.GetVariableName(this.Path.Variable);

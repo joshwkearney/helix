@@ -1,5 +1,14 @@
-﻿func test3(let a as int***) as void {
-	var b = 45;
+﻿struct Point {
+	var x as int;
+	var y as int;
+};
 
-	a** = &b;
+func test() {
+	let p = create();
+};
+
+func create() as Point* {
+	var p = new Point;
+
+	&p;
 };
