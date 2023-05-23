@@ -15,8 +15,6 @@ namespace Helix.Analysis.Flow {
 
         public IDictionary<ISyntaxTree, LifetimeBundle> SyntaxLifetimes { get; }
 
-        public IDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; }
-
         public LifetimeGraph LifetimeGraph { get; }
 
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
@@ -26,6 +24,8 @@ namespace Helix.Analysis.Flow {
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         // Frame-specific things
+        public IDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; }
+
         public ISet<Lifetime> LifetimeRoots { get; }
 
         public FlowFrame(TypeFrame frame) {
@@ -50,7 +50,7 @@ namespace Helix.Analysis.Flow {
             this.LifetimeGraph = prev.LifetimeGraph;
             this.SyntaxLifetimes = prev.SyntaxLifetimes;
 
-            this.LocalLifetimes = prev.LocalLifetimes;
+            this.LocalLifetimes = prev.LocalLifetimes.ToStackedDictionary();
             this.LifetimeRoots = prev.LifetimeRoots.ToStackedSet();
         }
 
