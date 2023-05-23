@@ -1,11 +1,17 @@
-﻿func test12(let A as int**) as int* {
-	var a = 5;
-	var b = 10;
+﻿struct Point {
+	var x as int;
+	var y as int;
+};
 
-	var x = &a;
-	var z = &x;
-	
-	z* = &b;
+func test(let z as Point**) as Point* {
+	let p = create();
 
-	x;
+	z* = p;
+	p;
+};
+
+func create() as Point* {
+	var p = new Point { 10, 5 };
+
+	&p;
 };

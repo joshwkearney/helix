@@ -14,40 +14,51 @@ extern _Region* _region_new();
 extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
-typedef struct int$ptr int$ptr;
-typedef struct int$ptr$ptr int$ptr$ptr;
+typedef struct Point Point;
+typedef struct Point$ptr Point$ptr;
+typedef struct Point$ptr$ptr Point$ptr$ptr;
 
-int$ptr test12(_Region* _return_region, int$ptr$ptr A);
+Point$ptr test(_Region* _return_region, Point$ptr$ptr z);
+Point$ptr create(_Region* _return_region);
 
-struct int$ptr {
-    int* data;
+struct Point {
+    int x;
+    int y;
+};
+
+struct Point$ptr {
+    Point* data;
     _Region* region;
 };
 
-struct int$ptr$ptr {
-    int$ptr* data;
+struct Point$ptr$ptr {
+    Point$ptr* data;
     _Region* region;
 };
 
-int$ptr test12(_Region* _return_region, int$ptr$ptr A) {
-    /* Line 2: New variable declaration 'a' */
-    int* a = (int*)_region_malloc(_return_region, sizeof(int));
-    (*a) = 5U;
+Point$ptr test(_Region* _return_region, Point$ptr$ptr z) {
+    /* Line 7: Region calculation */
+    _Region* $A = _return_region;
+    $A = ((($A->depth) <= ((z.region)->depth)) ? $A : (z.region));
 
-    /* Line 3: New variable declaration 'b' */
-    int* b = (int*)_region_malloc(_return_region, sizeof(int));
-    (*b) = 10U;
+    /* Line 7: Function call */
+    Point$ptr $B = create($A);
 
-    /* Line 5: New variable declaration 'x' */
-    int$ptr x = (int$ptr){ a, _return_region };
+    /* Line 7: New variable declaration 'p' */
+    Point$ptr p = $B;
 
-    /* Line 6: New variable declaration 'z' */
-    int$ptr$ptr z = (int$ptr$ptr){ (&x), _return_region };
+    /* Line 9: Assignment statement */
+    (*(z.data)) = p;
 
-    /* Line 8: Assignment statement */
-    (*(z.data)) = (int$ptr){ b, _return_region };
+    return p;
+}
 
-    return x;
+Point$ptr create(_Region* _return_region) {
+    /* Line 14: New variable declaration 'p' */
+    Point* p_1 = (Point*)_region_malloc(_return_region, sizeof(Point));
+    (*p_1) = (Point){ 10U, 5U };
+
+    return (Point$ptr){ p_1, _return_region };
 }
 
 #if __cplusplus

@@ -33,6 +33,8 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.Functions {
     public record InvokeParseSyntax : ISyntaxTree {
+        private static int tempCounter = 0;
+
         private readonly ISyntaxTree target;
         private readonly IReadOnlyList<ISyntaxTree> args;
 
@@ -76,7 +78,8 @@ namespace Helix.Features.Functions {
                 newArgs[i] = this.args[i].CheckTypes(types).ConvertTypeTo(expectedType, types);
             }
 
-            var result = new InvokeSyntax(this.Location, sig, newArgs);
+            var path = this.Location.Scope.Append("$invoke_temp_" + tempCounter++);
+            var result = new InvokeSyntax(this.Location, sig, newArgs, path);
             types.ReturnTypes[result] = sig.ReturnType;
 
             return result;            
@@ -86,6 +89,7 @@ namespace Helix.Features.Functions {
     public record InvokeSyntax : ISyntaxTree {
         private readonly FunctionSignature sig;
         private readonly IReadOnlyList<ISyntaxTree> args;
+        private readonly IdentifierPath invokeTempPath;
 
         public TokenLocation Location { get; }
 
@@ -96,11 +100,13 @@ namespace Helix.Features.Functions {
         public InvokeSyntax(
             TokenLocation loc,
             FunctionSignature sig,
-            IReadOnlyList<ISyntaxTree> args) {
+            IReadOnlyList<ISyntaxTree> args,
+            IdentifierPath tempPath) {
 
             this.Location = loc;
             this.sig = sig;
             this.args = args;
+            this.invokeTempPath = tempPath;
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) => this;
@@ -112,14 +118,38 @@ namespace Helix.Features.Functions {
                 arg.AnalyzeFlow(flow);
             }
 
-            // TODO: Fix this
-            flow.SyntaxLifetimes[this] = new LifetimeBundle();
+            // Things to do:
+            // 1) Figure out possible reference type aliasing through arguments
+            // 1) Figure out possible pointer aliasing through arguments
+            // 2) Figure out possible argument dependencies for the return value
+            // 3) Create new inferenced return value lifetime
+
+            var invokeLifetime = new InferredLocationLifetime(
+                this.Location,
+                this.invokeTempPath.ToVariablePath(),
+                flow.LifetimeRoots,
+                LifetimeOrigin.TempValue);
+
+            var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
+
+            foreach (var (relPath, memType) in this.sig.ReturnType.GetMembers(flow)) {
+                var memBounds = new LifetimeBounds(invokeLifetime);
+
+                dict.Add(relPath, memBounds);
+            }
+
+            flow.SyntaxLifetimes[this] = new LifetimeBundle(dict);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+            var region = this
+                .GetLifetimes(types)[new IdentifierPath()]
+                .ValueLifetime
+                .GenerateCode(types, writer);
+
             var args = this.args
                 .Select(x => x.GenerateCode(types, writer))
-                .Prepend(new CVariableLiteral("_pool"))
+                .Prepend(region)
                 .ToArray();
 
             var result = new CInvoke() {
@@ -135,6 +165,7 @@ namespace Helix.Features.Functions {
                 Assignment = result
             };
 
+            writer.WriteComment($"Line {this.Location.Line}: Function call");
             writer.WriteStatement(stat);
 
             return new CVariableLiteral(name);
