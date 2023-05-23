@@ -72,6 +72,7 @@ namespace Helix.Features.FlowControl {
                 .OrElse(() => PrimitiveType.Void);
 
             result.SetReturnType(returnType, types);
+            result.SetCapturedVariables(stats, types);
 
             return result;
         }

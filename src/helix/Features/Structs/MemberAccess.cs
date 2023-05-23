@@ -62,7 +62,9 @@ namespace Helix.Features.Aggregates {
                         "count",
                         false);
 
-                    types.ReturnTypes[result] = PrimitiveType.Int;
+                    result.SetReturnType(PrimitiveType.Int, types);
+                    result.SetCapturedVariables(target, types);
+
                     return result;
                 }
             }
@@ -82,9 +84,10 @@ namespace Helix.Features.Aggregates {
                             this.Location,
                             target,
                             this.MemberName,
-                            field.IsWritable);                       
+                            field.IsWritable);                    
 
-                        types.ReturnTypes[result] = field.Type;
+                        result.SetReturnType(field.Type, types);
+                        result.SetCapturedVariables(target, types);
 
                         return result;
                     }                    

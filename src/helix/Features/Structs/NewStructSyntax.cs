@@ -137,7 +137,9 @@ namespace Helix.Features.Aggregates {
 
             var result = new NewStructSyntax(this.Location, this.sig, allNames, allValues, true);
 
-            types.ReturnTypes[result] = type;
+            result.SetReturnType(type, types);
+            result.SetCapturedVariables(allValues, types);
+
             return result;
         }
 

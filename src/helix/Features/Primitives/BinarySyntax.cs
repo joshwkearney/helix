@@ -247,7 +247,9 @@ namespace Helix.Features.Primitives {
             }
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
-            types.ReturnTypes[result] = returnType;
+
+            result.SetReturnType(returnType, types);
+            result.SetCapturedVariables(left, right, types);
 
             return result;
         }

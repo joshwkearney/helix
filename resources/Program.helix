@@ -3,13 +3,10 @@
 	var y as int;
 };
 
-func test14(let a as Point**, let b as Point**) {
-	var c = a;
+func test14() {
+	var total = 0;
 
-	if true then {
-		c = b;
+	while true {
+		total = 10;
 	};
-
-	var x = new Point { 10, 5 };
-	c* = &x;
 };

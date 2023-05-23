@@ -6,6 +6,7 @@ using Helix.Generation.Syntax;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Analysis;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -32,7 +33,8 @@ namespace Helix.Features.Primitives {
         public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            types.ReturnTypes[this] = PrimitiveType.Void;
+            this.SetReturnType(PrimitiveType.Void, types);
+            this.SetCapturedVariables(types);
 
             return this;
         }

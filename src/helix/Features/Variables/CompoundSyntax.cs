@@ -25,11 +25,11 @@ namespace Helix.Features.Variables {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            var result = new CompoundSyntax(
-                this.Location,
-                this.args.Select(x => x.CheckTypes(types)).ToArray());
+            var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
+            var result = new CompoundSyntax(this.Location, args);
 
             this.SetReturnType(PrimitiveType.Void, types);
+            this.SetCapturedVariables(args, types);
 
             return result;
         }

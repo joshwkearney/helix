@@ -101,6 +101,8 @@ namespace Helix.Features.Variables {
                 throw new InvalidOperationException("Compiler bug");
             }
 
+            this.SetCapturedVariables(this.VariablePath, VariableCaptureKind.ValueCapture, types);
+
             return this;
         }
 
@@ -111,7 +113,9 @@ namespace Helix.Features.Variables {
             }
 
             var result = new VariableAccessSyntax(this.Location, this.VariablePath, true).CheckTypes(types);
+
             result.SetReturnType(new PointerType(this.GetReturnType(types)), types);
+            result.SetCapturedVariables(this.VariablePath, VariableCaptureKind.LocationCapture, types);
 
             return result;
         }

@@ -46,7 +46,9 @@ namespace Helix.Features.Arrays {
                 return this;
             }
 
-            types.ReturnTypes[this] = new PointerType(this.arrayType.InnerType);
+            this.SetReturnType(new PointerType(this.arrayType.InnerType), types);
+            this.SetCapturedVariables(this.target, this.offset, types);
+
             return this;
         }
 

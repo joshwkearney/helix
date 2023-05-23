@@ -102,7 +102,8 @@ namespace Helix.Features.FlowControl {
                 iftrue,
                 iffalse);
 
-            types.ReturnTypes[result] = resultType;
+            result.SetReturnType(resultType, types);
+            result.SetCapturedVariables(cond, iftrue, iffalse, types);
 
             return result;
         }

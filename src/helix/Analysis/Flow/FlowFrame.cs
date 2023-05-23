@@ -14,6 +14,8 @@ namespace Helix.Analysis.Flow {
         // General things
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
+        public IDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
+
         public IDictionary<ISyntaxTree, LifetimeBundle> SyntaxLifetimes { get; }
 
         public LifetimeGraph LifetimeGraph { get; }
@@ -31,6 +33,8 @@ namespace Helix.Analysis.Flow {
 
         public FlowFrame(TypeFrame frame) {
             this.ReturnTypes = frame.ReturnTypes;
+            this.CapturedVariables = frame.CapturedVariables;
+
             this.Variables = frame.Variables;
             this.Functions = frame.Functions;
             this.Structs = frame.Structs;
@@ -44,6 +48,8 @@ namespace Helix.Analysis.Flow {
 
         public FlowFrame(FlowFrame prev) {
             this.ReturnTypes = prev.ReturnTypes;
+            this.CapturedVariables = prev.CapturedVariables;
+
             this.Variables = prev.Variables;
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;

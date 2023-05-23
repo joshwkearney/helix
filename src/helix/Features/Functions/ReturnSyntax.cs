@@ -53,11 +53,11 @@ namespace Helix.Features.Functions {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            var sig = types.Functions[this.funcPath];
             var payload = this.payload.CheckTypes(types).ToRValue(types);
             var result = new ReturnSyntax(this.Location, payload, this.funcPath, true);
 
-            types.ReturnTypes[result] = PrimitiveType.Void;
+            result.SetReturnType(PrimitiveType.Void, types);
+            result.SetCapturedVariables(types);
 
             return result;
         }

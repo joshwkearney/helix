@@ -64,6 +64,7 @@ namespace Helix.Features.Memory {
             var result = new DereferenceSyntax(this.Location, target, this.tempPath);
 
             result.SetReturnType(pointerType.InnerType, types);
+            result.SetCapturedVariables(target, types);
 
             return result;
         }
@@ -118,7 +119,9 @@ namespace Helix.Features.Memory {
 
             // this.target is already type checked
             var pointerType = this.target.AssertIsPointer(types);
+
             this.SetReturnType(pointerType.InnerType, types);
+            this.SetCapturedVariables(this.target, types);
 
             return this;
         }
@@ -235,6 +238,8 @@ namespace Helix.Features.Memory {
             }
 
             this.SetReturnType(this.target.GetReturnType(types), types);
+            this.SetCapturedVariables(this.target, types);
+
             return this;
         }
 

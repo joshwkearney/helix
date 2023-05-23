@@ -12,6 +12,12 @@ using System.Collections.Immutable;
 namespace Helix.Analysis.TypeChecking {
     public delegate void DeclarationCG(ICWriter writer);
 
+    public enum VariableCaptureKind {
+        ValueCapture, LocationCapture
+    }
+
+    public record struct VariableCapture(IdentifierPath VariablePath, VariableCaptureKind Kind) { }
+
     public class TypeFrame : ITypedFrame {
         private int tempCounter = 0;
 
@@ -28,6 +34,8 @@ namespace Helix.Analysis.TypeChecking {
         public IDictionary<HelixType, DeclarationCG> TypeDeclarations { get; }
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
+
+        public IDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
 
         public TypeFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
@@ -48,20 +56,22 @@ namespace Helix.Analysis.TypeChecking {
 
             this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
             this.Structs = new Dictionary<IdentifierPath, StructSignature>();
-
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
+
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
+            this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
         }
 
         public TypeFrame(TypeFrame prev) {
-            this.Variables = prev.Variables;
             this.SyntaxValues = prev.SyntaxValues;
 
+            this.Variables = prev.Variables;
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;
-
             this.TypeDeclarations = prev.TypeDeclarations;
+
             this.ReturnTypes = prev.ReturnTypes;
+            this.CapturedVariables = prev.CapturedVariables;
         }
 
         public string GetVariableName() {

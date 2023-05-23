@@ -148,6 +148,13 @@ namespace Helix.Features.Functions {
                     throw new Exception("Compiler assertion failed: syntax tree does not have a return type");
                 }
             }
+
+            // Debug check: make sure that every syntax tree has captured variables
+            foreach (var expr in body.GetAllChildren()) {
+                if (!types.CapturedVariables.ContainsKey(expr)) {
+                    throw new Exception("Compiler assertion failed: syntax tree does not have captured variables");
+                }
+            }
 #endif
 
             return new FunctionDeclaration(this.Location, sig, body);

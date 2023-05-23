@@ -7,6 +7,7 @@ using Helix.Features.Primitives;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Analysis;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -76,7 +77,8 @@ namespace Helix.Features.FlowControl {
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = (ISyntaxTree)new LoopStatement(this.Location, body);
 
-            types.ReturnTypes[result] = PrimitiveType.Void;
+            result.SetReturnType(PrimitiveType.Void, types);
+            result.SetCapturedVariables(body, types);
 
             return result;
         }

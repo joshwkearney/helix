@@ -80,7 +80,9 @@ namespace Helix.Features.Functions {
 
             var path = this.Location.Scope.Append("$invoke_temp_" + tempCounter++);
             var result = new InvokeSyntax(this.Location, sig, newArgs, path);
-            types.ReturnTypes[result] = sig.ReturnType;
+
+            result.SetReturnType(sig.ReturnType, types);
+            result.SetCapturedVariables(newArgs.Append(target), types);
 
             return result;            
         }

@@ -31,7 +31,13 @@ namespace Helix.Features.Memory {
             var ptrType = (PointerType)target.GetReturnType(types);
             var result = new AddressOfSyntax(this.Location, target);
 
+            var capturedVars = target.GetCapturedVariables(types)
+                .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture))
+                .ToArray();
+
             result.SetReturnType(ptrType, types);
+            result.SetCapturedVariables(capturedVars, types);
+
             return result;
         }
 
