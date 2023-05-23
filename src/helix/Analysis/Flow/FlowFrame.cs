@@ -7,6 +7,7 @@ using System.Security.AccessControl;
 using Helix.Parsing;
 using Helix.Collections;
 using System.Linq;
+using System.Collections.Immutable;
 
 namespace Helix.Analysis.Flow {
     public class FlowFrame : ITypedFrame {
@@ -24,9 +25,9 @@ namespace Helix.Analysis.Flow {
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         // Frame-specific things
-        public IDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; }
+        public ImmutableDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; set; }
 
-        public ISet<Lifetime> LifetimeRoots { get; }
+        public ImmutableHashSet<Lifetime> LifetimeRoots { get; set; }
 
         public FlowFrame(TypeFrame frame) {
             this.ReturnTypes = frame.ReturnTypes;
@@ -37,8 +38,8 @@ namespace Helix.Analysis.Flow {
             this.LifetimeGraph = new();
             this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
 
-            this.LocalLifetimes = new Dictionary<VariablePath, LifetimeBounds>();
-            this.LifetimeRoots = new HashSet<Lifetime>();
+            this.LocalLifetimes = ImmutableDictionary<VariablePath, LifetimeBounds>.Empty;
+            this.LifetimeRoots = ImmutableHashSet<Lifetime>.Empty;
         }
 
         public FlowFrame(FlowFrame prev) {
@@ -50,8 +51,8 @@ namespace Helix.Analysis.Flow {
             this.LifetimeGraph = prev.LifetimeGraph;
             this.SyntaxLifetimes = prev.SyntaxLifetimes;
 
-            this.LocalLifetimes = prev.LocalLifetimes.ToStackedDictionary();
-            this.LifetimeRoots = prev.LifetimeRoots.ToStackedSet();
+            this.LocalLifetimes = prev.LocalLifetimes;
+            this.LifetimeRoots = prev.LifetimeRoots;
         }
 
         private IEnumerable<Lifetime> MaximizeRootSet(IEnumerable<Lifetime> roots) {

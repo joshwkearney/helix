@@ -5,6 +5,7 @@ using Helix.Collections;
 using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using System.Collections.Immutable;
 
 namespace Helix.Generation {
     public enum CVariableKind {
@@ -53,14 +54,22 @@ namespace Helix.Generation {
         private readonly IList<ICStatement> stats;
 
         private readonly Dictionary<Lifetime, ICSyntax> lifetimes = new();
-        private readonly Dictionary<ValueSet<Lifetime>, ICSyntax> lifetimeCombinations = new();
+        private ImmutableDictionary<ValueSet<Lifetime>, ICSyntax> lifetimeCombinations;
 
-        public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; } 
-            = new Dictionary<IdentifierPath, CVariableKind>();
+        public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; }
 
         public CStatementWriter(ICWriter prev, IList<ICStatement> stats) {
             this.prev = prev;
             this.stats = stats;
+
+            if (prev is CStatementWriter statWriter) {
+                this.lifetimeCombinations = statWriter.lifetimeCombinations;
+                this.VariableKinds = statWriter.VariableKinds;
+            }
+            else {
+                this.lifetimeCombinations = ImmutableDictionary<ValueSet<Lifetime>, ICSyntax>.Empty;
+                this.VariableKinds = new Dictionary<IdentifierPath, CVariableKind>();
+            }
         }
 
         public ICStatementWriter WriteStatement(ICStatement stat) {
@@ -145,7 +154,7 @@ namespace Helix.Generation {
 
             this.WriteEmptyLine();
 
-            this.lifetimeCombinations[lifetimeList] = new CVariableLiteral(tempName);
+            this.lifetimeCombinations = this.lifetimeCombinations.SetItem(lifetimeList, new CVariableLiteral(tempName));
             return new CVariableLiteral(tempName);
         }
 

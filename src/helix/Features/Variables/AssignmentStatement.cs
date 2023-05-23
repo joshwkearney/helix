@@ -164,7 +164,7 @@ namespace Helix.Features.Variables {
                     var newTargetBounds = targetBounds.WithValue(newValue);
 
                     // Update this variable's value
-                    flow.LocalLifetimes[newValue.Path] = newTargetBounds;
+                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newValue.Path, newTargetBounds);
 
                     // Make sure the new value outlives its variable
                     flow.LifetimeGraph.AddStored(newValue, newTargetBounds.LocationLifetime, memType);

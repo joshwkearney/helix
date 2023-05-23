@@ -73,14 +73,17 @@ namespace Helix.Features.Functions {
 
                     if (memType.IsValueType(flow)) {
                         // Skip value types because they don't have lifetimes anyway
-                        flow.LocalLifetimes[path] = new LifetimeBounds();
+                        flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, new LifetimeBounds());
                     }
                     else {
                         flow.LifetimeGraph.AddStored(valueLifetime, locationLifetime, memType);
-                        flow.LocalLifetimes[path] = new LifetimeBounds(valueLifetime, locationLifetime);
 
-                        flow.LifetimeRoots.Add(locationLifetime);
-                        flow.LifetimeRoots.Add(valueLifetime);
+                        flow.LocalLifetimes = flow.LocalLifetimes.SetItem(
+                            path, 
+                            new LifetimeBounds(valueLifetime, locationLifetime));
+
+                        flow.LifetimeRoots = flow.LifetimeRoots.Add(locationLifetime);
+                        flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
                     }
                 }
             }

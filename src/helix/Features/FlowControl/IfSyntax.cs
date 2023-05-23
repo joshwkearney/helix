@@ -94,15 +94,6 @@ namespace Helix.Features.FlowControl {
             iftrue = iftrue.ConvertTypeFrom(iffalse, types);
             iffalse = iffalse.ConvertTypeFrom(iftrue, types);
 
-            //var newLifetimes = this.CalculateModifiedVariables(iftrueTypes, iffalseTypes, types);            
-
-            // Make sure to bind all the new lifetimes we have discovered
-            //var bindings = newLifetimes
-            //    .Select(x => new BindLifetimeSyntax(this.Location, x.Lifetime, x.Path))
-            //    .Select(x => (ISyntaxTree)x)
-             //   .ToList();
-
-            //var lifetimeBundle = this.CalculateLifetimes(iftrue, iffalse, bindings, types);
             var resultType = types.ReturnTypes[iftrue];
 
             var result = new IfSyntax(
@@ -126,51 +117,83 @@ namespace Helix.Features.FlowControl {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            //if (flow.Lifetimes.ContainsKey(this)) {
-            //    return;
-            //}
+            if (this.IsFlowAnalyzed(flow)) {
+                return;
+            }
 
-            //var iftrueFlow = new FlowFrame(flow);
-            //var iffalseFlow = new FlowFrame(flow);
+            var iftrueFlow = new FlowFrame(flow);
+            var iffalseFlow = new FlowFrame(flow);
 
-            //this.cond.AnalyzeFlow(flow);
-            //this.iftrue.AnalyzeFlow(iftrueFlow);
-            //this.iffalse.AnalyzeFlow(iffalseFlow);
+            this.cond.AnalyzeFlow(flow);
+            this.iftrue.AnalyzeFlow(iftrueFlow);
+            this.iffalse.AnalyzeFlow(iffalseFlow);
 
-            //var resultType = flow.ReturnTypes[this.iftrue];
+            var ifTrueBundle = this.iftrue.GetLifetimes(flow);
+            var ifFalseBundle = this.iffalse.GetLifetimes(flow);
 
-            // If we are returning a reference type then we need to calculate a new lifetime
-            // This is required because the lifetimes that were used inside of the if body
-            //// may not be availible outside of it, so we need to reuinify around a new lifetime
-            //foreach (var (relPath, type) in resultType.GetMembers(flow)) {
-            //    var bodyLifetimes = new[] { flow.Lifetimes[this.iftrue][relPath] }
-            //        .Append(flow.Lifetimes[this.iffalse][relPath])
-            //        .ToValueSet();
+            MutateLocals(iftrueFlow, iffalseFlow, flow);
 
-            //    var path = this.tempPath.AppendMember(relPath);
-            //   // var resultLifetime = new Lifetime(path, 0);
+            if (this.GetReturnType(flow).IsValueType(flow)) {
+                this.SetLifetimes(new LifetimeBundle(), flow);
+                return;
+            }
 
-            //    //lifetimeBundle.Add(relPath, resultLifetime);
+            var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
-            //    // TODO: Fix this
-            //    // Make sure that our new lifetime is derived from the body lifetimes, and that
-            //    // the body lifetimes are precursors to our lifetime for the purposes of lifetime
-            //    // analysis
-            //    //foreach (var bodyLifetime in bodyLifetimes) {
-            //    ////    flow.LifetimeGraph.AddAlias(resultLifetime, bodyLifetime);
-            //    //}
+            foreach (var (relPath, _) in this.GetReturnType(flow).GetMembers(flow)) {
+                var memPath = this.tempPath.AppendMember(relPath);
+                var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Alias, LifetimeOrigin.TempValue);
 
-            //    // TODO: Add bindings
-            //    // Add this new lifetime to the list of bindings we calculated earlier
-            //    //if (type.IsRemote(flow)) {
-            //    //bindings.Add(new BindLifetimeSyntax(this.Location, resultLifetime, path));
-            //    //}
-            //}
+                flow.LifetimeGraph.AddAssignment(valueLifetime, ifTrueBundle[relPath].ValueLifetime, null);
+                flow.LifetimeGraph.AddAssignment(valueLifetime, ifFalseBundle[relPath].ValueLifetime, null);
 
-            // TODO: Add bindings
-            // CalculateModifiedVariables();
+                dict[relPath] = new LifetimeBounds(valueLifetime);
+            }
 
-            //flow.Lifetimes[this] = new LifetimeBundle(lifetimeBundle);
+            this.SetLifetimes(new LifetimeBundle(dict), flow);
+        }
+
+        private static void MutateLocals(
+            FlowFrame trueFrame, 
+            FlowFrame falseFrame, 
+            FlowFrame flow) {
+
+            var modifiedLocals = trueFrame.LocalLifetimes
+                .Concat(falseFrame.LocalLifetimes)
+                .Where(x => !flow.LocalLifetimes.Contains(x))
+                .Distinct()
+                .Select(x => x.Key)
+                .Where(x => flow.LocalLifetimes.ContainsKey(x))
+                .ToArray();
+
+            foreach (var varPath in modifiedLocals) {
+                var trueLifetime = trueFrame
+                    .LocalLifetimes
+                    .GetValueOrNone(varPath)
+                    .OrElse(() => new LifetimeBounds())
+                    .ValueLifetime;
+                
+                var falseLifetime = falseFrame
+                    .LocalLifetimes
+                    .GetValueOrNone(varPath)
+                    .OrElse(() => new LifetimeBounds())
+                    .ValueLifetime;
+
+                var postLifetime = Lifetime.None;
+
+                if (trueLifetime.Version >= falseLifetime.Version || falseLifetime == Lifetime.None) {
+                    postLifetime = trueLifetime.IncrementVersion();
+                }
+                else {
+                    postLifetime = falseLifetime.IncrementVersion();
+                }
+
+                flow.LifetimeGraph.AddAssignment(trueLifetime, postLifetime, null);
+                flow.LifetimeGraph.AddAssignment(falseLifetime, postLifetime, null);
+
+                var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);
+            }
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
@@ -203,6 +226,14 @@ namespace Helix.Features.FlowControl {
                 Name = tempName
             };
 
+            if (affirmList.Any() && affirmList.Last().IsEmpty) {
+                affirmList = affirmList.SkipLast(1).ToList();
+            }
+
+            if (negList.Any() && negList.Last().IsEmpty) {
+                negList = negList.SkipLast(1).ToList();
+            }
+
             var expr = new CIf() {
                 Condition = this.cond.GenerateCode(types, writer),
                 IfTrue = affirmList,
@@ -218,13 +249,6 @@ namespace Helix.Features.FlowControl {
             }
 
             writer.WriteStatement(expr);
-
-            // Register all the lifetimes that changed within this if statement, including
-            // the binding that register our return lifetime
-            //foreach (var binding in this.bindings) {
-            //    binding.GenerateCode(types, writer);
-            //}
-
             writer.WriteEmptyLine();
 
             if (returnType != PrimitiveType.Void) {
@@ -234,82 +258,5 @@ namespace Helix.Features.FlowControl {
                 return new CIntLiteral(0);
             }
         }
-
-        //private static IReadOnlyList<Lifetime> CalculateModifiedVariables(
-        //    FlowFrame ifTrueFlow,
-        //    FlowFrame ifFalseFlow,
-        //    FlowFrame flow) {
-
-        //    var modifiedVars = ifTrueFlow.Variables
-        //        .Concat(ifFalseFlow.Variables)
-        //        .Select(x => x.Key)
-        //        .Intersect(flow.Variables.Select(x => x.Key));
-
-        //    var newLifetimes = new List<Lifetime>();
-
-        //    // For every variable mutated within this if statement, we need to create a new
-        //    // lifetime for that variable after the if statement so that code that runs after
-        //    // doesn't use outdated lifetime information. Also, variables can be changed
-        //    // in different ways so we need to re-unify the branches anyway
-        //    foreach (var path in modifiedVars) {
-        //        var oldSig = flow.Variables[path];
-
-        //        // TODO: Fix all of this
-        //        // If this variable is changed in both paths, take the max mutation count and add one
-        //        //if (ifTrueFlow.Variables.Keys.Contains(path) && ifFalseFlow.Variables.Keys.Contains(path)) {
-        //           // var trueLifetime = ifTrueFlow.VariableLifetimes[path];
-        //           // var falseLifetime = ifFalseFlow.VariableLifetimes[path];
-
-        //          //  var mutationCount = 1 + Math.Max(
-        //          //      trueLifetime.MutationCount,
-        //          //      falseLifetime.MutationCount);
-
-        //          //  var newLifetime = new Lifetime(path, mutationCount);
-
-        //         /*   newLifetimes.Add(newLifetime);
-        //            flow.VariableLifetimes[path] = newLifetime;
-
-        //            // Make sure that the new lifetime is dependent on both if branches
-        //            flow.LifetimeGraph.AddAlias(newLifetime, trueLifetime);
-        //            flow.LifetimeGraph.AddAlias(newLifetime, falseLifetime);*/
-        //       // }
-        //      /*  else {
-        //            // TODO: Why not just always use the first branch?
-
-        //            // If this variable is changed in only one path
-        //            Lifetime oldLifetime;
-
-        //            if (ifTrueFlow.Variables.ContainsKey(path)) {
-        //                oldLifetime = ifTrueFlow.VariableLifetimes[path];
-        //            }
-        //            else {
-        //                oldLifetime = ifFalseFlow.VariableLifetimes[path];
-        //            }
-
-        //            var newSig = new VariableSignature(
-        //                path,
-        //                oldSig.Type,
-        //                oldSig.IsWritable,
-        //                oldLifetime.MutationCount + 1);
-
-        //            newLifetimes.Add(newSig);
-
-        //            // Make sure the new lifetime is dependent on the if branch
-        //            flow.LifetimeGraph.AddAlias(newSig.Lifetime, oldLifetime);
-        //            flow.LifetimeGraph.AddAlias(newSig.Lifetime, oldSig.Lifetime);
-
-        //            //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldLifetime);
-        //            //types.LifetimeGraph.AddDerived(oldLifetime, newSig.Lifetime);
-
-        //            //// Make sure the new lifetime is dependent on the old lifetime
-        //            //types.LifetimeGraph.AddPrecursor(newSig.Lifetime, oldSig.Lifetime);
-        //            //types.LifetimeGraph.AddDerived(oldSig.Lifetime, newSig.Lifetime);
-
-        //            flow.Variables[path] = newSig;
-        //        }*/
-        //    }
-
-        //    return newLifetimes;
-        //}
     }
 }

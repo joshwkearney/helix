@@ -105,3 +105,64 @@ func test12(let A as int**) as int* {
 
 	x;
 };
+
+// ###
+struct Point {
+	var x as int;
+	var y as int;
+};
+
+func test13(let z as Point**) as Point* {
+	let p = create() ;
+
+	z* = p;
+	p;
+};
+
+func create() as Point* {
+	var p = new Point { 10, 5 };
+
+	&p;
+};
+
+// ###
+struct Point {
+	var x as int;
+	var y as int;
+};
+
+func test14(let z as Point**) as Point* {
+	let p = if true 
+		then create() 
+		else {
+			var y = new Point;
+
+			&y;
+		};
+
+	z* = p;
+	p;
+};
+
+func create() as Point* {
+	var p = new Point { 10, 5 };
+
+	&p;
+};
+
+// ###
+struct Point {
+	var x as int;
+	var y as int;
+};
+
+func test14(let a as Point**, let b as Point**) {
+	var c = a;
+
+	if true then {
+		c = b;
+	};
+
+	var x = new Point { 10, 5 };
+	c* = &x;
+};

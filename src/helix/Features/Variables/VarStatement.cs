@@ -229,7 +229,8 @@ namespace Helix {
 
                 // Add this variable lifetimes to the current frame
                 var bounds = new LifetimeBounds(valueLifetime, memLocation);
-                flow.LocalLifetimes[memPath] = dict[relPath] = bounds;
+                dict[relPath] = bounds;
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(memPath, bounds);
             }
 
             return new LifetimeBundle(dict);

@@ -143,7 +143,7 @@ namespace Helix.Features.Memory {
 
                 if (type.IsValueType(flow)) {
                     bundleDict[relPath] = new LifetimeBounds(Lifetime.None);
-                    flow.LocalLifetimes[memPath] = new LifetimeBounds();
+                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(memPath, new LifetimeBounds());
 
                     continue;
                 }
@@ -177,7 +177,7 @@ namespace Helix.Features.Memory {
                 var derefValueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
 
                 // Make sure we add this as a root
-                flow.LifetimeRoots.Add(derefValueLifetime);
+                flow.LifetimeRoots = flow.LifetimeRoots.Add(derefValueLifetime);
 
                 // The lifetime that is stored in the pointer must outlive the pointer itself
                 flow.LifetimeGraph.AddStored(derefValueLifetime, pointerLifetime.ValueLifetime, this.GetReturnType(flow));

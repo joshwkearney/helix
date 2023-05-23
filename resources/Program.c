@@ -18,8 +18,7 @@ typedef struct Point Point;
 typedef struct Point$ptr Point$ptr;
 typedef struct Point$ptr$ptr Point$ptr$ptr;
 
-Point$ptr test(_Region* _return_region, Point$ptr$ptr z);
-Point$ptr create(_Region* _return_region);
+void test14(_Region* _return_region, Point$ptr$ptr a, Point$ptr$ptr b);
 
 struct Point {
     int x;
@@ -36,29 +35,26 @@ struct Point$ptr$ptr {
     _Region* region;
 };
 
-Point$ptr test(_Region* _return_region, Point$ptr$ptr z) {
-    /* Line 7: Region calculation */
-    _Region* $A = _return_region;
-    $A = ((($A->depth) <= ((z.region)->depth)) ? $A : (z.region));
+void test14(_Region* _return_region, Point$ptr$ptr a, Point$ptr$ptr b) {
+    /* Line 7: New variable declaration 'c' */
+    Point$ptr$ptr c = a;
 
-    /* Line 7: Function call */
-    Point$ptr $B = create($A);
+    /* Line 9: If statement */
+    if (1U) { 
+        /* Line 10: Assignment statement */
+        c = b;
+    } 
 
-    /* Line 7: New variable declaration 'p' */
-    Point$ptr p = $B;
+    /* Line 13: Region calculation */
+    _Region* $B = (a.region);
+    $B = ((($B->depth) <= ((b.region)->depth)) ? $B : (b.region));
 
-    /* Line 9: Assignment statement */
-    (*(z.data)) = p;
+    /* Line 13: New variable declaration 'x' */
+    Point* x = (Point*)_region_malloc($B, sizeof(Point));
+    (*x) = (Point){ 10U, 5U };
 
-    return p;
-}
-
-Point$ptr create(_Region* _return_region) {
-    /* Line 14: New variable declaration 'p' */
-    Point* p_1 = (Point*)_region_malloc(_return_region, sizeof(Point));
-    (*p_1) = (Point){ 10U, 5U };
-
-    return (Point$ptr){ p_1, _return_region };
+    /* Line 14: Assignment statement */
+    (*(c.data)) = (Point$ptr){ x, $B };
 }
 
 #if __cplusplus

@@ -3,15 +3,13 @@
 	var y as int;
 };
 
-func test(let z as Point**) as Point* {
-	let p = create();
+func test14(let a as Point**, let b as Point**) {
+	var c = a;
 
-	z* = p;
-	p;
-};
+	if true then {
+		c = b;
+	};
 
-func create() as Point* {
-	var p = new Point { 10, 5 };
-
-	&p;
+	var x = new Point { 10, 5 };
+	c* = &x;
 };

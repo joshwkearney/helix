@@ -6,15 +6,12 @@ using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Helix.Collections
-{
-    public class StackedSet<T> : ISet<T>
-    {
+namespace Helix.Collections {
+    public class StackedSet<T> : ISet<T> {
         private readonly ISet<T> values = new HashSet<T>();
         private readonly ISet<T> prev;
 
-        public StackedSet(ISet<T> prev)
-        {
+        public StackedSet(ISet<T> prev) {
             this.prev = prev;
         }
 
@@ -32,7 +29,7 @@ namespace Helix.Collections
 
         public void ExceptWith(IEnumerable<T> other) => this.values.ExceptWith(other);
 
-        public IEnumerator<T> GetEnumerator() => this.values.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => this.values.Concat(this.prev).GetEnumerator();
 
         public void IntersectWith(IEnumerable<T> other) => this.values.IntersectWith(other);
 
@@ -56,6 +53,6 @@ namespace Helix.Collections
 
         void ICollection<T>.Add(T item) => this.values.Add(item);
 
-        IEnumerator IEnumerable.GetEnumerator() => this.values.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => this.values.Concat(this.prev).GetEnumerator();
     }
 }

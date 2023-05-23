@@ -188,7 +188,7 @@ namespace Helix.Features.Functions {
             FunctionsHelper.DeclareParameterFlow(this.Signature, flow);
 
             // Make sure we include the heap in the root set
-            flow.LifetimeRoots.Add(Lifetime.Heap);
+            flow.LifetimeRoots = flow.LifetimeRoots.Add(Lifetime.Heap);
 
             this.body.AnalyzeFlow(flow);
             FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.Signature, this.body, flow);
