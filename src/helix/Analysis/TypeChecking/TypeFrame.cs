@@ -7,6 +7,7 @@ using Helix.Features.Functions;
 using Helix.Generation;
 using Helix.Parsing;
 using Helix.Collections;
+using System.Collections.Immutable;
 
 namespace Helix.Analysis.TypeChecking {
     public delegate void DeclarationCG(ICWriter writer);
@@ -15,7 +16,7 @@ namespace Helix.Analysis.TypeChecking {
         private int tempCounter = 0;
 
         // Frame-specific things
-        public IDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; }
+        public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
         // Global things
         public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
@@ -31,11 +32,19 @@ namespace Helix.Analysis.TypeChecking {
         public TypeFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
 
-            this.SyntaxValues = new Dictionary<IdentifierPath, ISyntaxTree>() {
-                { new IdentifierPath("void"), new TypeSyntax(default, PrimitiveType.Void) },
-                { new IdentifierPath("int"), new TypeSyntax(default, PrimitiveType.Int) },
-                { new IdentifierPath("bool"), new TypeSyntax(default, PrimitiveType.Bool) }
-            };
+            this.SyntaxValues = ImmutableDictionary<IdentifierPath, ISyntaxTree>.Empty;
+
+            this.SyntaxValues = this.SyntaxValues.Add(
+                new IdentifierPath("void"), 
+                new TypeSyntax(default, PrimitiveType.Void));
+
+            this.SyntaxValues = this.SyntaxValues.Add(
+                new IdentifierPath("int"), 
+                new TypeSyntax(default, PrimitiveType.Int));
+
+            this.SyntaxValues = this.SyntaxValues.Add(
+                new IdentifierPath("bool"), 
+                new TypeSyntax(default, PrimitiveType.Bool));
 
             this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
             this.Structs = new Dictionary<IdentifierPath, StructSignature>();
@@ -46,7 +55,7 @@ namespace Helix.Analysis.TypeChecking {
 
         public TypeFrame(TypeFrame prev) {
             this.Variables = prev.Variables;
-            this.SyntaxValues = prev.SyntaxValues.ToStackedDictionary();
+            this.SyntaxValues = prev.SyntaxValues;
 
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;

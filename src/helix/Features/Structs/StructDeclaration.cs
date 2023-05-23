@@ -69,15 +69,9 @@ namespace Helix.Features.Aggregates {
 
             var path = this.Location.Scope.Append(this.signature.Name);
 
-            names.SyntaxValues[path] = new TypeSyntax(this.Location, new NamedType(path));
-            //names = names.WithScope(this.signature.Name);
-
-            // Declare the parameters
-            //foreach (var par in this.signature.Members) {
-            //    if (!names.DeclareName(par.MemberName, NameTarget.Reserved)) {
-            //        throw TypeCheckingErrors.IdentifierDefined(this.Location, par.MemberName);
-            //    }
-            //}
+            names.SyntaxValues = names.SyntaxValues.SetItem(
+                path, 
+                new TypeSyntax(this.Location, new NamedType(path)));
         }
 
         public void DeclareTypes(TypeFrame types) {

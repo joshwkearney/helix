@@ -14,16 +14,6 @@ namespace Helix.Collections {
             return new DefaultDictionary<TKey, TValue>(dict, valueFactory);
         }
 
-        public static IDictionary<TKey, TValue> ToStackedDictionary<TKey, TValue>(
-            this IDictionary<TKey, TValue> dict) {
-
-            return new StackedDictionary<TKey, TValue>(dict);
-        }
-
-        public static ISet<T> ToStackedSet<T>(this ISet<T> set) {
-            return new StackedSet<T>(set);
-        }
-
         public static ValueSet<T> ToValueSet<T>(this IEnumerable<T> sequence) {
             if (sequence is ValueSet<T> set) {
                 return set;

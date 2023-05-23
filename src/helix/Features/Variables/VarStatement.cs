@@ -93,7 +93,7 @@ namespace Helix {
             types.DeclareVariableSignatures(basePath, assignType, this.isWritable);
 
             // Put this variable's value in the main table
-            types.SyntaxValues[basePath] = assign;
+            types.SyntaxValues = types.SyntaxValues.SetItem(basePath, assign);
 
             var result = new VarStatement(
                 this.Location,

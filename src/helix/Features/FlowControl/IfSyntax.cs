@@ -227,11 +227,11 @@ namespace Helix.Features.FlowControl {
             };
 
             if (affirmList.Any() && affirmList.Last().IsEmpty) {
-                affirmList = affirmList.SkipLast(1).ToList();
+                affirmList.RemoveAt(affirmList.Count - 1);
             }
 
             if (negList.Any() && negList.Last().IsEmpty) {
-                negList = negList.SkipLast(1).ToList();
+                negList.RemoveAt(negList.Count - 1);
             }
 
             var expr = new CIf() {

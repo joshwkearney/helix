@@ -46,8 +46,8 @@ void test14(_Region* _return_region, Point$ptr$ptr a, Point$ptr$ptr b) {
     } 
 
     /* Line 13: Region calculation */
-    _Region* $B = (a.region);
-    $B = ((($B->depth) <= ((b.region)->depth)) ? $B : (b.region));
+    _Region* $B = (b.region);
+    $B = ((($B->depth) <= ((a.region)->depth)) ? $B : (a.region));
 
     /* Line 13: New variable declaration 'x' */
     Point* x = (Point*)_region_malloc($B, sizeof(Point));

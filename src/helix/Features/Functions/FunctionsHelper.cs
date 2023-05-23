@@ -30,7 +30,9 @@ namespace Helix.Features.Functions {
             // Declare this function
             var path = sig.Location.Scope.Append(sig.Name);
 
-            types.SyntaxValues[path] = new TypeSyntax(sig.Location, new NamedType(path));
+            types.SyntaxValues = types.SyntaxValues.SetItem(
+                path, 
+                new TypeSyntax(sig.Location, new NamedType(path)));
         }
 
         public static void DeclareParameterTypes(TokenLocation loc, FunctionSignature sig, TypeFrame types) {
@@ -50,7 +52,10 @@ namespace Helix.Features.Functions {
                     var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, LifetimeOrigin.LocalValue, 0);
 
                     types.Variables[path.Variable] = new VariableSignature(path.Variable, type, parsePar.IsWritable);
-                    types.SyntaxValues[path.Variable] = new VariableAccessSyntax(loc, path.Variable);
+
+                    types.SyntaxValues = types.SyntaxValues.SetItem(
+                        path.Variable, 
+                        new VariableAccessSyntax(loc, path.Variable));
                 }
             }
         }
