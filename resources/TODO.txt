@@ -14,8 +14,14 @@ Interfaces
 Implicit struct conversions
 Fix syntax highlighting
 Add "until" to for loops and make "to" inclusive
+Add function argument region annotations
+Add conditional auto-copying when moving values between regions
+Reimplement array literals
+Fix binary expressions
+DONE - Fix for loops
+Check if we're in a loop for break/continue
 
-### The Lifetimes Update
+DONE ### The Lifetimes Update
 	DONE - Reimplement lvalues
 	DONE - Add back address of operator
 	DONE - Revive lifetime testing suite
@@ -26,17 +32,12 @@ Add "until" to for loops and make "to" inclusive
 	DONE - Infer region allocation for function parameters
 	DONE - Remove new expression
 	DONE - Invalidate variables if aliasing could occur in function calls
-	Reimplement array literals
 	DONE - Reimplement lifetimes with if expressions
-	Reimplement lifetimes with loops
+	DONE - Reimplement lifetimes with loops
 	DONE - Reimplement lifetimes with pointer dereferencing
 	DONE - Reimplement lifetimes with function calls
-	Add conditional auto-copying when moving values between regions
-	Add function argument region annotations
 	DONE - Clean up lifetime codegen
 	DONE - Store regions as ints not pointers
-	Fix binary expressions
-	Fix for loops
 
 ### The Primitives Update
 	Bytes

@@ -14,47 +14,49 @@ extern _Region* _region_new();
 extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
-typedef struct Point Point;
-typedef struct Point$ptr Point$ptr;
-typedef struct Point$ptr$ptr Point$ptr$ptr;
+typedef struct int$ptr int$ptr;
+typedef struct int$ptr$ptr int$ptr$ptr;
 
-void test14(_Region* _return_region, Point$ptr$ptr a, Point$ptr$ptr b);
+void test14(_Region* _return_region, int$ptr a);
 
-struct Point {
-    int x;
-    int y;
-};
-
-struct Point$ptr {
-    Point* data;
+struct int$ptr {
+    int* data;
     _Region* region;
 };
 
-struct Point$ptr$ptr {
-    Point$ptr* data;
+struct int$ptr$ptr {
+    int$ptr* data;
     _Region* region;
 };
 
-void test14(_Region* _return_region, Point$ptr$ptr a, Point$ptr$ptr b) {
-    /* Line 7: New variable declaration 'c' */
-    Point$ptr$ptr c = a;
+void test14(_Region* _return_region, int$ptr a) {
+    /* Line 7: New variable declaration 'x' */
+    int$ptr$ptr x = (int$ptr$ptr){ (&a), _return_region };
 
-    /* Line 9: If statement */
-    if (1U) { 
-        /* Line 10: Assignment statement */
-        c = b;
-    } 
+    /* Line 9: New variable declaration 'i' */
+    int i = 0U;
 
-    /* Line 13: Region calculation */
-    _Region* $B = (b.region);
-    $B = ((($B->depth) <= ((a.region)->depth)) ? $B : (a.region));
+    /* Line 9: While or for loop */
+    while (1U) {
+        /* Line 9: If statement */
+        if ((i > 10U)) { 
+            break;
+        } 
 
-    /* Line 13: New variable declaration 'x' */
-    Point* x = (Point*)_region_malloc($B, sizeof(Point));
-    (*x) = (Point){ 10U, 5U };
+        /* Line 10: New variable declaration 'b' */
+        int* b = (int*)_region_malloc((x.region), sizeof(int));
+        (*b) = 10U;
 
-    /* Line 14: Assignment statement */
-    (*(c.data)) = (Point$ptr){ x, $B };
+        /* Line 11: New variable declaration 'c' */
+        int$ptr* c = (int$ptr*)_region_malloc((x.region), sizeof(int$ptr));
+        (*c) = (int$ptr){ b, (x.region) };
+
+        /* Line 13: Assignment statement */
+        x = (int$ptr$ptr){ c, (x.region) };
+
+        /* Line 9: Assignment statement */
+        i = (i + 1U);
+    }
 }
 
 #if __cplusplus

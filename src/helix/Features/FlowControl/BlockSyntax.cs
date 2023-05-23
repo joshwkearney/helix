@@ -46,8 +46,7 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure { get; }
 
-        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements,
-                   bool isTypeChecked = false) {
+        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements) {
 
             this.Location = statements.Select(x => x.Location).Prepend(location).Last();
             this.Statements = statements;
@@ -56,8 +55,7 @@ namespace Helix.Features.FlowControl {
             this.IsPure = this.Statements.All(x => x.IsPure);
         }
 
-        public BlockSyntax(ISyntaxTree statement, bool isTypeChecked = false)
-            : this(statement.Location, new[] { statement }, isTypeChecked) { }
+        public BlockSyntax(ISyntaxTree statement) : this(statement.Location, new[] { statement }) { }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
@@ -65,7 +63,7 @@ namespace Helix.Features.FlowControl {
             }
 
             var stats = this.Statements.Select(x => x.CheckTypes(types).ToRValue(types)).ToArray();
-            var result = new BlockSyntax(this.Location, stats, true);
+            var result = new BlockSyntax(this.Location, stats);
             var returnType = stats
                 .LastOrNone()
                 .Select(x => types.ReturnTypes[x])

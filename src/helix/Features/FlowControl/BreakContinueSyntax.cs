@@ -52,7 +52,7 @@ namespace Helix.Features.FlowControl {
             this.isbreak = isbreak;
         }
 
-        public ISyntaxTree ToRValue() => this;
+        public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             this.SetReturnType(PrimitiveType.Void, types);

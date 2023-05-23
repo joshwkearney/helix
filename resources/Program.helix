@@ -3,10 +3,13 @@
 	var y as int;
 };
 
-func test14() {
-	var total = 0;
+func test14(var a as int*) {
+	var x = &a;
 
-	while true {
-		total = 10;
+	for i = 0 to 10 {
+		var b = 10;
+		var c = &b;
+
+		x = &c;
 	};
 };

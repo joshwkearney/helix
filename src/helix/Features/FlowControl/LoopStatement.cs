@@ -60,8 +60,8 @@ namespace Helix.Features.FlowControl {
             this.body = body;
         }
 
-        public Option<ISyntaxTree> ToRValue(TypeFrame types) {
-            if (!types.ReturnTypes.ContainsKey(this)) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            if (!this.IsTypeChecked(types)) {
                 throw TypeException.RValueRequired(this.Location);
             }
 
@@ -84,106 +84,71 @@ namespace Helix.Features.FlowControl {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            this.body.AnalyzeFlow(flow);
+            var modifiedVars = this.body.GetCapturedVariables(flow)
+                .Where(x => x.Kind == VariableCaptureKind.LocationCapture)
+                .Select(x => x.VariablePath)
+                .Where(x => flow.LocalLifetimes.ContainsKey(x.ToVariablePath()))
+                .ToArray();
 
-            flow.SyntaxLifetimes[this] = new LifetimeBundle();
-
-            // TODO: Redo all of this
-            // Get a list of all the mutable variables that could change in this loop body
-            /*var potentiallyModifiedVars = this.body.GetAllChildren()
-                .Select(x => x as VariableAccessParseSyntax)
-                .Where(x => x != null)
-                .Select(x => {
-                    if (types.TryResolvePath(this.Location.Scope, x.Name, out var path)) {
-                        return path;
-                    }
-                    else {
-                        return new IdentifierPath();
-                    }
-                })
-                .Where(x => x != new IdentifierPath())
-                .Where(x => types.Variables.ContainsKey(x))
-                .Select(x => types.Variables[x])
-                .SelectMany(x => {
-                    var list = new List<VariableSignature>();
-
-                    foreach (var (relPath, _) in VariablesHelper.GetMemberPaths(x.Type, types)) {
-                        list.Add(types.Variables[x.Path.Append(relPath)]);
-                    }
-
-                    return list;
-                })
-                .Where(x => x.IsWritable)
-                .Where(x => x.Type.IsRemote(types))
-                .Distinct()
-                .ToValueList();
-
-            var bodyVars = potentiallyModifiedVars
-                .Select(sig => {
-                    var newSig = new VariableSignature(
-                        sig.Type,
-                        sig.IsWritable,
-                        new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1));
-
-                    return newSig;
-                })
-                .ToValueList();
+            var modifiedVarMems = modifiedVars
+                .SelectMany(path => flow.Variables[path].Type
+                    .GetMembers(flow)
+                    .Where(x => !x.Value.IsValueType(flow))
+                    .Select(x => path.AppendMember(x.Key)))
+                .ToArray();
 
             // For every variable that might be modified in the loop, create a new lifetime
             // for it in the loop body so that if it does change, it is only changing the
             // new variable signature and not the old one
-            foreach (var sig in bodyVars) {
-                bodyTypes.Variables[sig.Path] = sig;
+            foreach (var memPath in modifiedVarMems) {
+                var bounds = flow.LocalLifetimes[memPath];
+                var newValueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
+
+                // Make sure the old value depends on the new root we just created
+                // This is to ensure inference works correctly for things above the loop
+                flow.LifetimeGraph.AddStored(bounds.ValueLifetime, newValueLifetime, null);
+
+                // Make sure our new value outlives its location
+                flow.LifetimeGraph.AddStored(newValueLifetime, bounds.LocationLifetime, null);
+
+                // Replace the variable's value with our new root. This is because
+                // this variable might be modified in the loop, so anything accessing
+                // it from this point forward must assume we don't know where the value
+                // came from.
+                bounds = bounds.WithValue(newValueLifetime);
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(memPath, bounds);
+
+                // Add this root to the root set
+                flow.LifetimeRoots = flow.LifetimeRoots.Add(newValueLifetime);
             }
 
-            var bodyBindings = new List<ISyntaxTree>();
+            var bodyFlow = new FlowFrame(flow);
+            this.body.AnalyzeFlow(bodyFlow);
 
-            var modifiedVars = bodyVars
-                .Select(x => x.Path)
-                .Except(bodyTypes.Variables.Values.Select(x => x.Path))
+            MutateLocals(bodyFlow, flow);
+            this.SetLifetimes(new LifetimeBundle(), flow);
+        }
+
+        private static void MutateLocals(
+            FlowFrame bodyFrame,
+            FlowFrame flow) {
+
+            var modifiedLocals = bodyFrame.LocalLifetimes
+                .Where(x => !flow.LocalLifetimes.Contains(x))
                 .Distinct()
-                .ToValueList();
+                .Select(x => x.Key)
+                .Where(flow.LocalLifetimes.ContainsKey)
+                .ToArray();
 
-            // For every variable that does change, change the scope after the loop
-            // by incrementing its mutation counter. Also, DO NOT link up the variable
-            // before the loop with the new signature we made. This forces any code in 
-            // the loop to treat this variable as a root since we don't know its origin
-            foreach (var path in modifiedVars) {
-                var sig = bodyTypes.Variables[path];
+            foreach (var varPath in modifiedLocals) {
+                var trueLifetime = bodyFrame.LocalLifetimes[varPath].ValueLifetime;
 
-                var newSig = new VariableSignature(
-                    sig.Type,
-                    sig.IsWritable,
-                    new Lifetime(sig.Path, sig.Lifetime.MutationCount + 1));
+                var postLifetime = trueLifetime.IncrementVersion();
+                flow.LifetimeGraph.AddAssignment(trueLifetime, postLifetime, null);
 
-                types.Variables[sig.Path] = newSig;
-                types.LifetimeGraph.AddAlias(newSig.Lifetime, sig.Lifetime);
-
-                bodyBindings.Add(new BindLifetimeSyntax(this.Location, sig.Lifetime, sig.Path));
+                var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);
             }
-
-            var postBindings = new List<ISyntaxTree>();
-
-            var unmodifiedVars = potentiallyModifiedVars
-                .Select(x => x.Path)
-                .Except(modifiedVars)
-                .Distinct()
-                .ToValueList();
-
-            // For every variable that is not changed in the loop, change the scope after
-            // the loop to just be the new signature we made earlier. Also, since it didn't
-            // change, we are safe to link up the original lifetime for this variable with what
-            // will be seen in the loop
-            foreach (var path in unmodifiedVars) {
-                var sig = bodyTypes.Variables[path];
-                var oldSig = types.Variables[path];
-
-                types.Variables[sig.Path] = sig;
-                types.LifetimeGraph.AddAlias(sig.Lifetime, oldSig.Lifetime);
-
-                bodyBindings.Add(new BindLifetimeSyntax(this.Location, sig.Lifetime, sig.Path));
-                postBindings.Add(new BindLifetimeSyntax(this.Location, sig.Lifetime, sig.Path));
-            }*/
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
@@ -191,7 +156,11 @@ namespace Helix.Features.FlowControl {
             var bodyWriter = new CStatementWriter(writer, bodyStats);
 
             this.body.GenerateCode(types, bodyWriter);
-            
+
+            if (bodyStats.Any() && bodyStats.Last().IsEmpty) {
+                bodyStats.RemoveAt(bodyStats.Count - 1);
+            }
+
             var stat = new CWhile() {
                 Condition = new CIntLiteral(1),
                 Body = bodyStats

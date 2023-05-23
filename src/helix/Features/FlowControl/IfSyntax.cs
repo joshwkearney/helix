@@ -164,7 +164,7 @@ namespace Helix.Features.FlowControl {
                 .Where(x => !flow.LocalLifetimes.Contains(x))
                 .Distinct()
                 .Select(x => x.Key)
-                .Where(x => flow.LocalLifetimes.ContainsKey(x))
+                .Where(flow.LocalLifetimes.ContainsKey)
                 .ToArray();
 
             foreach (var varPath in modifiedLocals) {
