@@ -155,32 +155,7 @@ namespace Helix.Features.Variables {
                     continue;
                 }
 
-                if (targetBounds.ValueLifetime == Lifetime.None) {
-                    // Pointer aliasing of doom!
-                    // If we're here it means that this assignment has a pointer to assign to
-                    // but no value, which means we don't know which variable this pointer is
-                    // an alias of. In that case we have to find every possible aliased variable
-                    // and update their value lifetimes in case this assignment modifies them.
-                    // We don't have to worry about locals aliased through a pointer because it
-                    // is the responsibility of the dereferencer to deal with aliasing in that
-                    // case.
-
-                    // Get every possible variable that could be aliased by our target
-                    var aliases = flow.GetAliasedLocals(
-                        targetBounds.LocationLifetime, 
-                        memType);
-
-                    // Add lifetime dependencies as if we are modifying each aliased variable.
-                    foreach (var alias in aliases) {
-                        flow.LifetimeGraph.AddStored(assignLifetime, alias.LocationLifetime, memType);
-                        flow.LifetimeGraph.AddAssignment(assignLifetime, alias.ValueLifetime, memType);
-                    }
-
-                    // Add lifetime dependencies to our target as well
-                    flow.LifetimeGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, memType);
-                    flow.LifetimeGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, memType);
-                }
-                else {
+                if (targetBounds.ValueLifetime.Origin == LifetimeOrigin.LocalValue) {
                     // Here we are storing into a known local variable, so we can replace its
                     // current value instead of adding more lifetimes to it. This is the
                     // best-case scenario because any lifetime inferences based on the previous
@@ -193,11 +168,11 @@ namespace Helix.Features.Variables {
 
                     // Make sure the new value outlives its variable
                     flow.LifetimeGraph.AddStored(newValue, newTargetBounds.LocationLifetime, memType);
-
-                    // Add dependencies between our new target and the assignment lifetimes
-                    flow.LifetimeGraph.AddStored(assignLifetime, newTargetBounds.LocationLifetime, memType);
-                    flow.LifetimeGraph.AddAssignment(assignLifetime, newTargetBounds.ValueLifetime, memType);
                 }
+
+                // Add dependencies between our new target and the assignment lifetimes
+                flow.LifetimeGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, memType);
+                flow.LifetimeGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, memType);
             }
 
             this.SetLifetimes(new LifetimeBundle(), flow);

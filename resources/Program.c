@@ -10,39 +10,44 @@ typedef struct _Region {
 	unsigned int depth;
 } _Region;
 
-extern _Region* _region_create();
+extern _Region* _region_new();
 extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
-typedef struct Point Point;
-typedef struct Point$ptr Point$ptr;
+typedef struct int$ptr int$ptr;
+typedef struct int$ptr$ptr int$ptr$ptr;
 
-void test(_Region* _return_region);
-Point$ptr create(_Region* _return_region);
+int$ptr test12(_Region* _return_region, int$ptr$ptr A);
 
-struct Point {
-    int x;
-    int y;
-};
-
-struct Point$ptr {
-    Point* data;
+struct int$ptr {
+    int* data;
     _Region* region;
 };
 
-void test(_Region* _return_region) {
-    Point$ptr $A = create(_pool);
+struct int$ptr$ptr {
+    int$ptr* data;
+    _Region* region;
+};
 
-    /* Line 7: New variable declaration 'p' */
-    Point$ptr p = $A;
-}
+int$ptr test12(_Region* _return_region, int$ptr$ptr A) {
+    /* Line 2: New variable declaration 'a' */
+    int* a = (int*)_region_malloc(_return_region, sizeof(int));
+    (*a) = 5U;
 
-Point$ptr create(_Region* _return_region) {
-    /* Line 11: New variable declaration 'p' */
-    Point* p_1 = (Point*)_region_malloc(_return_region, sizeof(Point));
-    (*p_1) = (Point){ 0U, 0U };
+    /* Line 3: New variable declaration 'b' */
+    int* b = (int*)_region_malloc(_return_region, sizeof(int));
+    (*b) = 10U;
 
-    return (Point$ptr){ p_1, _return_region };
+    /* Line 5: New variable declaration 'x' */
+    int$ptr x = (int$ptr){ a, _return_region };
+
+    /* Line 6: New variable declaration 'z' */
+    int$ptr$ptr z = (int$ptr$ptr){ (&x), _return_region };
+
+    /* Line 8: Assignment statement */
+    (*(z.data)) = (int$ptr){ b, _return_region };
+
+    return x;
 }
 
 #if __cplusplus
