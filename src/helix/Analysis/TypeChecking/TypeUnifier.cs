@@ -49,6 +49,28 @@ namespace Helix.Analysis.TypeChecking {
             return TryUnify(type1, type2, types).Kind.IsSubsetOf(UnificationKind.Convert);
         }
 
+        public static bool CanUnifyFrom(this HelixType type1, HelixType type2, TypeFrame types, out HelixType resultType) {
+            if (type2.CanUnifyTo(type1, types)) {
+                resultType = type1;
+                return true;
+            }
+            else if (type1.CanUnifyTo(type2, types)) {
+                resultType = type2;
+                return true;
+            }
+
+            var abstract1 = type1.GetNaturalSupertype(types);
+            var abstract2 = type2.GetNaturalSupertype(types);
+
+            if (abstract1 == abstract2) {
+                resultType = abstract1;
+                return true;
+            }
+
+            resultType = PrimitiveType.Void;
+            return false;
+        }
+
         public static bool CanUnifyTo(this ISyntaxTree fromSyntax, HelixType toType, TypeFrame types) {
             var fromType = fromSyntax.GetReturnType(types);
 
@@ -69,21 +91,11 @@ namespace Helix.Analysis.TypeChecking {
             var type1 = syntax1.GetReturnType(types);
             var type2 = syntax2.GetReturnType(types);
 
-            if (type2.CanUnifyTo(type1, types)) {
-                return syntax1;
-            }
-            else if (type1.CanUnifyTo(type2, types)) {
-                return syntax1.UnifyTo(type2, types);
+            if (!type1.CanUnifyFrom(type2, types, out var result)) {
+                throw TypeException.UnexpectedType(syntax1.Location, type2, type1);
             }
 
-            var abstract1 = type1.GetNaturalSupertype(types);
-            var abstract2 = type2.GetNaturalSupertype(types);
-
-            if (abstract1 == abstract2) {
-                return syntax1.UnifyTo(abstract1, types);
-            }
-
-            throw TypeException.UnexpectedType(syntax1.Location, type2, type1);
+            return syntax1.UnifyTo(result, types);
         }
 
         private static UnificationResult TryUnify(HelixType first, HelixType second, TypeFrame types) {

@@ -14,14 +14,29 @@ extern _Region* _region_new();
 extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
-void test14(_Region* _return_region);
+typedef struct int$array int$array;
+typedef struct int$array$ptr int$array$ptr;
 
-void test14(_Region* _return_region) {
-    /* Line 2: New variable declaration 'x' */
-    int x = (4U + 9U);
+void helix_main(_Region* _return_region, int$array$ptr A);
 
-    /* Line 4: Assignment statement */
-    x = (x + 7U);
+struct int$array {
+    int* data;
+    _Region* region;
+    int count;
+};
+
+struct int$array$ptr {
+    int$array* data;
+    _Region* region;
+};
+
+void helix_main(_Region* _return_region, int$array$ptr A) {
+    /* Line 2: Array literal */
+    int $A[] = { 10U, 9U, 8U, 7U, 6U };
+    int$array $array_literal_0 = (int$array){ $A, _return_region };
+
+    /* Line 2: New variable declaration 'array' */
+    int$array array = $array_literal_0;
 }
 
 #if __cplusplus

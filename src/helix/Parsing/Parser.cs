@@ -145,6 +145,9 @@ namespace Helix.Parsing {
             else if (this.Peek(TokenKind.NewKeyword)) {
                 return this.NewExpression();
             }
+            else if (this.Peek(TokenKind.OpenBracket)) {
+                return this.ArrayLiteral();
+            }
             else {
                 var next = this.Advance();
 

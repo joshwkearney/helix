@@ -280,7 +280,10 @@ namespace Helix {
             writer.WriteStatement(new CVariableDeclaration() {
                 Name = name,
                 Type = new CPointerType(cReturnType),
-                Assignment = new CVariableLiteral($"({cReturnType.WriteToC()}*)_region_malloc({allocLifetime.WriteToC()}, sizeof({cReturnType.WriteToC()}))")
+                Assignment = new CRegionAllocExpression() {
+                    Type = cReturnType,
+                    Lifetime = allocLifetime
+                }
             });
 
             var assignmentDecl = new CAssignment() {

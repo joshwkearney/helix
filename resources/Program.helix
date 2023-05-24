@@ -1,5 +1,5 @@
-﻿func test14() {
-	var x = 4 + 9;
+﻿func helix_main(let A as int[]*) {
+	var array = [10, 9, 8, 7, 6];
 
-	x += 7;
+	//A* = array;
 };

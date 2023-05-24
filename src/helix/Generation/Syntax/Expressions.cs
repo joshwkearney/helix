@@ -9,6 +9,33 @@ namespace Helix.Generation.Syntax {
         public string WriteToC() => this.Value + "U";
     }
 
+    public record CRegionAllocExpression : ICSyntax {
+        public ICSyntax Type { get; init; }
+
+        public ICSyntax Lifetime { get; init; }
+
+        public int Amount { get; init; } = 1;
+
+        public string WriteToC() {
+            if (this.Amount == 1) {
+                return $"({this.Type.WriteToC()}*)_region_malloc({this.Lifetime.WriteToC()}, sizeof({this.Type.WriteToC()}))";
+            }
+            else {
+                return $"({this.Type.WriteToC()}*)_region_malloc({this.Lifetime.WriteToC()}, {this.Amount} * sizeof({this.Type.WriteToC()}))";
+            }
+        }
+    }
+
+    public record CIndexExpression : ICSyntax {
+        public ICSyntax Target { get; init; }
+
+        public ICSyntax Index { get; init; }
+
+        public string WriteToC() {
+            return this.Target.WriteToC() + "[" + this.Index.WriteToC() + "]";
+        }
+    }
+
     public record CCompoundExpression : ICSyntax {
         public IEnumerable<ICSyntax> Arguments { get; init; } = null;
 

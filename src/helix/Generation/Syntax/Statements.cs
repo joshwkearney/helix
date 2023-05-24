@@ -61,6 +61,25 @@ namespace Helix.Generation.Syntax {
         }
     }
 
+    /// <summary>
+    /// This is required in addition to CVariableDeclaration because
+    /// array declarations require a very particular syntax to work in
+    /// both C and C++
+    /// </summary>
+    public record CArrayDeclaration() : ICStatement {
+        public IReadOnlyList<ICSyntax> Elements { get; init; }
+
+        public ICSyntax ElementType { get; init; } = null;
+
+        public string Name { get; init; } = null;
+
+        public void WriteToC(int indentLevel, StringBuilder sb) {
+            CHelper.Indent(indentLevel, sb);
+            sb.Append(this.ElementType.WriteToC()).Append(' ').Append(this.Name).Append("[]");
+            sb.Append(" = { ").AppendJoin(", ", this.Elements.Select(x => x.WriteToC())).AppendLine(" };");
+        }
+    }
+
     public record CReturn() : ICStatement {
         private readonly Option<ICSyntax> target = Option.None;
 

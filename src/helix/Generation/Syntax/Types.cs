@@ -6,4 +6,8 @@
     public record CPointerType(ICSyntax InnerType) : ICSyntax {
         public string WriteToC() => this.InnerType.WriteToC() + "*";
     }
+
+    public record CArrayType(ICSyntax InnerType) : ICSyntax {
+        public string WriteToC() => this.InnerType.WriteToC() + "[]";
+    }
 }
