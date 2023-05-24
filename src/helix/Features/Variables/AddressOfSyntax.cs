@@ -7,18 +7,18 @@ using Helix.Parsing;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 
-namespace Helix.Features.Memory {
+namespace Helix.Features.Variables {
     public class AddressOfSyntax : ISyntaxTree {
         private readonly ISyntaxTree target;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
+        public IEnumerable<ISyntaxTree> Children => new[] { target };
 
-        public bool IsPure => this.target.IsPure;
+        public bool IsPure => target.IsPure;
 
         public AddressOfSyntax(TokenLocation loc, ISyntaxTree target) {
-            this.Location = loc;
+            Location = loc;
             this.target = target;
         }
 
@@ -29,7 +29,7 @@ namespace Helix.Features.Memory {
 
             var target = this.target.CheckTypes(types).ToLValue(types);
             var ptrType = (PointerType)target.GetReturnType(types);
-            var result = new AddressOfSyntax(this.Location, target);
+            var result = new AddressOfSyntax(Location, target);
 
             var capturedVars = target.GetCapturedVariables(types)
                 .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture))
@@ -50,17 +50,17 @@ namespace Helix.Features.Memory {
                 return;
             }
 
-            this.target.AnalyzeFlow(flow);
-            var locationLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()].LocationLifetime;
+            target.AnalyzeFlow(flow);
+            var locationLifetime = target.GetLifetimes(flow)[new IdentifierPath()].LocationLifetime;
 
             // Make sure we're taking the address of a variable location
             if (locationLifetime == Lifetime.None) {
                 // TODO: Add more specific error message
-                throw TypeException.ExpectedVariableType(this.Location, this.target.GetReturnType(flow));
+                throw TypeException.ExpectedVariableType(Location, target.GetReturnType(flow));
             }
 
-            var dict = new Dictionary<IdentifierPath, LifetimeBounds>() { 
-                { new IdentifierPath(), new LifetimeBounds(locationLifetime) } 
+            var dict = new Dictionary<IdentifierPath, LifetimeBounds>() {
+                { new IdentifierPath(), new LifetimeBounds(locationLifetime) }
             };
 
             this.SetLifetimes(new LifetimeBundle(dict), flow);
@@ -69,7 +69,7 @@ namespace Helix.Features.Memory {
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
-                    this.target.GenerateCode(types, writer),
+                    target.GenerateCode(types, writer),
                     writer.GetLifetime(this.GetLifetimes(types)[new IdentifierPath()].ValueLifetime, types)
                 },
                 Type = writer.ConvertType(this.GetReturnType(types))

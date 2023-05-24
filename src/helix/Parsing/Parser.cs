@@ -62,8 +62,11 @@ namespace Helix.Parsing {
             if (this.Peek(TokenKind.FunctionKeyword)) {
                 return this.FunctionDeclaration();
             }
-            else if (this.Peek(TokenKind.StructKeyword) || this.Peek(TokenKind.UnionKeyword)) {
-                return this.AggregateDeclaration();
+            else if (this.Peek(TokenKind.StructKeyword)) {
+                return this.StructDeclaration();
+            }
+            else if (this.Peek(TokenKind.UnionKeyword)) {
+                return this.UnionDeclaration();
             }
             else if (this.Peek(TokenKind.ExternKeyword)) {
                 return this.ExternFunctionDeclaration();

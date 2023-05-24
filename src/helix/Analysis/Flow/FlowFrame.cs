@@ -26,6 +26,8 @@ namespace Helix.Analysis.Flow {
 
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
+        public IDictionary<IdentifierPath, StructSignature> Unions { get; }
+
         // Frame-specific things
         public ImmutableDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; set; }
 
@@ -38,6 +40,7 @@ namespace Helix.Analysis.Flow {
             this.Variables = frame.Variables;
             this.Functions = frame.Functions;
             this.Structs = frame.Structs;
+            this.Unions = frame.Unions;
 
             this.LifetimeGraph = new();
             this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
@@ -53,6 +56,7 @@ namespace Helix.Analysis.Flow {
             this.Variables = prev.Variables;
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;
+            this.Unions = prev.Unions;
 
             this.LifetimeGraph = prev.LifetimeGraph;
             this.SyntaxLifetimes = prev.SyntaxLifetimes;

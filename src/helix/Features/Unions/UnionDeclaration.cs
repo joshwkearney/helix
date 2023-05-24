@@ -10,26 +10,15 @@ using Helix.Analysis.TypeChecking;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private IDeclaration StructDeclaration() {
-            var start = this.Advance(TokenKind.StructKeyword);
+        private IDeclaration UnionDeclaration() {
+            var start = this.Advance(TokenKind.UnionKeyword);
             var name = this.Advance(TokenKind.Identifier).Value;
             var mems = new List<ParseStructMember>();
 
             this.Advance(TokenKind.OpenBrace);
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                bool isWritable;
-                Token memStart;
-
-                if (this.Peek(TokenKind.VarKeyword)) {
-                    memStart = this.Advance(TokenKind.VarKeyword);
-                    isWritable = true;
-                }
-                else {
-                    memStart = this.Advance(TokenKind.LetKeyword);
-                    isWritable = false;
-                }
-
+                var memStart = this.Advance(TokenKind.LetKeyword);
                 var memName = this.Advance(TokenKind.Identifier);
                 this.Advance(TokenKind.AsKeyword);
 
@@ -37,7 +26,7 @@ namespace Helix.Parsing {
                 var memLoc = memStart.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);
-                mems.Add(new ParseStructMember(memLoc, memName.Value, memType, isWritable));
+                mems.Add(new ParseStructMember(memLoc, memName.Value, memType, false));
             }
 
             this.Advance(TokenKind.CloseBrace);
@@ -45,18 +34,18 @@ namespace Helix.Parsing {
             var loc = start.Location.Span(last.Location);
             var sig = new StructParseSignature(loc, name, mems);
 
-            return new StructDeclaration(loc, sig);
+            return new UnionDeclaration(loc, sig);
         }
     }
 }
 
 namespace Helix.Features.Aggregates {
-    public record StructDeclaration : IDeclaration {
+    public record UnionDeclaration : IDeclaration {
         private readonly StructParseSignature signature;
 
         public TokenLocation Location { get; }
 
-        public StructDeclaration(TokenLocation loc, StructParseSignature sig) {
+        public UnionDeclaration(TokenLocation loc, StructParseSignature sig) {
             this.Location = loc;
             this.signature = sig;
         }
@@ -76,13 +65,13 @@ namespace Helix.Features.Aggregates {
 
         public void DeclareTypes(TypeFrame types) {
             var sig = this.signature.ResolveNames(types);
-            var structType = new NamedType(sig.Path);
+            var unionType = new NamedType(sig.Path);
 
-            types.Structs[sig.Path] = sig;
+            types.Unions[sig.Path] = sig;
 
             // Register this declaration with the code generator so 
             // types are constructed in order
-            types.TypeDeclarations[structType] = writer => this.RealCodeGenerator(sig, writer);
+            types.TypeDeclarations[unionType] = writer => this.RealCodeGenerator(sig, writer);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
@@ -108,29 +97,57 @@ namespace Helix.Features.Aggregates {
         public void GenerateCode(FlowFrame types, ICWriter writer) { }
 
         private void RealCodeGenerator(StructSignature signature, ICWriter writer) {
-            var name = writer.GetVariableName(signature.Path);
+            var structName = writer.GetVariableName(signature.Path);
+            var unionName = writer.GetVariableName(signature.Path) + "$union";
 
-            var mems = signature.Members
+            var unionMems = signature.Members
                 .Select(x => new CParameter() {
                     Type = writer.ConvertType(x.Type),
                     Name = x.Name
                 })
                 .ToArray();
 
-            var prototype = new CAggregateDeclaration() {
-                Name = name
+            var unionPrototype = new CAggregateDeclaration() {
+                Name = unionName,
+                IsUnion = true
             };
 
-            var fullDeclaration = new CAggregateDeclaration() {
-                Name = name,
-                Members = mems
+            var unionDeclaration = new CAggregateDeclaration() {
+                Name = unionName,
+                Members = unionMems,
+                IsUnion = true
+            };
+
+            var structMems = new[] { 
+                new CParameter() {
+                    Name = "tag",
+                    Type = new CNamedType("int")
+                },
+                new CParameter() {
+                    Name = "data",
+                    Type = new CNamedType(unionName)
+                }
+            };
+
+            var structPrototype = new CAggregateDeclaration() {
+                Name = structName
+            };
+
+            var structDeclaration = new CAggregateDeclaration() {
+                Name = structName,
+                Members = structMems
             };
 
             // Write forward declaration
-            writer.WriteDeclaration1(prototype);
+            writer.WriteDeclaration1(unionPrototype);
+            writer.WriteDeclaration1(structPrototype);
+            writer.WriteDeclaration3(new CEmptyLine());
 
             // Write full struct
-            writer.WriteDeclaration3(fullDeclaration);
+            writer.WriteDeclaration3(unionDeclaration);
+            writer.WriteDeclaration3(new CEmptyLine());
+
+            writer.WriteDeclaration3(structDeclaration);
             writer.WriteDeclaration3(new CEmptyLine());
         }
     }

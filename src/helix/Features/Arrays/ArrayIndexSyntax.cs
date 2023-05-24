@@ -3,8 +3,8 @@ using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Features.Arrays;
-using Helix.Features.Memory;
 using Helix.Parsing;
+using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {

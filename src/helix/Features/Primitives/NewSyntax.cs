@@ -2,7 +2,6 @@
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Features.Aggregates;
-using Helix.Features.Memory;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 
@@ -46,7 +45,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Memory {
+namespace Helix.Features.Primitives {
     public class NewSyntax : ISyntaxTree {
         private readonly ISyntaxTree type;
         private readonly IReadOnlyList<string> names;
@@ -111,17 +110,27 @@ namespace Helix.Features.Memory {
                 return new BoolLiteral(this.Location, singBool.Value).CheckTypes(types);
             }
             else if (type is NamedType named) {
-                if (!types.Structs.TryGetValue(named.Path, out var sig)) {
-                    throw TypeException.ExpectedStructType(this.type.Location, type);
+                if (types.Structs.TryGetValue(named.Path, out var sig)) {
+                    var result = new NewStructSyntax(
+                        this.Location,
+                        sig,
+                        this.names,
+                        this.values);
+
+                    return result.CheckTypes(types);
+                }
+                else if (types.Unions.TryGetValue(named.Path, out sig)) {
+                    var result = new NewUnionSyntax(
+                        this.Location,
+                        sig,
+                        this.names,
+                        this.values);
+
+                    return result.CheckTypes(types);
                 }
 
-                var result = new NewStructSyntax(
-                    this.Location,
-                    sig,
-                    this.names,
-                    this.values);
+                throw TypeException.ExpectedStructType(this.type.Location, type);
 
-                return result.CheckTypes(types);
             }
             else {
                 throw new TypeException(

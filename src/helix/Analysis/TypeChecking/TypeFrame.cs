@@ -31,6 +31,8 @@ namespace Helix.Analysis.TypeChecking {
 
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
+        public IDictionary<IdentifierPath, StructSignature> Unions { get; }
+
         public IDictionary<HelixType, DeclarationCG> TypeDeclarations { get; }
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
@@ -55,9 +57,9 @@ namespace Helix.Analysis.TypeChecking {
                 new TypeSyntax(default, PrimitiveType.Bool));
 
             this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
-            this.Structs = new Dictionary<IdentifierPath, StructSignature>();
+            this.Structs = new Dictionary<IdentifierPath, StructSignature>(); 
+            this.Unions = new Dictionary<IdentifierPath, StructSignature>();
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
-
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
             this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
         }
@@ -68,6 +70,7 @@ namespace Helix.Analysis.TypeChecking {
             this.Variables = prev.Variables;
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;
+            this.Unions = prev.Unions;
             this.TypeDeclarations = prev.TypeDeclarations;
 
             this.ReturnTypes = prev.ReturnTypes;

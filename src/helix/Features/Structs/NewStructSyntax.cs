@@ -179,13 +179,6 @@ namespace Helix.Features.Aggregates {
                 throw new InvalidOperationException();
             }
 
-            var name = writer.GetVariableName();
-
-            var varDecl = new CVariableDeclaration() {
-                Type = writer.ConvertType(new NamedType(this.sig.Path)),
-                Name = name
-            };
-
             var mems = this.values
                 .Select(x => x.GenerateCode(types, writer))
                 .ToArray();

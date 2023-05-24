@@ -12,6 +12,8 @@ namespace Helix.Analysis {
 
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
+        public IDictionary<IdentifierPath, StructSignature> Unions { get; }
+
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
         public IDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }

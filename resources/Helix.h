@@ -1,4 +1,8 @@
-﻿typedef unsigned int _helix_bool;
+﻿#ifdef _MSC_VER
+#define inline __inline
+#endif
+
+typedef unsigned int _helix_bool;
 typedef unsigned int _helix_void;
 typedef unsigned int _helix_int;
 

@@ -1,13 +1,8 @@
 ﻿using Helix.Analysis.Types;
+using Helix.Features.Aggregates;
 using Helix.Features.FlowControl;
-using Helix.Features.Memory;
+using Helix.Features.Primitives;
 using Helix.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Helix.Analysis.TypeChecking {
     public static class TypeUnifier {
@@ -181,28 +176,39 @@ namespace Helix.Analysis.TypeChecking {
                 return UnificationResult.Pun(second);
             }
             else if (second is NamedType named) {
-                if (!types.Structs.TryGetValue(named.Path, out var sig)) {
-                    return UnificationResult.None;
+                if (types.Structs.TryGetValue(named.Path, out var sig)) {
+                    return TryUnifyVoidToStruct(sig, types);
                 }
-
-                var memsConvertable = sig.Members
-                    .Select(x => TryUnify(PrimitiveType.Void, x.Type, types))
-                    .All(x => x.Kind.IsSubsetOf(UnificationKind.Convert));
-
-                if (!memsConvertable) {
-                    return UnificationResult.None;
+                else if (types.Unions.TryGetValue(named.Path, out sig)) {
+                    return TryUnifyVoidToStruct(sig, types);
                 }
-
-                return new UnificationResult() {
-                    Kind = UnificationKind.Convert,
-                    Unifier = (syntax, t) => new BlockSyntax(syntax.Location, new[] {
-                        syntax,
-                        new NewSyntax(syntax.Location, second.ToSyntax(syntax.Location)).CheckTypes(types)
-                    })
-                };
             }
 
             return UnificationResult.None;
+        }
+
+        private static UnificationResult TryUnifyVoidToStruct(StructSignature sig, TypeFrame types) {
+            var memsConvertable = TryUnify(PrimitiveType.Void, sig.Members[0].Type, types)
+                .Kind
+                .IsSubsetOf(UnificationKind.Convert);
+
+            if (!memsConvertable) {
+                return UnificationResult.None;
+            }
+
+            var structType = new NamedType(sig.Path);
+
+            return new UnificationResult() {
+                Kind = UnificationKind.Convert,
+                Unifier = (syntax, t) => {
+                    var block = new BlockSyntax(syntax.Location, new[] {
+                        syntax,
+                        new NewSyntax(syntax.Location, structType.ToSyntax(syntax.Location))
+                    });
+
+                    return block.CheckTypes(t);
+                }
+            };
         }
     }
 }

@@ -12,10 +12,9 @@ Bounds check arrays
 Interfaces
 Implicit struct conversions
 DONE - Fix syntax highlighting
-Add "until" to for loops and make "to" inclusive
 Add function argument region annotations
 Add conditional auto-copying when moving values between regions
-Reimplement array literals
+DONE - Reimplement array literals
 DONE - Fix binary expressions
 DONE - Fix for loops
 Check if we're in a loop for break/continue

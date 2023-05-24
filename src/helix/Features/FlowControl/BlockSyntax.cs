@@ -55,7 +55,11 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            var stats = this.Statements.Select(x => x.CheckTypes(types).ToRValue(types)).ToArray();
+            var stats = new List<ISyntaxTree>();
+            foreach (var stat in this.Statements) {
+                stats.Add(stat.CheckTypes(types).ToRValue(types));
+            }
+
             var result = new BlockSyntax(this.Location, stats);
             var returnType = stats
                 .LastOrNone()

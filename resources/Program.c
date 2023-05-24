@@ -2,6 +2,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 typedef unsigned int _helix_bool;
 typedef unsigned int _helix_void;
 typedef unsigned int _helix_int;
@@ -14,29 +18,35 @@ extern _Region* _region_new();
 extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
-typedef struct int$array int$array;
-typedef struct int$array$ptr int$array$ptr;
+typedef struct int$ptr int$ptr;
+typedef union IntOption$union IntOption$union;
+typedef struct IntOption IntOption;
 
-void helix_main(_Region* _return_region, int$array$ptr A);
+void helix_main(_Region* _return_region, int$ptr b);
 
-struct int$array {
+struct int$ptr {
     int* data;
     _Region* region;
-    int count;
 };
 
-struct int$array$ptr {
-    int$array* data;
-    _Region* region;
+
+union IntOption$union {
+    int none;
+    int$ptr some;
 };
 
-void helix_main(_Region* _return_region, int$array$ptr A) {
-    /* Line 2: Array literal */
-    int $A[] = { 10U, 9U, 8U, 7U, 6U };
-    int$array $array_literal_0 = (int$array){ $A, _return_region };
+struct IntOption {
+    int tag;
+    IntOption$union data;
+};
 
-    /* Line 2: New variable declaration 'array' */
-    int$array array = $array_literal_0;
+void helix_main(_Region* _return_region, int$ptr b) {
+    /* Line 2: Union literal */
+    IntOption$union $new_union_0;
+    ($new_union_0.some) = b;
+
+    /* Line 2: New variable declaration 'a' */
+    IntOption a = (IntOption){ 1U, $new_union_0 };
 }
 
 #if __cplusplus

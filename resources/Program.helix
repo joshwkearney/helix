@@ -1,5 +1,13 @@
-﻿func helix_main(let A as int[]*) {
-	var array = [10, 9, 8, 7, 6];
+﻿func helix_main(let b as int*) as int {
+	let a = new IntOption { some= b };
 
-	//A* = array;
+	if a is some then {
+		a + 10;
+	}
+	else 0;
+};
+
+union IntOption {
+	let none as void;
+	let some as int;
 };
