@@ -75,7 +75,7 @@ namespace Helix.Features.Functions {
             for (int i = 0; i < this.args.Count; i++) {
                 var expectedType = sig.Parameters[i].Type;
 
-                newArgs[i] = this.args[i].CheckTypes(types).ConvertTypeTo(expectedType, types);
+                newArgs[i] = this.args[i].CheckTypes(types).UnifyTo(expectedType, types);
             }
 
             var path = this.Location.Scope.Append("$invoke_temp_" + tempCounter++);

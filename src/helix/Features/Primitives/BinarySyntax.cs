@@ -210,8 +210,8 @@ namespace Helix.Features.Primitives {
             var left = this.left.CheckTypes(types).ToRValue(types);
             var right = this.right.CheckTypes(types).ToRValue(types);
 
-            left = left.ConvertTypeFrom(right, types);
-            right = right.ConvertTypeFrom(left, types);
+            left = left.UnifyFrom(right, types);
+            right = right.UnifyFrom(left, types);
 
             var leftType = types.ReturnTypes[left];
             var rightType = types.ReturnTypes[right];

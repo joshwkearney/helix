@@ -6,18 +6,17 @@ DONE - Character literals
 DONE - Lines numbers in c comments
 
 Improve array type inference
-Make declarations symmetric with let/var
 Add closures
 Add defer
 Bounds check arrays
 Interfaces
 Implicit struct conversions
-Fix syntax highlighting
+DONE - Fix syntax highlighting
 Add "until" to for loops and make "to" inclusive
 Add function argument region annotations
 Add conditional auto-copying when moving values between regions
 Reimplement array literals
-Fix binary expressions
+DONE - Fix binary expressions
 DONE - Fix for loops
 Check if we're in a loop for break/continue
 
@@ -30,14 +29,12 @@ DONE ### The Lifetimes Update
 	DONE - Invalidate variables if aliasing could occur in assignments
 	DONE - Infer region allocation for let/var
 	DONE - Infer region allocation for function parameters
-	DONE - Remove new expression
 	DONE - Invalidate variables if aliasing could occur in function calls
 	DONE - Reimplement lifetimes with if expressions
 	DONE - Reimplement lifetimes with loops
 	DONE - Reimplement lifetimes with pointer dereferencing
 	DONE - Reimplement lifetimes with function calls
 	DONE - Clean up lifetime codegen
-	DONE - Store regions as ints not pointers
 
 ### The Primitives Update
 	Bytes

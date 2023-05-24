@@ -61,7 +61,7 @@ namespace Helix.Features.Arrays {
             var index = this.index
                 .CheckTypes(types)
                 .ToRValue(types)
-                .ConvertTypeTo(PrimitiveType.Int, types);
+                .UnifyTo(PrimitiveType.Int, types);
 
             // Make sure we have an array
             if (types.ReturnTypes[target] is not ArrayType arrayType) {

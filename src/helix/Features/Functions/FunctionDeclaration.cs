@@ -139,7 +139,7 @@ namespace Helix.Features.Functions {
 
             body = body.CheckTypes(types)
                 .ToRValue(types)
-                .ConvertTypeTo(sig.ReturnType, types);
+                .UnifyTo(sig.ReturnType, types);
 
 #if DEBUG
             // Debug check: make sure that every syntax tree has a return type

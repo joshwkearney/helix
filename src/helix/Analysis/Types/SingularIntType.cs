@@ -18,16 +18,8 @@ namespace Helix.Analysis.Types {
         public override ISyntaxTree ToSyntax(TokenLocation loc) {
             return new IntLiteral(loc, this.Value);
         }
-
-        public override UnificationKind TestUnification(HelixType other, TypeFrame types) {
-            return PrimitiveType.Int.TestUnification(other, types);
-        }
-
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, UnificationKind unify, TypeFrame types) {
-            return PrimitiveType.Int.UnifyTo(other, syntax, unify, types);
-        }
-
-        public override HelixType ToMutableType() {
+        
+        public override HelixType GetNaturalSupertype(ITypedFrame types) {
             return PrimitiveType.Int;
         }
 

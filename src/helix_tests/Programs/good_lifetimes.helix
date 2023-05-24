@@ -156,7 +156,7 @@ struct Point {
 	var y as int;
 };
 
-func test14(let a as Point**, let b as Point**) {
+func test15(let a as Point**, let b as Point**) {
 	var c = a;
 
 	if true then {
@@ -165,4 +165,16 @@ func test14(let a as Point**, let b as Point**) {
 
 	var x = new Point { 10, 5 };
 	c* = &x;
+};
+
+// ###
+func test16(var a as int*) {
+	var x = &a;
+
+	for i = 0 to 10 {
+		var b = 10;
+		var c = &b;
+
+		x = &c;
+	};
 };

@@ -41,22 +41,5 @@ namespace Helix.Analysis.Types {
 
             return new[] { this };
         }
-
-        public override UnificationKind TestUnification(HelixType other, TypeFrame types) {
-            if (this == other) {
-                return UnificationKind.Pun;
-            }
-            else {
-                return UnificationKind.None;
-            }
-        }
-
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax, UnificationKind unificationKind, TypeFrame types) {
-            if (this.TestUnification(other, types).IsSubsetOf(unificationKind)) {
-                return syntax;
-            }
-
-            throw new InvalidOperationException();
-        }
     }
 }

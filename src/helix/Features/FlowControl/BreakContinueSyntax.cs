@@ -45,9 +45,7 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure => false;
 
-        public BreakContinueSyntax(TokenLocation loc, bool isbreak, 
-            bool istypeChecked = false) {
-
+        public BreakContinueSyntax(TokenLocation loc, bool isbreak) {
             this.Location = loc;
             this.isbreak = isbreak;
         }

@@ -44,17 +44,17 @@ contexts [] {
       }
       
       : pattern {
-         regex \= (?:\b)(if|then|else|while|do|for|break|continue|return)(?:\b)
+         regex \= (?:\b)(if|then|else|while|for|to|until|break|continue|return)(?:\b)
          styles []= .keyword_control;
       }
       
       : pattern {
-         regex \= (\bint|void|true|false\b)
+         regex \= (\bvoid|true|false\b)
          styles []= .keyword_constant;
       }
       
       : pattern {
-         regex \= (?:\b)(int|bool|void|var|let|func|as|cast|extern|to)(?:\b)
+         regex \= (?:\b)(int|bool|word|void|var|let|func|as|new|cast|extern)(?:\b)
          styles []= .keyword;
       }
       

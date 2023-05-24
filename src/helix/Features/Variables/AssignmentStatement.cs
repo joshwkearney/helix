@@ -86,7 +86,7 @@ namespace Helix.Features.Variables {
             var assign = this.assign
                 .CheckTypes(types)
                 .ToRValue(types)
-                .ConvertTypeTo(targetType, types);            
+                .UnifyTo(targetType, types);            
 
             var result = new AssignmentStatement(
                 this.Location,

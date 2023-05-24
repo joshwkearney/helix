@@ -34,10 +34,6 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.FlowControl {
     public record BlockSyntax : ISyntaxTree {
-        private static int idCounter = 0;
-
-        private readonly int id;
-
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => this.Statements;
@@ -47,11 +43,8 @@ namespace Helix.Features.FlowControl {
         public bool IsPure { get; }
 
         public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements) {
-
             this.Location = statements.Select(x => x.Location).Prepend(location).Last();
             this.Statements = statements;
-            this.id = idCounter++;
-
             this.IsPure = this.Statements.All(x => x.IsPure);
         }
 

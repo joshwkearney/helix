@@ -24,48 +24,7 @@ namespace Helix.Analysis.Types {
         public override PassingSemantics GetSemantics(ITypedFrame types) {
             return PassingSemantics.ValueType;
         }
-
-        public override UnificationKind TestUnification(HelixType other, TypeFrame types) {
-            if (this == other) {
-                return UnificationKind.Pun;
-            }
-            else if (this == Void) {
-                if (other == Int || other == Bool || other == Float) {
-                    return UnificationKind.Pun;
-                }
-                else if (other is NamedType named) {
-                    if (types.Structs.TryGetValue(named.Path, out var sig)) {
-                        var memsConvertable = sig.Members
-                            .Select(x => PrimitiveType.Void.TestUnification(x.Type, types))
-                            .All(x => x.IsSubsetOf(UnificationKind.Convert));
-
-                        return UnificationKind.Convert;
-                    }
-                }
-            }
-
-            return UnificationKind.None;
-        }
-
-        public override ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax,
-                                            UnificationKind unify, TypeFrame types) {
-            var test = this.TestUnification(other, types);
-
-            if (test.IsSubsetOf(unify)) {
-                if (test == UnificationKind.Pun) {
-                    return syntax;
-                }
-                else {
-                    return new BlockSyntax(syntax.Location, new ISyntaxTree[] {
-                        syntax,
-                        new NewSyntax(syntax.Location, other.ToSyntax(syntax.Location))
-                    });
-                }
-            }
-
-            throw new InvalidOperationException();
-        }
-
+     
         public override string ToString() {
             return this.kind switch {
                 PrimitiveTypeKind.Int   => "int",

@@ -44,13 +44,7 @@ namespace Helix.Analysis.Types {
     public abstract record HelixType { 
         public abstract PassingSemantics GetSemantics(ITypedFrame types);
 
-        public abstract UnificationKind TestUnification(HelixType other, TypeFrame types);
-
-        public abstract ISyntaxTree UnifyTo(HelixType other, ISyntaxTree syntax,
-                                           UnificationKind unificationKind,
-                                           TypeFrame types);
-
-        public virtual HelixType ToMutableType() {
+        public virtual HelixType GetNaturalSupertype(ITypedFrame types) {
             return this;
         }
 
@@ -62,38 +56,10 @@ namespace Helix.Analysis.Types {
             yield return this;
         }
 
-        public bool CanConvertTo(HelixType other, TypeFrame types) {
-            return this.TestUnification(other, types).IsSubsetOf(UnificationKind.Convert);
-        }
-
-        public ISyntaxTree ConvertTo(HelixType other, ISyntaxTree syntax, TypeFrame types) {
-            return this.UnifyTo(other, syntax, UnificationKind.Convert, types);
-        }
-
-        public bool CanConvertFrom(HelixType other, TypeFrame types) {
-            return this.CanConvertTo(other, types) || other.CanConvertTo(this, types);
-        }
-
         public bool IsValueType(ITypedFrame types) {
             return this.GetSemantics(types) == PassingSemantics.ValueType;
         }
-
-        public HelixType ConvertFrom(HelixType other, TypeFrame types) {
-            if (this.CanConvertTo(other, types)) {
-                return other;
-            }
-            else if (other.CanConvertTo(this, types)) {
-                return this;
-            }
-            else {
-                throw new InvalidOperationException();
-            }
-        }
-
-        public bool HasDefaultValue(TypeFrame types) {
-            return PrimitiveType.Void.CanConvertTo(this, types);
-        }
-
+        
         private class TypeSyntaxWrapper : ISyntaxTree {
             private readonly HelixType type;
 

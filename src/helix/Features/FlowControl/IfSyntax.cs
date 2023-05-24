@@ -87,12 +87,12 @@ namespace Helix.Features.FlowControl {
             var iftrueTypes = new TypeFrame(types);
             var iffalseTypes = new TypeFrame(types);
 
-            var cond = this.cond.CheckTypes(types).ToRValue(types).ConvertTypeTo(PrimitiveType.Bool, types);
+            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
             var iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
             var iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
 
-            iftrue = iftrue.ConvertTypeFrom(iffalse, types);
-            iffalse = iffalse.ConvertTypeFrom(iftrue, types);
+            iftrue = iftrue.UnifyFrom(iffalse, types);
+            iffalse = iffalse.UnifyFrom(iftrue, types);
 
             var resultType = types.ReturnTypes[iftrue];
 

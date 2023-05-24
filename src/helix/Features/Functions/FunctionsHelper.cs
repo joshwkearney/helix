@@ -42,7 +42,7 @@ namespace Helix.Features.Functions {
                 var type = sig.Parameters[i].Type;
 
                 if (parsePar.IsWritable) {
-                    type = type.ToMutableType();
+                    type = type.GetNaturalSupertype(types);
                 }
 
                 // Declare this parameter as a root by making an end cycle in the graph
@@ -67,7 +67,7 @@ namespace Helix.Features.Functions {
                 var type = sig.Parameters[i].Type;
 
                 if (parsePar.IsWritable) {
-                    type = type.ToMutableType();
+                    type = type.GetNaturalSupertype(flow);
                 }
 
                 // Declare this parameter as a root by making an end cycle in the graph

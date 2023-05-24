@@ -45,7 +45,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?:\b)(as|put|new)(\s+)([_a-zA-Z][_a-zA-Z0-9]*)</string>
+            <string>(?:\b)(as|new)(\s+)([_a-zA-Z][_a-zA-Z0-9]*)</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -73,19 +73,19 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?:\b)(if|then|else|while|do|for|to|until|break|continue|return)(?:\b)</string>
+            <string>(?:\b)(if|then|else|while|for|to|until|break|continue|return)(?:\b)</string>
             <key>name</key>
             <string>keyword.control.flow.if.helix</string>
           </dict>
           <dict>
             <key>match</key>
-            <string>(\bint|void|true|false\b)</string>
+            <string>(\bvoid|true|false\b)</string>
             <key>name</key>
             <string>constant.language.helix</string>
           </dict>
           <dict>
             <key>match</key>
-            <string>(?:\b)(int|bool|void|var|let|func|as|put|cast|extern)(?:\b)</string>
+            <string>(?:\b)(int|bool|word|void|var|let|func|as|new|cast|extern)(?:\b)</string>
             <key>name</key>
             <string>keyword.other.helix</string>
           </dict>
