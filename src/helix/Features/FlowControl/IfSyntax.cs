@@ -11,8 +11,10 @@ using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Collections;
+using Helix.Analysis.Predicates;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
         private ISyntaxTree IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
@@ -36,7 +38,8 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.FlowControl {
+namespace Helix.Features.FlowControl
+{
     public record IfSyntax : ISyntaxTree {
         private static int ifTempCounter = 0;
 
@@ -88,6 +91,15 @@ namespace Helix.Features.FlowControl {
             var iffalseTypes = new TypeFrame(types);
 
             var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
+            var condPredicate = ISyntaxPredicate.Empty;
+
+            if (cond.GetReturnType(types) is PredicateBool predBool) {
+                condPredicate = predBool.Predicate;
+            }
+
+            condPredicate.ApplyToTypes(this.iftrue.Location, iftrueTypes);
+            condPredicate.Negate().ApplyToTypes(this.iffalse.Location, iffalseTypes);
+
             var iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
             var iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
 
@@ -104,6 +116,7 @@ namespace Helix.Features.FlowControl {
 
             result.SetReturnType(resultType, types);
             result.SetCapturedVariables(cond, iftrue, iffalse, types);
+            result.SetPredicate(iftrue, iffalse, types);
 
             return result;
         }

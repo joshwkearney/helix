@@ -1,13 +1,12 @@
-﻿func helix_main(let b as int*) as int {
-	let a = new IntOption { some= b };
-
-	if a is some then {
-		a + 10;
-	}
-	else 0;
-};
-
-union IntOption {
+﻿union IntOption {
 	let none as void;
 	let some as int;
+};
+
+func test(var x as IntOption) as IntOption {
+	if x is some {
+		//x += 45;
+	};
+
+	x;
 };

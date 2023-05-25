@@ -83,6 +83,7 @@ namespace Helix.Features.Functions {
 
             result.SetReturnType(sig.ReturnType, types);
             result.SetCapturedVariables(newArgs.Append(target), types);
+            result.SetPredicate(newArgs.Append(target), types);
 
             return result;            
         }

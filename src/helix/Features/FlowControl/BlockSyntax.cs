@@ -7,8 +7,10 @@ using Helix.Generation.Syntax;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Analysis.Predicates;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
         private int blockCounter = 0;
 
@@ -32,7 +34,8 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.FlowControl {
+namespace Helix.Features.FlowControl
+{
     public record BlockSyntax : ISyntaxTree {
         public TokenLocation Location { get; }
 
@@ -55,9 +58,17 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
+            var predicate = ISyntaxPredicate.Empty;
             var stats = new List<ISyntaxTree>();
+
             foreach (var stat in this.Statements) {
-                stats.Add(stat.CheckTypes(types).ToRValue(types));
+                var frame = predicate == ISyntaxPredicate.Empty ? types : new TypeFrame(types);
+                predicate.ApplyToTypes(stat.Location, frame);
+
+                var checkedStat = stat.CheckTypes(frame).ToRValue(frame);
+
+                predicate = checkedStat.GetPredicate(frame);
+                stats.Add(checkedStat);
             }
 
             var result = new BlockSyntax(this.Location, stats);
@@ -68,6 +79,7 @@ namespace Helix.Features.FlowControl {
 
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(stats, types);
+            result.SetPredicate(predicate, types);
 
             return result;
         }

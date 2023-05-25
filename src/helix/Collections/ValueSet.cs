@@ -2,29 +2,43 @@
 using System.Collections.Immutable;
 
 namespace Helix.Analysis {
-    public class ValueSet<T> : IEquatable<ValueSet<T>>, IEnumerable<T>, IReadOnlySet<T> {
-        private readonly int hashCode;
-        private readonly ImmutableHashSet<T> items;
+    public class ValueSet<T> : IEquatable<ValueSet<T>>, IEnumerable<T>, IReadOnlySet<T>, 
+                               IReadOnlyCollection<T>, IImmutableSet<T> {
 
-        public ValueSet() {
-            this.items = ImmutableHashSet<T>.Empty;
-            this.hashCode = 0;
-        }
+        private readonly int hashCode;
+        private readonly IImmutableSet<T> items;
+
+        public ValueSet() : this(ImmutableHashSet<T>.Empty) { }
 
         public ValueSet(IEnumerable<T> values) : this(values.ToImmutableHashSet()) { }
 
-        public ValueSet(ImmutableHashSet<T> values) {
-            this.items = values;
+        public ValueSet(IImmutableSet<T> values)
+            : this(values, values.Aggregate(982451653, (x, y) => x + y.GetHashCode())) { }
 
-            int largePrime = 982451653;
-            this.hashCode = this.items.Aggregate(1, (x, y) => (x * (y.GetHashCode() % largePrime)) % largePrime);
+        private ValueSet(IImmutableSet<T> values, int hash) {
+            this.items = values;
+            this.hashCode = hash;
         }
 
         public int Count => this.items.Count;
 
-        public ValueSet<T> Add(T item) => new(this.items.Add(item));
+        public ValueSet<T> Add(T item) => new(this.items.Add(item), this.hashCode + item.GetHashCode());
+
+        public ValueSet<T> Remove(T item) => new(this.items.Remove(item), this.hashCode - item.GetHashCode());
+
+        public ValueSet<T> Except(IEnumerable<T> items) => new(this.items.Except(items));
+
+        public ValueSet<T> SymmetricExcept(IEnumerable<T> items) => new(this.items.SymmetricExcept(items));
+
+        public ValueSet<T> Union(IEnumerable<T> items) => new(this.items.Union(items));
+
+        public ValueSet<T> Intersect(IEnumerable<T> items) => new(this.items.Intersect(items));
+
+        public ValueSet<T> Clear() => new();
 
         public bool Contains(T item) => this.items.Contains(item);
+
+        public bool TryGetValue(T equalValue, out T actualValue) => this.items.TryGetValue(equalValue, out actualValue);
 
         public IEnumerator<T> GetEnumerator() => this.items.GetEnumerator();
 
@@ -41,6 +55,20 @@ namespace Helix.Analysis {
         public bool SetEquals(IEnumerable<T> other) => this.items.SetEquals(other);
 
         IEnumerator IEnumerable.GetEnumerator() => this.items.GetEnumerator();
+
+        IImmutableSet<T> IImmutableSet<T>.Add(T value) => this.Add(value);
+
+        IImmutableSet<T> IImmutableSet<T>.Clear() => this.Clear();
+
+        IImmutableSet<T> IImmutableSet<T>.Except(IEnumerable<T> other) => this.Except(other);
+
+        IImmutableSet<T> IImmutableSet<T>.Intersect(IEnumerable<T> other) => this.Intersect(other);
+
+        IImmutableSet<T> IImmutableSet<T>.Remove(T value) => this.Remove(value);
+
+        IImmutableSet<T> IImmutableSet<T>.SymmetricExcept(IEnumerable<T> other) => this.SymmetricExcept(other);
+
+        IImmutableSet<T> IImmutableSet<T>.Union(IEnumerable<T> other) => this.Union(other);
 
         public override int GetHashCode() => this.hashCode;
 

@@ -41,6 +41,7 @@ namespace Helix.Features.Primitives {
         public ISyntaxTree CheckTypes(TypeFrame types) {
             this.SetReturnType(new SingularBoolType(this.Value), types);
             this.SetCapturedVariables(types);
+            this.SetPredicate(types);
 
             return this;
         }

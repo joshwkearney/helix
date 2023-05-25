@@ -102,6 +102,7 @@ namespace Helix.Features.Variables {
             }
 
             this.SetCapturedVariables(this.VariablePath, VariableCaptureKind.ValueCapture, types);
+            this.SetPredicate(types);
 
             return this;
         }

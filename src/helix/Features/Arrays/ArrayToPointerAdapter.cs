@@ -48,6 +48,7 @@ namespace Helix.Features.Arrays {
 
             this.SetReturnType(new PointerType(this.arrayType.InnerType), types);
             this.SetCapturedVariables(this.target, this.offset, types);
+            this.SetPredicate(this.target, this.offset, types);
 
             return this;
         }

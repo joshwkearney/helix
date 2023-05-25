@@ -39,7 +39,7 @@ contexts [] {
       }
       
       : pattern {
-         regex \= (?:\b)(and\sthen|or\selse|and|or|xor)(?:\b)
+         regex \= (?:\b)(and|or|xor|is)(?:\b)
          styles []= .keyword_operator;
       }
       

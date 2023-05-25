@@ -58,6 +58,7 @@ namespace Helix.Features.Functions {
 
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(types);
+            result.SetPredicate(types);
 
             return result;
         }

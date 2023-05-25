@@ -95,6 +95,7 @@ namespace Helix.Features.Variables {
 
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(target, assign, types);
+            result.SetPredicate(target, assign, types);
 
             return result;
         }

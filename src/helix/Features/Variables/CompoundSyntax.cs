@@ -30,6 +30,7 @@ namespace Helix.Features.Variables {
 
             this.SetReturnType(PrimitiveType.Void, types);
             this.SetCapturedVariables(args, types);
+            this.SetPredicate(args, types);
 
             return result;
         }

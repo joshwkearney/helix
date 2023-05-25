@@ -139,6 +139,7 @@ namespace Helix.Features.Aggregates {
 
             result.SetReturnType(type, types);
             result.SetCapturedVariables(allValues, types);
+            result.SetPredicate(allValues, types);
 
             return result;
         }

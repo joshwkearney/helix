@@ -79,6 +79,7 @@ namespace Helix.Features.FlowControl {
 
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(body, types);
+            result.SetPredicate(types);
 
             return result;
         }

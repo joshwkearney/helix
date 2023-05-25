@@ -19,34 +19,20 @@ extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
 typedef struct int$ptr int$ptr;
-typedef union IntOption$union IntOption$union;
-typedef struct IntOption IntOption;
 
-void helix_main(_Region* _return_region, int$ptr b);
+int$ptr test1(_Region* _return_region);
 
 struct int$ptr {
     int* data;
     _Region* region;
 };
 
+int$ptr test1(_Region* _return_region) {
+    /* Line 2: New variable declaration 'x' */
+    int* x = (int*)_region_malloc(_return_region, sizeof(int));
+    (*x) = 45U;
 
-union IntOption$union {
-    int none;
-    int$ptr some;
-};
-
-struct IntOption {
-    int tag;
-    IntOption$union data;
-};
-
-void helix_main(_Region* _return_region, int$ptr b) {
-    /* Line 2: Union literal */
-    IntOption$union $new_union_0;
-    ($new_union_0.some) = b;
-
-    /* Line 2: New variable declaration 'a' */
-    IntOption a = (IntOption){ 1U, $new_union_0 };
+    return (int$ptr){ x, _return_region };
 }
 
 #if __cplusplus

@@ -8,8 +8,10 @@ using Helix.Generation;
 using Helix.Parsing;
 using Helix.Collections;
 using System.Collections.Immutable;
+using Helix.Analysis.Predicates;
 
-namespace Helix.Analysis.TypeChecking {
+namespace Helix.Analysis.TypeChecking
+{
     public delegate void DeclarationCG(ICWriter writer);
 
     public enum VariableCaptureKind {
@@ -39,6 +41,8 @@ namespace Helix.Analysis.TypeChecking {
 
         public IDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
 
+        public IDictionary<ISyntaxTree, ISyntaxPredicate> Predicates { get; }
+
         public TypeFrame() {
             this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
 
@@ -60,8 +64,10 @@ namespace Helix.Analysis.TypeChecking {
             this.Structs = new Dictionary<IdentifierPath, StructSignature>(); 
             this.Unions = new Dictionary<IdentifierPath, StructSignature>();
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
+
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
             this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
+            this.Predicates = new Dictionary<ISyntaxTree, ISyntaxPredicate>();
         }
 
         public TypeFrame(TypeFrame prev) {
@@ -75,6 +81,7 @@ namespace Helix.Analysis.TypeChecking {
 
             this.ReturnTypes = prev.ReturnTypes;
             this.CapturedVariables = prev.CapturedVariables;
+            this.Predicates = prev.Predicates;
         }
 
         public string GetVariableName() {

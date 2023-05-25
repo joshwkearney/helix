@@ -67,7 +67,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?:\b)(and\sthen|or\selse|and|or|xor)(?:\b)</string>
+            <string>(?:\b)(and|or|xor|is)(?:\b)</string>
             <key>name</key>
             <string>keyword.other.helix</string>
           </dict>

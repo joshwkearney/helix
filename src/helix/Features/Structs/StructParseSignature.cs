@@ -19,14 +19,14 @@ namespace Helix.Features.Aggregates
 
         public StructSignature ResolveNames(TypeFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.Name);
-            var mems = new List<AggregateMember>();
+            var mems = new List<StructMember>();
 
             foreach (var mem in this.Members) {
                 if (!mem.MemberType.AsType(types).TryGetValue(out var type)) {
                     throw TypeException.ExpectedTypeExpression(mem.Location);
                 }
 
-                mems.Add(new AggregateMember(mem.MemberName, type, mem.IsWritable));
+                mems.Add(new StructMember(mem.MemberName, type, mem.IsWritable));
             }
 
             return new StructSignature(path, mems);

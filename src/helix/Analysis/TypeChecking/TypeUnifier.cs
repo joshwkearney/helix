@@ -107,7 +107,7 @@ namespace Helix.Analysis.TypeChecking {
             else if (first is SingularIntType) {
                 return TryUnifyFromSingularInt(second, types);
             }
-            else if (first is SingularBoolType) {
+            else if (first is SingularBoolType || first is PredicateBool) {
                 return TryUnifyFromSingularBool(second, types);
             }
             else if (first is PointerType pointerType) {

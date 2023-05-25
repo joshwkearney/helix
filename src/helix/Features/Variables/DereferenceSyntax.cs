@@ -64,6 +64,7 @@ namespace Helix.Features.Variables {
 
             result.SetReturnType(pointerType.InnerType, types);
             result.SetCapturedVariables(target, types);
+            result.SetPredicate(target, types);
 
             return result;
         }
@@ -121,6 +122,7 @@ namespace Helix.Features.Variables {
 
             this.SetReturnType(pointerType.InnerType, types);
             this.SetCapturedVariables(this.target, types);
+            this.SetPredicate(this.target, types);
 
             return this;
         }
@@ -238,6 +240,7 @@ namespace Helix.Features.Variables {
 
             this.SetReturnType(this.target.GetReturnType(types), types);
             this.SetCapturedVariables(this.target, types);
+            this.SetPredicate(this.target, types);
 
             return this;
         }

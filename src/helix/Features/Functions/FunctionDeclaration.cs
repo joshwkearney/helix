@@ -155,6 +155,13 @@ namespace Helix.Features.Functions {
                     throw new Exception("Compiler assertion failed: syntax tree does not have captured variables");
                 }
             }
+
+            // Debug check: make sure that every syntax tree has captured variables
+            foreach (var expr in body.GetAllChildren()) {
+                if (!types.Predicates.ContainsKey(expr)) {
+                    throw new Exception("Compiler assertion failed: syntax tree does not have any predicates");
+                }
+            }
 #endif
 
             return new FunctionDeclaration(this.Location, sig, body);

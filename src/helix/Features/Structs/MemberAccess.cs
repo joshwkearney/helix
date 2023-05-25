@@ -64,6 +64,7 @@ namespace Helix.Features.Aggregates {
 
                     result.SetReturnType(PrimitiveType.Int, types);
                     result.SetCapturedVariables(target, types);
+                    result.SetPredicate(target, types);
 
                     return result;
                 }
@@ -88,6 +89,7 @@ namespace Helix.Features.Aggregates {
 
                         result.SetReturnType(field.Type, types);
                         result.SetCapturedVariables(target, types);
+                        result.SetPredicate(target, types);
 
                         return result;
                     }                    

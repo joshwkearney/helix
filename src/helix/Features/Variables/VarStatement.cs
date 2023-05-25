@@ -102,6 +102,7 @@ namespace Helix {
 
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(assign, types);
+            result.SetPredicate(assign, types);
 
             return result;
         }

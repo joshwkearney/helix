@@ -88,6 +88,7 @@ namespace Helix.Features.Primitives {
 
                 result.SetReturnType(PrimitiveType.Bool, types);
                 result.SetCapturedVariables(arg, types);
+                result.SetPredicate(arg, types);
 
                 return result;
             }

@@ -250,6 +250,7 @@ namespace Helix.Features.Primitives {
 
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(left, right, types);
+            result.SetPredicate(left, right, types);
 
             return result;
         }

@@ -92,6 +92,7 @@ namespace Helix.Features.Arrays {
             var result = new ArrayLiteralSyntax(this.Location, args, this.tempPath);
 
             result.SetCapturedVariables(args, types);
+            result.SetPredicate(args, types);
             result.SetReturnType(new ArrayType(totalType), types);
 
             return result;

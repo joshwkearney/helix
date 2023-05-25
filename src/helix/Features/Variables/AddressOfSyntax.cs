@@ -37,6 +37,7 @@ namespace Helix.Features.Variables {
 
             result.SetReturnType(ptrType, types);
             result.SetCapturedVariables(capturedVars, types);
+            result.SetPredicate(target, types);
 
             return result;
         }
