@@ -171,6 +171,8 @@ namespace Helix.Features.Variables {
 
                     // Make sure the new value outlives its variable
                     flow.LifetimeGraph.AddStored(newValue, newTargetBounds.LocationLifetime, memType);
+
+                    targetBounds = newTargetBounds;
                 }
 
                 // Add dependencies between our new target and the assignment lifetimes

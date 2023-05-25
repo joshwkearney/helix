@@ -1,12 +1,9 @@
-﻿union IntOption {
-	let none as void;
-	let some as int;
-};
+﻿func test10() as int* {
+	var x = 5;
+	var y = 10;
 
-func test(var x as IntOption) as IntOption {
-	if x is some then {
-		//x += 45;
-	};
+	var z = &x;
+	z = &y;
 
-	x;
+	z;
 };

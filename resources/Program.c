@@ -18,27 +18,30 @@ extern _Region* _region_new();
 extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
-typedef union IntOption$union IntOption$union;
-typedef struct IntOption IntOption;
+typedef struct int$ptr int$ptr;
 
-IntOption test(_Region* _return_region, IntOption x);
+int$ptr test10(_Region* _return_region);
 
-
-union IntOption$union {
-    int none;
-    int some;
+struct int$ptr {
+    int* data;
+    _Region* region;
 };
 
-struct IntOption {
-    int tag;
-    IntOption$union data;
-};
+int$ptr test10(_Region* _return_region) {
+    /* Line 2: New variable declaration 'x' */
+    int x = 5U;
 
-IntOption test(_Region* _return_region, IntOption x) {
-    /* Line 7: If statement */
-    if (((x.tag) == 1U)) {     } 
+    /* Line 3: New variable declaration 'y' */
+    int* y = (int*)_region_malloc(_return_region, sizeof(int));
+    (*y) = 10U;
 
-    return x;
+    /* Line 5: New variable declaration 'z' */
+    int$ptr z = (int$ptr){ (&x), _return_region };
+
+    /* Line 6: Assignment statement */
+    z = (int$ptr){ y, _return_region };
+
+    return z;
 }
 
 #if __cplusplus
