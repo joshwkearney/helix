@@ -145,11 +145,11 @@ namespace Helix.Analysis.TypeChecking {
                 $"Expected a struct type, but recieved '{actual}'");
         }
 
-        public static TypeException ExpectedUnionType(TokenLocation location, HelixType actual) {
+        public static TypeException ExpectedUnionType(TokenLocation location) {
             return new TypeException(
                 location,
                 "Analysis Exception: Expected Union Type",
-                $"Expected a union type, but recieved '{actual}'");
+                $"A union type is required in this context.");
         }
 
         public static TypeException TypeUndefined(TokenLocation loc, string name) {

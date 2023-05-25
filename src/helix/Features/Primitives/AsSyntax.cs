@@ -3,17 +3,30 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.Unions;
 
 namespace Helix.Parsing {
     public partial class Parser {
         private ISyntaxTree AsExpression() {
             var first = this.BinaryExpression();
 
-            while (this.TryAdvance(TokenKind.AsKeyword)) {
-                var target = this.TopExpression();
-                var loc = first.Location.Span(target.Location);
+            while (this.Peek(TokenKind.AsKeyword) || this.Peek(TokenKind.IsKeyword)) {
+                if (this.TryAdvance(TokenKind.AsKeyword)) {
+                    var target = this.TopExpression();
+                    var loc = first.Location.Span(target.Location);
 
-                first = new AsParseTree(loc, first, target);
+                    first = new AsParseTree(loc, first, target);
+                }
+                else {
+                    this.Advance(TokenKind.IsKeyword);
+                    var nameTok = this.Advance(TokenKind.Identifier);
+
+                    first = new IsParseSyntax() {
+                        Location = first.Location.Span(nameTok.Location),
+                        Target = first,
+                        MemberName = nameTok.Value
+                    };
+                }
             }
 
             return first;

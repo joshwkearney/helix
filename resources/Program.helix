@@ -4,7 +4,7 @@
 };
 
 func test(var x as IntOption) as IntOption {
-	if x is some {
+	if x is some then {
 		//x += 45;
 	};
 

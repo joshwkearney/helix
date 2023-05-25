@@ -13,8 +13,7 @@ using Helix.Analysis.TypeChecking;
 using Helix.Collections;
 using Helix.Analysis.Predicates;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
         private ISyntaxTree IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
@@ -38,8 +37,7 @@ namespace Helix.Parsing
     }
 }
 
-namespace Helix.Features.FlowControl
-{
+namespace Helix.Features.FlowControl {
     public record IfSyntax : ISyntaxTree {
         private static int ifTempCounter = 0;
 
@@ -53,8 +51,8 @@ namespace Helix.Features.FlowControl
         public bool IsPure { get; }
 
         public IfSyntax(
-            TokenLocation location, 
-            ISyntaxTree cond, 
+            TokenLocation location,
+            ISyntaxTree cond,
             ISyntaxTree iftrue) {
 
             this.Location = location;
@@ -70,9 +68,9 @@ namespace Helix.Features.FlowControl
         }
 
         public IfSyntax(
-            TokenLocation location, 
-            ISyntaxTree cond, 
-            ISyntaxTree iftrue, 
+            TokenLocation location,
+            ISyntaxTree cond,
+            ISyntaxTree iftrue,
             ISyntaxTree iffalse) : this(location, cond, iftrue) {
 
             this.Location = location;
@@ -90,18 +88,23 @@ namespace Helix.Features.FlowControl
             var iftrueTypes = new TypeFrame(types);
             var iffalseTypes = new TypeFrame(types);
 
-            var cond = this.cond.CheckTypes(types).ToRValue(types).UnifyTo(PrimitiveType.Bool, types);
+            var cond = this.cond.CheckTypes(types).ToRValue(types);
             var condPredicate = ISyntaxPredicate.Empty;
 
             if (cond.GetReturnType(types) is PredicateBool predBool) {
                 condPredicate = predBool.Predicate;
             }
 
-            condPredicate.ApplyToTypes(this.iftrue.Location, iftrueTypes);
-            condPredicate.Negate().ApplyToTypes(this.iffalse.Location, iffalseTypes);
+            cond = cond.UnifyTo(PrimitiveType.Bool, types);
 
-            var iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
-            var iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
+            var ifTruePrepend = condPredicate.ApplyToTypes(this.iftrue.Location, iftrueTypes);
+            var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.iffalse.Location, iffalseTypes);
+
+            ISyntaxTree iftrue = new BlockSyntax(this.iftrue.Location, ifTruePrepend.Append(this.iftrue).ToArray());
+            ISyntaxTree iffalse = new BlockSyntax(this.iffalse.Location, ifFalsePrepend.Append(this.iffalse).ToArray());
+
+            iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
+            iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
 
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
@@ -168,8 +171,8 @@ namespace Helix.Features.FlowControl
         }
 
         private static void MutateLocals(
-            FlowFrame trueFrame, 
-            FlowFrame falseFrame, 
+            FlowFrame trueFrame,
+            FlowFrame falseFrame,
             FlowFrame flow) {
 
             var modifiedLocals = trueFrame.LocalLifetimes
@@ -186,7 +189,7 @@ namespace Helix.Features.FlowControl
                     .GetValueOrNone(varPath)
                     .OrElse(() => new LifetimeBounds())
                     .ValueLifetime;
-                
+
                 var falseLifetime = falseFrame
                     .LocalLifetimes
                     .GetValueOrNone(varPath)
@@ -222,7 +225,7 @@ namespace Helix.Features.FlowControl
 
             var tempName = writer.GetVariableName(this.tempPath);
             var returnType = this.GetReturnType(types);
-            
+
             if (returnType != PrimitiveType.Void) {
                 affirmWriter.WriteStatement(new CAssignment() {
                     Left = new CVariableLiteral(tempName),
