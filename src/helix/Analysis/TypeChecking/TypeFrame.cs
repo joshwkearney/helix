@@ -73,44 +73,6 @@ namespace Helix.Analysis.TypeChecking {
 
         public string GetVariableName() {
             return "$t_" + this.tempCounter++;
-        }
-
-        public bool TryResolvePath(IdentifierPath scope, string name, out IdentifierPath path) {
-            while (true) {
-                path = scope.Append(name);
-                if (this.SyntaxValues.ContainsKey(path)) {
-                    return true;
-                }
-
-                if (scope.Segments.Any()) {
-                    scope = scope.Pop();
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-
-        public IdentifierPath ResolvePath(IdentifierPath scope, string path) {
-            if (this.TryResolvePath(scope, path, out var value)) {
-                return value;
-            }
-
-            throw new InvalidOperationException(
-                $"Compiler error: The path '{path}' does not contain a value.");
-        }
-
-        public bool TryResolveName(IdentifierPath scope, string name, out ISyntaxTree value) {
-            if (!this.TryResolvePath(scope, name, out var path)) {
-                value = null;
-                return false;
-            }
-
-            return this.SyntaxValues.TryGetValue(path, out value);
-        }
-
-        public ISyntaxTree ResolveName(IdentifierPath scope, string name) {
-            return this.SyntaxValues[this.ResolvePath(scope, name)];
-        }
+        }        
     }
 }

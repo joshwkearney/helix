@@ -97,14 +97,14 @@ namespace Helix.Features.FlowControl {
 
             cond = cond.UnifyTo(PrimitiveType.Bool, types);
 
-            var ifTruePrepend = condPredicate.ApplyToTypes(this.iftrue.Location, iftrueTypes);
-            var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.iffalse.Location, iffalseTypes);
+            var ifTruePrepend = condPredicate.ApplyToTypes(this.cond.Location, iftrueTypes);
+            var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.cond.Location, iffalseTypes);
 
             ISyntaxTree iftrue = new BlockSyntax(this.iftrue.Location, ifTruePrepend.Append(this.iftrue).ToArray());
             ISyntaxTree iffalse = new BlockSyntax(this.iffalse.Location, ifFalsePrepend.Append(this.iffalse).ToArray());
 
-            iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
-            iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
+            iftrue = iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
+            iffalse = iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
 
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);

@@ -3,8 +3,7 @@ using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Analysis.Predicates;
 
-namespace Helix.Analysis
-{
+namespace Helix.Analysis {
     public static partial class TypeCheckingExtensions {
         public static PointerType AssertIsPointer(this ISyntaxTree syntax, ITypedFrame types) {
             var type = syntax.GetReturnType(types);

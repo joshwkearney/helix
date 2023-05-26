@@ -7,6 +7,7 @@ using Helix.Analysis.Types;
 using Helix.Syntax;
 using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
+using Helix.Analysis;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -18,7 +19,18 @@ namespace Helix.Parsing {
             this.Advance(TokenKind.OpenBrace);
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                var memStart = this.Advance(TokenKind.LetKeyword);
+                bool isWritable;
+                Token memStart;
+
+                if (this.Peek(TokenKind.VarKeyword)) {
+                    memStart = this.Advance(TokenKind.VarKeyword);
+                    isWritable = true;
+                }
+                else {
+                    memStart = this.Advance(TokenKind.LetKeyword);
+                    isWritable = false;
+                }
+
                 var memName = this.Advance(TokenKind.Identifier);
                 this.Advance(TokenKind.AsKeyword);
 
@@ -26,7 +38,7 @@ namespace Helix.Parsing {
                 var memLoc = memStart.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);
-                mems.Add(new ParseStructMember(memLoc, memName.Value, memType, false));
+                mems.Add(new ParseStructMember(memLoc, memName.Value, memType, isWritable));
             }
 
             this.Advance(TokenKind.CloseBrace);
@@ -57,10 +69,9 @@ namespace Helix.Features.Aggregates {
             }
 
             var path = this.Location.Scope.Append(this.signature.Name);
+            var named = new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Union));
 
-            names.SyntaxValues = names.SyntaxValues.SetItem(
-                path, 
-                new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Union)));
+            names.SyntaxValues = names.SyntaxValues.SetItem(path, named);
         }
 
         public void DeclareTypes(TypeFrame types) {

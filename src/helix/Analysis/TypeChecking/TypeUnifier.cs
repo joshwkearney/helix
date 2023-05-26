@@ -37,7 +37,7 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         public static bool HasDefaultValue(this HelixType type, TypeFrame types) {
-            return TryUnify(PrimitiveType.Void, type, types).Kind.IsSubsetOf(UnificationKind.Convert);
+            return PrimitiveType.Void.CanUnifyTo(type, types);
         }
 
         public static bool CanUnifyTo(this HelixType type1, HelixType type2, TypeFrame types) {
@@ -67,9 +67,7 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         public static bool CanUnifyTo(this ISyntaxTree fromSyntax, HelixType toType, TypeFrame types) {
-            var fromType = fromSyntax.GetReturnType(types);
-
-            return fromType.CanUnifyTo(toType, types);
+            return fromSyntax.GetReturnType(types).CanUnifyTo(toType, types);
         }
 
         public static ISyntaxTree UnifyTo(this ISyntaxTree fromSyntax, HelixType toType, TypeFrame types) {

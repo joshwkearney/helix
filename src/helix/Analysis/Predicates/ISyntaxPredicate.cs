@@ -29,6 +29,13 @@ namespace Helix.Analysis.Predicates {
             return new PredicatePolynomial(this).Or(other);
         }
 
+        public virtual ISyntaxPredicate Xor(ISyntaxPredicate other) {
+            var left = this.And(other.Negate());
+            var right = this.Negate().And(other);
+
+            return left.Or(right);
+        }
+
         public virtual IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
             return Array.Empty<ISyntaxTree>();
         }

@@ -53,7 +53,7 @@ namespace Helix.Features.Functions {
                 new TypeSyntax(this.Location, named));
 
             // Declare this function
-            types.NominalSignatures = types.NominalSignatures.SetItem(named.Path, sig);
+            types.NominalSignatures = types.NominalSignatures.SetItem(path, sig);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {

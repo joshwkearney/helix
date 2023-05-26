@@ -47,7 +47,7 @@ namespace Helix.Features.Variables {
             this.tempPath = tempPath;
         }
 
-        public Option<HelixType> AsType(TypeFrame types) {
+        public Option<HelixType> AsType(ITypedFrame types) {
             return this.target.AsType(types)
                 .Select(x => new PointerType(x, true))
                 .Select(x => (HelixType)x);

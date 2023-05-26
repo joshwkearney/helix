@@ -7,6 +7,7 @@ using Helix.Analysis.Types;
 using Helix.Syntax;
 using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
+using Helix.Analysis;
 
 namespace Helix.Parsing {
     public partial class Parser {

@@ -35,7 +35,7 @@ namespace Helix.Features.Variables {
             this.Name = name;
         }
 
-        public Option<HelixType> AsType(TypeFrame types) {
+        public Option<HelixType> AsType(ITypedFrame types) {
             // If we're pointing at a type then return it
             if (types.TryResolveName(this.Location.Scope, this.Name, out var syntax)) {
                 if (syntax.AsType(types).TryGetValue(out var type)) {

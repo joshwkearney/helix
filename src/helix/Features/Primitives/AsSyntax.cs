@@ -8,7 +8,7 @@ using Helix.Features.Unions;
 namespace Helix.Parsing {
     public partial class Parser {
         private ISyntaxTree AsExpression() {
-            var first = this.BinaryExpression();
+            var first = this.UnaryExpression();
 
             while (this.Peek(TokenKind.AsKeyword) || this.Peek(TokenKind.IsKeyword)) {
                 if (this.TryAdvance(TokenKind.AsKeyword)) {

@@ -2,25 +2,30 @@
 using Helix.Syntax;
 using Helix.Features.Primitives;
 using Helix.Parsing;
+using Helix.Analysis.Predicates;
 
 namespace Helix.Analysis.Types {
-    public record SingularBoolType : HelixType {
+    public record class PredicateBool : HelixType {
+        public ISyntaxPredicate Predicate { get; }
+
+        public PredicateBool(ISyntaxPredicate predicate) {
+            this.Predicate = predicate;
+        }
+
+        public override PassingSemantics GetSemantics(ITypedFrame types) => PassingSemantics.ValueType;
+
+        public override HelixType GetMutationSupertype(ITypedFrame types) => PrimitiveType.Bool;
+
+        public override HelixType GetSignatureSupertype(ITypedFrame types) => PrimitiveType.Bool;
+    }
+
+    public record SingularBoolType : PredicateBool {
         public bool Value { get; }
 
-        public SingularBoolType(bool value) {
+        public SingularBoolType(bool value) : this(value, ISyntaxPredicate.Empty) { }
+
+        public SingularBoolType(bool value, ISyntaxPredicate pred) : base(pred) {
             this.Value = value;
-        }
-
-        public override PassingSemantics GetSemantics(ITypedFrame types) {
-            return PassingSemantics.ValueType;
-        }
-
-        public override HelixType GetMutationSupertype(ITypedFrame types) {
-            return PrimitiveType.Bool;
-        }
-
-        public override HelixType GetSignatureSupertype(ITypedFrame types) {
-            return PrimitiveType.Bool;
         }
 
         public override ISyntaxTree ToSyntax(TokenLocation loc) {

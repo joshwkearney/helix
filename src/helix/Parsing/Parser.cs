@@ -76,11 +76,11 @@ namespace Helix.Parsing {
         }
 
         /** Expression Parsing **/
-        private ISyntaxTree TopExpression() => this.AsExpression();
+        private ISyntaxTree TopExpression() => this.BinaryExpression();
 
         private ISyntaxTree BinaryExpression() => this.OrExpression();
 
-        private ISyntaxTree PrefixExpression() => this.UnaryExpression();        
+        private ISyntaxTree PrefixExpression() => this.AsExpression();     
 
         private ISyntaxTree SuffixExpression() {
             var first = this.Atom();

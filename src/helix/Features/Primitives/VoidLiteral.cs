@@ -30,7 +30,7 @@ namespace Helix.Features.Primitives {
             this.Location = loc;
         }
 
-        public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
+        public Option<HelixType> AsType(ITypedFrame types) => PrimitiveType.Void;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             this.SetReturnType(PrimitiveType.Void, types);

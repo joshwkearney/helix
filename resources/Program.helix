@@ -1,9 +1,20 @@
-﻿struct Test2Struct {
-	var field as int**;
+﻿union IntOption {
+	var none as void;
+	var some as int;
+	var other as bool;
 };
 
-func test2(var n as Test2Struct) {
-	var x = n.field**;
+func test(var x as IntOption) as IntOption {
+	if (x is other) or (x is none) then {
+		// Lol
+	}
+	else {
+		// Still works!
+		x += 45;
+	};
 
-	n.field* = &x;
+	x;
 };
+
+
+

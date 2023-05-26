@@ -2,6 +2,7 @@
 using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Parsing;
+using Helix.Analysis;
 
 namespace Helix.Features.Arrays {
     public record ArrayTypeSyntax : ISyntaxTree {
@@ -20,7 +21,7 @@ namespace Helix.Features.Arrays {
             this.inner = inner;
         }
 
-        Option<HelixType> ISyntaxTree.AsType(TypeFrame types) {
+        Option<HelixType> ISyntaxTree.AsType(ITypedFrame types) {
             return this.inner
                 .AsType(types)
                 .Select(x => new ArrayType(x))

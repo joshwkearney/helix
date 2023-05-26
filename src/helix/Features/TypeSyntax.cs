@@ -4,6 +4,7 @@ using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Analysis;
 
 namespace Helix.Features {
     public record TypeSyntax : ISyntaxTree {
@@ -20,7 +21,7 @@ namespace Helix.Features {
             this.type = type;
         }
 
-        public Option<HelixType> AsType(TypeFrame types) => this.type;
+        public Option<HelixType> AsType(ITypedFrame types) => this.type;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();

@@ -19,6 +19,8 @@ namespace Helix.Analysis.Flow {
 
         public IDictionary<ISyntaxTree, LifetimeBundle> SyntaxLifetimes { get; }
 
+        public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
+
         public LifetimeGraph LifetimeGraph { get; }
 
         // Frame-specific things
@@ -38,6 +40,7 @@ namespace Helix.Analysis.Flow {
             this.LocalLifetimes = ImmutableDictionary<VariablePath, LifetimeBounds>.Empty;
             this.LifetimeRoots = ImmutableHashSet<Lifetime>.Empty;
             this.NominalSignatures = frame.NominalSignatures;
+            this.SyntaxValues = frame.SyntaxValues;
         }
 
         public FlowFrame(FlowFrame prev) {
@@ -50,6 +53,7 @@ namespace Helix.Analysis.Flow {
             this.LocalLifetimes = prev.LocalLifetimes;
             this.LifetimeRoots = prev.LifetimeRoots;
             this.NominalSignatures = prev.NominalSignatures;
+            this.SyntaxValues = prev.SyntaxValues;
         }
 
         private IEnumerable<Lifetime> MaximizeRootSet(IEnumerable<Lifetime> roots) {

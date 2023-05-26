@@ -1,4 +1,5 @@
-﻿using Helix.Analysis.Flow;
+﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
@@ -13,7 +14,7 @@ namespace Helix.Syntax {
 
         public bool IsPure { get; }
 
-        public Option<HelixType> AsType(TypeFrame types) => Option.None;
+        public Option<HelixType> AsType(ITypedFrame types) => Option.None;
 
         public ISyntaxTree CheckTypes(TypeFrame types);
 

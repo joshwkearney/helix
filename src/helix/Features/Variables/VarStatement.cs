@@ -168,7 +168,7 @@ namespace Helix {
             this.isWritable = isWritable;
         }
 
-        public Option<HelixType> AsType(TypeFrame types) {
+        public Option<HelixType> AsType(ITypedFrame types) {
             return new PointerType(this.assignSyntax.GetReturnType(types), this.isWritable);
         }
 

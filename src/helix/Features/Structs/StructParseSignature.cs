@@ -2,9 +2,9 @@
 using Helix.Syntax;
 using Helix.Parsing;
 using Helix.Analysis.Types;
+using Helix.Analysis;
 
-namespace Helix.Features.Aggregates
-{
+namespace Helix.Features.Aggregates {
     public record StructParseSignature {
         public string Name { get; }
 

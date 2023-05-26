@@ -9,8 +9,7 @@ using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
         private int blockCounter = 0;
 
@@ -34,8 +33,7 @@ namespace Helix.Parsing
     }
 }
 
-namespace Helix.Features.FlowControl
-{
+namespace Helix.Features.FlowControl {
     public record BlockSyntax : ISyntaxTree {
         public TokenLocation Location { get; }
 

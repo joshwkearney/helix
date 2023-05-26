@@ -6,16 +6,56 @@ using Helix.Features.Types;
 
 namespace Helix.Analysis {
     public static class AnalysisExtensions {
-        public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
-            return types.NominalSignatures
+        public static bool TryResolvePath(this ITypedFrame types, IdentifierPath scope, string name, out IdentifierPath path) {
+            while (true) {
+                path = scope.Append(name);
+                if (types.SyntaxValues.ContainsKey(path)) {
+                    return true;
+                }
+
+                if (scope.Segments.Any()) {
+                    scope = scope.Pop();
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+
+        public static IdentifierPath ResolvePath(this ITypedFrame types, IdentifierPath scope, string name) {
+            if (types.TryResolvePath(scope, name, out var value)) {
+                return value;
+            }
+
+            throw new InvalidOperationException(
+                $"Compiler error: The path '{name}' does not contain a value.");
+        }
+
+        public static bool TryResolveName(this ITypedFrame types, IdentifierPath scope, string name, out ISyntaxTree value) {
+            if (!types.TryResolvePath(scope, name, out var path)) {
+                value = null;
+                return false;
+            }
+
+            return types.SyntaxValues.TryGetValue(path, out value);
+        }
+
+        public static ISyntaxTree ResolveName(this ITypedFrame types, IdentifierPath scope, string name) {
+            return types.SyntaxValues[types.ResolvePath(scope, name)];
+        }
+
+        public static bool TryGetVariable(this ITypedFrame types, IdentifierPath path, out PointerType type) {
+            return types.SyntaxValues
                 .GetValueOrNone(path)
+                .SelectMany(x => x.AsType(types))
                 .SelectMany(x => x.AsVariable(types))
                 .TryGetValue(out type);
         }
 
-        public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {
-            return types.NominalSignatures
+        public static bool TryGetFunction(this ITypedFrame types, IdentifierPath path, out FunctionType type) {
+            return types.SyntaxValues
                 .GetValueOrNone(path)
+                .SelectMany(x => x.AsType(types))
                 .SelectMany(x => x.AsFunction(types))
                 .TryGetValue(out type);
         }
@@ -53,6 +93,33 @@ namespace Helix.Analysis {
             }
             else {
                 return Option.None;
+            }
+        }
+
+        public static Option<ArrayType> AsArray(this HelixType type, ITypedFrame types) {
+            if (type.GetSignatureSupertype(types) is ArrayType sig) {
+                return sig;
+            }
+            else {
+                return Option.None;
+            }
+        }
+
+        public static bool IsBool(this HelixType type, ITypedFrame types) {
+            if (type.GetSignatureSupertype(types) == PrimitiveType.Bool) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        public static bool IsInt(this HelixType type, ITypedFrame types) {
+            if (type.GetSignatureSupertype(types) == PrimitiveType.Int) {
+                return true;
+            }
+            else {
+                return false;
             }
         }
 
@@ -162,11 +229,7 @@ namespace Helix.Analysis {
 
             yield return (basePath, type);
 
-            if (type is not NominalType named) {
-                yield break;
-            }
-
-            if (!named.AsStruct(types).TryGetValue(out var structSig)) {
+            if (!type.AsStruct(types).TryGetValue(out var structSig)) {
                 yield break;
             }
 

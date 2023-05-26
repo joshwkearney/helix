@@ -57,6 +57,7 @@ namespace Helix.Features.Functions {
             var target = this.target.CheckTypes(types).ToRValue(types);
             var targetType = types.ReturnTypes[target];
 
+            // TODO: Support invoking non-nominal functions
             // Make sure the target is a function
             if (!targetType.AsFunction(types).TryGetValue(out var sig) || targetType is not NominalType named) {
                 throw TypeException.ExpectedFunctionType(this.target.Location, targetType);

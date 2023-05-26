@@ -32,10 +32,9 @@ namespace Helix.Features.Functions {
 
             // Declare this function
             var path = sig.Location.Scope.Append(sig.Name);
+            var named = new TypeSyntax(sig.Location, new NominalType(path, NominalTypeKind.Function));
 
-            types.SyntaxValues = types.SyntaxValues.SetItem(
-                path, 
-                new TypeSyntax(sig.Location, new NominalType(path, NominalTypeKind.Function)));
+            types.SyntaxValues = types.SyntaxValues.SetItem(path, named);
         }
 
         public static void DeclareParameterTypes(TokenLocation loc, FunctionType sig, IdentifierPath path, TypeFrame types) {            
@@ -52,7 +51,7 @@ namespace Helix.Features.Functions {
                 // TODO: Fix iswritable here
                 types.SyntaxValues = types.SyntaxValues.Add(
                     parPath,
-                    new PointerType(type, true).ToSyntax(loc));
+                    new PointerType(type, parsePar.IsWritable).ToSyntax(loc));
 
                 var varSig = new PointerType(type, parsePar.IsWritable);
                 types.NominalSignatures = types.NominalSignatures.SetItem(parPath, varSig);

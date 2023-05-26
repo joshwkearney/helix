@@ -28,6 +28,22 @@ namespace Helix.Features.Unions {
             this.UnionSignature = unionSig;
         }
 
+        public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
+            if (this.MemberNames.Count != 1) {
+                return Array.Empty<ISyntaxTree>();
+            }
+
+            var memName = this.MemberNames.First();
+            var member = this.UnionSignature.Members.First(x => x.Name == memName);
+
+            if (!types.TryGetVariable(this.TargetPath, out var varSig)) {
+                throw new Exception();
+            }
+
+            var inject = new UnionFlowVarStatement(loc, member, this.TargetPath, varSig);
+            return new[] { inject };
+        }
+
         public override bool TryOrWith(ISyntaxPredicate pred, out ISyntaxPredicate result) {
             if (pred is not IsUnionMemberPredicate other) {
                 result = null;

@@ -114,6 +114,9 @@ namespace Helix.Features.Functions {
         public void DeclareTypes(TypeFrame types) {
             var path = this.Location.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
+            var named = new NominalType(path, NominalTypeKind.Function);
+
+            types.SyntaxValues = types.SyntaxValues.SetItem(path, new TypeSyntax(this.Location, named));
 
             // Declare this function
             types.NominalSignatures = types.NominalSignatures.SetItem(path, sig);

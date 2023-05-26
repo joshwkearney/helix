@@ -8,6 +8,7 @@ using Helix.Features.FlowControl;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Analysis.Predicates;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -206,44 +207,66 @@ namespace Helix.Features.Primitives {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            // Delegate type resolution
             var left = this.left.CheckTypes(types).ToRValue(types);
             var right = this.right.CheckTypes(types).ToRValue(types);
+
+            if (left.GetReturnType(types).IsBool(types) && right.GetReturnType(types).IsBool(types)) {
+                return this.CheckBoolExpresion(left, right, types);
+            }
+            else if (left.GetReturnType(types).IsInt(types) && right.GetReturnType(types).IsInt(types)) {
+                return this.CheckIntExpresion(left, right, types);
+            }
+            else {
+                throw TypeException.UnexpectedType(this.right.Location, left.GetReturnType(types));
+            }
+        }
+
+        private ISyntaxTree CheckIntExpresion(ISyntaxTree left, ISyntaxTree right, TypeFrame types) {
+            if (!intOperations.TryGetValue(this.op, out var returnType)) {
+                throw TypeException.UnexpectedType(this.left.Location, left.GetReturnType(types));
+            }
 
             left = left.UnifyFrom(right, types);
             right = right.UnifyFrom(left, types);
 
-            var leftType = types.ReturnTypes[left];
-            var rightType = types.ReturnTypes[right];
-            var returnType = PrimitiveType.Void as HelixType;
+            var result = new BinarySyntax(this.Location, left, right, this.op, true);
 
-            // Check if left is a valid type
-            if (leftType != PrimitiveType.Int && leftType != PrimitiveType.Bool) {
+            result.SetReturnType(returnType, types);
+            result.SetCapturedVariables(left, right, types);
+            result.SetPredicate(left, right, types);
+
+            return result;
+        }
+
+        private ISyntaxTree CheckBoolExpresion(ISyntaxTree left, ISyntaxTree right, TypeFrame types) {
+            var leftType = left.GetReturnType(types);
+            var rightType = right.GetReturnType(types);
+
+            if (!boolOperations.TryGetValue(this.op, out var ret)) {
                 throw TypeException.UnexpectedType(this.left.Location, leftType);
             }
 
-            // Check if right is a valid type
-            if (rightType != PrimitiveType.Int && rightType != PrimitiveType.Bool) {
-                throw TypeException.UnexpectedType(this.right.Location, rightType);
-            }
+            var predicate = ISyntaxPredicate.Empty;
+            var returnType = PrimitiveType.Bool as HelixType;
 
-            // Make sure this is a valid operation
-            if (leftType == PrimitiveType.Int) {
-                if (!intOperations.TryGetValue(this.op, out var ret)) {
-                    throw TypeException.UnexpectedType(this.left.Location, leftType);
+            if (leftType is PredicateBool leftPred && rightType is PredicateBool rightPred) {
+                switch (this.op) {
+                    case BinaryOperationKind.And:
+                        predicate = leftPred.Predicate.And(rightPred.Predicate);
+                        break;
+                    case BinaryOperationKind.Or:
+                        predicate = leftPred.Predicate.Or(rightPred.Predicate);
+                        break;
+                    case BinaryOperationKind.NotEqualTo:
+                    case BinaryOperationKind.Xor:
+                        predicate = leftPred.Predicate.Xor(rightPred.Predicate);
+                        break;
+                    case BinaryOperationKind.EqualTo:
+                        predicate = leftPred.Predicate.Xor(rightPred.Predicate).Negate();
+                        break;
                 }
 
-                returnType = ret;
-            }
-            else if (leftType == PrimitiveType.Bool) {
-                if (!boolOperations.TryGetValue(this.op, out var ret)) {
-                    throw TypeException.UnexpectedType(this.left.Location, leftType);
-                }
-
-                returnType = ret;
-            }
-            else {
-                throw new Exception("This should never happen");
+                returnType = new PredicateBool(predicate);
             }
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);

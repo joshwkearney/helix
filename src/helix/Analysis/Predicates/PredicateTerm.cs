@@ -53,7 +53,7 @@ namespace Helix.Analysis.Predicates {
                         continue;
                     }
 
-                    if (leaf.TryAndWith(op, out var result)) {
+                    if (leaf.TryAndWith(op.Operands.First(), out var result)) {
                         var newOps = this.Operands
                             .Remove(op)
                             .Add(new PredicatePolynomial(result));

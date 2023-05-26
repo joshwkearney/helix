@@ -32,7 +32,7 @@ namespace Helix.Parsing {
                 else if (tokOp.Kind == TokenKind.Ampersand) {
                     return new AddressOfSyntax(loc, first);
                 }
-                else {
+                else if (tokOp.Kind != TokenKind.Not) {
                     throw new Exception("Unexpected unary operator");
                 }
 
@@ -78,15 +78,22 @@ namespace Helix.Features.Primitives {
                 return result.CheckTypes(types);
             }
             else if (this.op == UnaryOperatorKind.Not) {
-                var arg = this.arg
-                    .CheckTypes(types)
-                    .UnifyTo(PrimitiveType.Bool, types);
+                var arg = this.arg.CheckTypes(types);
+                var returnType = arg.GetReturnType(types);
+
+                if (returnType is PredicateBool pred) {
+                    returnType = new PredicateBool(pred.Predicate.Negate());
+                }
+                else {
+                    arg = arg.UnifyTo(PrimitiveType.Bool, types);
+                    returnType = PrimitiveType.Bool;
+                }
 
                 var result = new UnaryNotSyntax(
                     this.Location,
                     arg);
 
-                result.SetReturnType(PrimitiveType.Bool, types);
+                result.SetReturnType(returnType, types);
                 result.SetCapturedVariables(arg, types);
                 result.SetPredicate(arg, types);
 
@@ -115,6 +122,12 @@ namespace Helix.Features.Primitives {
         public ISyntaxTree CheckTypes(TypeFrame types) => this;
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
+
+        public void AnalyzeFlow(FlowFrame flow) {
+            this.target.AnalyzeFlow(flow);
+
+            this.SetLifetimes(this.target.GetLifetimes(flow), flow);
+        }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             return new CNot() {

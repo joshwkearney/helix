@@ -79,13 +79,13 @@ namespace Helix.Features.Primitives {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            // If the supplied type isn't a type, then try to check this as a new value expression
+            // Make sure our type is actually a type
             if (!this.type.AsType(types).TryGetValue(out var type)) {
                 throw TypeException.ExpectedTypeExpression(this.type.Location);              
             }
 
             // Make sure we are not supplying members to a primitive type
-            if (type is not NominalType) {
+            if (!type.AsStruct(types).HasValue && !type.AsUnion(types).HasValue) {
                 if (this.names.Count > 0) {
                     throw new TypeException(
                         this.Location,
