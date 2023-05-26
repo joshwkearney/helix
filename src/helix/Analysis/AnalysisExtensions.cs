@@ -7,11 +7,16 @@ using Helix.Features.Types;
 namespace Helix.Analysis {
     public static class AnalysisExtensions {
         public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
-            var named = new NominalType(path, NominalTypeKind.Variable);
-
-            return types.NominalSupertypes
-                .GetValueOrNone(named)
+            return types.NominalSignatures
+                .GetValueOrNone(path)
                 .SelectMany(x => x.AsVariable(types))
+                .TryGetValue(out type);
+        }
+
+        public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {
+            return types.NominalSignatures
+                .GetValueOrNone(path)
+                .SelectMany(x => x.AsFunction(types))
                 .TryGetValue(out type);
         }
 
@@ -35,6 +40,15 @@ namespace Helix.Analysis {
 
         public static Option<StructType> AsStruct(this HelixType type, ITypedFrame types) {
             if (type.GetSignatureSupertype(types) is StructType sig) {
+                return sig;
+            }
+            else {
+                return Option.None;
+            }
+        }
+
+        public static Option<UnionType> AsUnion(this HelixType type, ITypedFrame types) {
+            if (type.GetSignatureSupertype(types) is UnionType sig) {
                 return sig;
             }
             else {

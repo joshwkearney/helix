@@ -13,7 +13,7 @@ namespace Helix.Features.Aggregates {
         private static int tempCounter = 0;
 
         private readonly HelixType unionType;
-        private readonly StructType sig;
+        private readonly UnionType sig;
         private readonly IReadOnlyList<string> names;
         private readonly IReadOnlyList<ISyntaxTree> values;
         private readonly IdentifierPath tempPath;
@@ -27,7 +27,7 @@ namespace Helix.Features.Aggregates {
         public NewUnionSyntax(
             TokenLocation loc,
             HelixType unionType,
-            StructType sig,
+            UnionType sig,
             IReadOnlyList<string> names,
             IReadOnlyList<ISyntaxTree> values,
             IdentifierPath tempPath) {
@@ -42,7 +42,7 @@ namespace Helix.Features.Aggregates {
             this.IsPure = this.values.All(x => x.IsPure);
         }
 
-        public NewUnionSyntax(TokenLocation loc, HelixType unionType, StructType sig,
+        public NewUnionSyntax(TokenLocation loc, HelixType unionType, UnionType sig,
                               IReadOnlyList<string> names, IReadOnlyList<ISyntaxTree> values)
             : this(loc, unionType, sig, names, values, loc.Scope.Append("$new_union_" + tempCounter++)) { }
 

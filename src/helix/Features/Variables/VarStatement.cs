@@ -88,10 +88,9 @@ namespace Helix {
             }
 
             var basePath = this.Location.Scope.Append(this.names[0]);
-            var namedType = new NominalType(basePath, NominalTypeKind.Variable);
             var varSig = new PointerType(assignType, this.isWritable);
 
-            types.NominalSupertypes = types.NominalSupertypes.Add(namedType, varSig);
+            types.NominalSignatures = types.NominalSignatures.SetItem(basePath, varSig);
 
             var result = new VarStatement(
                 this.Location,

@@ -77,9 +77,8 @@ namespace Helix.Features.Aggregates {
         public void DeclareTypes(TypeFrame types) {
             var path = this.Location.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
-            var namedType = new NominalType(path, NominalTypeKind.Struct);
 
-            types.NominalSupertypes = types.NominalSupertypes.Add(namedType, sig);
+            types.NominalSignatures = types.NominalSignatures.SetItem(path, sig);
 
             // Register this declaration with the code generator so 
             // types are constructed in order

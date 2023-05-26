@@ -38,11 +38,12 @@ namespace Helix.Features.Functions {
                 new TypeSyntax(sig.Location, new NominalType(path, NominalTypeKind.Function)));
         }
 
-        public static void DeclareParameterTypes(TokenLocation loc, FunctionType sig, IdentifierPath path, TypeFrame types) {
+        public static void DeclareParameterTypes(TokenLocation loc, FunctionType sig, IdentifierPath path, TypeFrame types) {            
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
                 var type = sig.Parameters[i].Type;
+                var parPath = path.Append(parsePar.Name);
 
                 if (parsePar.IsWritable) {
                     type = type.GetMutationSupertype(types);
@@ -50,17 +51,15 @@ namespace Helix.Features.Functions {
 
                 // TODO: Fix iswritable here
                 types.SyntaxValues = types.SyntaxValues.Add(
-                    path.Append(parsePar.Name),
+                    parPath,
                     new PointerType(type, true).ToSyntax(loc));
 
                 var varSig = new PointerType(type, parsePar.IsWritable);
-                var namedType = new NominalType(path.Append(parsePar.Name), NominalTypeKind.Variable);
-
-                types.NominalSupertypes = types.NominalSupertypes.Add(namedType, varSig);
+                types.NominalSignatures = types.NominalSignatures.SetItem(parPath, varSig);
 
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(types)) {
-                    var memPath = path.Append(parsePar.Name).AppendMember(relPath);
+                    var memPath = parPath.AppendMember(relPath);
                     var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
                     var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.LocalValue, 0);
                 }

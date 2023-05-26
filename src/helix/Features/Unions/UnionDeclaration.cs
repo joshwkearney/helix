@@ -65,14 +65,15 @@ namespace Helix.Features.Aggregates {
 
         public void DeclareTypes(TypeFrame types) {
             var path = this.Location.Scope.Append(this.signature.Name);
-            var sig = this.signature.ResolveNames(types);
+            var structSig = this.signature.ResolveNames(types);
+            var unionSig = new UnionType(structSig.Members);
             var unionType = new NominalType(path, NominalTypeKind.Union);
 
-            types.Unions[path] = sig;
+            types.NominalSignatures = types.NominalSignatures.SetItem(path, unionSig);
 
             // Register this declaration with the code generator so 
             // types are constructed in order
-            types.TypeDeclarations[unionType] = writer => this.RealCodeGenerator(sig, writer);
+            types.TypeDeclarations[unionType] = writer => this.RealCodeGenerator(unionSig, writer);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
@@ -98,7 +99,7 @@ namespace Helix.Features.Aggregates {
 
         public void GenerateCode(FlowFrame types, ICWriter writer) { }
 
-        private void RealCodeGenerator(StructType signature, ICWriter writer) {
+        private void RealCodeGenerator(UnionType signature, ICWriter writer) {
             var path = this.Location.Scope.Append(this.signature.Name);
             var structName = writer.GetVariableName(path);
             var unionName = writer.GetVariableName(path) + "$union";

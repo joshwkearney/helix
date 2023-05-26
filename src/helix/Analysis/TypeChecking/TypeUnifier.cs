@@ -175,22 +175,19 @@ namespace Helix.Analysis.TypeChecking {
             if (second == PrimitiveType.Int || second == PrimitiveType.Float || second == PrimitiveType.Bool) {
                 return UnificationResult.Pun(second);
             }
-            else if (second is NominalType named) {
-                if (named.AsStruct(types).TryGetValue(out var sig)) {
-                    return TryUnifyVoidToStruct(named, sig, types);
-                }
-                else if (types.Unions.TryGetValue(named.Path, out sig)) {
-                    return TryUnifyVoidToStruct(named, sig, types);
-                }
+            else if (second.AsStruct(types).TryGetValue(out var structSig)) {
+                return TryUnifyVoidToStruct(second, structSig, types);
+            }
+            else if (second.AsUnion(types).TryGetValue(out var unionSig)) {
+                return TryUnifyVoidToUnion(second, unionSig, types);
             }
 
             return UnificationResult.None;
         }
 
         private static UnificationResult TryUnifyVoidToStruct(HelixType structType, StructType sig, TypeFrame types) {
-            var memsConvertable = TryUnify(PrimitiveType.Void, sig.Members[0].Type, types)
-                .Kind
-                .IsSubsetOf(UnificationKind.Convert);
+            var memsConvertable = sig.Members
+                .All(x => PrimitiveType.Void.CanUnifyTo(x.Type, types));
 
             if (!memsConvertable) {
                 return UnificationResult.None;
@@ -202,6 +199,24 @@ namespace Helix.Analysis.TypeChecking {
                     var block = new BlockSyntax(syntax.Location, new[] {
                         syntax,
                         new NewSyntax(syntax.Location, structType.ToSyntax(syntax.Location))
+                    });
+
+                    return block.CheckTypes(t);
+                }
+            };
+        }
+
+        private static UnificationResult TryUnifyVoidToUnion(HelixType unionType, UnionType sig, TypeFrame types) {
+            if (!PrimitiveType.Void.CanUnifyTo(sig.Members[0].Type, types)) {
+                return UnificationResult.None;
+            }
+
+            return new UnificationResult() {
+                Kind = UnificationKind.Convert,
+                Unifier = (syntax, t) => {
+                    var block = new BlockSyntax(syntax.Location, new[] {
+                        syntax,
+                        new NewSyntax(syntax.Location, unionType.ToSyntax(syntax.Location))
                     });
 
                     return block.CheckTypes(t);

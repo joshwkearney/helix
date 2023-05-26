@@ -53,13 +53,12 @@ namespace Helix.Features.Functions {
                 new TypeSyntax(this.Location, named));
 
             // Declare this function
-            types.NominalSupertypes = types.NominalSupertypes.SetItem(named, sig);
+            types.NominalSignatures = types.NominalSignatures.SetItem(named.Path, sig);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
-            var path = types.ResolvePath(this.Location.Scope, this.Signature.Name);
-            var named = new NominalType(path, NominalTypeKind.Function);
-            var sig = types.NominalSupertypes[named].AsFunction(types).GetValue();
+            var path = this.Location.Scope.Append(this.Signature.Name);
+            var sig = new NominalType(path, NominalTypeKind.Function).AsFunction(types).GetValue();
 
             return new ExternFunctionDeclaration(this.Location, sig, this.Signature.Name);
         }

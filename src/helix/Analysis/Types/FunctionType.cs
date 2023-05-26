@@ -13,7 +13,7 @@ namespace Helix.Features.Types {
         }
 
         public override PassingSemantics GetSemantics(ITypedFrame types) {
-            return PassingSemantics.ValueType;
+            return PassingSemantics.ReferenceType;
         }
 
         public override HelixType GetMutationSupertype(ITypedFrame types) => this;

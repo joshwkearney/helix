@@ -41,12 +41,12 @@ namespace Helix.Features.Unions {
             }
 
             // Make sure we have a variable pointing to a union
-            if (varSig.InnerType is not NominalType named || !types.Unions.TryGetValue(named.Path, out var sig)) {
+            if (varSig.InnerType.AsUnion(types).TryGetValue(out var unionSig)) {
                 throw TypeException.ExpectedUnionType(this.Target.Location);
             }
 
             // Make sure this union actually contains this member
-            if (!sig.Members.Any(x => x.Name == this.MemberName)) {
+            if (!unionSig.Members.Any(x => x.Name == this.MemberName)) {
                 throw TypeException.MemberUndefined(
                     this.Location, 
                     new NominalType(path, NominalTypeKind.Union), 
@@ -56,14 +56,14 @@ namespace Helix.Features.Unions {
             var predicate = new IsUnionMemberPredicate(
                 path,
                 new[] { this.MemberName }.ToValueSet(),
-                sig);
+                unionSig);
 
             var returnType = new PredicateBool(predicate);
 
             var result = new IsSyntax() {
                 Location = this.Location,
                 MemberName = this.MemberName,
-                UnionSignature = sig,
+                UnionSignature = unionSig,
                 VariablePath = path
             };
 
@@ -82,7 +82,7 @@ namespace Helix.Features.Unions {
 
         public string MemberName { get; init; }
 
-        public StructType UnionSignature { get; init; }
+        public UnionType UnionSignature { get; init; }
 
         public IEnumerable<ISyntaxTree> Children => Array.Empty<ISyntaxTree>();
 

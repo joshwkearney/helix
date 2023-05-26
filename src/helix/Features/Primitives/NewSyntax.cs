@@ -110,37 +110,31 @@ namespace Helix.Features.Primitives {
             else if (type is SingularBoolType singBool) {
                 return new BoolLiteral(this.Location, singBool.Value).CheckTypes(types);
             }
-            else if (type is NominalType named) {
-                if (named.AsStruct(types).TryGetValue(out var sig)) {
-                    var result = new NewStructSyntax(
-                        this.Location,
-                        named,
-                        sig,
-                        this.names,
-                        this.values);
-
-                    return result.CheckTypes(types);
-                }
-                else if (types.Unions.TryGetValue(named.Path, out sig)) {
-                    var result = new NewUnionSyntax(
-                        this.Location,
-                        named,
-                        sig,
-                        this.names,
-                        this.values);
-
-                    return result.CheckTypes(types);
-                }
-
-                throw TypeException.ExpectedStructType(this.type.Location, type);
-
-            }
-            else {
-                throw new TypeException(
+            else if (type.AsStruct(types).TryGetValue(out var structSig)) {
+                var result = new NewStructSyntax(
                     this.Location,
-                    "Invalid Initialization",
-                    $"The type '{type}' does not have a default value and cannot be initialized.");
+                    type,
+                    structSig,
+                    this.names,
+                    this.values);
+
+                return result.CheckTypes(types);
             }
+            else if (type.AsUnion(types).TryGetValue(out var unionSig)) {
+                var result = new NewUnionSyntax(
+                    this.Location,
+                    type,
+                    unionSig,
+                    this.names,
+                    this.values);
+
+                return result.CheckTypes(types);
+            }
+
+            throw new TypeException(
+                this.Location,
+                "Invalid Initialization",
+                $"The type '{type}' does not have a default value and cannot be initialized.");
         }
     }
 }

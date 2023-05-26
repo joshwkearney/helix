@@ -8,9 +8,7 @@ using System.Collections.Immutable;
 
 namespace Helix.Analysis {
     public interface ITypedFrame {
-        public ImmutableDictionary<HelixType, HelixType> NominalSupertypes { get; set; }
-
-        public IDictionary<IdentifierPath, StructType> Unions { get; }
+        public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 

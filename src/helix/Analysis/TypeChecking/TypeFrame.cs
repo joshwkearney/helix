@@ -26,9 +26,9 @@ namespace Helix.Analysis.TypeChecking {
         // Frame-specific things
         public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
-        // Global things
-        public IDictionary<IdentifierPath, StructType> Unions { get; }
+        public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
 
+        // Global things
         public IDictionary<HelixType, DeclarationCG> TypeDeclarations { get; }
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
@@ -36,8 +36,6 @@ namespace Helix.Analysis.TypeChecking {
         public IDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
 
         public IDictionary<ISyntaxTree, ISyntaxPredicate> Predicates { get; }
-
-        public ImmutableDictionary<HelixType, HelixType> NominalSupertypes { get; set; }
 
         public TypeFrame() {
             this.SyntaxValues = ImmutableDictionary<IdentifierPath, ISyntaxTree>.Empty;
@@ -54,25 +52,23 @@ namespace Helix.Analysis.TypeChecking {
                 new IdentifierPath("bool"),
                 new TypeSyntax(default, PrimitiveType.Bool));
 
-            this.Unions = new Dictionary<IdentifierPath, StructType>();
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
 
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
             this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
             this.Predicates = new Dictionary<ISyntaxTree, ISyntaxPredicate>();
-            this.NominalSupertypes = ImmutableDictionary<HelixType, HelixType>.Empty;
+            this.NominalSignatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
         }
 
         public TypeFrame(TypeFrame prev) {
             this.SyntaxValues = prev.SyntaxValues;
 
-            this.Unions = prev.Unions;
             this.TypeDeclarations = prev.TypeDeclarations;
 
             this.ReturnTypes = prev.ReturnTypes;
             this.CapturedVariables = prev.CapturedVariables;
             this.Predicates = prev.Predicates;
-            this.NominalSupertypes = prev.NominalSupertypes;
+            this.NominalSignatures = prev.NominalSignatures;
         }
 
         public string GetVariableName() {

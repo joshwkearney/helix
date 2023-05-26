@@ -1,5 +1,6 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Features.Aggregates;
+using Helix.Parsing;
 using Helix.Syntax;
 
 namespace Helix.Analysis.Types {
@@ -21,55 +22,23 @@ namespace Helix.Analysis.Types {
             switch (this.Kind) {
                 case NominalTypeKind.Function:
                     return PassingSemantics.ValueType;
-                case NominalTypeKind.Struct:
-                    return types.NominalSupertypes[this].GetSemantics(types);
-                case NominalTypeKind.Union:
-                    return this.GetAggregateSemantics(types.Unions[this.Path], types);
                 default:
-                    throw new InvalidOperationException();
+                    return types.NominalSignatures[this.Path].GetSemantics(types);
             }
         }
 
         public override HelixType GetMutationSupertype(ITypedFrame types) => this;
 
         public override HelixType GetSignatureSupertype(ITypedFrame types) {
-            // TODO: Fix this
-            if (types.NominalSupertypes.TryGetValue(this, out var s)) {
-                return s.GetSignatureSupertype(types);
-            }
-            else {
-                return this;
-            }
+            return types.NominalSignatures[this.Path].GetSignatureSupertype(types);
         }
 
-        private PassingSemantics GetAggregateSemantics(StructType sig, ITypedFrame types) {
-            var memSemantics = sig.Members.Select(x => x.Type.GetSemantics(types));
-
-            if (memSemantics.All(x => x.IsValueType())) {
-                return PassingSemantics.ValueType;
-            }
-            else {
-                return PassingSemantics.ContainsReferenceType;
-            }
+        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame types) {
+            return types.NominalSignatures[this.Path].GetContainedTypes(types);
         }
 
         public override string ToString() {
             return this.Path.Segments.Last();
-        }
-
-        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame types) {
-            if (this.AsStruct(types).TryGetValue(out var sig)) {
-                return sig.Members
-                    .SelectMany(x => x.Type.GetContainedTypes(types))
-                    .Prepend(this);
-            }
-            else if (types.Unions.TryGetValue(this.Path, out sig)) {
-                return sig.Members
-                    .SelectMany(x => x.Type.GetContainedTypes(types))
-                    .Prepend(this);
-            }
-
-            return new[] { this };
         }
     }
 }

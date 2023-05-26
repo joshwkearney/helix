@@ -21,41 +21,35 @@ namespace Helix.Analysis.Flow {
 
         public LifetimeGraph LifetimeGraph { get; }
 
-        public IDictionary<IdentifierPath, StructType> Unions { get; }
-
         // Frame-specific things
         public ImmutableDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; set; }
 
         public ImmutableHashSet<Lifetime> LifetimeRoots { get; set; }
 
-        public ImmutableDictionary<HelixType, HelixType> NominalSupertypes { get; set; }
+        public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
 
         public FlowFrame(TypeFrame frame) {
             this.ReturnTypes = frame.ReturnTypes;
             this.CapturedVariables = frame.CapturedVariables;
-
-            this.Unions = frame.Unions;
 
             this.LifetimeGraph = new();
             this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
 
             this.LocalLifetimes = ImmutableDictionary<VariablePath, LifetimeBounds>.Empty;
             this.LifetimeRoots = ImmutableHashSet<Lifetime>.Empty;
-            this.NominalSupertypes = frame.NominalSupertypes;
+            this.NominalSignatures = frame.NominalSignatures;
         }
 
         public FlowFrame(FlowFrame prev) {
             this.ReturnTypes = prev.ReturnTypes;
             this.CapturedVariables = prev.CapturedVariables;
 
-            this.Unions = prev.Unions;
-
             this.LifetimeGraph = prev.LifetimeGraph;
             this.SyntaxLifetimes = prev.SyntaxLifetimes;
 
             this.LocalLifetimes = prev.LocalLifetimes;
             this.LifetimeRoots = prev.LifetimeRoots;
-            this.NominalSupertypes = prev.NominalSupertypes;
+            this.NominalSignatures = prev.NominalSignatures;
         }
 
         private IEnumerable<Lifetime> MaximizeRootSet(IEnumerable<Lifetime> roots) {
