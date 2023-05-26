@@ -99,7 +99,7 @@
             }
         }
 
-        public static Option<TValue> GetValueOrNone<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) {
+        public static Option<TValue> GetValueOrNone<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dict, TKey key) {
             if (dict.TryGetValue(key, out var value)) {
                 return value;
             }

@@ -72,7 +72,7 @@ namespace Helix {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);
             if (this.isWritable) {
-                assign = assign.WithMutableType(types);
+                assign = assign.WithMutationType(types);
             }
 
             // If this is a compound assignment, check if we have the right
@@ -83,11 +83,11 @@ namespace Helix {
             }
 
             // Make sure we're not shadowing anybody
-            if (types.TryResolveName(this.Location.Scope, this.names[0], out _)) {
+            if (types.TryResolveName(types.Scope, this.names[0], out _)) {
                 throw TypeException.IdentifierDefined(this.Location, this.names[0]);
             }
 
-            var basePath = this.Location.Scope.Append(this.names[0]);
+            var basePath = types.Scope.Append(this.names[0]);
             var varSig = new PointerType(assignType, this.isWritable);
 
             types.NominalSignatures = types.NominalSignatures.SetItem(basePath, varSig);
@@ -168,7 +168,7 @@ namespace Helix {
             this.isWritable = isWritable;
         }
 
-        public Option<HelixType> AsType(ITypedFrame types) {
+        public Option<HelixType> AsType(TypeFrame types) {
             return new PointerType(this.assignSyntax.GetReturnType(types), this.isWritable);
         }
 

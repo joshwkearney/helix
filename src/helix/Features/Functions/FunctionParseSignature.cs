@@ -22,7 +22,6 @@ namespace Helix.Features.Functions {
         }
 
         public FunctionType ResolveNames(TypeFrame types) {
-            var path = this.Location.Scope.Append(this.Name);
             var pars = new List<FunctionParameter>();
 
             if (!this.ReturnType.AsType(types).TryGetValue(out var retType)) {

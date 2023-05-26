@@ -22,31 +22,50 @@ namespace Helix.Features.Unions {
 
         public PointerType ShadowedType { get; }
 
+        public IdentifierPath Path { get; }
+
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => Array.Empty<ISyntaxTree>();
 
         public bool IsPure => true;
 
-        public UnionFlowVarStatement(TokenLocation loc, StructMember member, 
-                                    IdentifierPath shadowed, PointerType shadowedType) {
+        public UnionFlowVarStatement(TokenLocation loc, StructMember member,
+                                     IdentifierPath shadowed, PointerType shadowedType,
+                                     IdentifierPath path) {
             this.Location = loc;
             this.UnionMember = member;
             this.ShadowedPath = shadowed;
             this.ShadowedType = shadowedType;
+            this.Path = path;
         }
 
+        public UnionFlowVarStatement(TokenLocation loc, StructMember member,
+                                     IdentifierPath shadowed, PointerType shadowedType)
+            : this(loc, member, shadowed, shadowedType, new IdentifierPath(shadowed.Segments.Last())) { }
+
         public ISyntaxTree CheckTypes(TypeFrame types) {
+            if (this.IsTypeChecked(types)) {
+                return this;
+            }
+
             var varSig = new PointerType(this.UnionMember.Type, this.UnionMember.IsWritable && this.ShadowedType.IsWritable);
-            var path = this.Location.Scope.Append(this.ShadowedPath.Segments.Last());
+            var path = types.Scope.Append(this.Path);
 
             types.SyntaxValues = types.SyntaxValues.SetItem(path, new TypeSyntax(this.Location, varSig));
 
-            this.SetReturnType(PrimitiveType.Void, types);
-            this.SetCapturedVariables(this.ShadowedPath, VariableCaptureKind.LocationCapture, this.ShadowedType, types);
-            this.SetPredicate(types);
+            var result = new UnionFlowVarStatement(
+                this.Location, 
+                this.UnionMember,
+                this.ShadowedPath, 
+                this.ShadowedType, 
+                path);
 
-            return this;
+            result.SetReturnType(PrimitiveType.Void, types);
+            result.SetCapturedVariables(this.ShadowedPath, VariableCaptureKind.LocationCapture, this.ShadowedType, types);
+            result.SetPredicate(types);
+
+            return result;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
@@ -57,10 +76,9 @@ namespace Helix.Features.Unions {
         }
 
         private void DeclareValueLifetimes(FlowFrame flow) {
-            var path = this.Location.Scope
-                .Append(this.ShadowedPath.Segments.Last())
-                .ToVariablePath();
+            var path = this.Path.ToVariablePath();
 
+            // TODO: Revisit this
             //var varLocation = new Lifetime(
             //    this.Location,
             //    this.path.ToVariablePath(),
@@ -95,8 +113,7 @@ namespace Helix.Features.Unions {
                 }
             };
 
-            var path = this.Location.Scope.Append(this.ShadowedPath.Segments.Last());
-            var name = writer.GetVariableName(path);
+            var name = writer.GetVariableName(this.Path);
             var cReturnType = new CPointerType(writer.ConvertType(this.UnionMember.Type));
 
             var stat = new CVariableDeclaration() {
@@ -108,7 +125,7 @@ namespace Helix.Features.Unions {
             writer.WriteComment($"Line {this.Location.Line}: Union downcast flowtyping");
             writer.WriteStatement(stat);
             writer.WriteEmptyLine();
-            writer.VariableKinds[path] = CVariableKind.Allocated;
+            writer.VariableKinds[this.Path] = CVariableKind.Allocated;
 
             return new CIntLiteral(0);
         }

@@ -46,7 +46,10 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.FlowControl {
     public record LoopStatement : ISyntaxTree {
+        private static int loopCounter = 0;
+
         private readonly ISyntaxTree body;
+        private readonly string name;
 
         public TokenLocation Location { get; }
 
@@ -54,11 +57,14 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure => false;
 
-        public LoopStatement(TokenLocation location, ISyntaxTree body) {
-
+        public LoopStatement(TokenLocation location, ISyntaxTree body, string name) {
             this.Location = location;
             this.body = body;
+            this.name = name;
         }
+
+        public LoopStatement(TokenLocation location, ISyntaxTree body)
+            : this(location, body, "$loop" + loopCounter++) { }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
@@ -73,9 +79,9 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            var bodyTypes = new TypeFrame(types);
+            var bodyTypes = new TypeFrame(types, this.name);
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
-            var result = (ISyntaxTree)new LoopStatement(this.Location, body);
+            var result = (ISyntaxTree)new LoopStatement(this.Location, body, this.name);
 
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(body, types);

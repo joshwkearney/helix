@@ -80,7 +80,7 @@ namespace Helix.Features.Functions {
                 newArgs[i] = this.args[i].CheckTypes(types).UnifyTo(expectedType, types);
             }
 
-            var path = this.Location.Scope.Append("$invoke_temp_" + tempCounter++);
+            var path = types.Scope.Append("$call" + tempCounter++);
             var result = new InvokeSyntax(this.Location, sig, newArgs, named.Path, path);
 
             result.SetReturnType(sig.ReturnType, types);

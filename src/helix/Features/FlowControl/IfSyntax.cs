@@ -42,7 +42,7 @@ namespace Helix.Features.FlowControl {
         private static int ifTempCounter = 0;
 
         private readonly ISyntaxTree cond, iftrue, iffalse;
-        private readonly IdentifierPath tempPath;
+        private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
 
@@ -64,19 +64,22 @@ namespace Helix.Features.FlowControl {
 
             this.iffalse = new VoidLiteral(location);
             this.IsPure = cond.IsPure && iftrue.IsPure;
-            this.tempPath = location.Scope.Append("$if_temp_" + ifTempCounter++);
+            this.path = new IdentifierPath("$if" + ifTempCounter++);
         }
 
-        public IfSyntax(
-            TokenLocation location,
-            ISyntaxTree cond,
-            ISyntaxTree iftrue,
-            ISyntaxTree iffalse) : this(location, cond, iftrue) {
+        public IfSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue,
+                        ISyntaxTree iffalse) 
+            : this(location, cond, iftrue, iffalse, new IdentifierPath("$if" + ifTempCounter++)) {}
+
+        public IfSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue,
+                        ISyntaxTree iffalse, IdentifierPath path) 
+            : this(location, cond, iftrue) {
 
             this.Location = location;
             this.cond = cond;
             this.iftrue = iftrue;
             this.iffalse = iffalse;
+            this.path = path;
             this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
         }
 
@@ -85,8 +88,9 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            var iftrueTypes = new TypeFrame(types);
-            var iffalseTypes = new TypeFrame(types);
+            var name = this.path.Segments.Last();
+            var iftrueTypes = new TypeFrame(types, name + "T");
+            var iffalseTypes = new TypeFrame(types, name + "F");
 
             var cond = this.cond.CheckTypes(types).ToRValue(types);
             var condPredicate = ISyntaxPredicate.Empty;
@@ -115,7 +119,8 @@ namespace Helix.Features.FlowControl {
                 this.Location,
                 cond,
                 iftrue,
-                iffalse);
+                iffalse,
+                types.Scope.Append(name));
 
             result.SetReturnType(resultType, types);
             result.SetCapturedVariables(cond, iftrue, iffalse, types);
@@ -158,7 +163,7 @@ namespace Helix.Features.FlowControl {
             var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
             foreach (var (relPath, _) in this.GetReturnType(flow).GetMembers(flow)) {
-                var memPath = this.tempPath.AppendMember(relPath);
+                var memPath = this.path.AppendMember(relPath);
                 var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Alias, LifetimeOrigin.TempValue);
 
                 flow.LifetimeGraph.AddAssignment(valueLifetime, ifTrueBundle[relPath].ValueLifetime, null);
@@ -223,7 +228,7 @@ namespace Helix.Features.FlowControl {
             var affirm = this.iftrue.GenerateCode(types, affirmWriter);
             var neg = this.iffalse.GenerateCode(types, negWriter);
 
-            var tempName = writer.GetVariableName(this.tempPath);
+            var tempName = writer.GetVariableName();
             var returnType = this.GetReturnType(types);
 
             if (returnType != PrimitiveType.Void) {

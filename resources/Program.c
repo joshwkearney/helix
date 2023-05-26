@@ -18,35 +18,37 @@ extern _Region* _region_new();
 extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
-typedef union IntOption$union IntOption$union;
-typedef struct IntOption IntOption;
+typedef struct int$ptr int$ptr;
+typedef struct int$ptr$ptr int$ptr$ptr;
 
-IntOption test(_Region* _return_region, IntOption x);
+int$ptr test11(_Region* _return_region);
 
-
-union IntOption$union {
-    int none;
-    int some;
-    int other;
+struct int$ptr {
+    int* data;
+    _Region* region;
 };
 
-struct IntOption {
-    int tag;
-    IntOption$union data;
+struct int$ptr$ptr {
+    int$ptr* data;
+    _Region* region;
 };
 
-IntOption test(_Region* _return_region, IntOption x) {
-    /* Line 9: If statement */
-    if ((((x.tag) == 2U) | ((x.tag) == 0U))) {     } 
-    else {
-        /* Line 9: Union downcast flowtyping */
-        int* x_1 = (&((x.data).some));
+int$ptr test11(_Region* _return_region) {
+    /* Line 2: New variable declaration 'a' */
+    int* a = (int*)_region_malloc(_return_region, sizeof(int));
+    (*a) = 10U;
 
-        /* Line 14: Assignment statement */
-        (*x_1) = ((*x_1) + 45U);
-    }
+    /* Line 3: New variable declaration 'b' */
+    int$ptr* b = (int$ptr*)_region_malloc(_return_region, sizeof(int$ptr));
+    (*b) = (int$ptr){ a, _return_region };
 
-    return x;
+    /* Line 4: New variable declaration 'c' */
+    int$ptr$ptr c = (int$ptr$ptr){ b, _return_region };
+
+    /* Line 6: Pointer dereference */
+    int$ptr $deref0 = (*(c.data));
+
+    return $deref0;
 }
 
 #if __cplusplus

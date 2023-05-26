@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 
 namespace Helix.Features.Types {
@@ -12,13 +13,13 @@ namespace Helix.Features.Types {
             this.Parameters = pars;
         }
 
-        public override PassingSemantics GetSemantics(ITypedFrame types) {
+        public override PassingSemantics GetSemantics(ITypeContext types) {
             return PassingSemantics.ReferenceType;
         }
 
-        public override HelixType GetMutationSupertype(ITypedFrame types) => this;
+        public override HelixType GetMutationSupertype(ITypeContext types) => this;
 
-        public override HelixType GetSignatureSupertype(ITypedFrame types) => this;
+        public override HelixType GetSignatureSupertype(ITypeContext types) => this;
     }
 
     public record FunctionParameter {

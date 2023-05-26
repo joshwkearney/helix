@@ -43,7 +43,7 @@ namespace Helix.Features.Functions {
         }
 
         public void DeclareTypes(TypeFrame types) {
-            var path = this.Location.Scope.Append(this.Signature.Name);
+            var path = types.Scope.Append(this.Signature.Name);
             var sig = this.Signature.ResolveNames(types);
             var named = new NominalType(path, NominalTypeKind.Function);
 
@@ -57,10 +57,10 @@ namespace Helix.Features.Functions {
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
-            var path = this.Location.Scope.Append(this.Signature.Name);
+            var path = types.Scope.Append(this.Signature.Name);
             var sig = new NominalType(path, NominalTypeKind.Function).AsFunction(types).GetValue();
 
-            return new ExternFunctionDeclaration(this.Location, sig, this.Signature.Name);
+            return new ExternFunctionDeclaration(this.Location, sig, path);
         }
 
         public void GenerateCode(TypeFrame types, ICWriter writer) => throw new InvalidOperationException();
@@ -71,12 +71,12 @@ namespace Helix.Features.Functions {
 
         public TokenLocation Location { get; }
 
-        public string Name { get; }
+        public IdentifierPath Path { get; }
 
-        public ExternFunctionDeclaration(TokenLocation loc, FunctionType sig, string name) {
+        public ExternFunctionDeclaration(TokenLocation loc, FunctionType sig, IdentifierPath path) {
             this.Location = loc;
             this.Signature = sig;
-            this.Name = name;
+            this.Path = path;
         }
 
         public void DeclareNames(TypeFrame names) {
@@ -90,8 +90,6 @@ namespace Helix.Features.Functions {
         public IDeclaration CheckTypes(TypeFrame types) => this;
 
         public void GenerateCode(FlowFrame types, ICWriter writer) {
-            var path = this.Location.Scope.Append(this.Name);
-
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
                 : writer.ConvertType(this.Signature.ReturnType);
@@ -100,7 +98,7 @@ namespace Helix.Features.Functions {
                 .Parameters
                 .Select((x, i) => new CParameter() {
                     Type = writer.ConvertType(x.Type),
-                    Name = writer.GetVariableName(path.Append(x.Name))
+                    Name = writer.GetVariableName(this.Path.Append(x.Name))
                 })
                 .Prepend(new CParameter() {
                     Name = "_region",
@@ -108,7 +106,7 @@ namespace Helix.Features.Functions {
                 })
                 .ToArray();
 
-            var funcName = writer.GetVariableName(path);
+            var funcName = writer.GetVariableName(this.Path);
 
             var forwardDecl = new CFunctionDeclaration() {
                 ReturnType = returnType,

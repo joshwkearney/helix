@@ -21,7 +21,7 @@ namespace Helix.Features {
             this.type = type;
         }
 
-        public Option<HelixType> AsType(ITypedFrame types) => this.type;
+        public Option<HelixType> AsType(TypeFrame types) => this.type;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();

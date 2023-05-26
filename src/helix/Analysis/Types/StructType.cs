@@ -1,12 +1,13 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Analysis.Types {
     public record StructType(IReadOnlyList<StructMember> Members) : HelixType {
-        public override HelixType GetMutationSupertype(ITypedFrame types) => this;
+        public override HelixType GetMutationSupertype(ITypeContext types) => this;
 
-        public override HelixType GetSignatureSupertype(ITypedFrame types) => this;
+        public override HelixType GetSignatureSupertype(ITypeContext types) => this;
 
-        public override PassingSemantics GetSemantics(ITypedFrame types) {
+        public override PassingSemantics GetSemantics(ITypeContext types) {
             if (this.Members.All(x => x.Type.GetSemantics(types) == PassingSemantics.ValueType)) {
                 return PassingSemantics.ValueType;
             }

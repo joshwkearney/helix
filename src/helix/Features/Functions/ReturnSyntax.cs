@@ -8,6 +8,7 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Features.Functions;
+using Helix.Features.Types;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -17,8 +18,7 @@ namespace Helix.Parsing {
 
             return new ReturnSyntax(
                 start.Location,
-                arg, 
-                this.funcPath.Peek());
+                arg);
         }
     }
 }
@@ -26,8 +26,7 @@ namespace Helix.Parsing {
 namespace Helix.Features.Functions {
     public record ReturnSyntax : ISyntaxTree {
         private readonly ISyntaxTree payload;
-        private readonly IdentifierPath funcPath;
-        private readonly bool isTypeChecked = false;
+        private readonly FunctionType funcSig;
 
         public TokenLocation Location { get; }
 
@@ -36,25 +35,25 @@ namespace Helix.Features.Functions {
         public bool IsPure => false;
 
         public ReturnSyntax(TokenLocation loc, ISyntaxTree payload, 
-            IdentifierPath func, bool isTypeChecked = false) {
+                            FunctionType func = null) {
 
             this.Location = loc;
             this.payload = payload;
-            this.funcPath = func;
-            this.isTypeChecked = isTypeChecked;
-        }
-
-        public ISyntaxTree ToRValue(TypeFrame frame) {
-            if (!this.isTypeChecked) {
-                throw TypeException.RValueRequired(this.Location);
-            }
-
-            return this;
+            this.funcSig = func;
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
+            if (this.IsTypeChecked(types)) {
+                return this;
+            }
+
             var payload = this.payload.CheckTypes(types).ToRValue(types);
-            var result = new ReturnSyntax(this.Location, payload, this.funcPath, true);
+
+            if (!this.TryGetCurrentFunction(types, out var sig)) {
+                throw new InvalidOperationException();
+            }
+
+            var result = new ReturnSyntax(this.Location, payload, sig);
 
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(types);
@@ -63,24 +62,39 @@ namespace Helix.Features.Functions {
             return result;
         }
 
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            if (!this.IsTypeChecked(types)) {
+                throw TypeException.RValueRequired(this.Location);
+            }
+
+            return this;
+        }
+
         public void AnalyzeFlow(FlowFrame flow) {
             if (this.IsFlowAnalyzed(flow)) {
                 return;
             }
 
-            if (!flow.TryGetFunction(this.funcPath, out var sig)) {
-                throw new InvalidOperationException();
+            flow.SyntaxLifetimes[this] = new LifetimeBundle();
+            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, this.payload, flow);
+        }
+
+        private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {
+            var path = types.Scope;
+
+            while (!path.IsEmpty) {
+                if (types.TryGetFunction(path, out func)) {
+                    return true;
+                }
+
+                path = path.Pop();
             }
 
-            flow.SyntaxLifetimes[this] = new LifetimeBundle();
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, this.payload, flow);
+            func = null;
+            return false;
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
-            if (!this.isTypeChecked) {
-                throw new InvalidOperationException();
-            }
-
             writer.WriteStatement(new CReturn() {
                 Target = this.payload.GenerateCode(types, writer)
             });

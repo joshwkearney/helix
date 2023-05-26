@@ -10,16 +10,13 @@ using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private int dereferenceCounter = 0;
-
         public ISyntaxTree DereferenceExpression(ISyntaxTree first) {
             var op = this.Advance(TokenKind.Star);
             var loc = first.Location.Span(op.Location);
 
             return new DereferenceSyntax(
                 loc, 
-                first, 
-                this.scope.Append("$deref_" + this.dereferenceCounter++));
+                first);
         }
     }
 }
@@ -31,8 +28,9 @@ namespace Helix.Features.Variables {
     // This is for clarity because dereference rvalues and lvalues have
     // very different semantics, especially when it comes to lifetimes
     public record DereferenceSyntax : ISyntaxTree {
+        private static int derefCounter = 0;
+
         private readonly ISyntaxTree target;
-        private readonly IdentifierPath tempPath;
 
         public TokenLocation Location { get; }
 
@@ -40,14 +38,12 @@ namespace Helix.Features.Variables {
 
         public bool IsPure => this.target.IsPure;
 
-        public DereferenceSyntax(TokenLocation loc, ISyntaxTree target,
-                                 IdentifierPath tempPath) {
+        public DereferenceSyntax(TokenLocation loc, ISyntaxTree target) {
             this.Location = loc;
             this.target = target;
-            this.tempPath = tempPath;
         }
 
-        public Option<HelixType> AsType(ITypedFrame types) {
+        public Option<HelixType> AsType(TypeFrame types) {
             return this.target.AsType(types)
                 .Select(x => new PointerType(x, true))
                 .Select(x => (HelixType)x);
@@ -60,7 +56,7 @@ namespace Helix.Features.Variables {
 
             var target = this.target.CheckTypes(types).ToRValue(types);
             var pointerType = target.AssertIsPointer(types);
-            var result = new DereferenceSyntax(this.Location, target, this.tempPath);
+            var result = new DereferenceSyntax(this.Location, target);
 
             result.SetReturnType(pointerType.InnerType, types);
             result.SetCapturedVariables(target, types);
@@ -74,7 +70,8 @@ namespace Helix.Features.Variables {
                 throw new InvalidOperationException();
             }
 
-            return new DereferenceRValue(this.Location, this.target, this.tempPath).CheckTypes(types);
+            var path = types.Scope.Append("$deref" + derefCounter++);
+            return new DereferenceRValue(this.Location, this.target, path).CheckTypes(types);
         }
 
         public ISyntaxTree ToLValue(TypeFrame types) {
@@ -82,7 +79,8 @@ namespace Helix.Features.Variables {
                 throw new InvalidOperationException();
             }
 
-            return new DereferenceLValue(this.Location, this.target, this.tempPath).CheckTypes(types);
+            var path = types.Scope.Append("$deref" + derefCounter++);
+            return new DereferenceLValue(this.Location, this.target, path).CheckTypes(types);
         }
     }
 

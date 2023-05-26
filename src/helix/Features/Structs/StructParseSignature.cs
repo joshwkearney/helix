@@ -19,7 +19,6 @@ namespace Helix.Features.Aggregates {
         }
 
         public StructType ResolveNames(TypeFrame types) {
-            var path = types.ResolvePath(this.Location.Scope, this.Name);
             var mems = new List<StructMember>();
 
             foreach (var mem in this.Members) {

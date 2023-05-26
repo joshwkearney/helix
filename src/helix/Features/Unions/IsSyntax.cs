@@ -31,7 +31,7 @@ namespace Helix.Features.Unions {
             }
 
             // Make sure this name exists
-            if (!types.TryResolvePath(this.Location.Scope, access.Name, out var path)) {
+            if (!types.TryResolvePath(types.Scope, access.Name, out var path)) {
                 throw TypeException.VariableUndefined(this.Location, access.Name);
             }
 

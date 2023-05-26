@@ -8,13 +8,10 @@ namespace Helix.Parsing {
 
         public int Line { get; }
 
-        public IdentifierPath Scope { get; }
-
-        public TokenLocation(int start, int length, int line, IdentifierPath scope) {
+        public TokenLocation(int start, int length, int line) {
             this.StartIndex = start;
             this.Length = length;
             this.Line = line;
-            this.Scope = scope;
         }
 
         public TokenLocation Span(TokenLocation other) {
@@ -25,15 +22,13 @@ namespace Helix.Parsing {
                 return new TokenLocation(
                     this.StartIndex,
                     Math.Max(this.Length, other.Length),
-                    Math.Min(this.Line, other.Line),
-                    this.Scope);
+                    Math.Min(this.Line, other.Line));
             }
             else {
                 return new TokenLocation(
                     this.StartIndex,
                     other.StartIndex - this.StartIndex + other.Length,
-                    this.Line,
-                    this.Scope);
+                    this.Line);
             }
         }
     }

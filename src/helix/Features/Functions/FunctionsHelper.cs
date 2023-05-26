@@ -26,12 +26,12 @@ namespace Helix.Features.Functions {
 
         public static void DeclareName(FunctionParseSignature sig, TypeFrame types) {
             // Make sure this name isn't taken
-            if (types.TryResolvePath(sig.Location.Scope, sig.Name, out _)) {
+            if (types.TryResolvePath(types.Scope, sig.Name, out _)) {
                 throw TypeException.IdentifierDefined(sig.Location, sig.Name);
             }
 
             // Declare this function
-            var path = sig.Location.Scope.Append(sig.Name);
+            var path = types.Scope.Append(sig.Name);
             var named = new TypeSyntax(sig.Location, new NominalType(path, NominalTypeKind.Function));
 
             types.SyntaxValues = types.SyntaxValues.SetItem(path, named);

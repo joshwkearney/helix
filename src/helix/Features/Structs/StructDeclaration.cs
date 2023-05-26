@@ -54,29 +54,33 @@ namespace Helix.Parsing {
 namespace Helix.Features.Aggregates {
     public record StructDeclaration : IDeclaration {
         private readonly StructParseSignature signature;
+        private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
 
-        public StructDeclaration(TokenLocation loc, StructParseSignature sig) {
+        public StructDeclaration(TokenLocation loc, StructParseSignature sig)
+            : this(loc, sig, new IdentifierPath(sig.Name)) { }
+
+        public StructDeclaration(TokenLocation loc, StructParseSignature sig, IdentifierPath path) {
             this.Location = loc;
             this.signature = sig;
+            this.path = path;
         }
 
-        public void DeclareNames(TypeFrame names) {
+        public void DeclareNames(TypeFrame types) {
             // Make sure this name isn't taken
-            if (names.TryResolvePath(this.Location.Scope, this.signature.Name, out _)) {
+            if (types.TryResolvePath(types.Scope, this.signature.Name, out _)) {
                 throw TypeException.IdentifierDefined(this.Location, this.signature.Name);
             }
 
-            var path = this.Location.Scope.Append(this.signature.Name);
+            var path = types.Scope.Append(this.signature.Name);
+            var syntax = new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Struct));
 
-            names.SyntaxValues = names.SyntaxValues.SetItem(
-                path,
-                new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Struct)));
+            types.SyntaxValues = types.SyntaxValues.SetItem(path, syntax);
         }
 
         public void DeclareTypes(TypeFrame types) {
-            var path = this.Location.Scope.Append(this.signature.Name);
+            var path = types.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
 
             types.NominalSignatures = types.NominalSignatures.SetItem(path, sig);
@@ -87,22 +91,22 @@ namespace Helix.Features.Aggregates {
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
-            var path = this.Location.Scope.Append(this.signature.Name);
-            var sig = this.signature.ResolveNames(types);
-            var structType = new NominalType(path, NominalTypeKind.Struct);
+            var path = types.Scope.Append(this.signature.Name);
+            var named = new NominalType(path, NominalTypeKind.Struct);
+            var sig = named.AsStruct(types).GetValue();
 
             var isRecursive = sig.Members
                 .Select(x => x.Type)
                 .Where(x => x.IsValueType(types))
                 .SelectMany(x => x.GetContainedTypes(types))
-                .Contains(structType);
+                .Contains(named);
 
             // Make sure this is not a recursive struct or union
             if (isRecursive) {
-                throw TypeException.CircularValueObject(this.Location, structType);
+                throw TypeException.CircularValueObject(this.Location, named);
             }
 
-            return this;
+            return new StructDeclaration(this.Location, this.signature, types.Scope.Append(this.path));
         }
 
         public void AnalyzeFlow(FlowFrame flow) { }
@@ -110,8 +114,7 @@ namespace Helix.Features.Aggregates {
         public void GenerateCode(FlowFrame types, ICWriter writer) { }
 
         private void RealCodeGenerator(StructType signature, ICWriter writer) {
-            var path = this.Location.Scope.Append(this.signature.Name);
-            var name = writer.GetVariableName(path);
+            var name = writer.GetVariableName(this.path);
 
             var mems = signature.Members
                 .Select(x => new CParameter() {

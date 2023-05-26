@@ -32,11 +32,10 @@ namespace Helix.Parsing {
 
         private int pos = 0;
         private int line = 1;
-        private IdentifierPath scope = new();
 
         private char Current => this.text[this.pos];
 
-        private TokenLocation Location => new(this.pos, 1, this.line, this.scope);
+        private TokenLocation Location => new(this.pos, 1, this.line);
 
         public Lexer(string text) {
             this.text = text;
@@ -47,7 +46,7 @@ namespace Helix.Parsing {
                 if (this.text[this.pos + 1] == '=') {
                     this.pos++;
 
-                    return new Token(TokenKind.LessThanOrEqualTo, new TokenLocation(this.pos - 1, 2, this.line, this.scope), "<=");
+                    return new Token(TokenKind.LessThanOrEqualTo, new TokenLocation(this.pos - 1, 2, this.line), "<=");
                 }
                 else {
                     return new Token(TokenKind.LessThan, this.Location, "<");
@@ -63,7 +62,7 @@ namespace Helix.Parsing {
                 if (this.text[this.pos + 1] == '=') {
                     this.pos++;
 
-                    return new Token(TokenKind.Equals, new TokenLocation(this.pos - 1, 2, this.line, this.scope), "==");
+                    return new Token(TokenKind.Equals, new TokenLocation(this.pos - 1, 2, this.line), "==");
                 }
                 else {
                     return new Token(TokenKind.Assignment, this.Location, "=");
@@ -79,7 +78,7 @@ namespace Helix.Parsing {
                 if (this.text[this.pos + 1] == '=') {
                     this.pos++;
 
-                    return new Token(TokenKind.GreaterThanOrEqualTo, new TokenLocation(this.pos - 1, 2, this.line, this.scope), ">=");
+                    return new Token(TokenKind.GreaterThanOrEqualTo, new TokenLocation(this.pos - 1, 2, this.line), ">=");
                 }
                 else {
                     return new Token(TokenKind.GreaterThan, this.Location, ">");
@@ -95,7 +94,7 @@ namespace Helix.Parsing {
                 if (this.text[this.pos + 1] == '=') {
                     this.pos++;
 
-                    return new Token(TokenKind.NotEquals, new TokenLocation(this.pos - 1, 2, this.line, this.scope), "!=");
+                    return new Token(TokenKind.NotEquals, new TokenLocation(this.pos - 1, 2, this.line), "!=");
                 }
                 else {
                     return new Token(TokenKind.Not, this.Location, "!");
@@ -117,7 +116,7 @@ namespace Helix.Parsing {
 
             this.pos--;
 
-            var loc = new TokenLocation(start, strNum.Length, this.line, this.scope);
+            var loc = new TokenLocation(start, strNum.Length, this.line);
 
             if (int.TryParse(strNum, out int num)) {
                 return new Token(TokenKind.IntLiteral, loc, strNum);
@@ -138,7 +137,7 @@ namespace Helix.Parsing {
 
             this.pos--;
 
-            var location = new TokenLocation(start, id.Length, this.line, this.scope);
+            var location = new TokenLocation(start, id.Length, this.line);
 
             if (keywords.TryGetValue(id, out var kind)) {
                 return new Token(kind, location, id);
@@ -168,7 +167,7 @@ namespace Helix.Parsing {
                 throw ParseException.UnexpectedCharacter(this.Location, this.Current);
             }
 
-            return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, this.line, this.scope), c.ToString());
+            return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, this.line), c.ToString());
         }
 
         private Token GetSlashOrCommentOrDivideAssignment() {
@@ -182,7 +181,7 @@ namespace Helix.Parsing {
 
                     this.pos--;
 
-                    var location = new TokenLocation(start, this.pos - start + 1, this.line, this.scope);
+                    var location = new TokenLocation(start, this.pos - start + 1, this.line);
                     return new Token(TokenKind.Whitespace, location, "");
                 }
                 else if (this.text[this.pos + 1] == '=') {
@@ -190,7 +189,7 @@ namespace Helix.Parsing {
 
                     return new Token(
                         TokenKind.DivideAssignment, 
-                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "/=");
+                        new TokenLocation(this.pos - 1, 2, this.line), "/=");
                 }
             }
 
@@ -204,7 +203,7 @@ namespace Helix.Parsing {
 
                     return new Token(
                         TokenKind.PlusAssignment,
-                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "+=");
+                        new TokenLocation(this.pos - 1, 2, this.line), "+=");
                 }
             }
 
@@ -218,12 +217,12 @@ namespace Helix.Parsing {
 
                     return new Token(
                         TokenKind.MinusAssignment,
-                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "-=");
+                        new TokenLocation(this.pos - 1, 2, this.line), "-=");
                 }
                 else if (this.text[this.pos + 1] == '>') {
                     this.pos++;
 
-                    return new Token(TokenKind.Yields, new TokenLocation(this.pos - 1, 2, this.line, this.scope), "->");
+                    return new Token(TokenKind.Yields, new TokenLocation(this.pos - 1, 2, this.line), "->");
                 }
             }
 
@@ -237,7 +236,7 @@ namespace Helix.Parsing {
 
                     return new Token(
                         TokenKind.StarAssignment,
-                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "*=");
+                        new TokenLocation(this.pos - 1, 2, this.line), "*=");
                 }
             }
 
@@ -251,7 +250,7 @@ namespace Helix.Parsing {
 
                     return new Token(
                         TokenKind.ModuloAssignment,
-                        new TokenLocation(this.pos - 1, 2, this.line, this.scope), "%=");
+                        new TokenLocation(this.pos - 1, 2, this.line), "%=");
                 }
             }
 
@@ -315,9 +314,7 @@ namespace Helix.Parsing {
             }
         }
 
-        public Token GetToken(IdentifierPath scope) {
-            this.scope = scope;
-
+        public Token GetToken() {
             while (this.pos < this.text.Length) {
                 var tok = this.GetTokenHelper();
                 this.pos++;
@@ -329,14 +326,14 @@ namespace Helix.Parsing {
 
             return new Token(
                 TokenKind.EOF, 
-                new TokenLocation(this.pos, 0, this.line, scope),
+                new TokenLocation(this.pos, 0, this.line),
                 string.Empty);
         }
 
-        public Token PeekToken(IdentifierPath scope) {
+        public Token PeekToken() {
             int oldPos = this.pos;
             int oldLine = this.line;
-            var tok = this.GetToken(scope);
+            var tok = this.GetToken();
 
             this.pos = oldPos;
             this.line = oldLine;

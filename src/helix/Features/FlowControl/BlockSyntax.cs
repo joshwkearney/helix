@@ -11,19 +11,13 @@ using Helix.Analysis.Predicates;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private int blockCounter = 0;
-
         private ISyntaxTree Block() {
             var start = this.Advance(TokenKind.OpenBrace);
             var stats = new List<ISyntaxTree>();
 
-            this.scope = this.scope.Append("$block_" + this.blockCounter++);
-
             while (!this.Peek(TokenKind.CloseBrace)) {
                 stats.Add(this.Statement());
             }
-
-            this.scope = this.scope.Pop();
 
             var end = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(end.Location);
@@ -35,6 +29,8 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.FlowControl {
     public record BlockSyntax : ISyntaxTree {
+        private static int blockCounter = 0;
+
         public TokenLocation Location { get; }
 
         public IEnumerable<ISyntaxTree> Children => this.Statements;
@@ -43,10 +39,13 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure { get; }
 
+        public string Name { get; }
+
         public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements) {
             this.Location = statements.Select(x => x.Location).Prepend(location).Last();
             this.Statements = statements;
             this.IsPure = this.Statements.All(x => x.IsPure);
+            this.Name = "$b" + blockCounter++;
         }
 
         public BlockSyntax(ISyntaxTree statement) : this(statement.Location, new[] { statement }) { }
@@ -56,18 +55,9 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            var predicate = ISyntaxPredicate.Empty;
-            var stats = new List<ISyntaxTree>();
-
-            foreach (var stat in this.Statements) {
-                var frame = predicate == ISyntaxPredicate.Empty ? types : new TypeFrame(types);
-                predicate.ApplyToTypes(stat.Location, frame);
-
-                var checkedStat = stat.CheckTypes(frame).ToRValue(frame);
-
-                predicate = checkedStat.GetPredicate(frame);
-                stats.Add(checkedStat);
-            }
+            // TODO: Fix predicates here
+            types = new TypeFrame(types, this.Name);
+            var stats = this.Statements.Select(x => x.CheckTypes(types).ToRValue(types)).ToArray();
 
             var result = new BlockSyntax(this.Location, stats);
             var returnType = stats
@@ -77,7 +67,7 @@ namespace Helix.Features.FlowControl {
 
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(stats, types);
-            result.SetPredicate(predicate, types);
+            result.SetPredicate(ISyntaxPredicate.Empty, types);
 
             return result;
         }

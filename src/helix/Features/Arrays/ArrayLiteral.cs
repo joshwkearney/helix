@@ -54,7 +54,7 @@ namespace Helix.Features.Arrays {
         public ArrayLiteralSyntax(TokenLocation loc, IReadOnlyList<ISyntaxTree> args) {
             this.Location = loc;
             this.args = args;
-            this.tempPath = loc.Scope.Append("$array_literal_" + tempCounter++);
+            this.tempPath = new IdentifierPath("$array" + tempCounter++);
         }
 
         public ArrayLiteralSyntax(TokenLocation loc, IReadOnlyList<ISyntaxTree> args, IdentifierPath tempPath) {
@@ -89,7 +89,10 @@ namespace Helix.Features.Arrays {
 
             args = args.Select(x => x.UnifyTo(totalType, types)).ToArray();
 
-            var result = new ArrayLiteralSyntax(this.Location, args, this.tempPath);
+            var result = new ArrayLiteralSyntax(
+                this.Location, 
+                args, 
+                types.Scope.Append(this.tempPath));
 
             result.SetCapturedVariables(args, types);
             result.SetPredicate(args, types);

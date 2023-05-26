@@ -22,7 +22,6 @@ namespace Helix.Parsing {
             var funcName = this.Advance(TokenKind.Identifier).Value;
 
             this.Advance(TokenKind.OpenParenthesis);
-            this.scope = this.scope.Append(funcName);
 
             var pars = ImmutableList<ParseFunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
@@ -51,8 +50,6 @@ namespace Helix.Parsing {
                 pars = pars.Add(new ParseFunctionParameter(parLoc, parName, parType, isWritable));
             }
 
-            this.scope = this.scope.Pop();
-
             var end = this.Advance(TokenKind.CloseParenthesis);
             var returnType = new VoidLiteral(end.Location) as ISyntaxTree;
 
@@ -73,13 +70,8 @@ namespace Helix.Parsing {
                 this.Advance(TokenKind.Yields);
             }
 
-            this.funcPath.Push(this.scope.Append(sig.Name));
-            this.scope = this.scope.Append(sig.Name);
-            var body = this.TopExpression();            
-
+            var body = this.TopExpression();           
             this.Advance(TokenKind.Semicolon);
-            this.scope = this.scope.Pop();
-            this.funcPath.Pop();
 
             return new FunctionParseDeclaration(
                 sig.Location.Span(body.Location), 
@@ -112,7 +104,7 @@ namespace Helix.Features.Functions {
         }
 
         public void DeclareTypes(TypeFrame types) {
-            var path = this.Location.Scope.Append(this.signature.Name);
+            var path = types.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
             var named = new NominalType(path, NominalTypeKind.Function);
 
@@ -123,11 +115,11 @@ namespace Helix.Features.Functions {
         }
         
         public IDeclaration CheckTypes(TypeFrame types) {
-            var path = types.ResolvePath(this.Location.Scope, this.signature.Name);
+            var path = types.ResolvePath(types.Scope, this.signature.Name);
             var sig = new NominalType(path, NominalTypeKind.Function).AsFunction(types).GetValue();
 
             // Set the scope for type checking the body
-            types = new TypeFrame(types);
+            types = new TypeFrame(types, this.signature.Name);
 
             // Declare parameters
             FunctionsHelper.DeclareParameterTypes(this.Location, sig, path, types);

@@ -1,6 +1,7 @@
 ﻿using Helix.Syntax;
 using Helix.Features.Primitives;
 using Helix.Parsing;
+using Helix.Analysis.TypeChecking;
 
 namespace Helix.Analysis.Types {
     public record PrimitiveType : HelixType {
@@ -18,13 +19,13 @@ namespace Helix.Analysis.Types {
             this.kind = kind;
         }
 
-        public override PassingSemantics GetSemantics(ITypedFrame types) {
+        public override PassingSemantics GetSemantics(ITypeContext types) {
             return PassingSemantics.ValueType;
         }
 
-        public override HelixType GetMutationSupertype(ITypedFrame types) => this;
+        public override HelixType GetMutationSupertype(ITypeContext types) => this;
 
-        public override HelixType GetSignatureSupertype(ITypedFrame types) => this;
+        public override HelixType GetSignatureSupertype(ITypeContext types) => this;
 
         public override ISyntaxTree ToSyntax(TokenLocation loc) {
             if (this == Void) {

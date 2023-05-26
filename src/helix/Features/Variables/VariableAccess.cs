@@ -35,9 +35,9 @@ namespace Helix.Features.Variables {
             this.Name = name;
         }
 
-        public Option<HelixType> AsType(ITypedFrame types) {
+        public Option<HelixType> AsType(TypeFrame types) {
             // If we're pointing at a type then return it
-            if (types.TryResolveName(this.Location.Scope, this.Name, out var syntax)) {
+            if (types.TryResolveName(types.Scope, this.Name, out var syntax)) {
                 if (syntax.AsType(types).TryGetValue(out var type)) {
                     return type;
                 }
@@ -48,7 +48,7 @@ namespace Helix.Features.Variables {
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             // Make sure this name exists
-            if (!types.TryResolvePath(this.Location.Scope, this.Name, out var path)) {
+            if (!types.TryResolvePath(types.Scope, this.Name, out var path)) {
                 throw TypeException.VariableUndefined(this.Location, this.Name);
             }
 

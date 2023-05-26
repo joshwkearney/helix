@@ -11,15 +11,15 @@ namespace Helix.Analysis.Types {
             this.Value = value;
         }
 
-        public override PassingSemantics GetSemantics(ITypedFrame types) {
+        public override PassingSemantics GetSemantics(ITypeContext types) {
             return PassingSemantics.ValueType;
         }
 
-        public override HelixType GetMutationSupertype(ITypedFrame types) {
+        public override HelixType GetMutationSupertype(ITypeContext types) {
             return PrimitiveType.Int;
         }
 
-        public override HelixType GetSignatureSupertype(ITypedFrame types) {
+        public override HelixType GetSignatureSupertype(ITypeContext types) {
             return PrimitiveType.Int;
         }
 

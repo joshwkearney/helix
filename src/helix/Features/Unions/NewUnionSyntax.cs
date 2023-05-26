@@ -30,21 +30,21 @@ namespace Helix.Features.Aggregates {
             UnionType sig,
             IReadOnlyList<string> names,
             IReadOnlyList<ISyntaxTree> values,
-            IdentifierPath tempPath) {
+            IdentifierPath path) {
 
             this.Location = loc;
             this.unionType = unionType;
             this.sig = sig;
             this.names = names;
             this.values = values;
-            this.tempPath = tempPath;
+            this.tempPath = path;
 
             this.IsPure = this.values.All(x => x.IsPure);
         }
 
         public NewUnionSyntax(TokenLocation loc, HelixType unionType, UnionType sig,
                               IReadOnlyList<string> names, IReadOnlyList<ISyntaxTree> values)
-            : this(loc, unionType, sig, names, values, loc.Scope.Append("$new_union_" + tempCounter++)) { }
+            : this(loc, unionType, sig, names, values, new IdentifierPath("$union" + tempCounter++)) { }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
@@ -104,7 +104,7 @@ namespace Helix.Features.Aggregates {
                 this.sig, 
                 new[] { name }, 
                 new[] { value },
-                this.tempPath);
+                types.Scope.Append(this.tempPath));
 
             result.SetReturnType(this.unionType, types);
             result.SetCapturedVariables(value, types);

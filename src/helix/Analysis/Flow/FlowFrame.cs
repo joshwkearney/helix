@@ -11,24 +11,25 @@ using System.Collections.Immutable;
 using Helix.Features.Types;
 
 namespace Helix.Analysis.Flow {
-    public class FlowFrame : ITypedFrame {
-        // General things
-        public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
+    public class FlowFrame : ITypeContext {
+        // Global ITypeFrame things
+        public IReadOnlyDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
-        public IDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
+        public IReadOnlyDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
 
+        public IReadOnlyDictionary<IdentifierPath, ISyntaxTree> GlobalSyntaxValues { get; }
+
+        public IReadOnlyDictionary<IdentifierPath, HelixType> GlobalNominalSignatures { get; }
+
+        // Global lifetime things
         public IDictionary<ISyntaxTree, LifetimeBundle> SyntaxLifetimes { get; }
-
-        public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
         public LifetimeGraph LifetimeGraph { get; }
 
-        // Frame-specific things
+        // Local lifetime things
         public ImmutableDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; set; }
 
         public ImmutableHashSet<Lifetime> LifetimeRoots { get; set; }
-
-        public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
 
         public FlowFrame(TypeFrame frame) {
             this.ReturnTypes = frame.ReturnTypes;
@@ -39,8 +40,8 @@ namespace Helix.Analysis.Flow {
 
             this.LocalLifetimes = ImmutableDictionary<VariablePath, LifetimeBounds>.Empty;
             this.LifetimeRoots = ImmutableHashSet<Lifetime>.Empty;
-            this.NominalSignatures = frame.NominalSignatures;
-            this.SyntaxValues = frame.SyntaxValues;
+            this.GlobalNominalSignatures = frame.NominalSignatures;
+            this.GlobalSyntaxValues = frame.SyntaxValues;
         }
 
         public FlowFrame(FlowFrame prev) {
@@ -52,8 +53,8 @@ namespace Helix.Analysis.Flow {
 
             this.LocalLifetimes = prev.LocalLifetimes;
             this.LifetimeRoots = prev.LifetimeRoots;
-            this.NominalSignatures = prev.NominalSignatures;
-            this.SyntaxValues = prev.SyntaxValues;
+            this.GlobalNominalSignatures = prev.GlobalNominalSignatures;
+            this.GlobalSyntaxValues = prev.GlobalSyntaxValues;
         }
 
         private IEnumerable<Lifetime> MaximizeRootSet(IEnumerable<Lifetime> roots) {

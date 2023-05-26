@@ -21,7 +21,7 @@ namespace Helix.Features.Arrays {
             this.inner = inner;
         }
 
-        Option<HelixType> ISyntaxTree.AsType(ITypedFrame types) {
+        Option<HelixType> ISyntaxTree.AsType(TypeFrame types) {
             return this.inner
                 .AsType(types)
                 .Select(x => new ArrayType(x))

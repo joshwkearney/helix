@@ -34,7 +34,7 @@ namespace Helix.Features.Primitives {
             this.Value = value;
         }
 
-        public Option<HelixType> AsType(ITypedFrame types) {
+        public Option<HelixType> AsType(TypeFrame types) {
             return new SingularIntType(this.Value);
         }
 

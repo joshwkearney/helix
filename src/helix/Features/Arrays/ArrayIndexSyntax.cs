@@ -30,8 +30,6 @@ namespace Helix.Parsing {
 
 namespace Helix.Features.Arrays {
     public record ArrayIndexSyntax : ISyntaxTree {
-        private static int tempCounter = 0;
-
         private readonly ISyntaxTree target;
         private readonly ISyntaxTree index;
 
@@ -74,8 +72,7 @@ namespace Helix.Features.Arrays {
 
             var deref = new DereferenceSyntax(
                 this.Location,
-                adapter,
-                this.Location.Scope.Append("$array_index_" + tempCounter++));
+                adapter);
 
             return deref.CheckTypes(types);
         }

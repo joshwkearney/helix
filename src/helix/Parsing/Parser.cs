@@ -4,10 +4,8 @@ using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private IdentifierPath scope = new();
         private readonly Lexer lexer;
         private readonly Stack<bool> isInLoop = new();
-        private readonly Stack<IdentifierPath> funcPath = new();
 
         public Parser(string text) {
             this.lexer = new Lexer(text);
@@ -17,7 +15,7 @@ namespace Helix.Parsing {
         public IReadOnlyList<IDeclaration> Parse() {
             var list = new List<IDeclaration>();
 
-            while (this.lexer.PeekToken(this.scope).Kind != TokenKind.EOF) {
+            while (this.lexer.PeekToken().Kind != TokenKind.EOF) {
                 list.Add(this.Declaration());
             }
 
@@ -25,7 +23,7 @@ namespace Helix.Parsing {
         }
 
         private bool Peek(TokenKind kind) {
-            return this.lexer.PeekToken(this.scope).Kind == kind;
+            return this.lexer.PeekToken().Kind == kind;
         }
 
         private bool TryAdvance(TokenKind kind) {
@@ -38,7 +36,7 @@ namespace Helix.Parsing {
         }
 
         private Token Advance() {
-            var tok = this.lexer.GetToken(this.scope);
+            var tok = this.lexer.GetToken();
 
             if (tok.Kind == TokenKind.EOF) {
                 throw ParseException.EndOfFile(new TokenLocation());

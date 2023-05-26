@@ -54,28 +54,33 @@ namespace Helix.Parsing {
 namespace Helix.Features.Aggregates {
     public record UnionDeclaration : IDeclaration {
         private readonly StructParseSignature signature;
+        private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
 
-        public UnionDeclaration(TokenLocation loc, StructParseSignature sig) {
+        public UnionDeclaration(TokenLocation loc, StructParseSignature sig, IdentifierPath path) {
             this.Location = loc;
             this.signature = sig;
+            this.path = path;
         }
 
-        public void DeclareNames(TypeFrame names) {
+        public UnionDeclaration(TokenLocation loc, StructParseSignature sig)
+            : this(loc, sig, new IdentifierPath(sig.Name)) { }
+
+        public void DeclareNames(TypeFrame types) {
             // Make sure this name isn't taken
-            if (names.TryResolvePath(this.Location.Scope, this.signature.Name, out _)) {
+            if (types.TryResolvePath(types.Scope, this.signature.Name, out _)) {
                 throw TypeException.IdentifierDefined(this.Location, this.signature.Name);
             }
 
-            var path = this.Location.Scope.Append(this.signature.Name);
+            var path = types.Scope.Append(this.signature.Name);
             var named = new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Union));
 
-            names.SyntaxValues = names.SyntaxValues.SetItem(path, named);
+            types.SyntaxValues = types.SyntaxValues.SetItem(path, named);
         }
 
         public void DeclareTypes(TypeFrame types) {
-            var path = this.Location.Scope.Append(this.signature.Name);
+            var path = types.Scope.Append(this.signature.Name);
             var structSig = this.signature.ResolveNames(types);
             var unionSig = new UnionType(structSig.Members);
             var unionType = new NominalType(path, NominalTypeKind.Union);
@@ -88,7 +93,7 @@ namespace Helix.Features.Aggregates {
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
-            var path = this.Location.Scope.Append(this.signature.Name);
+            var path = types.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
             var structType = new NominalType(path, NominalTypeKind.Union);
 
@@ -103,7 +108,7 @@ namespace Helix.Features.Aggregates {
                 throw TypeException.CircularValueObject(this.Location, structType);
             }
 
-            return this;
+            return new UnionDeclaration(this.Location, this.signature, types.Scope.Append(this.path));
         }
 
         public void AnalyzeFlow(FlowFrame flow) { }
@@ -111,9 +116,8 @@ namespace Helix.Features.Aggregates {
         public void GenerateCode(FlowFrame types, ICWriter writer) { }
 
         private void RealCodeGenerator(UnionType signature, ICWriter writer) {
-            var path = this.Location.Scope.Append(this.signature.Name);
-            var structName = writer.GetVariableName(path);
-            var unionName = writer.GetVariableName(path) + "$union";
+            var structName = writer.GetVariableName(this.path);
+            var unionName = writer.GetVariableName(this.path) + "$union";
 
             var unionMems = signature.Members
                 .Select(x => new CParameter() {
