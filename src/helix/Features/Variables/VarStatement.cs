@@ -110,14 +110,7 @@ namespace Helix {
         }
 
         private ISyntaxTree Destructure(HelixType assignType, TypeFrame types) {
-            if (assignType is not NominalType named) {
-                throw new TypeException(
-                    this.Location,
-                    "Invalid Desconstruction",
-                    $"Cannot deconstruct non-struct type '{assignType}'");
-            }
-
-            if (!types.Structs.TryGetValue(named.Path, out var sig)) {
+            if (!assignType.AsStruct(types).TryGetValue(out var sig)) {
                 throw new TypeException(
                     this.Location,
                     "Invalid Desconstruction",
@@ -129,7 +122,7 @@ namespace Helix {
                     this.Location,
                     "Invalid Desconstruction",
                     "The number of variables provided does not match "
-                        + $"the number of members on struct type '{named}'");
+                        + $"the number of members on struct type '{assignType}'");
             }
 
             var tempName = types.GetVariableName();

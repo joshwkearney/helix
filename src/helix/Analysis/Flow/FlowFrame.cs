@@ -21,9 +21,7 @@ namespace Helix.Analysis.Flow {
 
         public LifetimeGraph LifetimeGraph { get; }
 
-        public IDictionary<IdentifierPath, StructSignature> Structs { get; }
-
-        public IDictionary<IdentifierPath, StructSignature> Unions { get; }
+        public IDictionary<IdentifierPath, StructType> Unions { get; }
 
         // Frame-specific things
         public ImmutableDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; set; }
@@ -36,7 +34,6 @@ namespace Helix.Analysis.Flow {
             this.ReturnTypes = frame.ReturnTypes;
             this.CapturedVariables = frame.CapturedVariables;
 
-            this.Structs = frame.Structs;
             this.Unions = frame.Unions;
 
             this.LifetimeGraph = new();
@@ -51,7 +48,6 @@ namespace Helix.Analysis.Flow {
             this.ReturnTypes = prev.ReturnTypes;
             this.CapturedVariables = prev.CapturedVariables;
 
-            this.Structs = prev.Structs;
             this.Unions = prev.Unions;
 
             this.LifetimeGraph = prev.LifetimeGraph;

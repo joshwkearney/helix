@@ -27,9 +27,7 @@ namespace Helix.Analysis.TypeChecking {
         public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
         // Global things
-        public IDictionary<IdentifierPath, StructSignature> Structs { get; }
-
-        public IDictionary<IdentifierPath, StructSignature> Unions { get; }
+        public IDictionary<IdentifierPath, StructType> Unions { get; }
 
         public IDictionary<HelixType, DeclarationCG> TypeDeclarations { get; }
 
@@ -56,8 +54,7 @@ namespace Helix.Analysis.TypeChecking {
                 new IdentifierPath("bool"),
                 new TypeSyntax(default, PrimitiveType.Bool));
 
-            this.Structs = new Dictionary<IdentifierPath, StructSignature>();
-            this.Unions = new Dictionary<IdentifierPath, StructSignature>();
+            this.Unions = new Dictionary<IdentifierPath, StructType>();
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
 
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
@@ -69,7 +66,6 @@ namespace Helix.Analysis.TypeChecking {
         public TypeFrame(TypeFrame prev) {
             this.SyntaxValues = prev.SyntaxValues;
 
-            this.Structs = prev.Structs;
             this.Unions = prev.Unions;
             this.TypeDeclarations = prev.TypeDeclarations;
 

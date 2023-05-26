@@ -24,7 +24,6 @@ namespace Helix {
                 // up the order of the steps
                 var parser = new Parser(input);
                 var types = new TypeFrame();
-                var flow = new FlowFrame(types);
                 var writer = new CWriter(this.header, types.TypeDeclarations);
                 var parseStats = parser.Parse();
 
@@ -37,6 +36,10 @@ namespace Helix {
                 }
 
                 var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
+
+                // We need to declare the flow frame down here after types is done being
+                // modified, because it uses immutable dictionaries
+                var flow = new FlowFrame(types);
 
                 foreach (var stat in stats) {
                     stat.AnalyzeFlow(flow);

@@ -2,7 +2,7 @@
 using Helix.Analysis.Types;
 
 namespace Helix.Features.Types {
-    public record FunctionType : HelixType  {
+    public record FunctionType : HelixType {
         public HelixType ReturnType { get; }
 
         public IReadOnlyList<FunctionParameter> Parameters { get; }
@@ -15,6 +15,10 @@ namespace Helix.Features.Types {
         public override PassingSemantics GetSemantics(ITypedFrame types) {
             return PassingSemantics.ValueType;
         }
+
+        public override HelixType GetMutationSupertype(ITypedFrame types) => this;
+
+        public override HelixType GetSignatureSupertype(ITypedFrame types) => this;
     }
 
     public record FunctionParameter {

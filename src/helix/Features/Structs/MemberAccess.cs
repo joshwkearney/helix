@@ -71,28 +71,26 @@ namespace Helix.Features.Aggregates {
             }
 
             // If this is a named type it could be a struct or union
-            if (targetType is NominalType named) {
+            if (targetType.AsStruct(types).TryGetValue(out var sig)) {
                 // If this is a struct we can access the fields
-                if (types.Structs.TryGetValue(named.Path, out var sig)) {
-                    var fieldOpt = sig
-                        .Members
-                        .Where(x => x.Name == this.MemberName)
-                        .FirstOrNone();
+                var fieldOpt = sig
+                    .Members
+                    .Where(x => x.Name == this.MemberName)
+                    .FirstOrNone();
 
-                    // Make sure this field is present
-                    if (fieldOpt.TryGetValue(out var field)) {
-                        var result = new MemberAccessSyntax(
-                            this.Location,
-                            target,
-                            this.MemberName,
-                            field.IsWritable);                    
+                // Make sure this field is present
+                if (fieldOpt.TryGetValue(out var field)) {
+                    var result = new MemberAccessSyntax(
+                        this.Location,
+                        target,
+                        this.MemberName,
+                        field.IsWritable);                    
 
-                        result.SetReturnType(field.Type, types);
-                        result.SetCapturedVariables(target, types);
-                        result.SetPredicate(target, types);
+                    result.SetReturnType(field.Type, types);
+                    result.SetCapturedVariables(target, types);
+                    result.SetPredicate(target, types);
 
-                        return result;
-                    }                    
+                    return result;
                 }               
             }
 

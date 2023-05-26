@@ -19,10 +19,10 @@ namespace Helix.Features.Unions {
 
         public ValueSet<string> MemberNames { get; }
 
-        public StructSignature UnionSignature { get; }
+        public StructType UnionSignature { get; }
 
         public IsUnionMemberPredicate(IdentifierPath targetPath, ValueSet<string> memberNames, 
-                                      StructSignature unionSig) {
+                                      StructType unionSig) {
             this.TargetPath = targetPath;
             this.MemberNames = memberNames;
             this.UnionSignature = unionSig;

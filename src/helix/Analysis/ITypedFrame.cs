@@ -10,9 +10,7 @@ namespace Helix.Analysis {
     public interface ITypedFrame {
         public ImmutableDictionary<HelixType, HelixType> NominalSupertypes { get; set; }
 
-        public IDictionary<IdentifierPath, StructSignature> Structs { get; }
-
-        public IDictionary<IdentifierPath, StructSignature> Unions { get; }
+        public IDictionary<IdentifierPath, StructType> Unions { get; }
 
         public IDictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 

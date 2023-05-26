@@ -21,7 +21,19 @@ namespace Helix.Analysis.Types {
         public override PassingSemantics GetSemantics(ITypedFrame types) {
             return PassingSemantics.ValueType;
         }
-     
+
+        public override HelixType GetMutationSupertype(ITypedFrame types) => this;
+
+        public override HelixType GetSignatureSupertype(ITypedFrame types) => this;
+
+        public override ISyntaxTree ToSyntax(TokenLocation loc) {
+            if (this == Void) {
+                return new VoidLiteral(loc);
+            }
+
+            return base.ToSyntax(loc);
+        }
+
         public override string ToString() {
             return this.kind switch {
                 PrimitiveTypeKind.Int   => "int",
@@ -30,14 +42,6 @@ namespace Helix.Analysis.Types {
                 PrimitiveTypeKind.Void  => "void",
                 _                       => throw new Exception("Unexpected primitive type kind"),
             };
-        }
-
-        public override ISyntaxTree ToSyntax(TokenLocation loc) {
-            if (this == Void) {
-                return new VoidLiteral(loc);
-            }
-
-            return base.ToSyntax(loc);
         }
 
         private enum PrimitiveTypeKind {

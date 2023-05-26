@@ -7,6 +7,19 @@ namespace Helix.Analysis.Types {
             return PassingSemantics.ReferenceType;
         }
 
+        public override HelixType GetMutationSupertype(ITypedFrame types) {
+            return this;
+        }
+
+        public override HelixType GetSignatureSupertype(ITypedFrame types) {
+            return this;
+        }
+
+        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame frame) {
+            yield return this;
+            yield return this.InnerType;
+        }
+
         public override string ToString() {
             if (this.IsWritable) {
                 return this.InnerType + "*";
@@ -14,11 +27,6 @@ namespace Helix.Analysis.Types {
             else {
                 return "let " + this.InnerType + "*";
             }
-        }
-
-        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame frame) {
-            yield return this;
-            yield return this.InnerType;
         }
     }
 }

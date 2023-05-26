@@ -17,22 +17,12 @@ namespace Helix.Analysis.Types {
             this.Kind = kind;
         }
 
-        public override HelixType GetNaturalSupertype(ITypedFrame types) {
-            // TODO: Fix this
-            if (types.NominalSupertypes.TryGetValue(this, out var s)) {
-                return s.GetNaturalSupertype(types);
-            }
-            else {
-                return this;
-            }
-        }
-
         public override PassingSemantics GetSemantics(ITypedFrame types) {
             switch (this.Kind) {
                 case NominalTypeKind.Function:
                     return PassingSemantics.ValueType;
                 case NominalTypeKind.Struct:
-                    return this.GetAggregateSemantics(types.Structs[this.Path], types);
+                    return types.NominalSupertypes[this].GetSemantics(types);
                 case NominalTypeKind.Union:
                     return this.GetAggregateSemantics(types.Unions[this.Path], types);
                 default:
@@ -40,7 +30,19 @@ namespace Helix.Analysis.Types {
             }
         }
 
-        private PassingSemantics GetAggregateSemantics(StructSignature sig, ITypedFrame types) {
+        public override HelixType GetMutationSupertype(ITypedFrame types) => this;
+
+        public override HelixType GetSignatureSupertype(ITypedFrame types) {
+            // TODO: Fix this
+            if (types.NominalSupertypes.TryGetValue(this, out var s)) {
+                return s.GetSignatureSupertype(types);
+            }
+            else {
+                return this;
+            }
+        }
+
+        private PassingSemantics GetAggregateSemantics(StructType sig, ITypedFrame types) {
             var memSemantics = sig.Members.Select(x => x.Type.GetSemantics(types));
 
             if (memSemantics.All(x => x.IsValueType())) {
@@ -56,7 +58,7 @@ namespace Helix.Analysis.Types {
         }
 
         public override IEnumerable<HelixType> GetContainedTypes(TypeFrame types) {
-            if (types.Structs.TryGetValue(this.Path, out var sig)) {
+            if (this.AsStruct(types).TryGetValue(out var sig)) {
                 return sig.Members
                     .SelectMany(x => x.Type.GetContainedTypes(types))
                     .Prepend(this);

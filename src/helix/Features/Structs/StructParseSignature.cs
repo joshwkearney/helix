@@ -1,6 +1,7 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Parsing;
+using Helix.Analysis.Types;
 
 namespace Helix.Features.Aggregates
 {
@@ -17,7 +18,7 @@ namespace Helix.Features.Aggregates
             this.Location = loc;
         }
 
-        public StructSignature ResolveNames(TypeFrame types) {
+        public StructType ResolveNames(TypeFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.Name);
             var mems = new List<StructMember>();
 
@@ -29,7 +30,7 @@ namespace Helix.Features.Aggregates
                 mems.Add(new StructMember(mem.MemberName, type, mem.IsWritable));
             }
 
-            return new StructSignature(path, mems);
+            return new StructType(mems);
         }
     }
 

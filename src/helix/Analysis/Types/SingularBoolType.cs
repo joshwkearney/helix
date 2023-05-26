@@ -15,13 +15,17 @@ namespace Helix.Analysis.Types {
             return PassingSemantics.ValueType;
         }
 
+        public override HelixType GetMutationSupertype(ITypedFrame types) {
+            return PrimitiveType.Bool;
+        }
+
+        public override HelixType GetSignatureSupertype(ITypedFrame types) {
+            return PrimitiveType.Bool;
+        }
+
         public override ISyntaxTree ToSyntax(TokenLocation loc) {
             return new BoolLiteral(loc, this.Value);
         }      
-
-        public override HelixType GetNaturalSupertype(ITypedFrame types) {
-            return PrimitiveType.Bool;
-        }
 
         public override string ToString() => this.Value.ToString().ToLower();
     }

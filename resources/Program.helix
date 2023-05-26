@@ -1,5 +1,9 @@
-﻿func test5(let arr as int*[]) as void {
-	var x = 45;
+﻿struct Test2Struct {
+	var field as int**;
+};
 
-	arr[0] = &x;
+func test2(var n as Test2Struct) {
+	var x = n.field**;
+
+	n.field* = &x;
 };

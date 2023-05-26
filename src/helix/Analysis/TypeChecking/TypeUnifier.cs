@@ -54,8 +54,8 @@ namespace Helix.Analysis.TypeChecking {
                 return true;
             }
 
-            var abstract1 = type1.GetNaturalSupertype(types);
-            var abstract2 = type2.GetNaturalSupertype(types);
+            var abstract1 = type1.GetMutationSupertype(types);
+            var abstract2 = type2.GetMutationSupertype(types);
 
             if (abstract1 == abstract2) {
                 resultType = abstract1;
@@ -176,18 +176,18 @@ namespace Helix.Analysis.TypeChecking {
                 return UnificationResult.Pun(second);
             }
             else if (second is NominalType named) {
-                if (types.Structs.TryGetValue(named.Path, out var sig)) {
-                    return TryUnifyVoidToStruct(sig, types);
+                if (named.AsStruct(types).TryGetValue(out var sig)) {
+                    return TryUnifyVoidToStruct(named, sig, types);
                 }
                 else if (types.Unions.TryGetValue(named.Path, out sig)) {
-                    return TryUnifyVoidToStruct(sig, types);
+                    return TryUnifyVoidToStruct(named, sig, types);
                 }
             }
 
             return UnificationResult.None;
         }
 
-        private static UnificationResult TryUnifyVoidToStruct(StructSignature sig, TypeFrame types) {
+        private static UnificationResult TryUnifyVoidToStruct(HelixType structType, StructType sig, TypeFrame types) {
             var memsConvertable = TryUnify(PrimitiveType.Void, sig.Members[0].Type, types)
                 .Kind
                 .IsSubsetOf(UnificationKind.Convert);
@@ -195,8 +195,6 @@ namespace Helix.Analysis.TypeChecking {
             if (!memsConvertable) {
                 return UnificationResult.None;
             }
-
-            var structType = new NominalType(sig.Path, NominalTypeKind.Struct);
 
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,

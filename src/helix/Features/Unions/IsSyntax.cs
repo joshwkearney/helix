@@ -49,7 +49,7 @@ namespace Helix.Features.Unions {
             if (!sig.Members.Any(x => x.Name == this.MemberName)) {
                 throw TypeException.MemberUndefined(
                     this.Location, 
-                    new NominalType(sig.Path, NominalTypeKind.Union), 
+                    new NominalType(path, NominalTypeKind.Union), 
                     this.MemberName);
             }
 
@@ -82,7 +82,7 @@ namespace Helix.Features.Unions {
 
         public string MemberName { get; init; }
 
-        public StructSignature UnionSignature { get; init; }
+        public StructType UnionSignature { get; init; }
 
         public IEnumerable<ISyntaxTree> Children => Array.Empty<ISyntaxTree>();
 

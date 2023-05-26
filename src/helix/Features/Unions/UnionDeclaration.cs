@@ -64,10 +64,11 @@ namespace Helix.Features.Aggregates {
         }
 
         public void DeclareTypes(TypeFrame types) {
+            var path = this.Location.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
-            var unionType = new NominalType(sig.Path, NominalTypeKind.Union);
+            var unionType = new NominalType(path, NominalTypeKind.Union);
 
-            types.Unions[sig.Path] = sig;
+            types.Unions[path] = sig;
 
             // Register this declaration with the code generator so 
             // types are constructed in order
@@ -75,8 +76,9 @@ namespace Helix.Features.Aggregates {
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
+            var path = this.Location.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
-            var structType = new NominalType(sig.Path, NominalTypeKind.Union);
+            var structType = new NominalType(path, NominalTypeKind.Union);
 
             var isRecursive = sig.Members
                 .Select(x => x.Type)
@@ -96,9 +98,10 @@ namespace Helix.Features.Aggregates {
 
         public void GenerateCode(FlowFrame types, ICWriter writer) { }
 
-        private void RealCodeGenerator(StructSignature signature, ICWriter writer) {
-            var structName = writer.GetVariableName(signature.Path);
-            var unionName = writer.GetVariableName(signature.Path) + "$union";
+        private void RealCodeGenerator(StructType signature, ICWriter writer) {
+            var path = this.Location.Scope.Append(this.signature.Name);
+            var structName = writer.GetVariableName(path);
+            var unionName = writer.GetVariableName(path) + "$union";
 
             var unionMems = signature.Members
                 .Select(x => new CParameter() {

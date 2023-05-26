@@ -45,7 +45,7 @@ namespace Helix.Features.Functions {
                 var type = sig.Parameters[i].Type;
 
                 if (parsePar.IsWritable) {
-                    type = type.GetNaturalSupertype(types);
+                    type = type.GetMutationSupertype(types);
                 }
 
                 // TODO: Fix iswritable here
@@ -74,7 +74,7 @@ namespace Helix.Features.Functions {
                 var type = sig.Parameters[i].Type;
 
                 if (parsePar.IsWritable) {
-                    type = type.GetNaturalSupertype(flow);
+                    type = type.GetMutationSupertype(flow);
                 }
 
                 // Declare this parameter as a root by making an end cycle in the graph

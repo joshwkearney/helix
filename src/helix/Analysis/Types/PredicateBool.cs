@@ -9,8 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Helix.Analysis.Types
-{
+namespace Helix.Analysis.Types {
     public record class PredicateBool : HelixType {
         public ISyntaxPredicate Predicate { get; }
 
@@ -20,8 +19,8 @@ namespace Helix.Analysis.Types
 
         public override PassingSemantics GetSemantics(ITypedFrame types) => PassingSemantics.ValueType;
 
-        public override HelixType GetNaturalSupertype(ITypedFrame types) {
-            return PrimitiveType.Bool;
-        }
+        public override HelixType GetMutationSupertype(ITypedFrame types) => PrimitiveType.Bool;
+
+        public override HelixType GetSignatureSupertype(ITypedFrame types) => PrimitiveType.Bool;
     }
 }

@@ -12,7 +12,8 @@ namespace Helix.Features.Aggregates {
     public class NewUnionSyntax : ISyntaxTree {
         private static int tempCounter = 0;
 
-        private readonly StructSignature sig;
+        private readonly HelixType unionType;
+        private readonly StructType sig;
         private readonly IReadOnlyList<string> names;
         private readonly IReadOnlyList<ISyntaxTree> values;
         private readonly IdentifierPath tempPath;
@@ -24,13 +25,15 @@ namespace Helix.Features.Aggregates {
         public bool IsPure { get; }
 
         public NewUnionSyntax(
-            TokenLocation loc, 
-            StructSignature sig,
+            TokenLocation loc,
+            HelixType unionType,
+            StructType sig,
             IReadOnlyList<string> names,
             IReadOnlyList<ISyntaxTree> values,
             IdentifierPath tempPath) {
 
             this.Location = loc;
+            this.unionType = unionType;
             this.sig = sig;
             this.names = names;
             this.values = values;
@@ -39,9 +42,9 @@ namespace Helix.Features.Aggregates {
             this.IsPure = this.values.All(x => x.IsPure);
         }
 
-        public NewUnionSyntax(TokenLocation loc, StructSignature sig,
+        public NewUnionSyntax(TokenLocation loc, HelixType unionType, StructType sig,
                               IReadOnlyList<string> names, IReadOnlyList<ISyntaxTree> values)
-            : this(loc, sig, names, values, loc.Scope.Append("$new_union_" + tempCounter++)) { }
+            : this(loc, unionType, sig, names, values, loc.Scope.Append("$new_union_" + tempCounter++)) { }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
@@ -54,8 +57,6 @@ namespace Helix.Features.Aggregates {
                     "Invalid Union Initialization",
                     "Union initializers must have at most one argument.");
             }
-
-            var unionType = new NominalType(this.sig.Path, NominalTypeKind.Union);
 
             string name;
             if (this.names.Count == 0 || this.names[0] == null) {
@@ -71,7 +72,7 @@ namespace Helix.Features.Aggregates {
                     this.Location,
                     "Invalid Union Initialization",
                     $"The member '{name}' does not exist in the "
-                        + $"union type '{unionType}'");
+                        + $"union type '{this.unionType}'");
             }
 
             ISyntaxTree value;
@@ -99,12 +100,13 @@ namespace Helix.Features.Aggregates {
 
             var result = new NewUnionSyntax(
                 this.Location, 
+                this.unionType,
                 this.sig, 
                 new[] { name }, 
                 new[] { value },
                 this.tempPath);
 
-            result.SetReturnType(unionType, types);
+            result.SetReturnType(this.unionType, types);
             result.SetCapturedVariables(value, types);
             result.SetPredicate(value, types);
 
@@ -155,8 +157,8 @@ namespace Helix.Features.Aggregates {
             var name = this.names[0];
             var value = this.values[0].GenerateCode(types, writer);
 
-            var unionStructType = writer.ConvertType(new NominalType(this.sig.Path, NominalTypeKind.Union));
-            var unionUnionType = new CNamedType(writer.GetVariableName(this.sig.Path) + "$union");
+            var unionStructType = writer.ConvertType(this.unionType);
+            var unionUnionType = new CNamedType(unionStructType.WriteToC() + "$union");
             var index = this.sig.Members.IndexOf(x => x.Name == name);
 
             var tempName = writer.GetVariableName(this.tempPath);

@@ -44,9 +44,9 @@ namespace Helix.Analysis.Types {
     public abstract record HelixType { 
         public abstract PassingSemantics GetSemantics(ITypedFrame types);
 
-        public virtual HelixType GetNaturalSupertype(ITypedFrame types) {
-            return this;
-        }
+        public abstract HelixType GetMutationSupertype(ITypedFrame types);
+
+        public abstract HelixType GetSignatureSupertype(ITypedFrame types);
 
         public virtual ISyntaxTree ToSyntax(TokenLocation loc) {
             return new TypeSyntaxWrapper(loc, this);

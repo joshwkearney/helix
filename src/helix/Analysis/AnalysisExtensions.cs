@@ -16,36 +16,29 @@ namespace Helix.Analysis {
         }
 
         public static Option<PointerType> AsVariable(this HelixType type, ITypedFrame types) {
-            if (type is PointerType sig) {
+            if (type.GetSignatureSupertype(types) is PointerType sig) {
                 return sig;
             }
             else {
-                sig = type.GetMaxNaturalSupertype(types) as PointerType;
-
-                return Option.Some(sig).Where(x => x != null);
+                return Option.None;
             }
         }
 
         public static Option<FunctionType> AsFunction(this HelixType type, ITypedFrame types) {
-            if (type is FunctionType funcSig) {
+            if (type.GetSignatureSupertype(types) is FunctionType funcSig) {
                 return funcSig;
             }
             else {
-                funcSig = type.GetMaxNaturalSupertype(types) as FunctionType;
-
-                return Option.Some(funcSig).Where(x => x != null);
+                return Option.None;
             }            
         }
 
-        public static HelixType GetMaxNaturalSupertype(this HelixType type, ITypedFrame types) {
-            while (true) {
-                var super = type.GetNaturalSupertype(types);
-
-                if (super == type) {
-                    return super;
-                }
-
-                type = super;
+        public static Option<StructType> AsStruct(this HelixType type, ITypedFrame types) {
+            if (type.GetSignatureSupertype(types) is StructType sig) {
+                return sig;
+            }
+            else {
+                return Option.None;
             }
         }
 
@@ -159,7 +152,7 @@ namespace Helix.Analysis {
                 yield break;
             }
 
-            if (!types.Structs.TryGetValue(named.Path, out var structSig)) {
+            if (!named.AsStruct(types).TryGetValue(out var structSig)) {
                 yield break;
             }
 

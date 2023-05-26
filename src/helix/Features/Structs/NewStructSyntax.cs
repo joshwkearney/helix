@@ -11,7 +11,8 @@ using Helix.Analysis.TypeChecking;
 namespace Helix.Features.Aggregates {
     public class NewStructSyntax : ISyntaxTree {
         private readonly bool isTypeChecked;
-        private readonly StructSignature sig;
+        private readonly StructType sig;
+        private readonly HelixType structType;
         private readonly IReadOnlyList<string> names;
         private readonly IReadOnlyList<ISyntaxTree> values;
 
@@ -22,13 +23,15 @@ namespace Helix.Features.Aggregates {
         public bool IsPure { get; }
 
         public NewStructSyntax(
-            TokenLocation loc, 
-            StructSignature sig,
+            TokenLocation loc,
+            HelixType structType,
+            StructType sig,
             IReadOnlyList<string> names,
             IReadOnlyList<ISyntaxTree> values, bool isTypeChecked = false) {
 
             this.Location = loc;
             this.sig = sig;
+            this.structType = structType;
             this.names = names;
             this.values = values;
             this.isTypeChecked = isTypeChecked;
@@ -39,8 +42,6 @@ namespace Helix.Features.Aggregates {
         public ISyntaxTree CheckTypes(TypeFrame types) {
             var names = new string[this.names.Count];
             int missingCounter = 0;
-
-            var type = new NominalType(this.sig.Path, NominalTypeKind.Struct);
 
             // Fill in missing names
             for (int i = 0; i < names.Length; i++) {
@@ -64,7 +65,7 @@ namespace Helix.Features.Aggregates {
                         this.Location,
                         "Invalid Initialization",
                         "This initializer has provided too many "
-                            + $"arguments for the type '{type}'");
+                            + $"arguments for the type '{this.structType}'");
                 }
 
                 names[i] = this.sig.Members[missingCounter++].Name;
@@ -95,7 +96,7 @@ namespace Helix.Features.Aggregates {
                     this.Location,
                     "Invalid Struct Initialization",
                     $"The member '{undefinedFields.First()}' does not exist in the "
-                        + $"struct type '{type}'");
+                        + $"struct type '{this.structType}'");
             }
 
             var absentFields = this.sig.Members
@@ -135,9 +136,15 @@ namespace Helix.Features.Aggregates {
                 allValues.Add(value);
             }
 
-            var result = new NewStructSyntax(this.Location, this.sig, allNames, allValues, true);
+            var result = new NewStructSyntax(
+                this.Location,
+                this.structType,
+                this.sig, 
+                allNames, 
+                allValues, 
+                true);
 
-            result.SetReturnType(type, types);
+            result.SetReturnType(this.structType, types);
             result.SetCapturedVariables(allValues, types);
             result.SetPredicate(allValues, types);
 

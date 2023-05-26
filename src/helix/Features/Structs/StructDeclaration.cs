@@ -70,24 +70,26 @@ namespace Helix.Features.Aggregates {
             var path = this.Location.Scope.Append(this.signature.Name);
 
             names.SyntaxValues = names.SyntaxValues.SetItem(
-                path, 
+                path,
                 new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Struct)));
         }
 
         public void DeclareTypes(TypeFrame types) {
+            var path = this.Location.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
-            var structType = new NominalType(sig.Path, NominalTypeKind.Struct);
+            var namedType = new NominalType(path, NominalTypeKind.Struct);
 
-            types.Structs[sig.Path] = sig;
+            types.NominalSupertypes = types.NominalSupertypes.Add(namedType, sig);
 
             // Register this declaration with the code generator so 
             // types are constructed in order
-            types.TypeDeclarations[structType] = writer => this.RealCodeGenerator(sig, writer);
+            types.TypeDeclarations[sig] = writer => this.RealCodeGenerator(sig, writer);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
+            var path = this.Location.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
-            var structType = new NominalType(sig.Path, NominalTypeKind.Struct);
+            var structType = new NominalType(path, NominalTypeKind.Struct);
 
             var isRecursive = sig.Members
                 .Select(x => x.Type)
@@ -107,8 +109,9 @@ namespace Helix.Features.Aggregates {
 
         public void GenerateCode(FlowFrame types, ICWriter writer) { }
 
-        private void RealCodeGenerator(StructSignature signature, ICWriter writer) {
-            var name = writer.GetVariableName(signature.Path);
+        private void RealCodeGenerator(StructType signature, ICWriter writer) {
+            var path = this.Location.Scope.Append(this.signature.Name);
+            var name = writer.GetVariableName(path);
 
             var mems = signature.Members
                 .Select(x => new CParameter() {

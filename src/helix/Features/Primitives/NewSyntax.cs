@@ -4,6 +4,7 @@ using Helix.Parsing;
 using Helix.Features.Aggregates;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Analysis;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -110,9 +111,10 @@ namespace Helix.Features.Primitives {
                 return new BoolLiteral(this.Location, singBool.Value).CheckTypes(types);
             }
             else if (type is NominalType named) {
-                if (types.Structs.TryGetValue(named.Path, out var sig)) {
+                if (named.AsStruct(types).TryGetValue(out var sig)) {
                     var result = new NewStructSyntax(
                         this.Location,
+                        named,
                         sig,
                         this.names,
                         this.values);
@@ -122,6 +124,7 @@ namespace Helix.Features.Primitives {
                 else if (types.Unions.TryGetValue(named.Path, out sig)) {
                     var result = new NewUnionSyntax(
                         this.Location,
+                        named,
                         sig,
                         this.names,
                         this.values);

@@ -17,7 +17,7 @@ namespace Helix.Analysis
         }
 
         public static ISyntaxTree WithMutableType(this ISyntaxTree syntax, TypeFrame types) {
-            var betterType = syntax.GetReturnType(types).GetNaturalSupertype(types);
+            var betterType = syntax.GetReturnType(types).GetMutationSupertype(types);
 
             return syntax.UnifyTo(betterType, types);
         }
