@@ -84,7 +84,7 @@ namespace Helix.Features.Primitives {
             }
 
             // Make sure we are not supplying members to a primitive type
-            if (type is not NamedType) {
+            if (type is not NominalType) {
                 if (this.names.Count > 0) {
                     throw new TypeException(
                         this.Location,
@@ -109,7 +109,7 @@ namespace Helix.Features.Primitives {
             else if (type is SingularBoolType singBool) {
                 return new BoolLiteral(this.Location, singBool.Value).CheckTypes(types);
             }
-            else if (type is NamedType named) {
+            else if (type is NominalType named) {
                 if (types.Structs.TryGetValue(named.Path, out var sig)) {
                     var result = new NewStructSyntax(
                         this.Location,

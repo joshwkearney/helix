@@ -3,6 +3,7 @@ using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Collections;
+using Helix.Features.Types;
 using Helix.Features.Variables;
 using Helix.Parsing;
 using Helix.Syntax;
@@ -34,10 +35,10 @@ namespace Helix.Features.Functions {
 
             types.SyntaxValues = types.SyntaxValues.SetItem(
                 path, 
-                new TypeSyntax(sig.Location, new NamedType(path)));
+                new TypeSyntax(sig.Location, new NominalType(path, NominalTypeKind.Function)));
         }
 
-        public static void DeclareParameterTypes(TokenLocation loc, FunctionSignature sig, TypeFrame types) {
+        public static void DeclareParameterTypes(TokenLocation loc, FunctionType sig, IdentifierPath path, TypeFrame types) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
@@ -49,19 +50,24 @@ namespace Helix.Features.Functions {
 
                 // TODO: Fix iswritable here
                 types.SyntaxValues = types.SyntaxValues.Add(
-                    sig.Path.Append(parsePar.Name),
+                    path.Append(parsePar.Name),
                     new PointerType(type, true).ToSyntax(loc));
+
+                var varSig = new PointerType(type, parsePar.IsWritable);
+                var namedType = new NominalType(path.Append(parsePar.Name), NominalTypeKind.Variable);
+
+                types.NominalSupertypes = types.NominalSupertypes.Add(namedType, varSig);
 
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(types)) {
-                    var path = sig.Path.Append(parsePar.Name).AppendMember(relPath);
-                    var locationLifetime = new StackLocationLifetime(path, LifetimeOrigin.LocalLocation);
-                    var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, LifetimeOrigin.LocalValue, 0);
+                    var memPath = path.Append(parsePar.Name).AppendMember(relPath);
+                    var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
+                    var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.LocalValue, 0);
                 }
             }
         }
 
-        public static void DeclareParameterFlow(FunctionSignature sig, FlowFrame flow) {
+        public static void DeclareParameterFlow(FunctionType sig, IdentifierPath path, FlowFrame flow) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
@@ -73,19 +79,19 @@ namespace Helix.Features.Functions {
 
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(flow)) {
-                    var path = sig.Path.Append(parsePar.Name).AppendMember(relPath);
-                    var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, LifetimeOrigin.LocalValue);
-                    var locationLifetime = new StackLocationLifetime(path, LifetimeOrigin.LocalLocation);
+                    var memPath = path.Append(parsePar.Name).AppendMember(relPath);
+                    var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.LocalValue);
+                    var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
 
                     if (memType.IsValueType(flow)) {
                         // Skip value types because they don't have lifetimes anyway
-                        flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, new LifetimeBounds());
+                        flow.LocalLifetimes = flow.LocalLifetimes.SetItem(memPath, new LifetimeBounds());
                     }
                     else {
                         flow.LifetimeGraph.AddStored(valueLifetime, locationLifetime, memType);
 
                         flow.LocalLifetimes = flow.LocalLifetimes.SetItem(
-                            path, 
+                            memPath, 
                             new LifetimeBounds(valueLifetime, locationLifetime));
 
                         flow.LifetimeRoots = flow.LifetimeRoots.Add(locationLifetime);
@@ -96,8 +102,8 @@ namespace Helix.Features.Functions {
         }
 
         public static void AnalyzeReturnValueFlow(
-            TokenLocation loc, 
-            FunctionSignature sig, 
+            TokenLocation loc,
+            FunctionType sig, 
             ISyntaxTree body, 
             FlowFrame flow) {
 

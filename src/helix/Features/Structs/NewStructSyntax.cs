@@ -40,6 +40,8 @@ namespace Helix.Features.Aggregates {
             var names = new string[this.names.Count];
             int missingCounter = 0;
 
+            var type = new NominalType(this.sig.Path, NominalTypeKind.Struct);
+
             // Fill in missing names
             for (int i = 0; i < names.Length; i++) {
                 // If this name is defined then set it and move on
@@ -62,13 +64,11 @@ namespace Helix.Features.Aggregates {
                         this.Location,
                         "Invalid Initialization",
                         "This initializer has provided too many "
-                            + $"arguments for the type '{new NamedType(this.sig.Path)}'");
+                            + $"arguments for the type '{type}'");
                 }
 
                 names[i] = this.sig.Members[missingCounter++].Name;
             }
-
-            var type = new NamedType(this.sig.Path);
 
             var dups = names
                 .GroupBy(x => x)

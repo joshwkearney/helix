@@ -2,9 +2,53 @@
 using Helix.Analysis.Types;
 using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.Types;
 
 namespace Helix.Analysis {
     public static class AnalysisExtensions {
+        public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
+            var named = new NominalType(path, NominalTypeKind.Variable);
+
+            return types.NominalSupertypes
+                .GetValueOrNone(named)
+                .SelectMany(x => x.AsVariable(types))
+                .TryGetValue(out type);
+        }
+
+        public static Option<PointerType> AsVariable(this HelixType type, ITypedFrame types) {
+            if (type is PointerType sig) {
+                return sig;
+            }
+            else {
+                sig = type.GetMaxNaturalSupertype(types) as PointerType;
+
+                return Option.Some(sig).Where(x => x != null);
+            }
+        }
+
+        public static Option<FunctionType> AsFunction(this HelixType type, ITypedFrame types) {
+            if (type is FunctionType funcSig) {
+                return funcSig;
+            }
+            else {
+                funcSig = type.GetMaxNaturalSupertype(types) as FunctionType;
+
+                return Option.Some(funcSig).Where(x => x != null);
+            }            
+        }
+
+        public static HelixType GetMaxNaturalSupertype(this HelixType type, ITypedFrame types) {
+            while (true) {
+                var super = type.GetNaturalSupertype(types);
+
+                if (super == type) {
+                    return super;
+                }
+
+                type = super;
+            }
+        }
+
         public static bool IsTypeChecked(this ISyntaxTree syntax, ITypedFrame types) {
             return types.ReturnTypes.ContainsKey(syntax);
         }
@@ -111,7 +155,7 @@ namespace Helix.Analysis {
 
             yield return (basePath, type);
 
-            if (type is not NamedType named) {
+            if (type is not NominalType named) {
                 yield break;
             }
 

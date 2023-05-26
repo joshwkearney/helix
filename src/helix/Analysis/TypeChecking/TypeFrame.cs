@@ -9,6 +9,7 @@ using Helix.Parsing;
 using Helix.Collections;
 using System.Collections.Immutable;
 using Helix.Analysis.Predicates;
+using Helix.Features.Types;
 
 namespace Helix.Analysis.TypeChecking {
     public delegate void DeclarationCG(ICWriter writer);
@@ -26,8 +27,6 @@ namespace Helix.Analysis.TypeChecking {
         public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
         // Global things
-        public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
-
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
         public IDictionary<IdentifierPath, StructSignature> Unions { get; }
@@ -39,6 +38,8 @@ namespace Helix.Analysis.TypeChecking {
         public IDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
 
         public IDictionary<ISyntaxTree, ISyntaxPredicate> Predicates { get; }
+
+        public ImmutableDictionary<HelixType, HelixType> NominalSupertypes { get; set; }
 
         public TypeFrame() {
             this.SyntaxValues = ImmutableDictionary<IdentifierPath, ISyntaxTree>.Empty;
@@ -55,7 +56,6 @@ namespace Helix.Analysis.TypeChecking {
                 new IdentifierPath("bool"),
                 new TypeSyntax(default, PrimitiveType.Bool));
 
-            this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
             this.Structs = new Dictionary<IdentifierPath, StructSignature>();
             this.Unions = new Dictionary<IdentifierPath, StructSignature>();
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
@@ -63,12 +63,12 @@ namespace Helix.Analysis.TypeChecking {
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
             this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
             this.Predicates = new Dictionary<ISyntaxTree, ISyntaxPredicate>();
+            this.NominalSupertypes = ImmutableDictionary<HelixType, HelixType>.Empty;
         }
 
         public TypeFrame(TypeFrame prev) {
             this.SyntaxValues = prev.SyntaxValues;
 
-            this.Functions = prev.Functions;
             this.Structs = prev.Structs;
             this.Unions = prev.Unions;
             this.TypeDeclarations = prev.TypeDeclarations;
@@ -76,6 +76,7 @@ namespace Helix.Analysis.TypeChecking {
             this.ReturnTypes = prev.ReturnTypes;
             this.CapturedVariables = prev.CapturedVariables;
             this.Predicates = prev.Predicates;
+            this.NominalSupertypes = prev.NominalSupertypes;
         }
 
         public string GetVariableName() {
@@ -118,19 +119,6 @@ namespace Helix.Analysis.TypeChecking {
 
         public ISyntaxTree ResolveName(IdentifierPath scope, string name) {
             return this.SyntaxValues[this.ResolvePath(scope, name)];
-        }
-
-        public bool TryGetVariable(IdentifierPath path, out PointerType type) {
-            if (!this.SyntaxValues.TryGetValue(path, out var tree)) {
-                type = null;
-                return false;
-            }
-
-            return tree
-                .AsType(this)
-                .Select(x => x as PointerType)
-                .Where(x => x != null)
-                .TryGetValue(out type);
         }
     }
 }

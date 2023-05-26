@@ -32,7 +32,7 @@ namespace Helix.Features.Functions {
                 return this;
             }
 
-            this.SetReturnType(new NamedType(this.FunctionPath), types);
+            this.SetReturnType(new NominalType(this.FunctionPath, NominalTypeKind.Function), types);
             this.SetCapturedVariables(types);
             this.SetPredicate(types);
 

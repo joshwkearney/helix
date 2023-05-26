@@ -140,7 +140,7 @@ namespace Helix.Generation {
             else if (type is PointerType type2) {
                 return new CNamedType(this.GeneratePointerType(type2));
             }
-            else if (type is NamedType named) {
+            else if (type is NominalType named) {
                 if (this.pathNames.TryGetValue(named.Path, out var cname)) {
                     return new CNamedType(cname);
                 }                   

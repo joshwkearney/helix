@@ -1,18 +1,19 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Types;
 
-namespace Helix.Features.Functions {
-    public record FunctionSignature  {
+namespace Helix.Features.Types {
+    public record FunctionType : HelixType  {
         public HelixType ReturnType { get; }
 
         public IReadOnlyList<FunctionParameter> Parameters { get; }
 
-        public IdentifierPath Path { get; }
-
-        public FunctionSignature(IdentifierPath path, HelixType returnType, IReadOnlyList<FunctionParameter> pars) {
-            this.Path = path;
+        public FunctionType(HelixType returnType, IReadOnlyList<FunctionParameter> pars) {
             this.ReturnType = returnType;
             this.Parameters = pars;
+        }
+
+        public override PassingSemantics GetSemantics(ITypedFrame types) {
+            return PassingSemantics.ValueType;
         }
     }
 

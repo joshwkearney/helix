@@ -13,6 +13,7 @@ using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Collections;
+using Helix.Features.Types;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -111,21 +112,24 @@ namespace Helix.Features.Functions {
         }
 
         public void DeclareTypes(TypeFrame types) {
+            var path = this.Location.Scope.Append(this.signature.Name);
+            var named = new NominalType(path, NominalTypeKind.Function);
             var sig = this.signature.ResolveNames(types);
 
             // Declare this function
-            types.Functions[sig.Path] = sig;
+            types.NominalSupertypes = types.NominalSupertypes.SetItem(named, sig);
         }
         
         public IDeclaration CheckTypes(TypeFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.signature.Name);
-            var sig = types.Functions[path];
+            var namedType = new NominalType(path, NominalTypeKind.Function);
+            var sig = (FunctionType)types.NominalSupertypes[namedType];
 
             // Set the scope for type checking the body
             types = new TypeFrame(types);
 
             // Declare parameters
-            FunctionsHelper.DeclareParameterTypes(this.Location, sig, types);
+            FunctionsHelper.DeclareParameterTypes(this.Location, sig, path, types);
 
             // Check types
             var body = this.body;
@@ -164,22 +168,24 @@ namespace Helix.Features.Functions {
             }
 #endif
 
-            return new FunctionDeclaration(this.Location, sig, body);
+            return new FunctionDeclaration(this.Location, path, sig, body);
         }
     }
 
     public record FunctionDeclaration : IDeclaration {
         private readonly ISyntaxTree body;
 
-        public FunctionSignature Signature { get; }
+        public FunctionType Signature { get; }
 
         public TokenLocation Location { get; }
 
-        public FunctionDeclaration(TokenLocation loc, FunctionSignature sig, ISyntaxTree body) {
+        public IdentifierPath Path { get; }
 
+        public FunctionDeclaration(TokenLocation loc, IdentifierPath path, FunctionType sig, ISyntaxTree body) {
             this.Location = loc;
             this.Signature = sig;
             this.body = body;
+            this.Path = path;
         }
 
         public void DeclareNames(TypeFrame names) {
@@ -199,7 +205,7 @@ namespace Helix.Features.Functions {
             flow = new FlowFrame(flow);
 
             // Declare parameters
-            FunctionsHelper.DeclareParameterFlow(this.Signature, flow);
+            FunctionsHelper.DeclareParameterFlow(this.Signature, this.Path, flow);
 
             // Make sure we include the heap in the root set
             flow.LifetimeRoots = flow.LifetimeRoots.Add(Lifetime.Heap);
@@ -228,7 +234,7 @@ namespace Helix.Features.Functions {
                 .Parameters
                 .Select((x, i) => new CParameter() { 
                     Type = writer.ConvertType(x.Type),
-                    Name = writer.GetVariableName(this.Signature.Path.Append(x.Name))
+                    Name = writer.GetVariableName(this.Path.Append(x.Name))
                 })
                 .Prepend(new CParameter() {
                     Name = "_return_region",
@@ -236,14 +242,14 @@ namespace Helix.Features.Functions {
                 })
                 .ToArray();
 
-            var funcName = writer.GetVariableName(this.Signature.Path);
+            var funcName = writer.GetVariableName(this.Path);
             var body = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, body);
 
             // Register the parameters as local variables
             foreach (var par in this.Signature.Parameters) {
                 foreach (var (relPath, _) in par.Type.GetMembers(types)) {
-                    var path = this.Signature.Path.Append(par.Name).Append(relPath);
+                    var path = this.Path.Append(par.Name).Append(relPath);
 
                     bodyWriter.VariableKinds[path] = CVariableKind.Local;
                 }

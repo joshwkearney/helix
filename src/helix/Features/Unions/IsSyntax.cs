@@ -41,13 +41,16 @@ namespace Helix.Features.Unions {
             }
 
             // Make sure we have a variable pointing to a union
-            if (varSig.InnerType is not NamedType named || !types.Unions.TryGetValue(named.Path, out var sig)) {
+            if (varSig.InnerType is not NominalType named || !types.Unions.TryGetValue(named.Path, out var sig)) {
                 throw TypeException.ExpectedUnionType(this.Target.Location);
             }
 
             // Make sure this union actually contains this member
             if (!sig.Members.Any(x => x.Name == this.MemberName)) {
-                throw TypeException.MemberUndefined(this.Location, new NamedType(sig.Path), this.MemberName);
+                throw TypeException.MemberUndefined(
+                    this.Location, 
+                    new NominalType(sig.Path, NominalTypeKind.Union), 
+                    this.MemberName);
             }
 
             var predicate = new IsUnionMemberPredicate(

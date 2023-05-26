@@ -60,12 +60,12 @@ namespace Helix.Features.Aggregates {
 
             names.SyntaxValues = names.SyntaxValues.SetItem(
                 path, 
-                new TypeSyntax(this.Location, new NamedType(path)));
+                new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Union)));
         }
 
         public void DeclareTypes(TypeFrame types) {
             var sig = this.signature.ResolveNames(types);
-            var unionType = new NamedType(sig.Path);
+            var unionType = new NominalType(sig.Path, NominalTypeKind.Union);
 
             types.Unions[sig.Path] = sig;
 
@@ -76,7 +76,7 @@ namespace Helix.Features.Aggregates {
 
         public IDeclaration CheckTypes(TypeFrame types) {
             var sig = this.signature.ResolveNames(types);
-            var structType = new NamedType(sig.Path);
+            var structType = new NominalType(sig.Path, NominalTypeKind.Union);
 
             var isRecursive = sig.Members
                 .Select(x => x.Type)

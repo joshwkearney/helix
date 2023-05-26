@@ -175,7 +175,7 @@ namespace Helix.Analysis.TypeChecking {
             if (second == PrimitiveType.Int || second == PrimitiveType.Float || second == PrimitiveType.Bool) {
                 return UnificationResult.Pun(second);
             }
-            else if (second is NamedType named) {
+            else if (second is NominalType named) {
                 if (types.Structs.TryGetValue(named.Path, out var sig)) {
                     return TryUnifyVoidToStruct(sig, types);
                 }
@@ -196,7 +196,7 @@ namespace Helix.Analysis.TypeChecking {
                 return UnificationResult.None;
             }
 
-            var structType = new NamedType(sig.Path);
+            var structType = new NominalType(sig.Path, NominalTypeKind.Struct);
 
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,

@@ -1,6 +1,8 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Parsing;
+using Helix.Features.Types;
+using Helix.Analysis;
 
 namespace Helix.Features.Functions {
     public record FunctionParseSignature {
@@ -19,7 +21,7 @@ namespace Helix.Features.Functions {
             this.Parameters = pars;
         }
 
-        public FunctionSignature ResolveNames(TypeFrame types) {
+        public FunctionType ResolveNames(TypeFrame types) {
             var path = this.Location.Scope.Append(this.Name);
             var pars = new List<FunctionParameter>();
 
@@ -35,7 +37,7 @@ namespace Helix.Features.Functions {
                 pars.Add(new FunctionParameter(par.Name, parType, par.IsWritable));
             }
 
-            return new FunctionSignature(path, retType, pars);
+            return new FunctionType(retType, pars);
         }
     }
 

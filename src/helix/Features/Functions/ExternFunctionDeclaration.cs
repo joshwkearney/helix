@@ -7,6 +7,8 @@ using Helix.Generation.Syntax;
 using Helix.Syntax;
 using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.Types;
+using Helix.Analysis;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -41,36 +43,41 @@ namespace Helix.Features.Functions {
         }
 
         public void DeclareTypes(TypeFrame types) {
+            var path = this.Location.Scope.Append(this.Signature.Name);
             var sig = this.Signature.ResolveNames(types);
-            var decl = new ExternFunctionDeclaration(this.Location, sig);
+            var named = new NominalType(path, NominalTypeKind.Function);
 
             // Replace the temporary wrapper object with a full declaration
             types.SyntaxValues = types.SyntaxValues.SetItem(
-                sig.Path, 
-                new TypeSyntax(this.Location, new NamedType(sig.Path)));
+                path, 
+                new TypeSyntax(this.Location, named));
 
             // Declare this function
-            types.Functions[sig.Path] = sig;
+            types.NominalSupertypes = types.NominalSupertypes.SetItem(named, sig);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
             var path = types.ResolvePath(this.Location.Scope, this.Signature.Name);
-            var sig = types.Functions[path];
+            var named = new NominalType(path, NominalTypeKind.Function);
+            var sig = types.NominalSupertypes[named].AsFunction(types).GetValue();
 
-            return new ExternFunctionDeclaration(this.Location, sig);
+            return new ExternFunctionDeclaration(this.Location, sig, this.Signature.Name);
         }
 
         public void GenerateCode(TypeFrame types, ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record ExternFunctionDeclaration : IDeclaration {
-        public FunctionSignature Signature { get; }
+        public FunctionType Signature { get; }
 
         public TokenLocation Location { get; }
 
-        public ExternFunctionDeclaration(TokenLocation loc, FunctionSignature sig) {
+        public string Name { get; }
+
+        public ExternFunctionDeclaration(TokenLocation loc, FunctionType sig, string name) {
             this.Location = loc;
             this.Signature = sig;
+            this.Name = name;
         }
 
         public void DeclareNames(TypeFrame names) {
@@ -84,6 +91,8 @@ namespace Helix.Features.Functions {
         public IDeclaration CheckTypes(TypeFrame types) => this;
 
         public void GenerateCode(FlowFrame types, ICWriter writer) {
+            var path = this.Location.Scope.Append(this.Name);
+
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
                 : writer.ConvertType(this.Signature.ReturnType);
@@ -92,7 +101,7 @@ namespace Helix.Features.Functions {
                 .Parameters
                 .Select((x, i) => new CParameter() {
                     Type = writer.ConvertType(x.Type),
-                    Name = writer.GetVariableName(this.Signature.Path.Append(x.Name))
+                    Name = writer.GetVariableName(path.Append(x.Name))
                 })
                 .Prepend(new CParameter() {
                     Name = "_region",
@@ -100,7 +109,7 @@ namespace Helix.Features.Functions {
                 })
                 .ToArray();
 
-            var funcName = writer.GetVariableName(this.Signature.Path);
+            var funcName = writer.GetVariableName(path);
 
             var forwardDecl = new CFunctionDeclaration() {
                 ReturnType = returnType,

@@ -19,14 +19,20 @@ extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
 typedef struct int$ptr int$ptr;
+typedef struct int$ptr$array int$ptr$array;
 typedef struct int$ptr$ptr int$ptr$ptr;
-typedef struct Test2Struct Test2Struct;
 
-void test2(_Region* _return_region, Test2Struct n);
+void test5(_Region* _return_region, int$ptr$array arr);
 
 struct int$ptr {
     int* data;
     _Region* region;
+};
+
+struct int$ptr$array {
+    int$ptr* data;
+    _Region* region;
+    int count;
 };
 
 struct int$ptr$ptr {
@@ -34,23 +40,16 @@ struct int$ptr$ptr {
     _Region* region;
 };
 
-struct Test2Struct {
-    int$ptr$ptr field;
-};
+void test5(_Region* _return_region, int$ptr$array arr) {
+    /* Line 2: New variable declaration 'x' */
+    int* x = (int*)_region_malloc((arr.region), sizeof(int));
+    (*x) = 45U;
 
-void test2(_Region* _return_region, Test2Struct n) {
-    /* Line 6: Pointer dereference */
-    int$ptr $deref_2 = (*((n.field).data));
+    /* Line 4: Array to pointer conversion */
+    int$ptr$ptr $A = (int$ptr$ptr){ ((arr.data) + 0U), (arr.region) };
 
-    /* Line 6: Pointer dereference */
-    int $deref_3 = (*($deref_2.data));
-
-    /* Line 6: New variable declaration 'x' */
-    int* x = (int*)_region_malloc(($deref_2.region), sizeof(int));
-    (*x) = $deref_3;
-
-    /* Line 8: Assignment statement */
-    (*((n.field).data)) = (int$ptr){ x, ($deref_2.region) };
+    /* Line 4: Assignment statement */
+    (*($A.data)) = (int$ptr){ x, (arr.region) };
 }
 
 #if __cplusplus

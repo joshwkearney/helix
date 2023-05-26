@@ -64,7 +64,8 @@ namespace Helix.Features.Functions {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var sig = flow.Functions[this.funcPath];
+            var named = new NominalType(this.funcPath, NominalTypeKind.Function);
+            var sig = flow.NominalSupertypes[named].AsFunction(flow).GetValue();
 
             flow.SyntaxLifetimes[this] = new LifetimeBundle();
             FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, this.payload, flow);

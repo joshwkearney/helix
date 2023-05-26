@@ -71,7 +71,7 @@ namespace Helix.Features.Aggregates {
             }
 
             // If this is a named type it could be a struct or union
-            if (targetType is NamedType named) {
+            if (targetType is NominalType named) {
                 // If this is a struct we can access the fields
                 if (types.Structs.TryGetValue(named.Path, out var sig)) {
                     var fieldOpt = sig

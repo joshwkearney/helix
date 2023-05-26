@@ -3,26 +3,41 @@ using Helix.Features.Aggregates;
 using Helix.Syntax;
 
 namespace Helix.Analysis.Types {
-    public record NamedType : HelixType {
+    public enum NominalTypeKind {
+        Function, Struct, Union, Variable
+    }
+
+    public record NominalType : HelixType {
         public IdentifierPath Path { get; } 
 
-        public NamedType(IdentifierPath fullName) {
+        public NominalTypeKind Kind { get; }
+
+        public NominalType(IdentifierPath fullName, NominalTypeKind kind) {
             this.Path = fullName;
+            this.Kind = kind;
+        }
+
+        public override HelixType GetNaturalSupertype(ITypedFrame types) {
+            // TODO: Fix this
+            if (types.NominalSupertypes.TryGetValue(this, out var s)) {
+                return s.GetNaturalSupertype(types);
+            }
+            else {
+                return this;
+            }
         }
 
         public override PassingSemantics GetSemantics(ITypedFrame types) {
-            if (types.Functions.ContainsKey(this.Path)) {
-                return PassingSemantics.ValueType;
+            switch (this.Kind) {
+                case NominalTypeKind.Function:
+                    return PassingSemantics.ValueType;
+                case NominalTypeKind.Struct:
+                    return this.GetAggregateSemantics(types.Structs[this.Path], types);
+                case NominalTypeKind.Union:
+                    return this.GetAggregateSemantics(types.Unions[this.Path], types);
+                default:
+                    throw new InvalidOperationException();
             }
-
-            if (types.Structs.TryGetValue(this.Path, out var sig)) {
-                return this.GetAggregateSemantics(sig, types);
-            }
-            else if (types.Unions.TryGetValue(this.Path, out sig)) {
-                return this.GetAggregateSemantics(sig, types);
-            }
-
-            throw new InvalidOperationException("Unexpected named type");
         }
 
         private PassingSemantics GetAggregateSemantics(StructSignature sig, ITypedFrame types) {

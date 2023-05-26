@@ -7,6 +7,7 @@ using Helix.Generation.Syntax;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.Types;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -57,7 +58,7 @@ namespace Helix.Features.Functions {
             var targetType = types.ReturnTypes[target];
 
             // Make sure the target is a function
-            if (targetType is not NamedType named || !types.Functions.TryGetValue(named.Path, out var sig)) {
+            if (!targetType.AsFunction(types).TryGetValue(out var sig) || targetType is not NominalType named) {
                 throw TypeException.ExpectedFunctionType(this.target.Location, targetType);
             }
 
@@ -79,7 +80,7 @@ namespace Helix.Features.Functions {
             }
 
             var path = this.Location.Scope.Append("$invoke_temp_" + tempCounter++);
-            var result = new InvokeSyntax(this.Location, sig, newArgs, path);
+            var result = new InvokeSyntax(this.Location, sig, newArgs, named.Path, path);
 
             result.SetReturnType(sig.ReturnType, types);
             result.SetCapturedVariables(newArgs.Append(target), types);
@@ -90,8 +91,9 @@ namespace Helix.Features.Functions {
     }
 
     public record InvokeSyntax : ISyntaxTree {
-        private readonly FunctionSignature sig;
+        private readonly FunctionType sig;
         private readonly IReadOnlyList<ISyntaxTree> args;
+        private readonly IdentifierPath funcPath;
         private readonly IdentifierPath invokeTempPath;
 
         public TokenLocation Location { get; }
@@ -102,13 +104,15 @@ namespace Helix.Features.Functions {
 
         public InvokeSyntax(
             TokenLocation loc,
-            FunctionSignature sig,
+            FunctionType sig,
             IReadOnlyList<ISyntaxTree> args,
+            IdentifierPath path,
             IdentifierPath tempPath) {
 
             this.Location = loc;
             this.sig = sig;
             this.args = args;
+            this.funcPath = path;
             this.invokeTempPath = tempPath;
         }
 
@@ -156,7 +160,7 @@ namespace Helix.Features.Functions {
                 .ToArray();
 
             var result = new CInvoke() {
-                Target = new CVariableLiteral(writer.GetVariableName(this.sig.Path)),
+                Target = new CVariableLiteral(writer.GetVariableName(this.funcPath)),
                 Arguments = args
             };
 

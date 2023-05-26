@@ -55,7 +55,7 @@ namespace Helix.Features.Aggregates {
                     "Union initializers must have at most one argument.");
             }
 
-            var unionType = new NamedType(this.sig.Path);
+            var unionType = new NominalType(this.sig.Path, NominalTypeKind.Union);
 
             string name;
             if (this.names.Count == 0 || this.names[0] == null) {
@@ -155,7 +155,7 @@ namespace Helix.Features.Aggregates {
             var name = this.names[0];
             var value = this.values[0].GenerateCode(types, writer);
 
-            var unionStructType = writer.ConvertType(new NamedType(this.sig.Path));
+            var unionStructType = writer.ConvertType(new NominalType(this.sig.Path, NominalTypeKind.Union));
             var unionUnionType = new CNamedType(writer.GetVariableName(this.sig.Path) + "$union");
             var index = this.sig.Members.IndexOf(x => x.Name == name);
 

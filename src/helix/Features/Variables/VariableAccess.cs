@@ -61,8 +61,13 @@ namespace Helix.Features.Variables {
                 return new VariableAccessSyntax(this.Location, path, type).CheckTypes(types);
             }
 
+            var named = new NominalType(path, NominalTypeKind.Function);
+            var funcOpt = types.NominalSupertypes
+                .GetValueOrNone(named)
+                .SelectMany(x => x.AsFunction(types));
+
             // See if we are accessing a function
-            if (types.Functions.ContainsKey(path)) {
+            if (funcOpt.TryGetValue(out var _)) {
                 return new FunctionAccessSyntax(this.Location, path).CheckTypes(types);
             }
 

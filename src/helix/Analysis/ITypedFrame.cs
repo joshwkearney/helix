@@ -3,10 +3,12 @@ using Helix.Analysis.Types;
 using Helix.Features.Aggregates;
 using Helix.Features.Functions;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.Types;
+using System.Collections.Immutable;
 
 namespace Helix.Analysis {
     public interface ITypedFrame {
-        public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
+        public ImmutableDictionary<HelixType, HelixType> NominalSupertypes { get; set; }
 
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
 
