@@ -46,25 +46,20 @@ namespace Helix.Parsing {
             var loc = start.Location.Span(last.Location);
             var sig = new StructParseSignature(loc, name, mems);
 
-            return new StructDeclaration(loc, sig);
+            return new StructParseDeclaration(loc, sig);
         }
     }
 }
 
 namespace Helix.Features.Aggregates {
-    public record StructDeclaration : IDeclaration {
+    public record StructParseDeclaration : IDeclaration {
         private readonly StructParseSignature signature;
-        private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
 
-        public StructDeclaration(TokenLocation loc, StructParseSignature sig)
-            : this(loc, sig, new IdentifierPath(sig.Name)) { }
-
-        public StructDeclaration(TokenLocation loc, StructParseSignature sig, IdentifierPath path) {
+        public StructParseDeclaration(TokenLocation loc, StructParseSignature sig) {
             this.Location = loc;
             this.signature = sig;
-            this.path = path;
         }
 
         public void DeclareNames(TypeFrame types) {
@@ -84,10 +79,6 @@ namespace Helix.Features.Aggregates {
             var sig = this.signature.ResolveNames(types);
 
             types.NominalSignatures = types.NominalSignatures.SetItem(path, sig);
-
-            // Register this declaration with the code generator so 
-            // types are constructed in order
-            types.TypeDeclarations[sig] = writer => this.RealCodeGenerator(sig, writer);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
@@ -106,17 +97,34 @@ namespace Helix.Features.Aggregates {
                 throw TypeException.CircularValueObject(this.Location, named);
             }
 
-            return new StructDeclaration(this.Location, this.signature, types.Scope.Append(this.path));
+            return new StructDeclaration(this.Location, sig, path);
         }
+    }
+
+    public record StructDeclaration : IDeclaration {
+        private readonly StructType signature;
+        private readonly IdentifierPath path;
+
+        public TokenLocation Location { get; }
+
+        public StructDeclaration(TokenLocation loc, StructType sig, IdentifierPath path) {
+            this.Location = loc;
+            this.signature = sig;
+            this.path = path;
+        }
+
+        public void DeclareNames(TypeFrame types) { }
+
+        public void DeclareTypes(TypeFrame types) { }
+
+        public IDeclaration CheckTypes(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) { }
 
-        public void GenerateCode(FlowFrame types, ICWriter writer) { }
-
-        private void RealCodeGenerator(StructType signature, ICWriter writer) {
+        public void GenerateCode(FlowFrame types, ICWriter writer) {
             var name = writer.GetVariableName(this.path);
 
-            var mems = signature.Members
+            var mems = this.signature.Members
                 .Select(x => new CParameter() {
                     Type = writer.ConvertType(x.Type),
                     Name = x.Name

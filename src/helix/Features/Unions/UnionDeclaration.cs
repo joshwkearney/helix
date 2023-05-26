@@ -46,26 +46,21 @@ namespace Helix.Parsing {
             var loc = start.Location.Span(last.Location);
             var sig = new StructParseSignature(loc, name, mems);
 
-            return new UnionDeclaration(loc, sig);
+            return new UnionParseDeclaration(loc, sig);
         }
     }
 }
 
 namespace Helix.Features.Aggregates {
-    public record UnionDeclaration : IDeclaration {
+    public record UnionParseDeclaration : IDeclaration {
         private readonly StructParseSignature signature;
-        private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
 
-        public UnionDeclaration(TokenLocation loc, StructParseSignature sig, IdentifierPath path) {
+        public UnionParseDeclaration(TokenLocation loc, StructParseSignature sig) {
             this.Location = loc;
             this.signature = sig;
-            this.path = path;
         }
-
-        public UnionDeclaration(TokenLocation loc, StructParseSignature sig)
-            : this(loc, sig, new IdentifierPath(sig.Name)) { }
 
         public void DeclareNames(TypeFrame types) {
             // Make sure this name isn't taken
@@ -83,18 +78,14 @@ namespace Helix.Features.Aggregates {
             var path = types.Scope.Append(this.signature.Name);
             var structSig = this.signature.ResolveNames(types);
             var unionSig = new UnionType(structSig.Members);
-            var unionType = new NominalType(path, NominalTypeKind.Union);
 
             types.NominalSignatures = types.NominalSignatures.SetItem(path, unionSig);
-
-            // Register this declaration with the code generator so 
-            // types are constructed in order
-            types.TypeDeclarations[unionType] = writer => this.RealCodeGenerator(unionSig, writer);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {
             var path = types.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
+            var unionSig = new UnionType(sig.Members);
             var structType = new NominalType(path, NominalTypeKind.Union);
 
             var isRecursive = sig.Members
@@ -108,23 +99,33 @@ namespace Helix.Features.Aggregates {
                 throw TypeException.CircularValueObject(this.Location, structType);
             }
 
-            return new UnionDeclaration(this.Location, this.signature, types.Scope.Append(this.path));
+            return new UnionDeclaration(this.Location, unionSig, path);
         }
+    }
+
+    public record UnionDeclaration : IDeclaration {
+        private readonly UnionType signature;
+        private readonly IdentifierPath path;
+
+        public TokenLocation Location { get; }
+
+        public UnionDeclaration(TokenLocation loc, UnionType sig, IdentifierPath path) {
+            this.Location = loc;
+            this.signature = sig;
+            this.path = path;
+        }
+
+        public void DeclareNames(TypeFrame types) { }
+
+        public void DeclareTypes(TypeFrame types) { }
+
+        public IDeclaration CheckTypes(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) { }
 
-        public void GenerateCode(FlowFrame types, ICWriter writer) { }
-
-        private void RealCodeGenerator(UnionType signature, ICWriter writer) {
+        public void GenerateCode(FlowFrame types, ICWriter writer) { 
             var structName = writer.GetVariableName(this.path);
-            var unionName = writer.GetVariableName(this.path) + "$union";
-
-            var unionMems = signature.Members
-                .Select(x => new CParameter() {
-                    Type = writer.ConvertType(x.Type),
-                    Name = x.Name
-                })
-                .ToArray();
+            var unionName = "_$" + writer.GetVariableName(this.path);
 
             var unionPrototype = new CAggregateDeclaration() {
                 Name = unionName,
@@ -133,19 +134,13 @@ namespace Helix.Features.Aggregates {
 
             var unionDeclaration = new CAggregateDeclaration() {
                 Name = unionName,
-                Members = unionMems,
-                IsUnion = true
-            };
-
-            var structMems = new[] { 
-                new CParameter() {
-                    Name = "tag",
-                    Type = new CNamedType("int")
-                },
-                new CParameter() {
-                    Name = "data",
-                    Type = new CNamedType(unionName)
-                }
+                IsUnion = true,
+                Members = this.signature.Members
+                    .Select(x => new CParameter() {
+                        Type = writer.ConvertType(x.Type),
+                        Name = x.Name
+                    })
+                    .ToArray(),
             };
 
             var structPrototype = new CAggregateDeclaration() {
@@ -154,7 +149,16 @@ namespace Helix.Features.Aggregates {
 
             var structDeclaration = new CAggregateDeclaration() {
                 Name = structName,
-                Members = structMems
+                Members = new[] {
+                    new CParameter() {
+                        Name = "tag",
+                        Type = new CNamedType("int")
+                    },
+                    new CParameter() {
+                        Name = "data",
+                        Type = new CNamedType(unionName)
+                    }
+                }
             };
 
             // Write forward declaration

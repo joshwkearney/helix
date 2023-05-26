@@ -18,10 +18,10 @@ namespace Helix.Generation.Syntax {
 
         public string WriteToC() {
             if (this.Amount == 1) {
-                return $"({this.Type.WriteToC()}*)_region_malloc({this.Lifetime.WriteToC()}, sizeof({this.Type.WriteToC()}))";
+                return $"_region_malloc({this.Lifetime.WriteToC()}, sizeof({this.Type.WriteToC()}))";
             }
             else {
-                return $"({this.Type.WriteToC()}*)_region_malloc({this.Lifetime.WriteToC()}, {this.Amount} * sizeof({this.Type.WriteToC()}))";
+                return $"_region_malloc({this.Lifetime.WriteToC()}, {this.Amount} * sizeof({this.Type.WriteToC()}))";
             }
         }
     }
@@ -39,12 +39,26 @@ namespace Helix.Generation.Syntax {
     public record CCompoundExpression : ICSyntax {
         public IEnumerable<ICSyntax> Arguments { get; init; } = null;
 
+        public IEnumerable<string> MemberNames { get; init; } = null;
+
         public ICSyntax Type { get; init; } = null;
 
         public string WriteToC() {
-            var args = string.Join(", ", this.Arguments!.Select(x => x.WriteToC()));
+            var args = this.Arguments.Select(x => x.WriteToC()).ToArray();
 
-            return "(" + this.Type!.WriteToC() + "){ " + args + " }";
+            if (this.MemberNames != null) {
+                args = args
+                    .Zip(this.MemberNames, (x, y) => "." + y + "= " + x)
+                    .ToArray();
+            }
+
+            var result = "{ " + string.Join(", ", args) + " }";
+
+            if (this.Type != null) {
+                result = "(" + this.Type!.WriteToC() + ")" + result;
+            }
+
+            return result;
         }
     }
 

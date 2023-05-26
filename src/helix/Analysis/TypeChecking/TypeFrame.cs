@@ -12,8 +12,6 @@ using Helix.Analysis.Predicates;
 using Helix.Features.Types;
 
 namespace Helix.Analysis.TypeChecking {
-    public delegate void DeclarationCG(ICWriter writer);
-
     public enum VariableCaptureKind {
         ValueCapture, LocationCapture
     }
@@ -32,8 +30,6 @@ namespace Helix.Analysis.TypeChecking {
 
 
         // Global things
-        public Dictionary<HelixType, DeclarationCG> TypeDeclarations { get; }
-
         public Dictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
         public Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
@@ -64,8 +60,6 @@ namespace Helix.Analysis.TypeChecking {
                 new IdentifierPath("bool"),
                 new TypeSyntax(default, PrimitiveType.Bool));
 
-            this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
-
             this.Scope = new IdentifierPath();
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
             this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
@@ -75,8 +69,6 @@ namespace Helix.Analysis.TypeChecking {
 
         private TypeFrame(TypeFrame prev) {
             this.SyntaxValues = prev.SyntaxValues;
-
-            this.TypeDeclarations = prev.TypeDeclarations;
 
             this.Scope = prev.Scope;
             this.ReturnTypes = prev.ReturnTypes;

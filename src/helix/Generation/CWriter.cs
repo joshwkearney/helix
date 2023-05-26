@@ -41,7 +41,6 @@ namespace Helix.Generation {
         private int tempNumberCounter = 0;
 
         private readonly string header;
-        private readonly IDictionary<HelixType, DeclarationCG> typeDeclarations;
         private readonly Dictionary<IdentifierPath, string> pathNames = new();
         private readonly Dictionary<string, int> nameCounters = new();
 
@@ -54,9 +53,8 @@ namespace Helix.Generation {
         private readonly StringBuilder decl3Sb = new();
         private readonly StringBuilder decl4Sb = new();
 
-        public CWriter(string header, IDictionary<HelixType, DeclarationCG> typeDecls) {
+        public CWriter(string header) {
             this.header = header;
-            this.typeDeclarations = typeDecls;
         }
 
         public string GetVariableName() {
@@ -146,11 +144,6 @@ namespace Helix.Generation {
                 }                   
 
                 cname = this.pathNames[named.Path] = string.Join("$", named.Path.Segments);
-
-                // Do this after in case we have a recursive struct (through a pointer)
-                if (this.typeDeclarations.TryGetValue(type, out var cg)) {
-                    cg(this);
-                }
 
                 return new CNamedType(cname);
             }
@@ -259,14 +252,10 @@ namespace Helix.Generation {
         public override string ToString() {
             var sb = new StringBuilder();
 
-            sb.AppendLine("#if __cplusplus");
-            sb.AppendLine("extern \"C\" {");
-            sb.AppendLine("#endif").AppendLine();
-
             sb.AppendLine(this.header);
 
             if (this.decl1Sb.Length > 0) {
-                sb.Append(this.decl1Sb).AppendLine();
+                sb.Append(this.decl1Sb);
             }
 
             if (this.decl2Sb.Length > 0) {
@@ -280,10 +269,6 @@ namespace Helix.Generation {
             if (this.decl4Sb.Length > 0) {
                 sb.Append(this.decl4Sb);
             }
-
-            sb.AppendLine("#if __cplusplus");
-            sb.AppendLine("}");
-            sb.AppendLine("#endif");
 
             return sb.ToString();
         }

@@ -80,7 +80,7 @@ namespace Helix.Features.Aggregates {
                 if (!mem.Type.HasDefaultValue(types)) {
                     throw new TypeException(
                     this.Location,
-                    "Invalid Struct Initialization",
+                    "Invalid Union Initialization",
                     $"The union member '{name}' does not have a default value. " 
                     + "Please supply an explicit value or initialize the union " 
                     + "with a different member.");
@@ -126,9 +126,7 @@ namespace Helix.Features.Aggregates {
                 return;
             }
 
-            var name = this.names[0];
             var value = this.values[0];
-
             value.AnalyzeFlow(flow);
 
             var valueBundle = value.GetLifetimes(flow);
@@ -158,32 +156,18 @@ namespace Helix.Features.Aggregates {
             var value = this.values[0].GenerateCode(types, writer);
 
             var unionStructType = writer.ConvertType(this.unionType);
-            var unionUnionType = new CNamedType(unionStructType.WriteToC() + "$union");
+            var unionUnionType = new CNamedType("_$" + unionStructType.WriteToC());
             var index = this.sig.Members.IndexOf(x => x.Name == name);
-
-            var tempName = writer.GetVariableName(this.tempPath);
-            var tempDecl = new CVariableDeclaration() {
-                Name = tempName,
-                Type = unionUnionType
-            };
-
-            var tempAssign = new CAssignment() {
-                Left = new CMemberAccess() {
-                    Target = new CVariableLiteral(tempName),
-                    MemberName = name
-                },
-                Right = value
-            };
-
-            writer.WriteComment($"Line {this.Location.Line}: Union literal");
-            writer.WriteStatement(tempDecl);
-            writer.WriteStatement(tempAssign);
 
             return new CCompoundExpression() {
                 Type = unionStructType,
+                MemberNames = new[] { "tag", "data" },
                 Arguments = new ICSyntax[] { 
                     new CIntLiteral(index),
-                    new CVariableLiteral(tempName)
+                    new CCompoundExpression() {
+                        MemberNames = new[] { name },
+                        Arguments = new[] { value }
+                    }
                 },
             };
         }

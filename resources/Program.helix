@@ -4,8 +4,15 @@
 	var other as bool;
 };
 
-func test(var x as IntOption) as IntOption {
-	if (x is what) or (x is none) then {
+struct Point {
+	let x as int;
+	let y as int;
+};
+
+func test() as IntOption {
+	var x = new IntOption { some= 45 };
+
+	if (x is other) or (x is none) then {
 		// Lol
 	}
 	else {

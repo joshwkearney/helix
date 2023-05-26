@@ -187,17 +187,18 @@ namespace Helix.Features.Aggregates {
                 throw new InvalidOperationException();
             }
 
-            var mems = this.values
+            var memValues = this.values
                 .Select(x => x.GenerateCode(types, writer))
                 .ToArray();
 
-            if (!mems.Any()) {
-                mems = new[] { new CIntLiteral(0) };
+            if (!memValues.Any()) {
+                memValues = new[] { new CIntLiteral(0) };
             }
 
             return new CCompoundExpression() {
-                Arguments = mems,
-                Type = writer.ConvertType(types.ReturnTypes[this])
+                Type = writer.ConvertType(types.ReturnTypes[this]),
+                MemberNames = this.names,
+                Arguments = memValues,
             };
         }
     }
