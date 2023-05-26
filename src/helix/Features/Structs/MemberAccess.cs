@@ -185,7 +185,8 @@ namespace Helix.Features.Aggregates {
                 return this;
             }
 
-            this.SetReturnType(new PointerType(this.memberType), types);
+            // TODO: Come back to this
+            this.SetReturnType(new PointerType(this.memberType, true), types);
             return this;
         }
 

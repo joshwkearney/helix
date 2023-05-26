@@ -6,6 +6,8 @@ using Helix.Collections;
 using Helix.Features.Variables;
 using Helix.Parsing;
 using Helix.Syntax;
+using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Helix.Features.Functions {
     public static class FunctionsHelper {
@@ -45,17 +47,16 @@ namespace Helix.Features.Functions {
                     type = type.GetNaturalSupertype(types);
                 }
 
+                // TODO: Fix iswritable here
+                types.SyntaxValues = types.SyntaxValues.Add(
+                    sig.Path.Append(parsePar.Name),
+                    new PointerType(type, true).ToSyntax(loc));
+
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(types)) {
                     var path = sig.Path.Append(parsePar.Name).AppendMember(relPath);
                     var locationLifetime = new StackLocationLifetime(path, LifetimeOrigin.LocalLocation);
                     var valueLifetime = new ValueLifetime(path, LifetimeRole.Root, LifetimeOrigin.LocalValue, 0);
-
-                    types.Variables[path.Variable] = new VariableSignature(path.Variable, type, parsePar.IsWritable);
-
-                    types.SyntaxValues = types.SyntaxValues.SetItem(
-                        path.Variable, 
-                        new VariableAccessSyntax(loc, path.Variable));
                 }
             }
         }

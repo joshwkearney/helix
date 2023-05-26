@@ -46,7 +46,7 @@ namespace Helix.Features.Arrays {
                 return this;
             }
 
-            this.SetReturnType(new PointerType(this.arrayType.InnerType), types);
+            this.SetReturnType(new PointerType(this.arrayType.InnerType, true), types);
             this.SetCapturedVariables(this.target, this.offset, types);
             this.SetPredicate(this.target, this.offset, types);
 
@@ -83,7 +83,7 @@ namespace Helix.Features.Arrays {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Array to pointer conversion");
 
-            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType));
+            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, true));
             var ptrValue = new CCompoundExpression() {
                 Arguments = new[] {
                     newData,

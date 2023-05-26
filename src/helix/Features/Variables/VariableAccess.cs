@@ -8,6 +8,7 @@ using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Features.Functions;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -56,13 +57,13 @@ namespace Helix.Features.Variables {
             }
 
             // See if we are accessing a variable
-            if (types.Variables.ContainsKey(path)) {
-                return new VariableAccessSyntax(this.Location, path).CheckTypes(types);
+            if (types.TryGetVariable(path, out var type)) {
+                return new VariableAccessSyntax(this.Location, path, type).CheckTypes(types);
             }
 
             // See if we are accessing a function
             if (types.Functions.ContainsKey(path)) {
-                return new VariableAccessSyntax(this.Location, path).CheckTypes(types);
+                return new FunctionAccessSyntax(this.Location, path).CheckTypes(types);
             }
 
             throw TypeException.VariableUndefined(this.Location, this.Name);
@@ -72,6 +73,8 @@ namespace Helix.Features.Variables {
     public record VariableAccessSyntax : ISyntaxTree {
         private readonly bool isLValue;
 
+        public PointerType VariableSignature { get; }
+
         public IdentifierPath VariablePath { get; }
 
         public TokenLocation Location { get; }
@@ -80,8 +83,9 @@ namespace Helix.Features.Variables {
 
         public bool IsPure => true;
 
-        public VariableAccessSyntax(TokenLocation loc, IdentifierPath path, bool isLValue = false) {
+        public VariableAccessSyntax(TokenLocation loc, IdentifierPath path, PointerType sig, bool isLValue = false) {
             this.Location = loc;
+            this.VariableSignature = sig;
             this.VariablePath = path;
             this.isLValue = isLValue;
         }
@@ -91,17 +95,22 @@ namespace Helix.Features.Variables {
                 return this;
             }
 
-            if (types.Variables.ContainsKey(this.VariablePath)) {
-                this.SetReturnType(types.Variables[this.VariablePath].Type, types);
-            }
-            else if (types.Functions.ContainsKey(this.VariablePath)) {
-                this.SetReturnType(new NamedType(this.VariablePath), types);
-            }
-            else {
-                throw new InvalidOperationException("Compiler bug");
-            }
+            //if (types.TryGetVariable(this.VariablePath, types, out var varType)) {
+            this.SetReturnType(this.VariableSignature.InnerType, types);
+            //}
+            //else if (types.Functions.ContainsKey(this.VariablePath)) {
+            //    this.SetReturnType(new NamedType(this.VariablePath), types);
+            //}
+            //else {
+            //    throw new InvalidOperationException("Compiler bug");
+            //}
 
-            this.SetCapturedVariables(this.VariablePath, VariableCaptureKind.ValueCapture, types);
+            this.SetCapturedVariables(
+                this.VariablePath, 
+                VariableCaptureKind.ValueCapture, 
+                this.VariableSignature, 
+                types);
+
             this.SetPredicate(types);
 
             return this;
@@ -109,14 +118,25 @@ namespace Helix.Features.Variables {
 
         public virtual ISyntaxTree ToLValue(TypeFrame types) {
             // Make sure this variable is writable
-            if (!types.Variables.ContainsKey(this.VariablePath) || !types.Variables[this.VariablePath].IsWritable) {
+            if (types.TryGetVariable(this.VariablePath, out var varType) && !varType.IsWritable) { 
                 throw TypeException.WritingToConstVariable(this.Location);
             }
 
-            var result = new VariableAccessSyntax(this.Location, this.VariablePath, true).CheckTypes(types);
+            ISyntaxTree result = new VariableAccessSyntax(
+                this.Location,
+                this.VariablePath,
+                this.VariableSignature,
+                true);
+            
+            result = result.CheckTypes(types);
 
-            result.SetReturnType(new PointerType(this.GetReturnType(types)), types);
-            result.SetCapturedVariables(this.VariablePath, VariableCaptureKind.LocationCapture, types);
+            result.SetReturnType(this.VariableSignature, types);
+
+            result.SetCapturedVariables(
+                this.VariablePath, 
+                VariableCaptureKind.LocationCapture, 
+                this.VariableSignature,
+                types);
 
             return result;
         }
@@ -124,10 +144,9 @@ namespace Helix.Features.Variables {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var sig = flow.Variables[this.VariablePath];
             var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
-            foreach (var (relPath, type) in sig.Type.GetMembers(flow)) {
+            foreach (var (relPath, type) in this.VariableSignature.InnerType.GetMembers(flow)) {
                 var memPath = this.VariablePath.AppendMember(relPath);
                 var locLifetime = flow.LocalLifetimes[memPath].LocationLifetime;
                 var valueLifetime = flow.LocalLifetimes[memPath].ValueLifetime;

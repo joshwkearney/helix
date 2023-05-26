@@ -36,12 +36,12 @@ namespace Helix.Features.Unions {
             }
 
             // Make sure we have a variable
-            if (!types.Variables.TryGetValue(path, out var varSig)) {
+            if (!types.TryGetVariable(path, out var varSig)) {
                 throw TypeException.VariableUndefined(this.Target.Location, access.Name);
             }
 
             // Make sure we have a variable pointing to a union
-            if (varSig.Type is not NamedType named || !types.Unions.TryGetValue(named.Path, out var sig)) {
+            if (varSig.InnerType is not NamedType named || !types.Unions.TryGetValue(named.Path, out var sig)) {
                 throw TypeException.ExpectedUnionType(this.Target.Location);
             }
 
@@ -66,7 +66,7 @@ namespace Helix.Features.Unions {
 
             result.SetReturnType(returnType, types);
             result.SetPredicate(types);
-            result.SetCapturedVariables(path, VariableCaptureKind.ValueCapture, types);
+            result.SetCapturedVariables(path, VariableCaptureKind.ValueCapture, varSig, types);
 
             return result;
         }

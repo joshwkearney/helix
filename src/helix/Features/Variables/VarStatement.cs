@@ -89,22 +89,20 @@ namespace Helix {
 
             var basePath = this.Location.Scope.Append(this.names[0]);
 
-            // Declare all our stuff
-            types.DeclareVariableSignatures(basePath, assignType, this.isWritable);
-
-            // Put this variable's value in the main table
-            types.SyntaxValues = types.SyntaxValues.SetItem(basePath, assign);
-
             var result = new VarStatement(
                 this.Location,
                 basePath,
-                assign);
+                assign,
+                this.isWritable);
+
+            // Put this variable's value in the main table
+            types.SyntaxValues = types.SyntaxValues.SetItem(basePath, result);
 
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(assign, types);
             result.SetPredicate(assign, types);
 
-            return result;
+            return result.CheckTypes(types);
         }
 
         private ISyntaxTree Destructure(HelixType assignType, TypeFrame types) {
@@ -159,6 +157,7 @@ namespace Helix {
     public record VarStatement : ISyntaxTree {
         private readonly ISyntaxTree assignSyntax;
         private readonly IdentifierPath path;
+        private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
@@ -166,10 +165,15 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        public VarStatement(TokenLocation loc, IdentifierPath path, ISyntaxTree assign) {
+        public VarStatement(TokenLocation loc, IdentifierPath path, ISyntaxTree assign, bool isWritable) {
             this.Location = loc;
             this.path = path;
             this.assignSyntax = assign;
+            this.isWritable = isWritable;
+        }
+
+        public Option<HelixType> AsType(TypeFrame types) {
+            return new PointerType(this.assignSyntax.GetReturnType(types), this.isWritable);
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) => this;

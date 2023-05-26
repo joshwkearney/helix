@@ -73,9 +73,10 @@ namespace Helix.Analysis {
             this ISyntaxTree syntax,
             IdentifierPath variable,
             VariableCaptureKind kind,
+            PointerType sig,
             ITypedFrame types) {
 
-            types.CapturedVariables[syntax] = new[] { new VariableCapture(variable, kind) };
+            types.CapturedVariables[syntax] = new[] { new VariableCapture(variable, kind, sig) };
         }
 
         public static void SetCapturedVariables(

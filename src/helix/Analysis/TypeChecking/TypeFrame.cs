@@ -10,15 +10,14 @@ using Helix.Collections;
 using System.Collections.Immutable;
 using Helix.Analysis.Predicates;
 
-namespace Helix.Analysis.TypeChecking
-{
+namespace Helix.Analysis.TypeChecking {
     public delegate void DeclarationCG(ICWriter writer);
 
     public enum VariableCaptureKind {
         ValueCapture, LocationCapture
     }
 
-    public record struct VariableCapture(IdentifierPath VariablePath, VariableCaptureKind Kind) { }
+    public record struct VariableCapture(IdentifierPath VariablePath, VariableCaptureKind Kind, PointerType Signature) { }
 
     public class TypeFrame : ITypedFrame {
         private int tempCounter = 0;
@@ -27,8 +26,6 @@ namespace Helix.Analysis.TypeChecking
         public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
         // Global things
-        public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
-
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }
@@ -44,24 +41,22 @@ namespace Helix.Analysis.TypeChecking
         public IDictionary<ISyntaxTree, ISyntaxPredicate> Predicates { get; }
 
         public TypeFrame() {
-            this.Variables = new Dictionary<IdentifierPath, VariableSignature>();
-
             this.SyntaxValues = ImmutableDictionary<IdentifierPath, ISyntaxTree>.Empty;
 
             this.SyntaxValues = this.SyntaxValues.Add(
-                new IdentifierPath("void"), 
+                new IdentifierPath("void"),
                 new TypeSyntax(default, PrimitiveType.Void));
 
             this.SyntaxValues = this.SyntaxValues.Add(
-                new IdentifierPath("int"), 
+                new IdentifierPath("int"),
                 new TypeSyntax(default, PrimitiveType.Int));
 
             this.SyntaxValues = this.SyntaxValues.Add(
-                new IdentifierPath("bool"), 
+                new IdentifierPath("bool"),
                 new TypeSyntax(default, PrimitiveType.Bool));
 
             this.Functions = new Dictionary<IdentifierPath, FunctionSignature>();
-            this.Structs = new Dictionary<IdentifierPath, StructSignature>(); 
+            this.Structs = new Dictionary<IdentifierPath, StructSignature>();
             this.Unions = new Dictionary<IdentifierPath, StructSignature>();
             this.TypeDeclarations = new Dictionary<HelixType, DeclarationCG>();
 
@@ -73,7 +68,6 @@ namespace Helix.Analysis.TypeChecking
         public TypeFrame(TypeFrame prev) {
             this.SyntaxValues = prev.SyntaxValues;
 
-            this.Variables = prev.Variables;
             this.Functions = prev.Functions;
             this.Structs = prev.Structs;
             this.Unions = prev.Unions;
@@ -126,14 +120,17 @@ namespace Helix.Analysis.TypeChecking
             return this.SyntaxValues[this.ResolvePath(scope, name)];
         }
 
-        public void DeclareVariableSignatures(IdentifierPath basePath, HelixType baseType, bool isWritable) {
-            foreach (var (compPath, compType) in baseType.GetMembers(this)) {
-                var path = basePath.Append(compPath);
-                var sig = new VariableSignature(path, compType, isWritable);
-
-                // Add this variable's lifetime
-                this.Variables[path] = sig;
+        public bool TryGetVariable(IdentifierPath path, out PointerType type) {
+            if (!this.SyntaxValues.TryGetValue(path, out var tree)) {
+                type = null;
+                return false;
             }
+
+            return tree
+                .AsType(this)
+                .Select(x => x as PointerType)
+                .Where(x => x != null)
+                .TryGetValue(out type);
         }
     }
 }

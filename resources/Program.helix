@@ -1,9 +1,9 @@
-﻿func test10() as int* {
-	var x = 5;
-	var y = 10;
+﻿struct Test2Struct {
+	var field as int**;
+};
 
-	var z = &x;
-	z = &y;
+func test2(var n as Test2Struct) {
+	var x = n.field**;
 
-	z;
+	n.field* = &x;
 };

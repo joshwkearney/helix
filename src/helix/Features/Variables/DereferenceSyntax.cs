@@ -49,7 +49,7 @@ namespace Helix.Features.Variables {
 
         public Option<HelixType> AsType(TypeFrame types) {
             return this.target.AsType(types)
-                .Select(x => new PointerType(x))
+                .Select(x => new PointerType(x, true))
                 .Select(x => (HelixType)x);
         }
 
@@ -104,12 +104,6 @@ namespace Helix.Features.Variables {
             this.Location = loc;
             this.target = target;
             this.tempPath = tempPath;
-        }
-
-        public Option<HelixType> AsType(TypeFrame types) {
-            return this.target.AsType(types)
-                .Select(x => new PointerType(x))
-                .Select(x => (HelixType)x);
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {

@@ -6,8 +6,6 @@ using Helix.Analysis.TypeChecking;
 
 namespace Helix.Analysis {
     public interface ITypedFrame {
-        public IDictionary<IdentifierPath, VariableSignature> Variables { get; }
-
         public IDictionary<IdentifierPath, FunctionSignature> Functions { get; }
 
         public IDictionary<IdentifierPath, StructSignature> Structs { get; }

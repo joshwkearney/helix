@@ -19,29 +19,38 @@ extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 
 typedef struct int$ptr int$ptr;
+typedef struct int$ptr$ptr int$ptr$ptr;
+typedef struct Test2Struct Test2Struct;
 
-int$ptr test10(_Region* _return_region);
+void test2(_Region* _return_region, Test2Struct n);
 
 struct int$ptr {
     int* data;
     _Region* region;
 };
 
-int$ptr test10(_Region* _return_region) {
-    /* Line 2: New variable declaration 'x' */
-    int x = 5U;
+struct int$ptr$ptr {
+    int$ptr* data;
+    _Region* region;
+};
 
-    /* Line 3: New variable declaration 'y' */
-    int* y = (int*)_region_malloc(_return_region, sizeof(int));
-    (*y) = 10U;
+struct Test2Struct {
+    int$ptr$ptr field;
+};
 
-    /* Line 5: New variable declaration 'z' */
-    int$ptr z = (int$ptr){ (&x), _return_region };
+void test2(_Region* _return_region, Test2Struct n) {
+    /* Line 6: Pointer dereference */
+    int$ptr $deref_2 = (*((n.field).data));
 
-    /* Line 6: Assignment statement */
-    z = (int$ptr){ y, _return_region };
+    /* Line 6: Pointer dereference */
+    int $deref_3 = (*($deref_2.data));
 
-    return z;
+    /* Line 6: New variable declaration 'x' */
+    int* x = (int*)_region_malloc(($deref_2.region), sizeof(int));
+    (*x) = $deref_3;
+
+    /* Line 8: Assignment statement */
+    (*((n.field).data)) = (int$ptr){ x, ($deref_2.region) };
 }
 
 #if __cplusplus
