@@ -171,7 +171,7 @@ namespace Helix.Generation {
                 this.arrayCounter++;
             }
 
-            name += "$array";
+            name += "_$Array";
 
             var decl = new CAggregateDeclaration() {
                 Name = name,
@@ -220,7 +220,7 @@ namespace Helix.Generation {
                 this.arrayCounter++;
             }
 
-            name += "$ptr";
+            name += "_$Pointer";
 
             var decl = new CAggregateDeclaration() {
                 Name = name,

@@ -88,7 +88,7 @@ namespace Helix.Generation.Syntax {
                 _ => throw new Exception()
             };
 
-            return "(" + this.Left!.WriteToC() + " " + op + " " + this.Right!.WriteToC() + ")";
+            return "(" + this.Left!.WriteToC() + ") " + op + " (" + this.Right!.WriteToC() + ")";
         }
     }
 
@@ -116,11 +116,11 @@ namespace Helix.Generation.Syntax {
         public string WriteToC() {
             var target = this.Target!.WriteToC();
 
-            if (target.StartsWith("(&")) {
+            if (target.StartsWith("&(")) {
                 return target.Substring(2, target.Length - 3);
             }
 
-            return "(*" + target + ")";
+            return "*(" + target + ")";
         }
     }
 
@@ -136,11 +136,11 @@ namespace Helix.Generation.Syntax {
         public string WriteToC() {
             var target = this.Target!.WriteToC();
 
-            if (target.StartsWith("(*")) {
+            if (target.StartsWith("*(")) {
                 return target.Substring(2, target.Length - 3);
             }
 
-            return "(&" + target + ")";
+            return "&(" + target + ")";
         }
     }
 
@@ -176,7 +176,7 @@ namespace Helix.Generation.Syntax {
         public string WriteToC() {
             var op = this.IsPointerAccess ? "->" : ".";
 
-            return "(" + this.Target!.WriteToC() + op + this.MemberName! + ")";
+            return this.Target!.WriteToC() + op + this.MemberName!;
         }
     }
 
@@ -185,7 +185,7 @@ namespace Helix.Generation.Syntax {
         public ICSyntax Target { get; init; } = null;
 
         public string WriteToC() {
-            return "(" + this.Type!.WriteToC() + ")" + this.Target!.WriteToC();
+            return "((" + this.Type!.WriteToC() + ")" + this.Target!.WriteToC() + ")";
         }
     }
 }

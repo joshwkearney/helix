@@ -156,7 +156,7 @@ namespace Helix.Features.Aggregates {
             var value = this.values[0].GenerateCode(types, writer);
 
             var unionStructType = writer.ConvertType(this.unionType);
-            var unionUnionType = new CNamedType("_$" + unionStructType.WriteToC());
+            var unionUnionType = new CNamedType(unionStructType.WriteToC() + "_$Union");
             var index = this.sig.Members.IndexOf(x => x.Name == name);
 
             return new CCompoundExpression() {

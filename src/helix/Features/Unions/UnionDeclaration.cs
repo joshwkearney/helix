@@ -125,7 +125,7 @@ namespace Helix.Features.Aggregates {
 
         public void GenerateCode(FlowFrame types, ICWriter writer) { 
             var structName = writer.GetVariableName(this.path);
-            var unionName = "_$" + writer.GetVariableName(this.path);
+            var unionName = writer.GetVariableName(this.path) + "_$Union";
 
             var unionPrototype = new CAggregateDeclaration() {
                 Name = unionName,
@@ -164,7 +164,6 @@ namespace Helix.Features.Aggregates {
             // Write forward declaration
             writer.WriteDeclaration1(unionPrototype);
             writer.WriteDeclaration1(structPrototype);
-            writer.WriteDeclaration3(new CEmptyLine());
 
             // Write full struct
             writer.WriteDeclaration3(unionDeclaration);

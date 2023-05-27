@@ -130,25 +130,9 @@ namespace Helix.Generation {
             this.WriteStatement(decl);
 
             foreach (var item in values.Skip(1)) {
-                this.WriteStatement(new CAssignment() { 
+                this.WriteStatement(new CAssignment() {
                     Left = new CVariableLiteral(tempName),
-                    Right = new CTernaryExpression() {
-                        Condition = new CBinaryExpression() {
-                            Left = new CMemberAccess() {
-                                Target = new CVariableLiteral(tempName),
-                                MemberName = "depth",
-                                IsPointerAccess = true
-                            },
-                            Right = new CMemberAccess() {
-                                Target = item,
-                                MemberName = "depth",
-                                IsPointerAccess = true
-                            },
-                            Operation = BinaryOperationKind.LessThanOrEqualTo
-                        },
-                        PositiveBranch = new CVariableLiteral(tempName),
-                        NegativeBranch = item
-                    }
+                    Right = new CVariableLiteral($"_region_min({tempName}, {item.WriteToC()})")
                 });
             }
 
