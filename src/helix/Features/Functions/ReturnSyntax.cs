@@ -75,6 +75,8 @@ namespace Helix.Features.Functions {
                 return;
             }
 
+            this.payload.AnalyzeFlow(flow);
+
             flow.SyntaxLifetimes[this] = new LifetimeBundle();
             FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, this.payload, flow);
         }

@@ -178,3 +178,21 @@ func test16(var a as int*) {
 		x = &c;
 	};
 };
+
+// ###
+union Option {
+	var none as void;
+	var some as int*;
+};
+
+func test17() as Option {
+	var x = 45;
+	var y = new Option { some= &x };
+
+	if y is some then {
+		var z = 10;
+		y = &z;
+	};
+
+	y;
+};

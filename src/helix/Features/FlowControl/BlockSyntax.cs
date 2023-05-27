@@ -39,14 +39,17 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure { get; }
 
-        public string Name { get; }
+        public IdentifierPath Path { get; }
 
-        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements) {
+        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements, IdentifierPath path) {
             this.Location = statements.Select(x => x.Location).Prepend(location).Last();
             this.Statements = statements;
             this.IsPure = this.Statements.All(x => x.IsPure);
-            this.Name = "$b" + blockCounter++;
+            this.Path = path;
         }
+
+        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements) 
+            : this(location, statements, new IdentifierPath("$b" + blockCounter++)) { }
 
         public BlockSyntax(ISyntaxTree statement) : this(statement.Location, new[] { statement }) { }
 
@@ -55,11 +58,44 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            // TODO: Fix predicates here
-            types = new TypeFrame(types, this.Name);
-            var stats = this.Statements.Select(x => x.CheckTypes(types).ToRValue(types)).ToArray();
+            var name = this.Path.Segments.Last();
+            types = new TypeFrame(types, name);
 
-            var result = new BlockSyntax(this.Location, stats);
+            var stats = new List<ISyntaxTree>();
+            var predicate = ISyntaxPredicate.Empty;
+            var statCounter = 0;
+            var statTypes = types;
+
+            foreach (var forStat in this.Statements) {
+                var stat = forStat;
+
+                // Apply this predicate's effects to the later statements
+                if (predicate != ISyntaxPredicate.Empty) {
+                    // Deepen the scope because the predicate might want to shadow variables
+                    // and it will need a new path to do so
+                    statTypes = new TypeFrame(statTypes, "$s" + statCounter++);
+
+                    // Apply this predicate to the current context
+                    var newStats = predicate
+                        .ApplyToTypes(stat.Location, statTypes)
+                        .Append(stat)
+                        .ToArray();
+
+                    // Only make a new block if the predicate injected any statements
+                    if (newStats.Length > 0) {
+                        stat = new BlockSyntax(stat.Location, newStats);
+                    }
+                }
+
+                // Evaluate this statement and get the next predicate
+                stat = stat.CheckTypes(statTypes).ToRValue(statTypes);
+                stats.Add(stat);
+
+                // Get this predicate's effects for the next statement
+                predicate = stat.GetPredicate(statTypes);
+            }
+
+            var result = new BlockSyntax(this.Location, stats, this.Path);
             var returnType = stats
                 .LastOrNone()
                 .Select(x => types.ReturnTypes[x])

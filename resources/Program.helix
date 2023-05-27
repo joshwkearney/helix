@@ -1,24 +1,9 @@
-﻿union IntOption {
-	var none as void;
-	var some as int;
-	var other as bool;
+﻿struct Test2Struct {
+	var field as int**;
 };
 
-struct Point {
-	let x as int;
-	let y as int;
-};
+func test2(var n as Test2Struct) {
+	var x = n.field**;
 
-func test() as IntOption {
-	var x = new IntOption { some= 45 };
-
-	if (x is other) or (x is none) then {
-		// Lol
-	}
-	else {
-		// Still works!
-		x += 45;
-	};
-
-	x;
+	n.field* = &x;
 };

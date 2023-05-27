@@ -205,6 +205,8 @@ namespace Helix.Features.Variables {
             });
 
             writer.WriteEmptyLine();
+            writer.VariableKinds[this.tempPath] = CVariableKind.Local;
+
             return new CVariableLiteral(tempName);
         }
     }

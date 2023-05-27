@@ -15,41 +15,37 @@ extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth < r2->depth ? r1 : r2;  }
 
-typedef union IntOption_$Union IntOption_$Union;
-typedef struct IntOption IntOption;
-typedef struct Point Point;
-IntOption test(_Region* _return_region);
+typedef struct int_$Pointer int_$Pointer;
+typedef struct int_$Pointer_$Pointer int_$Pointer_$Pointer;
+typedef struct Test2Struct Test2Struct;
+void test2(_Region* _return_region, Test2Struct n);
 
-union IntOption_$Union {
-    int none;
-    int some;
-    int other;
+struct int_$Pointer {
+    int* data;
+    _Region* region;
 };
 
-struct IntOption {
-    int tag;
-    IntOption_$Union data;
+struct int_$Pointer_$Pointer {
+    int_$Pointer* data;
+    _Region* region;
 };
 
-struct Point {
-    int x;
-    int y;
+struct Test2Struct {
+    int_$Pointer_$Pointer field;
 };
 
-IntOption test(_Region* _return_region) {
-    /* Line 13: New variable declaration 'x' */
-    IntOption x = (IntOption){ .tag= 1U, .data= { .some= 45U } };
+void test2(_Region* _return_region, Test2Struct n) {
+    /* Line 6: Pointer dereference */
+    int_$Pointer $deref0 = *(n.field.data);
 
-    /* Line 15: If statement */
-    if (((x.tag) == (2U)) | ((x.tag) == (0U))) {     } 
-    else {
-        /* Line 15: Union downcast flowtyping */
-        int* x_1 = &(x.data.some);
+    /* Line 6: Pointer dereference */
+    int $deref1 = *($deref0.data);
 
-        /* Line 20: Assignment statement */
-        *(x_1) = (*(x_1)) + (45U);
-    }
+    /* Line 6: New variable declaration 'x' */
+    int* x = _region_malloc($deref0.region, sizeof(int));
+    *(x) = $deref1;
 
-    return x;
+    /* Line 8: Assignment statement */
+    *(n.field.data) = (int_$Pointer){ x, $deref0.region };
 }
 

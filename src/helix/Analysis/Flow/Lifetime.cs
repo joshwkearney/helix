@@ -159,7 +159,7 @@ namespace Helix.Analysis.Flow {
             var targetName = writer.GetVariableName(this.Path.Variable);
 
             return new CMemberAccess() {
-                IsPointerAccess = false,
+                IsPointerAccess = writer.VariableKinds[this.Path.Variable] == CVariableKind.Allocated,
                 Target = new CVariableLiteral(targetName),
                 MemberName = "region"
             };
