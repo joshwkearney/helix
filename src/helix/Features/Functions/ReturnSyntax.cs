@@ -47,11 +47,14 @@ namespace Helix.Features.Functions {
                 return this;
             }
 
-            var payload = this.payload.CheckTypes(types).ToRValue(types);
-
             if (!this.TryGetCurrentFunction(types, out var sig)) {
                 throw new InvalidOperationException();
             }
+
+            var payload = this.payload
+                .CheckTypes(types)
+                .ToRValue(types)
+                .UnifyTo(sig.ReturnType, types);
 
             var result = new ReturnSyntax(this.Location, payload, sig);
 

@@ -40,8 +40,6 @@ namespace Helix.Analysis.Predicates {
             return Array.Empty<ISyntaxTree>();
         }
 
-        public virtual void ApplyToFlow(FlowFrame flow) { }
-
         public abstract override bool Equals(object other);
 
         public abstract override int GetHashCode();

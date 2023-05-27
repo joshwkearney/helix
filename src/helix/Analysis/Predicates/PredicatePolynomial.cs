@@ -58,12 +58,6 @@ namespace Helix.Analysis.Predicates {
             return new PredicateTerm(ops);
         }
 
-        public override void ApplyToFlow(FlowFrame flow) {
-            if (this.Operands.Count == 1) {
-                this.Operands.First().ApplyToFlow(flow);
-            }
-        }
-
         public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
             if (this.Operands.Count == 1) {
                 return this.Operands.First().ApplyToTypes(loc, types);

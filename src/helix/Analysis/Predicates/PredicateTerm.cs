@@ -66,12 +66,6 @@ namespace Helix.Analysis.Predicates {
             return this.And(new PredicatePolynomial(other));
         }
 
-        public override void ApplyToFlow(FlowFrame flow) {
-            foreach (var op in this.Operands) {
-                op.ApplyToFlow(flow);
-            }
-        }
-
         public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
             return this.Operands
                 .SelectMany(x => x.ApplyToTypes(loc, types))
