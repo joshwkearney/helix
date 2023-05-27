@@ -1,14 +1,18 @@
 ﻿union Option {
 	let none as void;
-	var some as int*;
+	var some as int**;
 };
 
 func test3(var Z as int*) as Option {
 	var x = 45;
-	var p = new Option { some= &x };
+	var xx = &x;
+
+	var p = new Option { some= &xx };
 
 	if p is some then {
-		p = Z;
+		var y = 55;
+
+		p* = &y;
 	};
 
 	p;

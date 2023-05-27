@@ -40,7 +40,7 @@ namespace Helix.Features.Unions {
                 throw new Exception();
             }
 
-            var inject = new UnionFlowVarStatement(loc, member, this.TargetPath, varSig);
+            var inject = new FlowVarStatement(loc, member, this.TargetPath, varSig);
             return new[] { inject };
         }
 

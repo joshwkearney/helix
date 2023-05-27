@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using Helix.Collections;
 
 namespace Helix.Features.Unions {
-    public class UnionFlowVarStatement : ISyntaxTree {
+    public class FlowVarStatement : ISyntaxTree {
         public StructMember UnionMember { get; }
 
         public IdentifierPath ShadowedPath { get; }
@@ -30,7 +30,7 @@ namespace Helix.Features.Unions {
 
         public bool IsPure => true;
 
-        public UnionFlowVarStatement(TokenLocation loc, StructMember member,
+        public FlowVarStatement(TokenLocation loc, StructMember member,
                                      IdentifierPath shadowed, PointerType shadowedType,
                                      IdentifierPath path) {
             this.Location = loc;
@@ -40,7 +40,7 @@ namespace Helix.Features.Unions {
             this.Path = path;
         }
 
-        public UnionFlowVarStatement(TokenLocation loc, StructMember member,
+        public FlowVarStatement(TokenLocation loc, StructMember member,
                                      IdentifierPath shadowed, PointerType shadowedType)
             : this(loc, member, shadowed, shadowedType, new IdentifierPath(shadowed.Segments.Last())) { }
 
@@ -54,7 +54,7 @@ namespace Helix.Features.Unions {
 
             types.SyntaxValues = types.SyntaxValues.SetItem(path, new TypeSyntax(this.Location, varSig));
 
-            var result = new UnionFlowVarStatement(
+            var result = new FlowVarStatement(
                 this.Location, 
                 this.UnionMember,
                 this.ShadowedPath, 
@@ -76,28 +76,9 @@ namespace Helix.Features.Unions {
         }
 
         private void DeclareValueLifetimes(FlowFrame flow) {
-            // TODO: Revisit this
-            //var varLocation = new Lifetime(
-            //    this.Location,
-            //    this.path.ToVariablePath(),
-            //    allowedRoots,
-            //    LifetimeOrigin.LocalLocation);
+            var shadowedBounds = flow.LocalLifetimes[this.ShadowedPath];
 
-            if (this.UnionMember.Type.IsValueType(flow)) {
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.Path, new LifetimeBounds());
-                return;
-            }
-
-            var valueLifetime = new ValueLifetime(
-                this.Path,
-                LifetimeRole.Root,
-                LifetimeOrigin.TempValue);
-
-            // Add this variable lifetimes to the current frame
-            var bounds = new LifetimeBounds(valueLifetime);
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.Path, bounds);
-
-            flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
+            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.Path, shadowedBounds);
         }
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
