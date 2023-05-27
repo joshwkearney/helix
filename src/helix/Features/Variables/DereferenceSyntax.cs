@@ -128,10 +128,9 @@ namespace Helix.Features.Variables {
 
             var pointerType = this.target.AssertIsPointer(flow);
             var pointerLifetime = this.target.GetLifetimes(flow);
-            var path = this.tempPath.ToVariablePath();
 
             if (pointerType.InnerType.IsValueType(flow)) {
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, new LifetimeBounds());
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.tempPath, new LifetimeBounds());
                 this.SetLifetimes(new LifetimeBounds(), flow);
                 return;
             }
@@ -161,7 +160,7 @@ namespace Helix.Features.Variables {
             // other lifetime that outlives the pointer. It's important to represent
             // the value like this because we can't store things into it that only
             // outlive the pointer
-            var derefValueLifetime = new ValueLifetime(path, LifetimeRole.Root, LifetimeOrigin.TempValue);
+            var derefValueLifetime = new ValueLifetime(this.tempPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
 
             // Make sure we add this as a root
             flow.LifetimeRoots = flow.LifetimeRoots.Add(derefValueLifetime);
@@ -252,10 +251,8 @@ namespace Helix.Features.Variables {
                 return;
             }
 
-            var memPath = this.tempPath.ToVariablePath();
-
             var derefValueLifetime = new ValueLifetime(
-                    memPath,
+                    this.tempPath,
                     LifetimeRole.Alias,
                     LifetimeOrigin.TempValue);
 

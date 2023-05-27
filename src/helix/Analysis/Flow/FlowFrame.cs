@@ -27,7 +27,7 @@ namespace Helix.Analysis.Flow {
         public DataFlowGraph DataFlowGraph { get; }
 
         // Local lifetime things
-        public ImmutableDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; set; }
+        public ImmutableDictionary<IdentifierPath, LifetimeBounds> LocalLifetimes { get; set; }
 
         public ImmutableHashSet<Lifetime> LifetimeRoots { get; set; }
 
@@ -38,7 +38,7 @@ namespace Helix.Analysis.Flow {
             this.DataFlowGraph = new();
             this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBounds>();
 
-            this.LocalLifetimes = ImmutableDictionary<VariablePath, LifetimeBounds>.Empty;
+            this.LocalLifetimes = ImmutableDictionary<IdentifierPath, LifetimeBounds>.Empty;
             this.LifetimeRoots = ImmutableHashSet<Lifetime>.Empty;
             this.GlobalNominalSignatures = frame.NominalSignatures;
             this.GlobalSyntaxValues = frame.SyntaxValues;

@@ -132,7 +132,7 @@ namespace Helix.Features.Aggregates {
             var valueBounds = value.GetLifetimes(flow);
 
             var lifetime = new ValueLifetime(
-                this.tempPath.ToVariablePath(),
+                this.tempPath,
                 LifetimeRole.Alias,
                 LifetimeOrigin.TempValue);
 

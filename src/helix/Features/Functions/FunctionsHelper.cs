@@ -58,7 +58,7 @@ namespace Helix.Features.Functions {
 
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(types)) {
-                    var memPath = parPath.AppendMember(relPath);
+                    var memPath = parPath.Append(relPath);
                     var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
                     var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.LocalValue, 0);
                 }
@@ -69,7 +69,7 @@ namespace Helix.Features.Functions {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
-                var parPath = path.Append(parsePar.Name).ToVariablePath();
+                var parPath = path.Append(parsePar.Name);
                 var type = sig.Parameters[i].Type;
 
                 if (parsePar.IsWritable) {
@@ -83,7 +83,7 @@ namespace Helix.Features.Functions {
 
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(flow)) {
-                    var memPath = parPath.AppendMember(relPath);
+                    var memPath = parPath.Append(relPath);
 
                     var valueLifetime = new ValueLifetime(
                         memPath,

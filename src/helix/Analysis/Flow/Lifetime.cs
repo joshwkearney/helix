@@ -35,18 +35,18 @@ namespace Helix.Analysis.Flow {
 
     public abstract record Lifetime {
         public static Lifetime Heap { get; } = new ValueLifetime(
-            new IdentifierPath("$heap").ToVariablePath(),
+            new IdentifierPath("$heap"),
             LifetimeRole.Root,
             LifetimeOrigin.Other,
             0);
 
         public static Lifetime None { get; } = new ValueLifetime(
-            new IdentifierPath("$none").ToVariablePath(),
+            new IdentifierPath("$none"),
             LifetimeRole.Root,
             LifetimeOrigin.Other,
             0);
 
-        public abstract VariablePath Path { get; }
+        public abstract IdentifierPath Path { get; }
 
         public abstract LifetimeRole Role { get; }
 
@@ -64,11 +64,11 @@ namespace Helix.Analysis.Flow {
 
         public override int Version { get; }
 
-        public override VariablePath Path { get; }
+        public override IdentifierPath Path { get; }
 
         public override LifetimeOrigin Origin { get; }
 
-        public StackLocationLifetime(VariablePath varPath, LifetimeOrigin origin, int version = 0) {
+        public StackLocationLifetime(IdentifierPath varPath, LifetimeOrigin origin, int version = 0) {
             this.Path = varPath;
             this.Version = version;
             this.Origin = origin;
@@ -89,7 +89,7 @@ namespace Helix.Analysis.Flow {
 
         private ValueSet<Lifetime> AllowedRoots { get; }
 
-        public override VariablePath Path { get; }
+        public override IdentifierPath Path { get; }
 
         public override LifetimeRole Role => LifetimeRole.Alias;
 
@@ -97,7 +97,7 @@ namespace Helix.Analysis.Flow {
 
         public override LifetimeOrigin Origin { get; }
 
-        public InferredLocationLifetime(TokenLocation loc, VariablePath varPath, 
+        public InferredLocationLifetime(TokenLocation loc, IdentifierPath varPath, 
                                         IEnumerable<Lifetime> allowedRoots, 
                                         LifetimeOrigin origin,
                                         int version = 0) {
@@ -109,7 +109,7 @@ namespace Helix.Analysis.Flow {
         }
 
         public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
-            var targetName = writer.GetVariableName(this.Path.Variable);
+            var targetName = writer.GetVariableName(this.Path);
             var roots = flow.GetMaximumRoots(this).ToValueSet();
 
             if (roots.Any() && roots.Any(x => !this.AllowedRoots.Contains(x))) {
@@ -132,7 +132,7 @@ namespace Helix.Analysis.Flow {
     }
 
     public record ValueLifetime : Lifetime {
-        public override VariablePath Path { get; }
+        public override IdentifierPath Path { get; }
 
         public override LifetimeRole Role { get; }
 
@@ -140,7 +140,7 @@ namespace Helix.Analysis.Flow {
 
         public override LifetimeOrigin Origin { get; }
 
-        public ValueLifetime(VariablePath varPath, LifetimeRole role, LifetimeOrigin origin, int version = 0) {
+        public ValueLifetime(IdentifierPath varPath, LifetimeRole role, LifetimeOrigin origin, int version = 0) {
             this.Path = varPath;
             this.Role = role;
             this.Version = version;
@@ -156,10 +156,10 @@ namespace Helix.Analysis.Flow {
                 return new CVariableLiteral("_return_region");
             }
 
-            var targetName = writer.GetVariableName(this.Path.Variable);
+            var targetName = writer.GetVariableName(this.Path);
 
             return new CMemberAccess() {
-                IsPointerAccess = writer.VariableKinds[this.Path.Variable] == CVariableKind.Allocated,
+                IsPointerAccess = writer.VariableKinds[this.Path] == CVariableKind.Allocated,
                 Target = new CVariableLiteral(targetName),
                 MemberName = "region"
             };

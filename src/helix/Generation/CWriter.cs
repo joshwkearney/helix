@@ -23,17 +23,6 @@ namespace Helix.Generation {
         public void WriteDeclaration4(ICStatement decl);
 
         public ICSyntax ConvertType(HelixType type);
-
-        // Mixins
-        public string GetVariableName(VariablePath path) {
-            var name = this.GetVariableName(path.Variable);
-
-            foreach (var segment in path.Member.Segments) {
-                name += "." + segment;
-            }
-
-            return name;
-        }
     }
 
     public class CWriter : ICWriter {

@@ -133,16 +133,15 @@ namespace Helix.Features.Aggregates {
 
             this.Target.AnalyzeFlow(flow);
 
-            var path = this.path.ToVariablePath();
             var targetLifetimes = this.Target.GetLifetimes(flow);
             var parentLifetimes = flow.DataFlowGraph.GetMemberLifetimes(targetLifetimes.ValueLifetime, this.MemberName);
 
             var memLifetime = new ValueLifetime(
-                this.path.ToVariablePath(), 
+                this.path, 
                 LifetimeRole.Alias, 
                 LifetimeOrigin.TempValue);
 
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, new LifetimeBounds(memLifetime));
+            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.path, new LifetimeBounds(memLifetime));
 
             foreach (var parent in parentLifetimes) {
                 flow.DataFlowGraph.AddAssignment(parent, memLifetime, null);

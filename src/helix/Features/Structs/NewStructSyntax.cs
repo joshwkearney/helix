@@ -165,7 +165,7 @@ namespace Helix.Features.Aggregates {
             for (int i = 0; i < this.names.Count; i++) {
                 var name = this.names[i];
                 var value = this.values[i];
-                var path = this.path.AppendMember(name);
+                var path = this.path.Append(name);
 
                 value.AnalyzeFlow(flow);
 
@@ -178,7 +178,7 @@ namespace Helix.Features.Aggregates {
             }
 
             var rootLifetime = new ValueLifetime(
-                this.path.ToVariablePath(), 
+                this.path, 
                 LifetimeRole.Alias, 
                 LifetimeOrigin.TempValue);
 

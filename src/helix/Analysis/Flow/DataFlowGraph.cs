@@ -81,7 +81,7 @@ namespace Helix.Analysis.Flow {
                 .Select(x => this.outlivesGraph[x])
                 .SelectMany(x => x.Where(y => y.EdgeKind == NodeRelationship.Member))
                 .Select(x => x.Lifetime)
-                .Where(x => x.Path.Member.Segments.Last() == memberName)
+                .Where(x => x.Path.Segments.Last() == memberName)
                 .ToArray();
 
             return result;

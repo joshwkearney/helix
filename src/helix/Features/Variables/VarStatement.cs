@@ -179,7 +179,7 @@ namespace Helix {
         public void AnalyzeFlow(FlowFrame flow) {
             this.assignSyntax.AnalyzeFlow(flow);
 
-            var bundle = DeclareValueLifetimes(flow);
+            var bundle = this.DeclareValueLifetimes(flow);
 
             // TODO: Fix this
             // HACK: Even though we're returning void, set the lifetime of this syntax
@@ -195,16 +195,15 @@ namespace Helix {
 
             var locationLifetime = new InferredLocationLifetime(
                 this.Location, 
-                this.path.ToVariablePath(), 
+                this.path, 
                 allowedRoots, 
                 LifetimeOrigin.LocalLocation);
 
             var valueLifetime = Lifetime.None;
-            var path = this.path.ToVariablePath();
             var type = this.assignSyntax.GetReturnType(flow);
 
             if (!type.IsValueType(flow)) {
-                valueLifetime = new ValueLifetime(path, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
+                valueLifetime = new ValueLifetime(this.path, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
             }
 
             // Add a dependency between whatever is being assigned to this variable and the
@@ -220,7 +219,7 @@ namespace Helix {
             // Add this variable lifetimes to the current frame
             var bounds = new LifetimeBounds(valueLifetime, locationLifetime);
 
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, bounds);
+            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.path, bounds);
             return bounds;
         }
 

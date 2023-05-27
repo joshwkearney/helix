@@ -93,14 +93,14 @@ namespace Helix.Features.FlowControl {
         public void AnalyzeFlow(FlowFrame flow) {
             var modifiedVars = this.body.GetCapturedVariables(flow)
                 .Where(x => x.Kind == VariableCaptureKind.LocationCapture)
-                .Where(x => flow.LocalLifetimes.ContainsKey(x.VariablePath.ToVariablePath()))
+                .Where(x => flow.LocalLifetimes.ContainsKey(x.VariablePath))
                 .ToArray();
 
             var modifiedVarMems = modifiedVars
                 .SelectMany(y => y.Signature.InnerType
                     .GetMembers(flow)
                     .Where(x => !x.Value.IsValueType(flow))
-                    .Select(x => y.VariablePath.AppendMember(x.Key)))
+                    .Select(x => y.VariablePath.Append(x.Key)))
                 .ToArray();
 
             // For every variable that might be modified in the loop, create a new lifetime

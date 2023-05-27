@@ -144,8 +144,7 @@ namespace Helix.Features.Variables {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var path = this.VariablePath.ToVariablePath();
-            var bounds = flow.LocalLifetimes[path];
+            var bounds = flow.LocalLifetimes[this.VariablePath];
 
             this.SetLifetimes(bounds, flow);
         }

@@ -134,7 +134,7 @@ namespace Helix.Features.Functions {
 
             var invokeLifetime = new InferredLocationLifetime(
                 this.Location,
-                this.invokeTempPath.ToVariablePath(),
+                this.invokeTempPath,
                 flow.LifetimeRoots,
                 LifetimeOrigin.TempValue);
 

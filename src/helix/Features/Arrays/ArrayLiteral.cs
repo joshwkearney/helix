@@ -120,7 +120,7 @@ namespace Helix.Features.Arrays {
 
             var arrayLifetime = new InferredLocationLifetime(
                 this.Location, 
-                this.tempPath.ToVariablePath(), 
+                this.tempPath, 
                 flow.LifetimeRoots, 
                 LifetimeOrigin.TempValue);
 

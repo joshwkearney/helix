@@ -76,8 +76,6 @@ namespace Helix.Features.Unions {
         }
 
         private void DeclareValueLifetimes(FlowFrame flow) {
-            var path = this.Path.ToVariablePath();
-
             // TODO: Revisit this
             //var varLocation = new Lifetime(
             //    this.Location,
@@ -86,18 +84,18 @@ namespace Helix.Features.Unions {
             //    LifetimeOrigin.LocalLocation);
 
             if (this.UnionMember.Type.IsValueType(flow)) {
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, new LifetimeBounds());
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.Path, new LifetimeBounds());
                 return;
             }
 
             var valueLifetime = new ValueLifetime(
-                path,
+                this.Path,
                 LifetimeRole.Root,
                 LifetimeOrigin.TempValue);
 
             // Add this variable lifetimes to the current frame
             var bounds = new LifetimeBounds(valueLifetime);
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, bounds);
+            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.Path, bounds);
 
             flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
         }

@@ -161,7 +161,7 @@ namespace Helix.Features.FlowControl {
             }
 
             var valueLifetime = new ValueLifetime(
-                this.path.ToVariablePath(), 
+                this.path, 
                 LifetimeRole.Alias, 
                 LifetimeOrigin.TempValue);
 
