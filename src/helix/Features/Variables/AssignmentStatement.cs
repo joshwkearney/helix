@@ -117,70 +117,66 @@ namespace Helix.Features.Variables {
             this.target.AnalyzeFlow(flow);
             this.assign.AnalyzeFlow(flow);
 
-            var targetBundle = this.target.GetLifetimes(flow);
-            var assignBundle = this.assign.GetLifetimes(flow);
+            var assignType = this.assign.GetReturnType(flow);
+
+            // Skip value types
+            if (assignType.IsValueType(flow)) {
+                this.SetLifetimes(new LifetimeBounds(), flow);
+                return;
+            }
+
+            var targetBounds = this.target.GetLifetimes(flow);
+            var assignBounds = this.assign.GetLifetimes(flow);
 
             // Check to see if the assigned value has the same origins
             // (or more restricted origins) than the target expression.
             // If the origins are compatible, we can assign with no further
             // issue. If they are different, compile error and make the user
             // clarify regions in the signature
-            foreach (var (path, type) in this.assign.GetReturnType(flow).GetMembers(flow)) {
-                var targetLocation = targetBundle[path].LocationLifetime;
-                var assignLifetime = assignBundle[path].ValueLifetime;
+            var targetLocation = targetBounds.LocationLifetime;
+            var assignLifetime = assignBounds.ValueLifetime;
 
-                // TODO: Redo this
-                foreach (var assignRoot in flow.GetMaximumRoots(assignLifetime)) {
-                    foreach (var targetRoot in flow.GetMaximumRoots(targetLocation)) {
-                        if (flow.LifetimeGraph.DoesOutlive(assignRoot, targetRoot)) {
-                            continue;
-                        }
-
-                        throw new LifetimeException(
-                            this.Location,
-                            "Unsafe Memory Store",
-                            $"Unable to verify that the assigned value outlives its container. " +
-                            $"The region '{assignRoot}' is not known to outlive the region '{targetRoot}', " +
-                            $"so this assignment cannot proceed safely. \n\nTo resolve this error, " +
-                            $"you can try implementing a '.copy()' method on the type '{type}' to allow " +
-                            $"its values to be copied between regions, or you can try adding explict " +
-                            $"region annotations to your code.");
+            // TODO: Redo this
+            foreach (var assignRoot in flow.GetMaximumRoots(assignLifetime)) {
+                foreach (var targetRoot in flow.GetMaximumRoots(targetLocation)) {
+                    if (flow.DataFlowGraph.DoesOutlive(assignRoot, targetRoot)) {
+                        continue;
                     }
+
+                    throw new LifetimeException(
+                        this.Location,
+                        "Unsafe Memory Store",
+                        $"Unable to verify that the assigned value outlives its container. " +
+                        $"The region '{assignRoot}' is not known to outlive the region '{targetRoot}', " +
+                        $"so this assignment cannot proceed safely. \n\nTo resolve this error, " +
+                        $"you can try implementing a '.copy()' method on the type '{assignType}' to allow " +
+                        $"its values to be copied between regions, or you can try adding explict " +
+                        $"region annotations to your code.");
                 }
             }
 
-            foreach (var (relPath, memType) in this.assign.GetReturnType(flow).GetMembers(flow)) {
-                var targetBounds = targetBundle[relPath];
-                var assignLifetime = assignBundle[relPath].ValueLifetime;
+            if (targetBounds.ValueLifetime.Origin == LifetimeOrigin.LocalValue) {
+                // Here we are storing into a known local variable, so we can replace its
+                // current value instead of adding more lifetimes to it. This is the
+                // best-case scenario because any lifetime inferences based on the previous
+                // value will not depend on future use of this variable
+                var newValue = targetBounds.ValueLifetime.IncrementVersion();
+                var newTargetBounds = targetBounds.WithValue(newValue);
 
-                // Skip value types
-                if (memType.IsValueType(flow)) {
-                    continue;
-                }
+                // Update this variable's value
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newValue.Path, newTargetBounds);
 
-                if (targetBounds.ValueLifetime.Origin == LifetimeOrigin.LocalValue) {
-                    // Here we are storing into a known local variable, so we can replace its
-                    // current value instead of adding more lifetimes to it. This is the
-                    // best-case scenario because any lifetime inferences based on the previous
-                    // value will not depend on future use of this variable
-                    var newValue = targetBounds.ValueLifetime.IncrementVersion();
-                    var newTargetBounds = targetBounds.WithValue(newValue);
+                // Make sure the new value outlives its variable
+                flow.DataFlowGraph.AddStored(newValue, newTargetBounds.LocationLifetime, assignType);
 
-                    // Update this variable's value
-                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newValue.Path, newTargetBounds);
-
-                    // Make sure the new value outlives its variable
-                    flow.LifetimeGraph.AddStored(newValue, newTargetBounds.LocationLifetime, memType);
-
-                    targetBounds = newTargetBounds;
-                }
-
-                // Add dependencies between our new target and the assignment lifetimes
-                flow.LifetimeGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, memType);
-                flow.LifetimeGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, memType);
+                targetBounds = newTargetBounds;
             }
 
-            this.SetLifetimes(new LifetimeBundle(), flow);
+            // Add dependencies between our new target and the assignment lifetimes
+            flow.DataFlowGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, assignType);
+            flow.DataFlowGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, assignType);
+
+            this.SetLifetimes(new LifetimeBounds(), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

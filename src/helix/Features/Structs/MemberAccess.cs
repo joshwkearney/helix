@@ -17,14 +17,17 @@ namespace Helix.Parsing {
             var tok = this.Advance(TokenKind.Identifier);
             var loc = first.Location.Span(tok.Location);
 
-            return new MemberAccessSyntax(loc, first, tok.Value);
+            return new MemberAccessSyntax(loc, first, tok.Value, default);
         }
     }
 }
 
 namespace Helix.Features.Aggregates {
     public record MemberAccessSyntax : ISyntaxTree {
+        private static int tempCounter = 0;
+
         private readonly bool isWritable;
+        private readonly IdentifierPath path;
 
         public ISyntaxTree Target { get; }
 
@@ -37,12 +40,14 @@ namespace Helix.Features.Aggregates {
         public bool IsPure => this.Target.IsPure;
 
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
-                                  string memberName, bool isWritable = false) {
+                                  string memberName, IdentifierPath scope,
+                                  bool isWritable = false) {
 
             this.Location = location;
             this.Target = target;
             this.MemberName = memberName;
             this.isWritable = isWritable;
+            this.path = scope?.Append("$mem" + tempCounter++);
         }
 
         public virtual ISyntaxTree CheckTypes(TypeFrame types) {
@@ -60,6 +65,7 @@ namespace Helix.Features.Aggregates {
                         this.Location,
                         target,
                         "count",
+                        types.Scope,
                         false);
 
                     result.SetReturnType(PrimitiveType.Int, types);
@@ -70,7 +76,6 @@ namespace Helix.Features.Aggregates {
                 }
             }
 
-            // If this is a named type it could be a struct or union
             if (targetType.AsStruct(types).TryGetValue(out var sig)) {
                 // If this is a struct we can access the fields
                 var fieldOpt = sig
@@ -84,6 +89,7 @@ namespace Helix.Features.Aggregates {
                         this.Location,
                         target,
                         this.MemberName,
+                        types.Scope,
                         field.IsWritable);                    
 
                     result.SetReturnType(field.Type, types);
@@ -127,23 +133,22 @@ namespace Helix.Features.Aggregates {
 
             this.Target.AnalyzeFlow(flow);
 
-            var memberType = this.GetReturnType(flow);
+            var path = this.path.ToVariablePath();
             var targetLifetimes = this.Target.GetLifetimes(flow);
-            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
+            var parentLifetimes = flow.DataFlowGraph.GetMemberLifetimes(targetLifetimes.ValueLifetime, this.MemberName);
 
-            foreach (var (relPath, type) in memberType.GetMembers(flow)) {
-                var memPath = new IdentifierPath(this.MemberName).Append(relPath);
-                var varPath = targetLifetimes[memPath].ValueLifetime.Path;
-                    
-                if (type.IsValueType(flow)) {
-                    bundleDict[relPath] = new LifetimeBounds();
-                }
-                else {
-                    bundleDict[relPath] = targetLifetimes[relPath];
-                }
+            var memLifetime = new ValueLifetime(
+                this.path.ToVariablePath(), 
+                LifetimeRole.Alias, 
+                LifetimeOrigin.TempValue);
+
+            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, new LifetimeBounds(memLifetime));
+
+            foreach (var parent in parentLifetimes) {
+                flow.DataFlowGraph.AddAssignment(parent, memLifetime, null);
             }
 
-            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+            this.SetLifetimes(new LifetimeBounds(memLifetime), flow);
         }
 
         public virtual ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

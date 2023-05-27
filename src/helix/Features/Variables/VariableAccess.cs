@@ -144,23 +144,10 @@ namespace Helix.Features.Variables {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
+            var path = this.VariablePath.ToVariablePath();
+            var bounds = flow.LocalLifetimes[path];
 
-            foreach (var (relPath, type) in this.VariableSignature.InnerType.GetMembers(flow)) {
-                var memPath = this.VariablePath.AppendMember(relPath);
-                var locLifetime = flow.LocalLifetimes[memPath].LocationLifetime;
-                var valueLifetime = flow.LocalLifetimes[memPath].ValueLifetime;
-
-#if DEBUG
-                if (type.IsValueType(flow) && valueLifetime != Lifetime.None) {
-                    throw new Exception("Compiler bug");
-                }
-#endif
-
-                bundleDict[relPath] = new LifetimeBounds(valueLifetime, locLifetime);
-            }
-
-            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+            this.SetLifetimes(bounds, flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

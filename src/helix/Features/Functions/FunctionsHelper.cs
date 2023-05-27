@@ -69,32 +69,42 @@ namespace Helix.Features.Functions {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
+                var parPath = path.Append(parsePar.Name).ToVariablePath();
                 var type = sig.Parameters[i].Type;
 
                 if (parsePar.IsWritable) {
                     type = type.GetMutationSupertype(flow);
                 }
 
+                var parLifetime = new ValueLifetime(
+                    parPath, 
+                    type.IsValueType(flow) ? LifetimeRole.Alias : LifetimeRole.Root, 
+                    LifetimeOrigin.LocalValue);
+
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(flow)) {
-                    var memPath = path.Append(parsePar.Name).AppendMember(relPath);
-                    var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.LocalValue);
+                    var memPath = parPath.AppendMember(relPath);
+
+                    var valueLifetime = new ValueLifetime(
+                        memPath,
+                        type.IsValueType(flow) ? LifetimeRole.Alias : LifetimeRole.Root, 
+                        LifetimeOrigin.LocalValue);
+
                     var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
 
-                    if (memType.IsValueType(flow)) {
-                        // Skip value types because they don't have lifetimes anyway
-                        flow.LocalLifetimes = flow.LocalLifetimes.SetItem(memPath, new LifetimeBounds());
-                    }
-                    else {
-                        flow.LifetimeGraph.AddStored(valueLifetime, locationLifetime, memType);
+                    // Register our members
+                    flow.DataFlowGraph.AddMember(parLifetime, valueLifetime, null);
 
-                        flow.LocalLifetimes = flow.LocalLifetimes.SetItem(
-                            memPath, 
-                            new LifetimeBounds(valueLifetime, locationLifetime));
+                    // Make sure the value outlives the location
+                    flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime, memType);
 
-                        flow.LifetimeRoots = flow.LifetimeRoots.Add(locationLifetime);
-                        flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
-                    }
+                    // Put these lifetimes in the main table
+                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(
+                        memPath, 
+                        new LifetimeBounds(valueLifetime, locationLifetime));
+
+                    flow.LifetimeRoots = flow.LifetimeRoots.Add(locationLifetime);
+                    flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
                 }
             }
         }
@@ -114,11 +124,7 @@ namespace Helix.Features.Functions {
             // are all either the heap or an inferred lifetime. This will make sure
             // that no roots other than the heap have allocated a part of the return
             // value.
-            var incompatibleRoots = body
-                .GetLifetimes(flow)
-                .Values
-                .Select(x => x.ValueLifetime)
-                .SelectMany(flow.LifetimeGraph.GetPrecursorLifetimes)
+            var incompatibleRoots = flow.DataFlowGraph.GetPrecursorLifetimes(body.GetLifetimes(flow).ValueLifetime)
                 .Where(x => x.Role == LifetimeRole.Root)
                 .Where(x => x != Lifetime.Heap)
                 .ToValueSet();
@@ -137,9 +143,10 @@ namespace Helix.Features.Functions {
             }
 
             // Add a dependency between every returned lifetime and the heap
-            foreach (var lifetime in flow.SyntaxLifetimes[body].Values) {
-                flow.LifetimeGraph.AddStored(lifetime.ValueLifetime, Lifetime.Heap, body.GetReturnType(flow));
-            }
+            flow.DataFlowGraph.AddStored(
+                flow.SyntaxLifetimes[body].ValueLifetime, 
+                Lifetime.Heap, 
+                body.GetReturnType(flow));
         }
     }
 }

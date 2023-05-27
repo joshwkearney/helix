@@ -6,12 +6,12 @@ namespace Helix.Analysis.Flow {
             return flow.SyntaxLifetimes.ContainsKey(syntax);
         }
 
-        public static LifetimeBundle GetLifetimes(this ISyntaxTree syntax, FlowFrame flow) {
+        public static LifetimeBounds GetLifetimes(this ISyntaxTree syntax, FlowFrame flow) {
             return flow.SyntaxLifetimes[syntax];
         }
 
-        public static void SetLifetimes(this ISyntaxTree syntax, LifetimeBundle bundle, FlowFrame flow) {
-            flow.SyntaxLifetimes[syntax] = bundle;
+        public static void SetLifetimes(this ISyntaxTree syntax, LifetimeBounds bounds, FlowFrame flow) {
+            flow.SyntaxLifetimes[syntax] = bounds;
         }
     }
 }

@@ -52,7 +52,7 @@ namespace Helix.Features.Variables {
             }
 
             target.AnalyzeFlow(flow);
-            var locationLifetime = target.GetLifetimes(flow)[new IdentifierPath()].LocationLifetime;
+            var locationLifetime = target.GetLifetimes(flow).LocationLifetime;
 
             // Make sure we're taking the address of a variable location
             if (locationLifetime == Lifetime.None) {
@@ -60,18 +60,14 @@ namespace Helix.Features.Variables {
                 throw TypeException.ExpectedVariableType(Location, target.GetReturnType(flow));
             }
 
-            var dict = new Dictionary<IdentifierPath, LifetimeBounds>() {
-                { new IdentifierPath(), new LifetimeBounds(locationLifetime) }
-            };
-
-            this.SetLifetimes(new LifetimeBundle(dict), flow);
+            this.SetLifetimes(new LifetimeBounds(locationLifetime), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
                     target.GenerateCode(types, writer),
-                    writer.GetLifetime(this.GetLifetimes(types)[new IdentifierPath()].ValueLifetime, types)
+                    writer.GetLifetime(this.GetLifetimes(types).ValueLifetime, types)
                 },
                 Type = writer.ConvertType(this.GetReturnType(types))
             };

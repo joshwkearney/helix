@@ -116,7 +116,7 @@ namespace Helix.Features.FlowControl {
             var bundle = this.Statements
                 .LastOrNone()
                 .Select(x => x.GetLifetimes(flow))
-                .OrElse(() => new LifetimeBundle());
+                .OrElse(() => new LifetimeBounds());
 
             this.SetLifetimes(bundle, flow);
         }

@@ -124,21 +124,12 @@ namespace Helix.Features.Arrays {
                 flow.LifetimeRoots, 
                 LifetimeOrigin.TempValue);
 
-            var arrayType = (ArrayType)this.GetReturnType(flow);
-
-            foreach (var (relPath, _) in arrayType.InnerType.GetMembers(flow)) {
-                foreach (var arg in this.args) {
-                    var valueLifetime = arg.GetLifetimes(flow)[relPath].ValueLifetime;
-
-                    flow.LifetimeGraph.AddStored(valueLifetime, arrayLifetime, null);
-                }
+            foreach (var arg in this.args) {
+                var valueLifetime = arg.GetLifetimes(flow).ValueLifetime;
+                flow.DataFlowGraph.AddStored(valueLifetime, arrayLifetime, null);
             }
 
-            var dict = new Dictionary<IdentifierPath, LifetimeBounds>() {
-                { new IdentifierPath(), new LifetimeBounds(arrayLifetime) }
-            };
-
-            this.SetLifetimes(new LifetimeBundle(dict), flow);
+            this.SetLifetimes(new LifetimeBounds(arrayLifetime), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
@@ -146,7 +137,7 @@ namespace Helix.Features.Arrays {
                 throw new InvalidOperationException();
             }
 
-            var lifetime = this.GetLifetimes(types)[new IdentifierPath()].ValueLifetime;
+            var lifetime = this.GetLifetimes(types).ValueLifetime;
             var roots = types.GetMaximumRoots(lifetime);
 
             writer.WriteComment($"Line {this.Location.Line}: Array literal");
@@ -161,7 +152,7 @@ namespace Helix.Features.Arrays {
 
         private ICSyntax GenerateRegionCode(FlowFrame types, ICStatementWriter writer) {
             var args = this.args.Select(x => x.GenerateCode(types, writer)).ToArray();
-            var lifetime = this.GetLifetimes(types)[new IdentifierPath()].ValueLifetime;
+            var lifetime = this.GetLifetimes(types).ValueLifetime;
             var helixArrayType = (ArrayType)this.GetReturnType(types);
 
             var cArrayType = writer.ConvertType(helixArrayType);

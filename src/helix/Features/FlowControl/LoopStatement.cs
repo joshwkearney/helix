@@ -112,10 +112,10 @@ namespace Helix.Features.FlowControl {
 
                 // Make sure the old value depends on the new root we just created
                 // This is to ensure inference works correctly for things above the loop
-                flow.LifetimeGraph.AddStored(bounds.ValueLifetime, newValueLifetime, null);
+                flow.DataFlowGraph.AddStored(bounds.ValueLifetime, newValueLifetime, null);
 
                 // Make sure our new value outlives its location
-                flow.LifetimeGraph.AddStored(newValueLifetime, bounds.LocationLifetime, null);
+                flow.DataFlowGraph.AddStored(newValueLifetime, bounds.LocationLifetime, null);
 
                 // Replace the variable's value with our new root. This is because
                 // this variable might be modified in the loop, so anything accessing
@@ -132,7 +132,7 @@ namespace Helix.Features.FlowControl {
             this.body.AnalyzeFlow(bodyFlow);
 
             MutateLocals(bodyFlow, flow);
-            this.SetLifetimes(new LifetimeBundle(), flow);
+            this.SetLifetimes(new LifetimeBounds(), flow);
         }
 
         private static void MutateLocals(
@@ -150,7 +150,7 @@ namespace Helix.Features.FlowControl {
                 var trueLifetime = bodyFrame.LocalLifetimes[varPath].ValueLifetime;
 
                 var postLifetime = trueLifetime.IncrementVersion();
-                flow.LifetimeGraph.AddAssignment(trueLifetime, postLifetime, null);
+                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime, null);
 
                 var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
                 flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);

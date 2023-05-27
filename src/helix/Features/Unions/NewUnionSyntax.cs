@@ -129,22 +129,16 @@ namespace Helix.Features.Aggregates {
             var value = this.values[0];
             value.AnalyzeFlow(flow);
 
-            var valueBundle = value.GetLifetimes(flow);
-            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
+            var valueBounds = value.GetLifetimes(flow);
 
             var lifetime = new ValueLifetime(
                 this.tempPath.ToVariablePath(),
                 LifetimeRole.Alias,
                 LifetimeOrigin.TempValue);
 
-            foreach (var (relPath, _) in value.GetReturnType(flow).GetMembers(flow)) {
-                var valueLifetime = valueBundle[relPath].ValueLifetime;
+            flow.DataFlowGraph.AddStored(valueBounds.ValueLifetime, lifetime, null);
 
-                flow.LifetimeGraph.AddStored(valueLifetime, lifetime, null);
-            }
-
-            bundleDict[new IdentifierPath()] = new LifetimeBounds(lifetime);
-            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+            this.SetLifetimes(new LifetimeBounds(lifetime), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

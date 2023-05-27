@@ -135,7 +135,7 @@ namespace Helix {
 
             for (int i = 0; i < sig.Members.Count; i++) {
                 var literal = new VariableAccessParseSyntax(this.Location, tempName);
-                var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name, this.isWritable);
+                var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name, types.Scope, this.isWritable);
 
                 var assign = new VarParseStatement(
                     this.Location,
@@ -189,58 +189,44 @@ namespace Helix {
             this.SetLifetimes(bundle, flow);
         }
 
-        private LifetimeBundle DeclareValueLifetimes(FlowFrame flow) {
-
-            var assignBundle = this.assignSyntax.GetLifetimes(flow);
+        private LifetimeBounds DeclareValueLifetimes(FlowFrame flow) {
+            var assignBounds = this.assignSyntax.GetLifetimes(flow);
             var allowedRoots = flow.LifetimeRoots.ToValueSet();
 
-            var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
-
-            var varLocation = new InferredLocationLifetime(
+            var locationLifetime = new InferredLocationLifetime(
                 this.Location, 
                 this.path.ToVariablePath(), 
                 allowedRoots, 
                 LifetimeOrigin.LocalLocation);
 
-            foreach (var (relPath, memType) in this.assignSyntax.GetReturnType(flow).GetMembers(flow)) {
-                var memPath = this.path.AppendMember(relPath);
-                var valueLifetime = Lifetime.None; 
+            var valueLifetime = Lifetime.None;
+            var path = this.path.ToVariablePath();
+            var type = this.assignSyntax.GetReturnType(flow);
 
-                var memLocation = new InferredLocationLifetime(
-                    this.Location, 
-                    memPath, 
-                    allowedRoots, 
-                    LifetimeOrigin.LocalLocation);
-
-                if (!memType.IsValueType(flow)) {
-                    valueLifetime = new ValueLifetime(memPath, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
-                }
-
-                // Add a dependency between whatever is being assigned to this variable and the
-                // variable's value
-                flow.LifetimeGraph.AddAssignment(
-                    assignBundle[relPath].ValueLifetime,
-                    valueLifetime,
-                    memType);
-
-                // The value of a variable must outlive its location
-                flow.LifetimeGraph.AddStored(valueLifetime, memLocation, memType);
-
-                // Make sure that this sub-location outlives the main location
-                flow.LifetimeGraph.AddStored(memLocation, varLocation, memType);
-
-                // Add this variable lifetimes to the current frame
-                var bounds = new LifetimeBounds(valueLifetime, memLocation);
-                dict[relPath] = bounds;
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(memPath, bounds);
+            if (!type.IsValueType(flow)) {
+                valueLifetime = new ValueLifetime(path, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
             }
 
-            return new LifetimeBundle(dict);
+            // Add a dependency between whatever is being assigned to this variable and the
+            // variable's value
+            flow.DataFlowGraph.AddAssignment(
+                assignBounds.ValueLifetime,
+                valueLifetime,
+                type);
+
+            // The value of a variable must outlive its location
+            flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime, type);
+
+            // Add this variable lifetimes to the current frame
+            var bounds = new LifetimeBounds(valueLifetime, locationLifetime);
+
+            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, bounds);
+            return bounds;
         }
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
             var assign = this.assignSyntax.GenerateCode(flow, writer);
-            var lifetime = this.GetLifetimes(flow)[new IdentifierPath()].LocationLifetime;
+            var lifetime = this.GetLifetimes(flow).LocationLifetime;
             var allocLifetime = lifetime.GenerateCode(flow, writer);
 
             writer.WriteEmptyLine();

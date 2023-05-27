@@ -127,61 +127,49 @@ namespace Helix.Features.Variables {
             this.target.AnalyzeFlow(flow);
 
             var pointerType = this.target.AssertIsPointer(flow);
-            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
+            var pointerLifetime = this.target.GetLifetimes(flow);
+            var path = this.tempPath.ToVariablePath();
 
-            // Doing this is ok because pointers don't have members
-            var pointerLifetime = this.target.GetLifetimes(flow)[new IdentifierPath()];
-
-            // Build a return bundle composed of lifetimes that outlive the pointer's lifetime
-            // This loop replaces flow.DeclareValueLifetimes() because some custom logic is needed
-            foreach (var (relPath, type) in pointerType.InnerType.GetMembers(flow)) {
-                var memPath = this.tempPath.AppendMember(relPath);
-
-                if (type.IsValueType(flow)) {
-                    bundleDict[relPath] = new LifetimeBounds(Lifetime.None);
-                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(memPath, new LifetimeBounds());
-
-                    continue;
-                }
-
-                // If we are dereferencing a pointer and the following three conditions hold,
-                // we don't have to make up a new lifetime: 1) We're dereferencing a local variable
-                // 2) That local variable could not have been mutated by an alias since the last 
-                // time it was set 3) That local variable is storing the location of another variable
-                if (pointerLifetime.LocationLifetime != Lifetime.None) {
-                    var valueLifetime = flow.LocalLifetimes[pointerLifetime.LocationLifetime.Path].ValueLifetime;
-
-                    var equivalents = flow
-                        .LifetimeGraph
-                        .GetEquivalentLifetimes(valueLifetime)
-                        .Where(x => x.Origin == LifetimeOrigin.LocalLocation);
-
-                    // If all three are true, we can return the location of the that variable
-                    // whose location is currently stored in the variable we're dereferencing.
-                    // Think of this as optimizing dereferencing an addressof operator.
-                    if (equivalents.Any()) {
-                        bundleDict[relPath] = new LifetimeBounds(equivalents.First());
-
-                        continue;
-                    }
-                }
-
-                // This value's lifetime actually isn't the pointer's lifetime, but some
-                // other lifetime that outlives the pointer. It's important to represent
-                // the value like this because we can't store things into it that only
-                // outlive the pointer
-                var derefValueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
-
-                // Make sure we add this as a root
-                flow.LifetimeRoots = flow.LifetimeRoots.Add(derefValueLifetime);
-
-                // The lifetime that is stored in the pointer must outlive the pointer itself
-                flow.LifetimeGraph.AddStored(derefValueLifetime, pointerLifetime.ValueLifetime, this.GetReturnType(flow));
-
-                bundleDict[relPath] = new LifetimeBounds(derefValueLifetime);
+            if (pointerType.InnerType.IsValueType(flow)) {
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, new LifetimeBounds());
+                this.SetLifetimes(new LifetimeBounds(), flow);
+                return;
             }
 
-            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+            // If we are dereferencing a pointer and the following three conditions hold,
+            // we don't have to make up a new lifetime: 1) We're dereferencing a local variable
+            // 2) That local variable could not have been mutated by an alias since the last 
+            // time it was set 3) That local variable is storing the location of another variable
+            if (pointerLifetime.LocationLifetime != Lifetime.None) {
+                var valueLifetime = flow.LocalLifetimes[pointerLifetime.LocationLifetime.Path].ValueLifetime;
+
+                var equivalents = flow
+                    .DataFlowGraph
+                    .GetEquivalentLifetimes(valueLifetime)
+                    .Where(x => x.Origin == LifetimeOrigin.LocalLocation);
+
+                // If all three are true, we can return the location of the that variable
+                // whose location is currently stored in the variable we're dereferencing.
+                // Think of this as optimizing dereferencing an addressof operator.
+                if (equivalents.Any()) {
+                    this.SetLifetimes(new LifetimeBounds(equivalents.First()), flow);
+                    return;
+                }
+            }
+
+            // This value's lifetime actually isn't the pointer's lifetime, but some
+            // other lifetime that outlives the pointer. It's important to represent
+            // the value like this because we can't store things into it that only
+            // outlive the pointer
+            var derefValueLifetime = new ValueLifetime(path, LifetimeRole.Root, LifetimeOrigin.TempValue);
+
+            // Make sure we add this as a root
+            flow.LifetimeRoots = flow.LifetimeRoots.Add(derefValueLifetime);
+
+            // The lifetime that is stored in the pointer must outlive the pointer itself
+            flow.DataFlowGraph.AddStored(derefValueLifetime, pointerLifetime.ValueLifetime, this.GetReturnType(flow));
+
+            this.SetLifetimes(new LifetimeBounds(derefValueLifetime), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
@@ -254,7 +242,7 @@ namespace Helix.Features.Variables {
 
             this.target.AnalyzeFlow(flow);            
 
-            var targetBounds = this.target.GetLifetimes(flow)[new IdentifierPath()];
+            var targetBounds = this.target.GetLifetimes(flow);
             var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
             // If we are dereferencing a pointer and the following three conditions hold,
@@ -266,27 +254,27 @@ namespace Helix.Features.Variables {
 
             var memPath = this.tempPath.ToVariablePath();
 
-            var precursors = flow.LifetimeGraph
-                .GetPrecursorLifetimes(targetBounds.ValueLifetime)
-                .ToArray();
-
             var derefValueLifetime = new ValueLifetime(
                     memPath,
                     LifetimeRole.Alias,
                     LifetimeOrigin.TempValue);
 
+            var precursors = flow.DataFlowGraph
+                .GetPrecursorLifetimes(targetBounds.ValueLifetime)
+                .ToArray();
+
             // We could potentially be storing into anything upstream of our target
             // with pointer aliasing, so assume that is the case and add the correct
             // dependencies
             foreach (var root in precursors) {
-                flow.LifetimeGraph.AddStored(derefValueLifetime, root, null);
+                flow.DataFlowGraph.AddStored(derefValueLifetime, root, null);
             }
 
             // The lifetime that is stored in the pointer must outlive the pointer itself
-            flow.LifetimeGraph.AddStored(derefValueLifetime, targetBounds.ValueLifetime, this.GetReturnType(flow));
+            flow.DataFlowGraph.AddStored(derefValueLifetime, targetBounds.ValueLifetime, this.GetReturnType(flow));
 
-            dict[new IdentifierPath()] = new LifetimeBounds(derefValueLifetime, targetBounds.ValueLifetime);
-            this.SetLifetimes(new LifetimeBundle(dict), flow);
+            var bounds = new LifetimeBounds(derefValueLifetime, targetBounds.ValueLifetime);
+            this.SetLifetimes(bounds, flow);
         }
 
         private bool AnalyzeLocalDeref(LifetimeBounds targetBounds, FlowFrame flow) {
@@ -298,7 +286,7 @@ namespace Helix.Features.Variables {
             var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
 
             var equivalents = flow
-                .LifetimeGraph
+                .DataFlowGraph
                 .GetEquivalentLifetimes(valueLifetime)
                 .Where(x => x.Origin == LifetimeOrigin.LocalLocation); ;
 
@@ -312,8 +300,7 @@ namespace Helix.Features.Variables {
             var loc = equivalents.First();
             var value = flow.LocalLifetimes[loc.Path].ValueLifetime;
 
-            dict[new IdentifierPath()] = new LifetimeBounds(value, loc);
-            this.SetLifetimes(new LifetimeBundle(dict), flow);
+            this.SetLifetimes(new LifetimeBounds(value, loc), flow);
 
             return true;
         }

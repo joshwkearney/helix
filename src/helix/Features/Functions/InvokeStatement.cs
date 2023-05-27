@@ -138,20 +138,12 @@ namespace Helix.Features.Functions {
                 flow.LifetimeRoots,
                 LifetimeOrigin.TempValue);
 
-            var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
-
-            foreach (var (relPath, memType) in this.sig.ReturnType.GetMembers(flow)) {
-                var memBounds = new LifetimeBounds(invokeLifetime);
-
-                dict.Add(relPath, memBounds);
-            }
-
-            flow.SyntaxLifetimes[this] = new LifetimeBundle(dict);
+            this.SetLifetimes(new LifetimeBounds(invokeLifetime), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
             var region = this
-                .GetLifetimes(types)[new IdentifierPath()]
+                .GetLifetimes(types)
                 .ValueLifetime
                 .GenerateCode(types, writer);
 

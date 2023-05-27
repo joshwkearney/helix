@@ -10,11 +10,14 @@ using Helix.Analysis.TypeChecking;
 
 namespace Helix.Features.Aggregates {
     public class NewStructSyntax : ISyntaxTree {
+        private static int tempCounter = 0;
+
         private readonly bool isTypeChecked;
         private readonly StructType sig;
         private readonly HelixType structType;
         private readonly IReadOnlyList<string> names;
         private readonly IReadOnlyList<ISyntaxTree> values;
+        private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
 
@@ -22,19 +25,16 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure { get; }
 
-        public NewStructSyntax(
-            TokenLocation loc,
-            HelixType structType,
-            StructType sig,
-            IReadOnlyList<string> names,
-            IReadOnlyList<ISyntaxTree> values, bool isTypeChecked = false) {
-
+        public NewStructSyntax(TokenLocation loc, HelixType structType, StructType sig,
+                               IReadOnlyList<string> names, IReadOnlyList<ISyntaxTree> values, 
+                               IdentifierPath scope, bool isTypeChecked = false) {
             this.Location = loc;
             this.sig = sig;
             this.structType = structType;
             this.names = names;
             this.values = values;
             this.isTypeChecked = isTypeChecked;
+            this.path = scope.Append("$struct" + tempCounter++);
 
             this.IsPure = this.values.All(x => x.IsPure);
         }
@@ -141,7 +141,8 @@ namespace Helix.Features.Aggregates {
                 this.structType,
                 this.sig, 
                 allNames, 
-                allValues, 
+                allValues,
+                this.path,
                 true);
 
             result.SetReturnType(this.structType, types);
@@ -160,26 +161,28 @@ namespace Helix.Features.Aggregates {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var bundleDict = new Dictionary<IdentifierPath, LifetimeBounds>();
-
             // Add each member to the lifetime bundle
             for (int i = 0; i < this.names.Count; i++) {
                 var name = this.names[i];
                 var value = this.values[i];
+                var path = this.path.AppendMember(name);
 
                 value.AnalyzeFlow(flow);
 
-                // Go through each member of this field
-                foreach (var (relPath, lifetime) in value.GetLifetimes(flow)) {
-                    var memPath = new IdentifierPath(name).Append(relPath);
+                var valueLifetime = new ValueLifetime(path, LifetimeRole.Alias, LifetimeOrigin.TempValue);
+                var assignLifetime = value.GetLifetimes(flow).ValueLifetime;
+                var bounds = new LifetimeBounds(valueLifetime);
 
-                    // Add this member to the lifetime dict
-                    bundleDict[memPath] = lifetime;
-                }
+                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, bounds);
+                flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime, null);
             }
 
-            bundleDict[new IdentifierPath()] = new LifetimeBounds();
-            this.SetLifetimes(new LifetimeBundle(bundleDict), flow);
+            var rootLifetime = new ValueLifetime(
+                this.path.ToVariablePath(), 
+                LifetimeRole.Alias, 
+                LifetimeOrigin.TempValue);
+
+            this.SetLifetimes(new LifetimeBounds(rootLifetime), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

@@ -126,14 +126,14 @@ namespace Helix.Analysis {
             return types.CapturedVariables[syntax];
         }
 
-        public static Bundle<HelixType> GetMembers(this HelixType type, ITypeContext types) {
+        public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, ITypeContext types) {
             var dict = new Dictionary<IdentifierPath, HelixType>();
 
             foreach (var (memPath, memType) in GetMemberPaths(type, types)) {
                 dict[memPath] = memType;
             }
 
-            return new Bundle<HelixType>(dict);
+            return dict;
         }
 
         private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPaths(

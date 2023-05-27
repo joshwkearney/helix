@@ -72,7 +72,7 @@ namespace Helix.Features.Unions {
 
         public void AnalyzeFlow(FlowFrame flow) {
             this.DeclareValueLifetimes(flow);
-            this.SetLifetimes(new LifetimeBundle(), flow);
+            this.SetLifetimes(new LifetimeBounds(), flow);
         }
 
         private void DeclareValueLifetimes(FlowFrame flow) {

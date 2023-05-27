@@ -43,7 +43,7 @@ namespace Helix.Features.Primitives {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
-            flow.SyntaxLifetimes[this] = new LifetimeBundle();
+            this.SetLifetimes(new LifetimeBounds(), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

@@ -22,9 +22,9 @@ namespace Helix.Analysis.Flow {
         public IReadOnlyDictionary<IdentifierPath, HelixType> GlobalNominalSignatures { get; }
 
         // Global lifetime things
-        public IDictionary<ISyntaxTree, LifetimeBundle> SyntaxLifetimes { get; }
+        public IDictionary<ISyntaxTree, LifetimeBounds> SyntaxLifetimes { get; }
 
-        public LifetimeGraph LifetimeGraph { get; }
+        public DataFlowGraph DataFlowGraph { get; }
 
         // Local lifetime things
         public ImmutableDictionary<VariablePath, LifetimeBounds> LocalLifetimes { get; set; }
@@ -35,8 +35,8 @@ namespace Helix.Analysis.Flow {
             this.ReturnTypes = frame.ReturnTypes;
             this.CapturedVariables = frame.CapturedVariables;
 
-            this.LifetimeGraph = new();
-            this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBundle>();
+            this.DataFlowGraph = new();
+            this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBounds>();
 
             this.LocalLifetimes = ImmutableDictionary<VariablePath, LifetimeBounds>.Empty;
             this.LifetimeRoots = ImmutableHashSet<Lifetime>.Empty;
@@ -48,7 +48,7 @@ namespace Helix.Analysis.Flow {
             this.ReturnTypes = prev.ReturnTypes;
             this.CapturedVariables = prev.CapturedVariables;
 
-            this.LifetimeGraph = prev.LifetimeGraph;
+            this.DataFlowGraph = prev.DataFlowGraph;
             this.SyntaxLifetimes = prev.SyntaxLifetimes;
 
             this.LocalLifetimes = prev.LocalLifetimes;
@@ -69,13 +69,13 @@ namespace Helix.Analysis.Flow {
 
                     // If these two lifetimes are equivalent (ie, they are supposed to
                     // outlive each other), then keep both as roots
-                    if (this.LifetimeGraph.GetEquivalentLifetimes(root).Contains(otherRoot)) {
+                    if (this.DataFlowGraph.GetEquivalentLifetimes(root).Contains(otherRoot)) {
                         continue;
                     }
 
                     // If the other root is outlived by this root (and they're not equivalent),
                     // then remove it because "root" is a more useful, longer-lived root
-                    if (this.LifetimeGraph.DoesOutlive(root, otherRoot)) {
+                    if (this.DataFlowGraph.DoesOutlive(root, otherRoot)) {
                         result.Remove(otherRoot);
                     }
                 }
@@ -86,7 +86,7 @@ namespace Helix.Analysis.Flow {
 
         public IEnumerable<Lifetime> GetMaximumRoots(Lifetime lifetime) {
             var roots = this
-                .LifetimeGraph
+                .DataFlowGraph
                 .GetOutlivedLifetimes(lifetime)
                 .Where(x => x.Role != LifetimeRole.Alias)
                 .Where(x => x != lifetime);

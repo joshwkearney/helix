@@ -150,29 +150,27 @@ namespace Helix.Features.FlowControl {
             this.iftrue.AnalyzeFlow(iftrueFlow);
             this.iffalse.AnalyzeFlow(iffalseFlow);
 
-            var ifTrueBundle = this.iftrue.GetLifetimes(flow);
-            var ifFalseBundle = this.iffalse.GetLifetimes(flow);
+            var ifTrueBounds = this.iftrue.GetLifetimes(flow);
+            var ifFalseBounds = this.iffalse.GetLifetimes(flow);
 
             MutateLocals(iftrueFlow, iffalseFlow, flow);
 
             if (this.GetReturnType(flow).IsValueType(flow)) {
-                this.SetLifetimes(new LifetimeBundle(), flow);
+                this.SetLifetimes(new LifetimeBounds(), flow);
                 return;
             }
 
-            var dict = new Dictionary<IdentifierPath, LifetimeBounds>();
+            var valueLifetime = new ValueLifetime(
+                this.path.ToVariablePath(), 
+                LifetimeRole.Alias, 
+                LifetimeOrigin.TempValue);
 
-            foreach (var (relPath, _) in this.GetReturnType(flow).GetMembers(flow)) {
-                var memPath = this.path.AppendMember(relPath);
-                var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Alias, LifetimeOrigin.TempValue);
+            var returnType = this.GetReturnType(flow);
 
-                flow.LifetimeGraph.AddAssignment(valueLifetime, ifTrueBundle[relPath].ValueLifetime, null);
-                flow.LifetimeGraph.AddAssignment(valueLifetime, ifFalseBundle[relPath].ValueLifetime, null);
+            flow.DataFlowGraph.AddAssignment(valueLifetime, ifTrueBounds.ValueLifetime, returnType);
+            flow.DataFlowGraph.AddAssignment(valueLifetime, ifFalseBounds.ValueLifetime, returnType);
 
-                dict[relPath] = new LifetimeBounds(valueLifetime);
-            }
-
-            this.SetLifetimes(new LifetimeBundle(dict), flow);
+            this.SetLifetimes(new LifetimeBounds(valueLifetime), flow);
         }
 
         private static void MutateLocals(
@@ -210,8 +208,8 @@ namespace Helix.Features.FlowControl {
                     postLifetime = falseLifetime.IncrementVersion();
                 }
 
-                flow.LifetimeGraph.AddAssignment(trueLifetime, postLifetime, null);
-                flow.LifetimeGraph.AddAssignment(falseLifetime, postLifetime, null);
+                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime, null);
+                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime, null);
 
                 var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
                 flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);

@@ -116,7 +116,8 @@ namespace Helix.Features.Primitives {
                     type,
                     structSig,
                     this.names,
-                    this.values);
+                    this.values,
+                    types.Scope);
 
                 return result.CheckTypes(types);
             }

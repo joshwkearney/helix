@@ -3,9 +3,9 @@ using Helix.Collections;
 using System.Collections.Immutable;
 
 namespace Helix.Analysis.Flow {
-    public class LifetimeGraph {
+    public class DataFlowGraph {
         private enum NodeRelationship {
-            Dependence, Equality
+            Dependence, Equality, Member
         }
 
         private record Edge(Lifetime Lifetime, HelixType DataType, NodeRelationship EdgeKind) { }
@@ -13,7 +13,7 @@ namespace Helix.Analysis.Flow {
         private readonly IDictionary<Lifetime, ISet<Edge>> outlivesGraph;
         private readonly IDictionary<Lifetime, ISet<Edge>> reverseOutlivesGraph;
 
-        public LifetimeGraph() {
+        public DataFlowGraph() {
             this.outlivesGraph = new Dictionary<Lifetime, ISet<Edge>>()
                 .ToDefaultDictionary(_ => new HashSet<Edge>());
 
@@ -22,7 +22,7 @@ namespace Helix.Analysis.Flow {
         }
 
         public void AddAssignment(Lifetime lifetime1, Lifetime lifetime2, HelixType type) {
-            if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None) {
+            if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None || lifetime1 == lifetime2) {
                 return;
             }
 
@@ -34,7 +34,7 @@ namespace Helix.Analysis.Flow {
         }
 
         public void AddStored(Lifetime lifetime1, Lifetime lifetime2, HelixType storedType) {
-            if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None) {
+            if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None || lifetime1 == lifetime2) {
                 return;
             }
 
@@ -42,19 +42,49 @@ namespace Helix.Analysis.Flow {
             this.reverseOutlivesGraph[lifetime2].Add(new Edge(lifetime1, storedType, NodeRelationship.Dependence));
         }
 
+        public void AddMember(Lifetime parent, Lifetime member, HelixType memType) {
+            if (parent == Lifetime.None || member == Lifetime.None || parent == member) {
+                return;
+            }
+
+            this.outlivesGraph[parent].Add(new Edge(member, memType, NodeRelationship.Member));
+            this.reverseOutlivesGraph[member].Add(new Edge(parent, memType, NodeRelationship.Member));
+        }
+
+
         public IEnumerable<Lifetime> GetOutlivedLifetimes(Lifetime time) {
-            return TraverseGraph(time, this.outlivesGraph, _ => true);
+            static bool canFollow(Edge edge) => false
+                || edge.EdgeKind == NodeRelationship.Equality 
+                || edge.EdgeKind == NodeRelationship.Dependence;
+
+            return TraverseGraph(time, this.outlivesGraph, canFollow);
         }
 
         public IEnumerable<Lifetime> GetPrecursorLifetimes(Lifetime time) {
-            return TraverseGraph(time, this.reverseOutlivesGraph, _ => true);
+            static bool canFollow(Edge edge) => false
+                || edge.EdgeKind == NodeRelationship.Equality
+                || edge.EdgeKind == NodeRelationship.Dependence;
+
+            return TraverseGraph(time, this.reverseOutlivesGraph, canFollow);
         }
 
         public IEnumerable<Lifetime> GetEquivalentLifetimes(Lifetime time) {
             return TraverseGraph(
                 time, 
-                this.reverseOutlivesGraph, 
+                this.outlivesGraph, 
                 edge => edge.EdgeKind == NodeRelationship.Equality);
+        }
+
+        public IEnumerable<Lifetime> GetMemberLifetimes(Lifetime time, string memberName) {
+            var result = this.GetEquivalentLifetimes(time)
+                .Where(x => this.outlivesGraph.ContainsKey(x))
+                .Select(x => this.outlivesGraph[x])
+                .SelectMany(x => x.Where(y => y.EdgeKind == NodeRelationship.Member))
+                .Select(x => x.Lifetime)
+                .Where(x => x.Path.Member.Segments.Last() == memberName)
+                .ToArray();
+
+            return result;
         }
 
         public bool DoesOutlive(Lifetime first, Lifetime second) {

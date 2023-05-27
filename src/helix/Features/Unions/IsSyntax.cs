@@ -93,7 +93,7 @@ namespace Helix.Features.Unions {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public void AnalyzeFlow(FlowFrame flow) {
-            this.SetLifetimes(new LifetimeBundle(), flow);
+            this.SetLifetimes(new LifetimeBounds(), flow);
         }
 
         public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
