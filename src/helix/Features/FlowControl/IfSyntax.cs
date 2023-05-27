@@ -167,8 +167,8 @@ namespace Helix.Features.FlowControl {
 
             var returnType = this.GetReturnType(flow);
 
-            flow.DataFlowGraph.AddAssignment(valueLifetime, ifTrueBounds.ValueLifetime, returnType);
-            flow.DataFlowGraph.AddAssignment(valueLifetime, ifFalseBounds.ValueLifetime, returnType);
+            flow.DataFlowGraph.AddAssignment(valueLifetime, ifTrueBounds.ValueLifetime);
+            flow.DataFlowGraph.AddAssignment(valueLifetime, ifFalseBounds.ValueLifetime);
 
             this.SetLifetimes(new LifetimeBounds(valueLifetime), flow);
         }
@@ -208,8 +208,8 @@ namespace Helix.Features.FlowControl {
                     postLifetime = falseLifetime.IncrementVersion();
                 }
 
-                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime, null);
-                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime, null);
+                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime);
+                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime);
 
                 var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
                 flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);

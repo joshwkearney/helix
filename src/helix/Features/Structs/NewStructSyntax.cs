@@ -161,7 +161,11 @@ namespace Helix.Features.Aggregates {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            // Add each member to the lifetime bundle
+            var rootLifetime = new ValueLifetime(
+                this.path,
+                LifetimeRole.Alias,
+                LifetimeOrigin.TempValue);
+
             for (int i = 0; i < this.names.Count; i++) {
                 var name = this.names[i];
                 var value = this.values[i];
@@ -174,13 +178,9 @@ namespace Helix.Features.Aggregates {
                 var bounds = new LifetimeBounds(valueLifetime);
 
                 flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, bounds);
-                flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime, null);
+                flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime);
+                flow.DataFlowGraph.AddMember(rootLifetime, valueLifetime);
             }
-
-            var rootLifetime = new ValueLifetime(
-                this.path, 
-                LifetimeRole.Alias, 
-                LifetimeOrigin.TempValue);
 
             this.SetLifetimes(new LifetimeBounds(rootLifetime), flow);
         }

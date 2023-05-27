@@ -93,10 +93,10 @@ namespace Helix.Features.Functions {
                     var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
 
                     // Register our members
-                    flow.DataFlowGraph.AddMember(parLifetime, valueLifetime, null);
+                    flow.DataFlowGraph.AddMember(parLifetime, valueLifetime);
 
                     // Make sure the value outlives the location
-                    flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime, memType);
+                    flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime);
 
                     // Put these lifetimes in the main table
                     flow.LocalLifetimes = flow.LocalLifetimes.SetItem(
@@ -145,8 +145,7 @@ namespace Helix.Features.Functions {
             // Add a dependency between every returned lifetime and the heap
             flow.DataFlowGraph.AddStored(
                 flow.SyntaxLifetimes[body].ValueLifetime, 
-                Lifetime.Heap, 
-                body.GetReturnType(flow));
+                Lifetime.Heap);
         }
     }
 }

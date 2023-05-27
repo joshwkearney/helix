@@ -166,7 +166,7 @@ namespace Helix.Features.Variables {
             flow.LifetimeRoots = flow.LifetimeRoots.Add(derefValueLifetime);
 
             // The lifetime that is stored in the pointer must outlive the pointer itself
-            flow.DataFlowGraph.AddStored(derefValueLifetime, pointerLifetime.ValueLifetime, this.GetReturnType(flow));
+            flow.DataFlowGraph.AddStored(derefValueLifetime, pointerLifetime.ValueLifetime);
 
             this.SetLifetimes(new LifetimeBounds(derefValueLifetime), flow);
         }
@@ -264,11 +264,11 @@ namespace Helix.Features.Variables {
             // with pointer aliasing, so assume that is the case and add the correct
             // dependencies
             foreach (var root in precursors) {
-                flow.DataFlowGraph.AddStored(derefValueLifetime, root, null);
+                flow.DataFlowGraph.AddStored(derefValueLifetime, root);
             }
 
             // The lifetime that is stored in the pointer must outlive the pointer itself
-            flow.DataFlowGraph.AddStored(derefValueLifetime, targetBounds.ValueLifetime, this.GetReturnType(flow));
+            flow.DataFlowGraph.AddStored(derefValueLifetime, targetBounds.ValueLifetime);
 
             var bounds = new LifetimeBounds(derefValueLifetime, targetBounds.ValueLifetime);
             this.SetLifetimes(bounds, flow);

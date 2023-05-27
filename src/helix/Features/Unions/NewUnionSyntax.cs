@@ -136,7 +136,7 @@ namespace Helix.Features.Aggregates {
                 LifetimeRole.Alias,
                 LifetimeOrigin.TempValue);
 
-            flow.DataFlowGraph.AddStored(valueBounds.ValueLifetime, lifetime, null);
+            flow.DataFlowGraph.AddStored(valueBounds.ValueLifetime, lifetime);
 
             this.SetLifetimes(new LifetimeBounds(lifetime), flow);
         }

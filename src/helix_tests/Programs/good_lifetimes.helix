@@ -196,3 +196,15 @@ func test17() as Option {
 
 	y;
 };
+
+// ###
+struct Point {
+	let x as int*;
+};
+
+func test3() as int* {
+	var x = 15;
+	let p = new Point { x = &x };
+
+	p.x;
+};

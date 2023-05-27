@@ -199,22 +199,17 @@ namespace Helix {
                 allowedRoots, 
                 LifetimeOrigin.LocalLocation);
 
-            var valueLifetime = Lifetime.None;
+            var valueLifetime = new ValueLifetime(this.path, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
             var type = this.assignSyntax.GetReturnType(flow);
-
-            if (!type.IsValueType(flow)) {
-                valueLifetime = new ValueLifetime(this.path, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
-            }
 
             // Add a dependency between whatever is being assigned to this variable and the
             // variable's value
             flow.DataFlowGraph.AddAssignment(
                 assignBounds.ValueLifetime,
-                valueLifetime,
-                type);
+                valueLifetime);
 
             // The value of a variable must outlive its location
-            flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime, type);
+            flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime);
 
             // Add this variable lifetimes to the current frame
             var bounds = new LifetimeBounds(valueLifetime, locationLifetime);

@@ -167,14 +167,14 @@ namespace Helix.Features.Variables {
                 flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newValue.Path, newTargetBounds);
 
                 // Make sure the new value outlives its variable
-                flow.DataFlowGraph.AddStored(newValue, newTargetBounds.LocationLifetime, assignType);
+                flow.DataFlowGraph.AddStored(newValue, newTargetBounds.LocationLifetime);
 
                 targetBounds = newTargetBounds;
             }
 
             // Add dependencies between our new target and the assignment lifetimes
-            flow.DataFlowGraph.AddStored(assignLifetime, targetBounds.LocationLifetime, assignType);
-            flow.DataFlowGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime, assignType);
+            flow.DataFlowGraph.AddStored(assignLifetime, targetBounds.LocationLifetime);
+            flow.DataFlowGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime);
 
             this.SetLifetimes(new LifetimeBounds(), flow);
         }

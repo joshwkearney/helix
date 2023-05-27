@@ -1,7 +1,15 @@
-﻿struct Test3Struct {
-	let field as int;
+﻿union Option {
+	let none as void;
+	var some as int*;
 };
 
-func test3(let arg as Test3Struct) as int {
-	arg.field;
+func test3(var Z as int*) as Option {
+	var x = 45;
+	var p = new Option { some= &x };
+
+	if p is some then {
+		p = Z;
+	};
+
+	p;
 };
