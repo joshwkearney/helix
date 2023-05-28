@@ -85,8 +85,12 @@ namespace Helix.Features.Variables {
 
             var assign = this.assign
                 .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(targetType, types);            
+                .ToRValue(types);
+            
+            if (assign.CanUnifyTo(targetType, types)) {
+                // Crap: We need lifetimes here
+                //types.SyntaxValues = types.SyntaxValues.SetItem()
+            }
 
             var result = new AssignmentStatement(
                 this.Location,

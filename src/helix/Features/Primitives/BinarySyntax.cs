@@ -9,6 +9,7 @@ using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
+using System;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -226,6 +227,13 @@ namespace Helix.Features.Primitives {
                 throw TypeException.UnexpectedType(this.left.Location, left.GetReturnType(types));
             }
 
+            var leftType = left.GetReturnType(types);
+            var rightType = right.GetReturnType(types);
+
+            if (leftType is SingularIntType singLeft && rightType is SingularIntType singRight) {
+                return this.EvaluateIntExpression(singLeft.Value, singRight.Value, types);
+            }
+
             left = left.UnifyFrom(right, types);
             right = right.UnifyFrom(left, types);
 
@@ -234,6 +242,62 @@ namespace Helix.Features.Primitives {
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(left, right, types);
             result.SetPredicate(left, right, types);
+
+            return result;
+        }
+
+        private ISyntaxTree EvaluateIntExpression(int int1, int int2, TypeFrame types) {
+            HelixType returnType;
+
+            switch (this.op) {
+                case BinaryOperationKind.Add:
+                    returnType = new SingularIntType(int1 + int2);
+                    break;
+                case BinaryOperationKind.Subtract:
+                    returnType = new SingularIntType(int1 - int2);
+                    break;
+                case BinaryOperationKind.Modulo:
+                    returnType = new SingularIntType(int1 % int2);
+                    break;
+                case BinaryOperationKind.FloorDivide:
+                    returnType = new SingularIntType(int1 / int2);
+                    break;
+                case BinaryOperationKind.And:
+                    returnType = new SingularIntType(int1 & int2);
+                    break;
+                case BinaryOperationKind.Or:
+                    returnType = new SingularIntType(int1 | int2);
+                    break;
+                case BinaryOperationKind.Xor:
+                    returnType = new SingularIntType(int1 ^ int2);
+                    break;
+                case BinaryOperationKind.EqualTo:
+                    returnType = new SingularBoolType(int1 == int2);
+                    break;
+                case BinaryOperationKind.NotEqualTo:
+                    returnType = new SingularBoolType(int1 != int2);
+                    break;
+                case BinaryOperationKind.GreaterThan:
+                    returnType = new SingularBoolType(int1 > int2);
+                    break;
+                case BinaryOperationKind.LessThan:
+                    returnType = new SingularBoolType(int1 < int2);
+                    break;
+                case BinaryOperationKind.GreaterThanOrEqualTo:
+                    returnType = new SingularBoolType(int1 >= int2);
+                    break;
+                case BinaryOperationKind.LessThanOrEqualTo:
+                    returnType = new SingularBoolType(int1 <= int2);
+                    break;
+                default:
+                    throw new Exception();
+            }
+
+            var result = returnType.ToSyntax(this.Location);
+
+            result.SetReturnType(returnType, types);
+            result.SetCapturedVariables(types);
+            result.SetPredicate(types);
 
             return result;
         }
@@ -269,11 +333,46 @@ namespace Helix.Features.Primitives {
                 returnType = new PredicateBool(predicate);
             }
 
+            if (leftType is SingularBoolType singLeft && rightType is SingularBoolType singRight) {
+                return this.EvaluateBoolExpression(singLeft.Value, singRight.Value, predicate, types);
+            }
+
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
 
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(left, right, types);
             result.SetPredicate(left, right, types);
+
+            return result;
+        }
+
+        private ISyntaxTree EvaluateBoolExpression(bool b1, bool b2, ISyntaxPredicate pred, TypeFrame types) {
+            bool value;
+
+            switch (this.op) {
+                case BinaryOperationKind.And:
+                    value = b1 & b2;
+                    break;
+                case BinaryOperationKind.Or:
+                    value = b1 | b2;
+                    break;
+                case BinaryOperationKind.NotEqualTo:
+                case BinaryOperationKind.Xor:
+                    value = b1 ^ b2;
+                    break;
+                case BinaryOperationKind.EqualTo:
+                    value = b1 == b2;
+                    break;
+                default:
+                    throw new Exception();
+            }
+
+            var returnType = new SingularBoolType(value, pred);
+            var result = returnType.ToSyntax(this.Location);
+
+            result.SetReturnType(returnType, types);
+            result.SetCapturedVariables(types);
+            result.SetPredicate(types);
 
             return result;
         }

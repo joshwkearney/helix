@@ -15,6 +15,8 @@ namespace Helix.Generation {
     public interface ICStatementWriter : ICWriter {
         public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; }
 
+        public IDictionary<IdentifierPath, IdentifierPath> ShadowedLifetimeSources { get; }
+
         public ICStatementWriter WriteStatement(ICStatement stat);
 
         public ICStatementWriter WriteEmptyLine();
@@ -58,6 +60,8 @@ namespace Helix.Generation {
 
         public IDictionary<IdentifierPath, CVariableKind> VariableKinds { get; }
 
+        public IDictionary<IdentifierPath, IdentifierPath> ShadowedLifetimeSources { get; }
+
         public CStatementWriter(ICWriter prev, IList<ICStatement> stats) {
             this.prev = prev;
             this.stats = stats;
@@ -65,10 +69,12 @@ namespace Helix.Generation {
             if (prev is CStatementWriter statWriter) {
                 this.lifetimeCombinations = statWriter.lifetimeCombinations;
                 this.VariableKinds = statWriter.VariableKinds;
+                this.ShadowedLifetimeSources = statWriter.ShadowedLifetimeSources;
             }
             else {
                 this.lifetimeCombinations = ImmutableDictionary<ValueSet<Lifetime>, ICSyntax>.Empty;
                 this.VariableKinds = new Dictionary<IdentifierPath, CVariableKind>();
+                this.ShadowedLifetimeSources = new Dictionary<IdentifierPath, IdentifierPath>();
             }
         }
 

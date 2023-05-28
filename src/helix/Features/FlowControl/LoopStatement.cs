@@ -91,70 +91,49 @@ namespace Helix.Features.FlowControl {
         }
 
         public void AnalyzeFlow(FlowFrame flow) {
-            var modifiedVars = this.body.GetCapturedVariables(flow)
-                .Where(x => x.Kind == VariableCaptureKind.LocationCapture)
-                .Where(x => flow.LocalLifetimes.ContainsKey(x.VariablePath))
-                .ToArray();
+            var bodyFlow = new FlowFrame(flow);
+            this.body.AnalyzeFlow(bodyFlow);
 
-            var modifiedVarMems = modifiedVars
-                .SelectMany(y => y.Signature.InnerType
-                    .GetMembers(flow)
-                    .Where(x => !x.Value.IsValueType(flow))
-                    .Select(x => y.VariablePath.Append(x.Key)))
+            var modifiedLocalLifetimes = bodyFlow.LocalLifetimes
+                .Where(x => !flow.LocalLifetimes.Contains(x))
+                .Select(x => x.Key)
+                .Where(flow.LocalLifetimes.ContainsKey)
                 .ToArray();
 
             // For every variable that might be modified in the loop, create a new lifetime
             // for it in the loop body so that if it does change, it is only changing the
             // new variable signature and not the old one
-            foreach (var memPath in modifiedVarMems) {
-                var bounds = flow.LocalLifetimes[memPath];
-                var newValueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
+            foreach (var path in modifiedLocalLifetimes) {
+                var oldBounds = flow.LocalLifetimes[path];
+                var newBounds = bodyFlow.LocalLifetimes[path];
 
-                // Make sure the old value depends on the new root we just created
-                // This is to ensure inference works correctly for things above the loop
-                flow.DataFlowGraph.AddStored(bounds.ValueLifetime, newValueLifetime);
+                // Add a dependency between the new lifetime and the old lifetime
+                // because things outside the loop may depend on things inside
+                // the loop, because it's a loop
+                flow.DataFlowGraph.AddStored(newBounds.ValueLifetime, oldBounds.ValueLifetime);
 
-                // Make sure our new value outlives its location
-                flow.DataFlowGraph.AddStored(newValueLifetime, bounds.LocationLifetime);
+                var roots = flow.GetMaximumRoots(newBounds.ValueLifetime);
 
-                // Replace the variable's value with our new root. This is because
-                // this variable might be modified in the loop, so anything accessing
-                // it from this point forward must assume we don't know where the value
-                // came from.
-                bounds = bounds.WithValue(newValueLifetime);
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(memPath, bounds);
+                // If the new value of this variable depends on a lifetime that was created
+                // inside the loop, we need to declare a new root so that nothing after the
+                // loop uses code that is no longer in scope
+                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
+                    var newRoot = new ValueLifetime(
+                        oldBounds.ValueLifetime.Path,
+                        LifetimeRole.Root,
+                        LifetimeOrigin.TempValue,
+                        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
 
-                // Add this root to the root set
-                flow.LifetimeRoots = flow.LifetimeRoots.Add(newValueLifetime);
+                    // Add our new root to the list of acceptable roots
+                    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
+
+                    // Replace the current value with our root
+                    oldBounds = oldBounds.WithValue(newRoot);
+                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newRoot.Path, oldBounds);
+                }
             }
 
-            var bodyFlow = new FlowFrame(flow);
-            this.body.AnalyzeFlow(bodyFlow);
-
-            MutateLocals(bodyFlow, flow);
             this.SetLifetimes(new LifetimeBounds(), flow);
-        }
-
-        private static void MutateLocals(
-            FlowFrame bodyFrame,
-            FlowFrame flow) {
-
-            var modifiedLocals = bodyFrame.LocalLifetimes
-                .Where(x => !flow.LocalLifetimes.Contains(x))
-                .Distinct()
-                .Select(x => x.Key)
-                .Where(flow.LocalLifetimes.ContainsKey)
-                .ToArray();
-
-            foreach (var varPath in modifiedLocals) {
-                var trueLifetime = bodyFrame.LocalLifetimes[varPath].ValueLifetime;
-
-                var postLifetime = trueLifetime.IncrementVersion();
-                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime);
-
-                var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);
-            }
         }
 
         public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {

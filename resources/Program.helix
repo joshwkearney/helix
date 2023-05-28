@@ -1,19 +1,15 @@
-﻿union Option {
-	let none as void;
-	var some as int**;
-};
+﻿func test3(let x as bool) as int* {
+	var a = 10;
+	var b = 15;
 
-func test3(var Z as int*) as Option {
-	var x = 45;
-	var xx = &x;
+	var aa = &a;
+	var bb = &b;
+	var cc = &a;
 
-	var p = new Option { some= &xx };
-
-	if p is some then {
-		var y = 55;
-
-		p* = &y;
+	while x {
+		cc = aa;
+		aa = bb;
 	};
 
-	p;
+	cc;
 };

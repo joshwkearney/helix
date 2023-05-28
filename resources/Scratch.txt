@@ -14,7 +14,7 @@ Point += struct {
 
 Principles:
 - Simplicity is king
-- Heisenberg's language features
+- Heisenberg's compiler
 - Implicit is better than explicit
 - Correctness as a spectrum
 - Interface-oriented programming

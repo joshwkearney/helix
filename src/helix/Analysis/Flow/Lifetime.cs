@@ -156,10 +156,14 @@ namespace Helix.Analysis.Flow {
                 return new CVariableLiteral("_return_region");
             }
 
-            var targetName = writer.GetVariableName(this.Path);
+            if (!writer.ShadowedLifetimeSources.TryGetValue(this.Path, out var path)) {
+                path = this.Path;
+            }
+
+            var targetName = writer.GetVariableName(path);
 
             return new CMemberAccess() {
-                IsPointerAccess = writer.VariableKinds[this.Path] == CVariableKind.Allocated,
+                IsPointerAccess = writer.VariableKinds[path] == CVariableKind.Allocated,
                 Target = new CVariableLiteral(targetName),
                 MemberName = "region"
             };

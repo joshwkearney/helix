@@ -2,10 +2,6 @@
 #define inline __inline
 #endif
 
-typedef unsigned int _helix_bool;
-typedef unsigned int _helix_void;
-typedef unsigned int _helix_int;
-
 typedef struct _Region {
 	unsigned int depth;
 } _Region;

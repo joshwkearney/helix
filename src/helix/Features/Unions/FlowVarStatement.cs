@@ -106,6 +106,8 @@ namespace Helix.Features.Unions {
             writer.WriteEmptyLine();
             writer.VariableKinds[this.Path] = CVariableKind.Allocated;
 
+            writer.ShadowedLifetimeSources[this.ShadowedPath] = this.Path;
+
             return new CIntLiteral(0);
         }
     }

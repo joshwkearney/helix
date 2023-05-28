@@ -88,7 +88,7 @@ namespace Helix.Generation.Syntax {
                 _ => throw new Exception()
             };
 
-            return "(" + this.Left!.WriteToC() + op + this.Right!.WriteToC() + ")";
+            return "(" + this.Left!.WriteToC() + " " + op + " " + this.Right!.WriteToC() + ")";
         }
     }
 

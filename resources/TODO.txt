@@ -19,6 +19,15 @@ DONE - Fix binary expressions
 DONE - Fix for loops
 Check if we're in a loop for break/continue
 
+PROJECT ZIP: Merge the typechecking and flow analysis phases
+	- Get loops to flow analyze without prior information (variable capture)
+	- Merge return types, captured variables, predicates, and syntax lifetimes
+	  into a single "tag" dictionary
+	- Maybe merge SyntaxValues, NominalSignatures, and LocalLifetimes into one "names"
+	  dictionary
+	- Merge type frame and flow frame
+	- No other phase dependencies? They used to be one phase anyway so it shouldn't be too bad
+
 DONE ### The Lifetimes Update
 	DONE - Reimplement lvalues
 	DONE - Add back address of operator

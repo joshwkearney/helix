@@ -2,10 +2,6 @@
 #define inline __inline
 #endif
 
-typedef unsigned int _helix_bool;
-typedef unsigned int _helix_void;
-typedef unsigned int _helix_int;
-
 typedef struct _Region {
 	unsigned int depth;
 } _Region;
@@ -14,62 +10,46 @@ extern _Region* _region_new();
 extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth < r2->depth ? r1 : r2;  }
-
 typedef struct int_$Pointer int_$Pointer;
-typedef struct int_$Pointer_$Pointer int_$Pointer_$Pointer;
-typedef union Option_$Union Option_$Union;
-typedef struct Option Option;
-Option test3(_Region* _return_region, int_$Pointer Z);
+int_$Pointer test3(_Region* _return_region, int x);
 
 struct int_$Pointer {
     int* data;
     _Region* region;
 };
 
-struct int_$Pointer_$Pointer {
-    int_$Pointer* data;
-    _Region* region;
-};
+int_$Pointer test3(_Region* _return_region, int x) {
+    /* Line 2: New variable declaration 'a' */
+    int* a = _region_malloc(_return_region, sizeof(int));
+    (*a) = 10U;
 
-union Option_$Union {
-    int none;
-    int_$Pointer_$Pointer some;
-};
+    /* Line 3: New variable declaration 'b' */
+    int* b = _region_malloc(_return_region, sizeof(int));
+    (*b) = 15U;
 
-struct Option {
-    int tag;
-    Option_$Union data;
-};
+    /* Line 5: New variable declaration 'aa' */
+    int_$Pointer aa = (int_$Pointer){ a, _return_region };
 
-Option test3(_Region* _return_region, int_$Pointer Z) {
-    /* Line 7: New variable declaration 'x' */
-    int* x = _region_malloc(_return_region, sizeof(int));
-    (*x) = 45U;
+    /* Line 6: New variable declaration 'bb' */
+    int_$Pointer bb = (int_$Pointer){ b, _return_region };
 
-    /* Line 8: New variable declaration 'xx' */
-    int_$Pointer* xx = _region_malloc(_return_region, sizeof(int_$Pointer));
-    (*xx) = (int_$Pointer){ x, _return_region };
+    /* Line 7: New variable declaration 'cc' */
+    int_$Pointer cc = (int_$Pointer){ a, _return_region };
 
-    /* Line 10: New variable declaration 'p' */
-    Option p = (Option){ .tag= 1U, .data= { .some= (int_$Pointer_$Pointer){ xx, _return_region } } };
+    /* Line 9: While or for loop */
+    while (1U) {
+        /* Line 9: If statement */
+        if (!x) { 
+            break;
+        } 
 
-    /* Line 12: If statement */
-    if (((p.tag)==1U)) { 
-        /* Line 12: Union downcast flowtyping */
-        int_$Pointer_$Pointer* p_1 = (&((p.data).some));
+        /* Line 10: Assignment statement */
+        cc = aa;
 
-        /* Line 13: New variable declaration 'y' */
-        int* y = _region_malloc(_return_region, sizeof(int));
-        (*y) = 55U;
-
-        /* Line 15: Assignment statement */
-        (*((*p_1).data)) = (int_$Pointer){ y, _return_region };
-    } 
-    else {
-        /* Line 12: Union downcast flowtyping */
-        int* p_2 = (&((p.data).none));
+        /* Line 11: Assignment statement */
+        aa = bb;
     }
 
-    return p;
+    return cc;
 }
 

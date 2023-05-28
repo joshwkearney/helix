@@ -160,17 +160,34 @@ namespace Helix.Features.FlowControl {
                 return;
             }
 
-            var valueLifetime = new ValueLifetime(
-                this.path, 
-                LifetimeRole.Alias, 
-                LifetimeOrigin.TempValue);
+            var role = LifetimeRole.Alias;
+            var newRoots = false
+                || this.HasNewRoots(ifTrueBounds.ValueLifetime, flow) 
+                || this.HasNewRoots(ifFalseBounds.ValueLifetime, flow);
 
-            var returnType = this.GetReturnType(flow);
+            if (newRoots) {
+                role = LifetimeRole.Root;
+            }
+
+            var valueLifetime = new ValueLifetime(
+                this.path,  
+                role, 
+                LifetimeOrigin.TempValue);
 
             flow.DataFlowGraph.AddAssignment(valueLifetime, ifTrueBounds.ValueLifetime);
             flow.DataFlowGraph.AddAssignment(valueLifetime, ifFalseBounds.ValueLifetime);
 
+            if (newRoots) {
+                flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
+            }
+
             this.SetLifetimes(new LifetimeBounds(valueLifetime), flow);
+        }
+
+        private bool HasNewRoots(Lifetime lifetime, FlowFrame flow) {
+            var roots = flow.GetMaximumRoots(lifetime);
+
+            return roots.Any(x => !flow.LifetimeRoots.Contains(x));
         }
 
         private static void MutateLocals(
