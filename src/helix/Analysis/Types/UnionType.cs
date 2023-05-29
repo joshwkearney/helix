@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Helix.Analysis.Types {
     public record UnionType(IReadOnlyList<StructMember> Members) : HelixType {
-        public override HelixType GetMutationSupertype(ITypeContext types) => this;
+        public override HelixType GetMutationSupertype(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) => this;
+        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
 
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             if (this.Members.All(x => x.Type.GetSemantics(types) == PassingSemantics.ValueType)) {
                 return PassingSemantics.ValueType;
             }

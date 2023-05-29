@@ -83,17 +83,17 @@ namespace Helix.Features.FlowControl {
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = (ISyntaxTree)new LoopStatement(this.Location, body, this.name);
 
+            MutateLocals(bodyTypes, types);
+
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(body, types);
             result.SetPredicate(types);
+            result.SetLifetimes(new LifetimeBounds(), types);
 
             return result;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            var bodyFlow = new FlowFrame(flow);
-            this.body.AnalyzeFlow(bodyFlow);
-
+        private static void MutateLocals(TypeFrame bodyFlow, TypeFrame flow) {
             var modifiedLocalLifetimes = bodyFlow.LocalLifetimes
                 .Where(x => !flow.LocalLifetimes.Contains(x))
                 .Select(x => x.Key)
@@ -107,36 +107,37 @@ namespace Helix.Features.FlowControl {
                 var oldBounds = flow.LocalLifetimes[path];
                 var newBounds = bodyFlow.LocalLifetimes[path];
 
-                // Add a dependency between the new lifetime and the old lifetime
-                // because things outside the loop may depend on things inside
-                // the loop, because it's a loop
-                flow.DataFlowGraph.AddStored(newBounds.ValueLifetime, oldBounds.ValueLifetime);
-
                 var roots = flow.GetMaximumRoots(newBounds.ValueLifetime);
 
                 // If the new value of this variable depends on a lifetime that was created
                 // inside the loop, we need to declare a new root so that nothing after the
-                // loop uses code that is no longer in scope
-                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
-                    var newRoot = new ValueLifetime(
-                        oldBounds.ValueLifetime.Path,
-                        LifetimeRole.Root,
-                        LifetimeOrigin.TempValue,
-                        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
+                //// loop uses code that is no longer in scope
+                //if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
+                //    var newRoot = new ValueLifetime(
+                //        oldBounds.ValueLifetime.Path,
+                //        LifetimeRole.Root,
+                //        LifetimeOrigin.TempValue,
+                //        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
 
-                    // Add our new root to the list of acceptable roots
-                    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
+                //    flow.DataFlowGraph.AddStored(oldBounds.ValueLifetime, newRoot);
+                //    flow.DataFlowGraph.AddStored()
 
-                    // Replace the current value with our root
-                    oldBounds = oldBounds.WithValue(newRoot);
-                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newRoot.Path, oldBounds);
-                }
+                //    // Add our new root to the list of acceptable roots
+                //    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
+
+                //    oldBounds = oldBounds.WithValue(newRoot);
+                //    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newRoot.Path, oldBounds);
+                //}
+                //else {
+                    // Add a dependency between the new lifetime and the old lifetime
+                    // because things outside the loop may depend on things inside
+                    // the loop, because it's a loop
+                    flow.DataFlowGraph.AddAssignment(newBounds.ValueLifetime, oldBounds.ValueLifetime);
+                //}
             }
-
-            this.SetLifetimes(new LifetimeBounds(), flow);
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var bodyStats = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, bodyStats);
 

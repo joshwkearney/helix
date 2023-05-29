@@ -49,22 +49,12 @@ namespace Helix.Features.Arrays {
             this.SetReturnType(new PointerType(this.arrayType.InnerType, true), types);
             this.SetCapturedVariables(this.target, this.offset, types);
             this.SetPredicate(this.target, this.offset, types);
+            this.SetLifetimes(this.target.GetLifetimes(types), types);
 
             return this;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
-                return;
-            }
-
-            this.target.AnalyzeFlow(flow);
-            this.offset.AnalyzeFlow(flow);
-
-            flow.SyntaxLifetimes[this] = flow.SyntaxLifetimes[this.target];
-        }
-
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
 
             ICSyntax newData = new CMemberAccess() {

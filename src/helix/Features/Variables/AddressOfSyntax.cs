@@ -38,6 +38,7 @@ namespace Helix.Features.Variables {
             result.SetReturnType(varSig, types);
             result.SetCapturedVariables(capturedVars, types);
             result.SetPredicate(target, types);
+            result.SetLifetimes(AnalyzeFlow(this.Location, target, types), types);
 
             return result;
         }
@@ -46,24 +47,19 @@ namespace Helix.Features.Variables {
             return this;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
-                return;
-            }
-
-            target.AnalyzeFlow(flow);
+        public static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree target, TypeFrame flow) {
             var locationLifetime = target.GetLifetimes(flow).LocationLifetime;
 
             // Make sure we're taking the address of a variable location
             if (locationLifetime == Lifetime.None) {
                 // TODO: Add more specific error message
-                throw TypeException.ExpectedVariableType(Location, target.GetReturnType(flow));
+                throw TypeException.ExpectedVariableType(loc, target.GetReturnType(flow));
             }
 
-            this.SetLifetimes(new LifetimeBounds(locationLifetime), flow);
+            return new LifetimeBounds(locationLifetime);
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
                     target.GenerateCode(types, writer),

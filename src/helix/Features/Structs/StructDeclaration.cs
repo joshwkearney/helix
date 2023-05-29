@@ -119,9 +119,7 @@ namespace Helix.Features.Aggregates {
 
         public IDeclaration CheckTypes(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) { }
-
-        public void GenerateCode(FlowFrame types, ICWriter writer) {
+        public void GenerateCode(TypeFrame types, ICWriter writer) {
             var name = writer.GetVariableName(this.path);
 
             var mems = this.signature.Members

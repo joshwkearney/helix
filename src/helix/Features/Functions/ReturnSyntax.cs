@@ -61,6 +61,9 @@ namespace Helix.Features.Functions {
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(types);
             result.SetPredicate(types);
+            result.SetLifetimes(new LifetimeBounds(), types);
+
+            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, this.payload, types);
 
             return result;
         }
@@ -71,17 +74,6 @@ namespace Helix.Features.Functions {
             }
 
             return this;
-        }
-
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
-                return;
-            }
-
-            this.payload.AnalyzeFlow(flow);
-
-            this.SetLifetimes(new LifetimeBounds(), flow);
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, this.payload, flow);
         }
 
         private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {
@@ -99,7 +91,7 @@ namespace Helix.Features.Functions {
             return false;
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             writer.WriteStatement(new CReturn() {
                 Target = this.payload.GenerateCode(types, writer)
             });

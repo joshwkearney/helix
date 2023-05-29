@@ -9,7 +9,7 @@ namespace Helix.Analysis.Types {
             this.InnerType = innerType;
         }
 
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             return PassingSemantics.ReferenceType;
         }
 
@@ -22,8 +22,8 @@ namespace Helix.Analysis.Types {
             yield return this.InnerType;
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) => this;
+        public override HelixType GetMutationSupertype(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) => this;
+        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
     }
 }

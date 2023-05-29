@@ -89,7 +89,7 @@ namespace Helix.Features.Functions {
 
         public IDeclaration CheckTypes(TypeFrame types) => this;
 
-        public void GenerateCode(FlowFrame types, ICWriter writer) {
+        public void GenerateCode(TypeFrame types, ICWriter writer) {
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
                 : writer.ConvertType(this.Signature.ReturnType);

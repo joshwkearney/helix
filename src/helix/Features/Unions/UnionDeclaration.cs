@@ -121,9 +121,7 @@ namespace Helix.Features.Aggregates {
 
         public IDeclaration CheckTypes(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) { }
-
-        public void GenerateCode(FlowFrame types, ICWriter writer) { 
+        public void GenerateCode(TypeFrame types, ICWriter writer) { 
             var structName = writer.GetVariableName(this.path);
             var unionName = writer.GetVariableName(this.path) + "_$Union";
 

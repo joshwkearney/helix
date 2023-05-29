@@ -70,6 +70,7 @@ namespace Helix.Features.Unions {
             result.SetReturnType(returnType, types);
             result.SetPredicate(types);
             result.SetCapturedVariables(path, VariableCaptureKind.ValueCapture, varSig, types);
+            result.SetLifetimes(new LifetimeBounds(), types);
 
             return result;
         }
@@ -92,11 +93,7 @@ namespace Helix.Features.Unions {
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.SetLifetimes(new LifetimeBounds(), flow);
-        }
-
-        public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var varName = writer.GetVariableName(this.VariablePath);
 
             var index = this.UnionSignature

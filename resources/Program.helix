@@ -1,15 +1,16 @@
-﻿func test3(let x as bool) as int* {
-	var a = 10;
-	var b = 15;
+﻿union Option {
+	var none as void;
+	var some as int*;
+};
 
-	var aa = &a;
-	var bb = &b;
-	var cc = &a;
+func test17() as Option {
+	var x = 45;
+	var y = new Option { some= &x };
 
-	while x {
-		cc = aa;
-		aa = bb;
+	if y is some then {
+		var z = 10;
+		y = &z;
 	};
 
-	cc;
+	y;
 };

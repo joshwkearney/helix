@@ -100,37 +100,22 @@ namespace Helix.Features.Variables {
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(target, assign, types);
             result.SetPredicate(target, assign, types);
+            result.SetLifetimes(AnalyzeFlow(this.Location, target, assign, types), types);
 
             return result;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            // We need to be type checked to be an r-value
-            if (!types.ReturnTypes.ContainsKey(this)) {
-                throw TypeException.RValueRequired(this.Location);
-            }
-
-            return this;
-        }
-
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (flow.SyntaxLifetimes.ContainsKey(this)) {
-                return;
-            }
-
-            this.target.AnalyzeFlow(flow);
-            this.assign.AnalyzeFlow(flow);
-
-            var assignType = this.assign.GetReturnType(flow);
+        public static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree target, 
+                                                 ISyntaxTree assign, TypeFrame flow) {
+            var assignType = assign.GetReturnType(flow);
 
             // Skip value types
             if (assignType.IsValueType(flow)) {
-                this.SetLifetimes(new LifetimeBounds(), flow);
-                return;
+                return new LifetimeBounds();
             }
 
-            var targetBounds = this.target.GetLifetimes(flow);
-            var assignBounds = this.assign.GetLifetimes(flow);
+            var targetBounds = target.GetLifetimes(flow);
+            var assignBounds = assign.GetLifetimes(flow);
 
             // Check to see if the assigned value has the same origins
             // (or more restricted origins) than the target expression.
@@ -148,7 +133,7 @@ namespace Helix.Features.Variables {
                     }
 
                     throw new LifetimeException(
-                        this.Location,
+                        loc,
                         "Unsafe Memory Store",
                         $"Unable to verify that the assigned value outlives its container. " +
                         $"The region '{assignRoot}' is not known to outlive the region '{targetRoot}', " +
@@ -180,10 +165,19 @@ namespace Helix.Features.Variables {
             flow.DataFlowGraph.AddStored(assignLifetime, targetBounds.LocationLifetime);
             flow.DataFlowGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime);
 
-            this.SetLifetimes(new LifetimeBounds(), flow);
+            return new LifetimeBounds();
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            // We need to be type checked to be an r-value
+            if (!types.ReturnTypes.ContainsKey(this)) {
+                throw TypeException.RValueRequired(this.Location);
+            }
+
+            return this;
+        }
+
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = new CPointerDereference() {
                 Target = this.target.GenerateCode(types, writer)
             };

@@ -86,9 +86,27 @@ namespace Helix.Features.Functions {
             result.SetReturnType(sig.ReturnType, types);
             result.SetCapturedVariables(newArgs.Append(target), types);
             result.SetPredicate(newArgs.Append(target), types);
+            result.SetLifetimes(AnalyzeFlow(this.Location, path, types), types);
 
             return result;            
         }
+
+        private static LifetimeBounds AnalyzeFlow(TokenLocation loc, IdentifierPath path, TypeFrame flow) {
+            // Things to do:
+            // 1) Figure out possible reference type aliasing through arguments
+            // 1) Figure out possible pointer aliasing through arguments
+            // 2) Figure out possible argument dependencies for the return value
+            // 3) Create new inferenced return value lifetime
+
+            var invokeLifetime = new InferredLocationLifetime(
+                loc,
+                path,
+                flow.LifetimeRoots,
+                LifetimeOrigin.TempValue);
+
+            return new LifetimeBounds(invokeLifetime);
+        }
+
     }
 
     public record InvokeSyntax : ISyntaxTree {
@@ -121,27 +139,7 @@ namespace Helix.Features.Functions {
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            foreach (var arg in this.args) {
-                arg.AnalyzeFlow(flow);
-            }
-
-            // Things to do:
-            // 1) Figure out possible reference type aliasing through arguments
-            // 1) Figure out possible pointer aliasing through arguments
-            // 2) Figure out possible argument dependencies for the return value
-            // 3) Create new inferenced return value lifetime
-
-            var invokeLifetime = new InferredLocationLifetime(
-                this.Location,
-                this.invokeTempPath,
-                flow.LifetimeRoots,
-                LifetimeOrigin.TempValue);
-
-            this.SetLifetimes(new LifetimeBounds(invokeLifetime), flow);
-        }
-
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var region = this
                 .GetLifetimes(types)
                 .ValueLifetime

@@ -42,17 +42,14 @@ namespace Helix.Features.Primitives {
             this.SetReturnType(new SingularIntType(this.Value), types);
             this.SetCapturedVariables(types);
             this.SetPredicate(types);
+            this.SetLifetimes(new LifetimeBounds(), types);
 
             return this;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.SetLifetimes(new LifetimeBounds(), flow);
-        }
-
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value);
         }
     }

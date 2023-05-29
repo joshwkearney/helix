@@ -123,6 +123,10 @@ namespace Helix.Features.Functions {
 
             // Declare parameters
             FunctionsHelper.DeclareParameterTypes(this.Location, sig, path, types);
+            FunctionsHelper.DeclareParameterFlow(sig, path, types);
+
+            // Make sure we include the heap in the root set
+            types.LifetimeRoots = types.LifetimeRoots.Add(Lifetime.Heap);
 
             // Check types
             var body = this.body;
@@ -137,6 +141,8 @@ namespace Helix.Features.Functions {
             body = body.CheckTypes(types)
                 .ToRValue(types)
                 .UnifyTo(sig.ReturnType, types);
+
+            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, body, types);
 
 #if DEBUG
             // Debug check: make sure that every syntax tree has a return type
@@ -157,6 +163,13 @@ namespace Helix.Features.Functions {
             foreach (var expr in body.GetAllChildren()) {
                 if (!types.Predicates.ContainsKey(expr)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have any predicates");
+                }
+            }
+
+            // Debug check: Make sure every part of the syntax tree has a lifetime
+            foreach (var expr in body.GetAllChildren()) {
+                if (!types.SyntaxLifetimes.ContainsKey(expr)) {
+                    throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
                 }
             }
 #endif
@@ -193,30 +206,7 @@ namespace Helix.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            // Set the scope for flow analyzing the body
-            flow = new FlowFrame(flow);
-
-            // Declare parameters
-            FunctionsHelper.DeclareParameterFlow(this.Signature, this.Path, flow);
-
-            // Make sure we include the heap in the root set
-            flow.LifetimeRoots = flow.LifetimeRoots.Add(Lifetime.Heap);
-
-            this.body.AnalyzeFlow(flow);
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.Signature, this.body, flow);
-
-#if DEBUG
-            // Debug check: Make sure every part of the syntax tree has a lifetime
-            foreach (var expr in this.body.GetAllChildren()) {
-                if (!flow.SyntaxLifetimes.ContainsKey(expr)) {
-                    throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
-                }
-            }
-#endif
-        }
-
-        public void GenerateCode(FlowFrame types, ICWriter writer) {
+        public void GenerateCode(TypeFrame types, ICWriter writer) {
             writer.ResetTempNames();
 
             var returnType = this.Signature.ReturnType == PrimitiveType.Void

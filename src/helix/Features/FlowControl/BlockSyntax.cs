@@ -8,6 +8,7 @@ using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
+using System;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -30,6 +31,7 @@ namespace Helix.Parsing {
 namespace Helix.Features.FlowControl {
     public record BlockSyntax : ISyntaxTree {
         private static int blockCounter = 0;
+        private static int statCounter = 0;
 
         public TokenLocation Location { get; }
 
@@ -59,36 +61,14 @@ namespace Helix.Features.FlowControl {
             }
 
             var name = this.Path.Segments.Last();
-            types = new TypeFrame(types, name);
+            var bodyTypes = new TypeFrame(types, name);
 
             var stats = new List<ISyntaxTree>();
             var predicate = ISyntaxPredicate.Empty;
-            var statCounter = 0;
-            var statTypes = types;
+            var statTypes = bodyTypes;
 
             foreach (var forStat in this.Statements) {
-                var stat = forStat;
-
-                // Apply this predicate's effects to the later statements
-                if (predicate != ISyntaxPredicate.Empty) {
-                    // Deepen the scope because the predicate might want to shadow variables
-                    // and it will need a new path to do so
-                    statTypes = new TypeFrame(statTypes, "$s" + statCounter++);
-
-                    // Apply this predicate to the current context
-                    var newStats = predicate
-                        .ApplyToTypes(stat.Location, statTypes)
-                        .Append(stat)
-                        .ToArray();
-
-                    // Only make a new block if the predicate injected any statements
-                    if (newStats.Length > 0) {
-                        stat = new BlockSyntax(stat.Location, newStats);
-                    }
-                }
-
-                // Evaluate this statement and get the next predicate
-                stat = stat.CheckTypes(statTypes).ToRValue(statTypes);
+                var stat = CheckStatement(forStat, predicate, bodyTypes);                
                 stats.Add(stat);
 
                 // Get this predicate's effects for the next statement
@@ -98,27 +78,97 @@ namespace Helix.Features.FlowControl {
             var result = new BlockSyntax(this.Location, stats, this.Path);
             var returnType = stats
                 .LastOrNone()
-                .Select(x => types.ReturnTypes[x])
+                .Select(x => bodyTypes.ReturnTypes[x])
                 .OrElse(() => PrimitiveType.Void);
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(stats, types);
-            result.SetPredicate(ISyntaxPredicate.Empty, types);
+            result.SetReturnType(returnType, bodyTypes);
+            result.SetCapturedVariables(stats, bodyTypes);
+            result.SetPredicate(predicate, bodyTypes);
+            result.SetLifetimes(AnalyzeFlow(stats, bodyTypes), bodyTypes);
+
+            MutateLocals(bodyTypes, types);
 
             return result;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            foreach (var stat in this.Statements) {
-                stat.AnalyzeFlow(flow);
+        private static ISyntaxTree CheckStatement(ISyntaxTree stat, ISyntaxPredicate predicate,
+                                                  TypeFrame types) {
+            // Apply this predicate's effects to the later statements
+            if (predicate == ISyntaxPredicate.Empty) {
+                return stat.CheckTypes(types).ToRValue(types);
+            }
+            else { 
+                // Deepen the scope because the predicate might want to shadow variables
+                // and it will need a new path to do so
+                var statTypes = new TypeFrame(types, "$s" + statCounter++);
+
+                // Apply this predicate to the current context
+                var newStats = predicate
+                    .ApplyToTypes(stat.Location, statTypes)
+                    .Append(stat)
+                    .ToArray();
+
+                // Only make a new block if the predicate injected any statements
+                if (newStats.Length > 0) {
+                    stat = new BlockSyntax(stat.Location, newStats);
+                }
+
+                // Evaluate this statement and get the next predicate
+                var result = stat.CheckTypes(statTypes).ToRValue(statTypes);
+
+                MutateLocals(statTypes, types);
+                return result;
+            }            
+        }
+
+        private static void MutateLocals(TypeFrame bodyTypes, TypeFrame types) {
+            if (types == bodyTypes) {
+                return;
             }
 
-            var bundle = this.Statements
+            var modifiedLocalLifetimes = bodyTypes.LocalLifetimes
+                .Where(x => !types.LocalLifetimes.Contains(x))
+                .Select(x => x.Key)
+                .Where(types.LocalLifetimes.ContainsKey)
+                .ToArray();
+
+            // For every variable that might be modified in the loop, create a new lifetime
+            // for it in the loop body so that if it does change, it is only changing the
+            // new variable signature and not the old one
+            foreach (var path in modifiedLocalLifetimes) {
+                var oldBounds = types.LocalLifetimes[path];
+                var newBounds = bodyTypes.LocalLifetimes[path];
+
+                var roots = types.GetMaximumRoots(newBounds.ValueLifetime);
+
+                // If the new value of this variable depends on a lifetime that was created
+                // inside the loop, we need to declare a new root so that nothing after the
+                // loop uses code that is no longer in scope
+                //if (roots.Any(x => !types.LifetimeRoots.Contains(x))) {
+                //    var newRoot = new ValueLifetime(
+                //        oldBounds.ValueLifetime.Path,
+                //        LifetimeRole.Root,
+                //        LifetimeOrigin.TempValue,
+                //        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
+
+                //    // Add our new root to the list of acceptable roots
+                //    types.LifetimeRoots = types.LifetimeRoots.Add(newRoot);
+
+                //    newBounds = newBounds.WithValue(newRoot);
+                //}
+
+                // Replace the current value with our root
+                types.LocalLifetimes = types.LocalLifetimes.SetItem(newBounds.ValueLifetime.Path, newBounds);
+            }
+        }
+
+        private static LifetimeBounds AnalyzeFlow(IReadOnlyList<ISyntaxTree> stats, TypeFrame flow) {
+            var bundle = stats
                 .LastOrNone()
                 .Select(x => x.GetLifetimes(flow))
                 .OrElse(() => new LifetimeBounds());
 
-            this.SetLifetimes(bundle, flow);
+            return bundle;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
@@ -129,7 +179,7 @@ namespace Helix.Features.FlowControl {
             return this;
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }

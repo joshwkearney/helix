@@ -19,11 +19,7 @@ namespace Helix.Syntax {
         public ISyntaxTree CheckTypes(TypeFrame types);
 
         // Mixins
-        public void AnalyzeFlow(FlowFrame flow) {
-            throw new Exception("Compiler bug");
-        }
-
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             throw new Exception("Compiler bug");
         }
 

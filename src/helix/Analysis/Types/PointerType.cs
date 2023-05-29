@@ -3,15 +3,15 @@ using Helix.Syntax;
 
 namespace Helix.Analysis.Types {
     public record PointerType(HelixType InnerType, bool IsWritable) : HelixType {
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             return PassingSemantics.ReferenceType;
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) {
+        public override HelixType GetMutationSupertype(TypeFrame types) {
             return this;
         }
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) {
+        public override HelixType GetSignatureSupertype(TypeFrame types) {
             return this;
         }
 

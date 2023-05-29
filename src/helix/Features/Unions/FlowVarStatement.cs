@@ -31,8 +31,8 @@ namespace Helix.Features.Unions {
         public bool IsPure => true;
 
         public FlowVarStatement(TokenLocation loc, StructMember member,
-                                     IdentifierPath shadowed, PointerType shadowedType,
-                                     IdentifierPath path) {
+                                IdentifierPath shadowed, PointerType shadowedType,
+                                IdentifierPath path) {
             this.Location = loc;
             this.UnionMember = member;
             this.ShadowedPath = shadowed;
@@ -41,7 +41,7 @@ namespace Helix.Features.Unions {
         }
 
         public FlowVarStatement(TokenLocation loc, StructMember member,
-                                     IdentifierPath shadowed, PointerType shadowedType)
+                                IdentifierPath shadowed, PointerType shadowedType)
             : this(loc, member, shadowed, shadowedType, new IdentifierPath(shadowed.Segments.Last())) { }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
@@ -64,24 +64,22 @@ namespace Helix.Features.Unions {
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(this.ShadowedPath, VariableCaptureKind.LocationCapture, this.ShadowedType, types);
             result.SetPredicate(types);
+            result.SetLifetimes(AnalyzeFlow(this.ShadowedPath, path, types), types);
 
             return result;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.DeclareValueLifetimes(flow);
-            this.SetLifetimes(new LifetimeBounds(), flow);
+        public static LifetimeBounds AnalyzeFlow(IdentifierPath shadowedPath, IdentifierPath newPath, 
+                                                 TypeFrame flow) {
+            var shadowedBounds = flow.LocalLifetimes[shadowedPath];
+            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newPath, shadowedBounds);
+
+            return new LifetimeBounds();
         }
 
-        private void DeclareValueLifetimes(FlowFrame flow) {
-            var shadowedBounds = flow.LocalLifetimes[this.ShadowedPath];
-
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.Path, shadowedBounds);
-        }
-
-        public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             ICSyntax assign = new CAddressOf() {
                 Target = new CMemberAccess() {
                     Target = new CMemberAccess() {

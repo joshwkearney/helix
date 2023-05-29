@@ -242,6 +242,7 @@ namespace Helix.Features.Primitives {
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(left, right, types);
             result.SetPredicate(left, right, types);
+            result.SetLifetimes(new LifetimeBounds(), types);
 
             return result;
         }
@@ -298,6 +299,7 @@ namespace Helix.Features.Primitives {
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(types);
             result.SetPredicate(types);
+            result.SetLifetimes(new LifetimeBounds(), types);
 
             return result;
         }
@@ -377,13 +379,6 @@ namespace Helix.Features.Primitives {
             return result;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.left.AnalyzeFlow(flow);
-            this.right.AnalyzeFlow(flow);
-
-            this.SetLifetimes(new LifetimeBounds(), flow);
-        }
-
         public ISyntaxTree ToRValue(TypeFrame types) {
             if (!this.isTypeChecked) {
                 throw TypeException.RValueRequired(this.Location);
@@ -392,7 +387,7 @@ namespace Helix.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CBinaryExpression() {
                 Left = this.left.GenerateCode(types, writer),
                 Right = this.right.GenerateCode(types, writer),

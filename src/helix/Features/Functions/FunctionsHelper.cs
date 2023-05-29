@@ -65,7 +65,7 @@ namespace Helix.Features.Functions {
             }
         }
 
-        public static void DeclareParameterFlow(FunctionType sig, IdentifierPath path, FlowFrame flow) {
+        public static void DeclareParameterFlow(FunctionType sig, IdentifierPath path, TypeFrame flow) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
@@ -113,7 +113,7 @@ namespace Helix.Features.Functions {
             TokenLocation loc,
             FunctionType sig, 
             ISyntaxTree body, 
-            FlowFrame flow) {
+            TypeFrame flow) {
 
             // Here we need to make sure that the return value can outlive the heap
             // It's ok if the return value doesn't currently outlive the heap because

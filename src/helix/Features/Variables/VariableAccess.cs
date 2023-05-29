@@ -112,6 +112,7 @@ namespace Helix.Features.Variables {
                 types);
 
             this.SetPredicate(types);
+            this.SetLifetimes(types.LocalLifetimes[this.VariablePath], types);
 
             return this;
         }
@@ -143,13 +144,7 @@ namespace Helix.Features.Variables {
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            var bounds = flow.LocalLifetimes[this.VariablePath];
-
-            this.SetLifetimes(bounds, flow);
-        }
-
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             ICSyntax result = new CVariableLiteral(writer.GetVariableName(this.VariablePath));
 
             if (writer.VariableKinds[this.VariablePath] == CVariableKind.Allocated) {

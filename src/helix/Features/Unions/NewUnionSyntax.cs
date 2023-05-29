@@ -24,14 +24,9 @@ namespace Helix.Features.Aggregates {
 
         public bool IsPure { get; }
 
-        public NewUnionSyntax(
-            TokenLocation loc,
-            HelixType unionType,
-            UnionType sig,
-            IReadOnlyList<string> names,
-            IReadOnlyList<ISyntaxTree> values,
-            IdentifierPath path) {
-
+        public NewUnionSyntax(TokenLocation loc, HelixType unionType, UnionType sig,
+                              IReadOnlyList<string> names, IReadOnlyList<ISyntaxTree> values,
+                              IdentifierPath path) {
             this.Location = loc;
             this.unionType = unionType;
             this.sig = sig;
@@ -109,6 +104,7 @@ namespace Helix.Features.Aggregates {
             result.SetReturnType(this.unionType, types);
             result.SetCapturedVariables(value, types);
             result.SetPredicate(value, types);
+            result.SetLifetimes(AnalyzeFlow(this.tempPath, value, types), types);
 
             return result;
         }
@@ -121,27 +117,20 @@ namespace Helix.Features.Aggregates {
             return this;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
-                return;
-            }
-
-            var value = this.values[0];
-            value.AnalyzeFlow(flow);
-
+        private static LifetimeBounds AnalyzeFlow(IdentifierPath tempPath, ISyntaxTree value, TypeFrame flow) {
             var valueBounds = value.GetLifetimes(flow);
 
             var lifetime = new ValueLifetime(
-                this.tempPath,
+                tempPath,
                 LifetimeRole.Alias,
                 LifetimeOrigin.TempValue);
 
             flow.DataFlowGraph.AddStored(valueBounds.ValueLifetime, lifetime);
 
-            this.SetLifetimes(new LifetimeBounds(lifetime), flow);
+            return new LifetimeBounds(lifetime);
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }

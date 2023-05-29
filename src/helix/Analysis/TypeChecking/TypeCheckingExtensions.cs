@@ -5,7 +5,7 @@ using Helix.Analysis.Predicates;
 
 namespace Helix.Analysis {
     public static partial class TypeCheckingExtensions {
-        public static PointerType AssertIsPointer(this ISyntaxTree syntax, ITypeContext types) {
+        public static PointerType AssertIsPointer(this ISyntaxTree syntax, TypeFrame types) {
             var type = syntax.GetReturnType(types);
 
             if (type is not PointerType pointer) {

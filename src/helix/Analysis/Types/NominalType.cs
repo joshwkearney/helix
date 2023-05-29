@@ -18,19 +18,19 @@ namespace Helix.Analysis.Types {
             this.Kind = kind;
         }
 
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             switch (this.Kind) {
                 case NominalTypeKind.Function:
                     return PassingSemantics.ValueType;
                 default:
-                    return types.GlobalNominalSignatures[this.Path].GetSemantics(types);
+                    return types.NominalSignatures[this.Path].GetSemantics(types);
             }
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) => this;
+        public override HelixType GetMutationSupertype(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) {
-            return types.GlobalNominalSignatures[this.Path].GetSignatureSupertype(types);
+        public override HelixType GetSignatureSupertype(TypeFrame types) {
+            return types.NominalSignatures[this.Path].GetSignatureSupertype(types);
         }
 
         public override IEnumerable<HelixType> GetContainedTypes(TypeFrame types) {

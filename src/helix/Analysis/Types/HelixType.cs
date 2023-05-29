@@ -42,11 +42,11 @@ namespace Helix.Analysis.Types {
     }
 
     public abstract record HelixType { 
-        public abstract PassingSemantics GetSemantics(ITypeContext types);
+        public abstract PassingSemantics GetSemantics(TypeFrame types);
 
-        public abstract HelixType GetMutationSupertype(ITypeContext types);
+        public abstract HelixType GetMutationSupertype(TypeFrame types);
 
-        public abstract HelixType GetSignatureSupertype(ITypeContext types);
+        public abstract HelixType GetSignatureSupertype(TypeFrame types);
 
         public virtual ISyntaxTree ToSyntax(TokenLocation loc) {
             return new TypeSyntaxWrapper(loc, this);
@@ -56,7 +56,7 @@ namespace Helix.Analysis.Types {
             yield return this;
         }
 
-        public bool IsValueType(ITypeContext types) {
+        public bool IsValueType(TypeFrame types) {
             return this.GetSemantics(types) == PassingSemantics.ValueType;
         }
         
@@ -84,7 +84,7 @@ namespace Helix.Analysis.Types {
                 throw new InvalidOperationException();
             }
 
-            public void AnalyzeFlow(FlowFrame flow) {
+            public void AnalyzeFlow(TypeFrame flow) {
                 throw new InvalidOperationException();
             }
         }
