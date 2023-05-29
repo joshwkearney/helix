@@ -131,7 +131,8 @@ namespace Helix.Features.Variables {
             
             result = result.CheckTypes(types);
 
-            result.SetReturnType(this.VariableSignature, types);
+            var returnType = new NominalType(this.VariablePath, NominalTypeKind.Variable);
+            result.SetReturnType(returnType, types);
 
             result.SetCapturedVariables(
                 this.VariablePath, 

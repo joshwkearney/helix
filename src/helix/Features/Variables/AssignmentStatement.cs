@@ -81,16 +81,17 @@ namespace Helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var targetType = ((PointerType)target.GetReturnType(types)).InnerType;
+            var targetType = target.GetReturnType(types).AsVariable(types).GetValue().InnerType;
 
             var assign = this.assign
                 .CheckTypes(types)
-                .ToRValue(types);
+                .ToRValue(types)
+                .UnifyTo(targetType, types);
             
-            if (assign.CanUnifyTo(targetType, types)) {
-                // Crap: We need lifetimes here
-                //types.SyntaxValues = types.SyntaxValues.SetItem()
-            }
+            //if (assign.CanUnifyTo(targetType, types)) {
+            //    // Crap: We need lifetimes here
+            //    //types.SyntaxValues = types.SyntaxValues.SetItem()
+            //}
 
             var result = new AssignmentStatement(
                 this.Location,

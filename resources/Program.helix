@@ -1,16 +1,11 @@
-﻿union Option {
-	var none as void;
-	var some as int*;
+﻿struct Test4Struct {
+	let next as Test4Struct*;
+	let data as int;
 };
 
-func test17() as Option {
-	var x = 45;
-	var y = new Option { some= &x };
+func test4(let a as Test4Struct*) as int {
+	var A = new Test4Struct { next= a };
+	let B = &A;
 
-	if y is some then {
-		var z = 10;
-		y = &z;
-	};
-
-	y;
+	B*.next*.next*.data;
 };

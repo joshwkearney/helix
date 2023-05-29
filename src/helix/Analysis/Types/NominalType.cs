@@ -27,7 +27,14 @@ namespace Helix.Analysis.Types {
             }
         }
 
-        public override HelixType GetMutationSupertype(TypeFrame types) => this;
+        public override HelixType GetMutationSupertype(TypeFrame types) {
+            if (this.Kind == NominalTypeKind.Variable) {
+                return this.GetSignatureSupertype(types);
+            }
+            else {
+                return this;
+            }
+        }
 
         public override HelixType GetSignatureSupertype(TypeFrame types) {
             return types.NominalSignatures[this.Path].GetSignatureSupertype(types);

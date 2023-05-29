@@ -8,7 +8,7 @@ namespace Helix.Analysis {
         public static PointerType AssertIsPointer(this ISyntaxTree syntax, TypeFrame types) {
             var type = syntax.GetReturnType(types);
 
-            if (type is not PointerType pointer) {
+            if (!type.AsVariable(types).TryGetValue(out var pointer)) {
                 throw TypeException.ExpectedVariableType(syntax.Location, type);
             }
 

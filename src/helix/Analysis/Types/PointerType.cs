@@ -2,13 +2,22 @@
 using Helix.Syntax;
 
 namespace Helix.Analysis.Types {
-    public record PointerType(HelixType InnerType, bool IsWritable) : HelixType {
+    public record PointerType : HelixType {
+        public HelixType InnerType { get; }
+
+        public bool IsWritable { get; }
+
+        public PointerType(HelixType innerType, bool isWritable) {
+            this.InnerType = innerType;
+            this.IsWritable = isWritable;
+        }
+
         public override PassingSemantics GetSemantics(TypeFrame types) {
             return PassingSemantics.ReferenceType;
         }
 
         public override HelixType GetMutationSupertype(TypeFrame types) {
-            return this;
+            return new PointerType(this.InnerType.GetMutationSupertype(types), true);
         }
 
         public override HelixType GetSignatureSupertype(TypeFrame types) {

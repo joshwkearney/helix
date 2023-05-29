@@ -48,13 +48,9 @@ namespace Helix.Features.Functions {
                     type = type.GetMutationSupertype(types);
                 }
 
-                // TODO: Fix iswritable here
-                types.SyntaxValues = types.SyntaxValues.Add(
-                    parPath,
-                    new PointerType(type, parsePar.IsWritable).ToSyntax(loc));
-
                 var varSig = new PointerType(type, parsePar.IsWritable);
-                types.NominalSignatures = types.NominalSignatures.SetItem(parPath, varSig);
+                types.SyntaxValues = types.SyntaxValues.Add(parPath, varSig.ToSyntax(loc));
+                types.NominalSignatures.Add(parPath, varSig);
 
                 // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in type.GetMembers(types)) {

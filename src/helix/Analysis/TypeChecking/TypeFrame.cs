@@ -26,14 +26,14 @@ namespace Helix.Analysis.TypeChecking {
 
         public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
-        public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
-
         public ImmutableDictionary<IdentifierPath, LifetimeBounds> LocalLifetimes { get; set; }
 
         public ImmutableHashSet<Lifetime> LifetimeRoots { get; set; }
 
 
         // Global things
+        public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; }
+
         public DataFlowGraph DataFlowGraph { get; }
 
         public Dictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
@@ -65,7 +65,7 @@ namespace Helix.Analysis.TypeChecking {
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
             this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
             this.Predicates = new Dictionary<ISyntaxTree, ISyntaxPredicate>();
-            this.NominalSignatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
+            this.NominalSignatures = new Dictionary<IdentifierPath, HelixType>();
 
             this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBounds>();
             this.LocalLifetimes = ImmutableDictionary<IdentifierPath, LifetimeBounds>.Empty;

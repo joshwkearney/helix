@@ -11,51 +11,36 @@ extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth < r2->depth ? r1 : r2;  }
 
-typedef struct int_$Pointer int_$Pointer;
-typedef union Option_$Union Option_$Union;
-typedef struct Option Option;
-Option test17(_Region* _return_region);
+typedef struct Test4Struct_$Pointer Test4Struct_$Pointer;
+typedef struct Test4Struct Test4Struct;
+int test4(_Region* _return_region, Test4Struct_$Pointer a);
 
-struct int_$Pointer {
-    int* data;
+struct Test4Struct_$Pointer {
+    Test4Struct* data;
     _Region* region;
 };
 
-union Option_$Union {
-    int none;
-    int_$Pointer some;
+struct Test4Struct {
+    Test4Struct_$Pointer next;
+    int data;
 };
 
-struct Option {
-    int tag;
-    Option_$Union data;
-};
+int test4(_Region* _return_region, Test4Struct_$Pointer a) {
+    /* Line 7: New variable declaration 'A' */
+    Test4Struct A = (Test4Struct){ .next= a, .data= 0U };
 
-Option test17(_Region* _return_region) {
-    /* Line 7: New variable declaration 'x' */
-    int* x = _region_malloc(_return_region, sizeof(int));
-    (*x) = 45U;
+    /* Line 8: New variable declaration 'B' */
+    A B = (A){ (&A), _return_region };
 
-    /* Line 8: New variable declaration 'y' */
-    Option y = (Option){ .tag= 1U, .data= { .some= (int_$Pointer){ x, _return_region } } };
+    /* Line 10: Pointer dereference */
+    Test4Struct $deref0 = (*(B.data));
 
-    /* Line 10: If statement */
-    if (((y.tag) == 1U)) { 
-        /* Line 10: Union downcast flowtyping */
-        int_$Pointer* y_1 = (&((y.data).some));
+    /* Line 10: Pointer dereference */
+    Test4Struct $deref1 = (*(($deref0.next).data));
 
-        /* Line 11: New variable declaration 'z' */
-        int* z = _region_malloc(_return_region, sizeof(int));
-        (*z) = 10U;
+    /* Line 10: Pointer dereference */
+    Test4Struct $deref2 = (*(($deref1.next).data));
 
-        /* Line 12: Assignment statement */
-        (*y_1) = (int_$Pointer){ z, _return_region };
-    } 
-    else {
-        /* Line 10: Union downcast flowtyping */
-        int* y_2 = (&((y.data).none));
-    }
-
-    return y;
+    return ($deref2.data);
 }
 

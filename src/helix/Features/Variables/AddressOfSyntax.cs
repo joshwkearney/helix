@@ -28,14 +28,14 @@ namespace Helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var varSig = (PointerType)target.GetReturnType(types);
+            var varType = target.GetReturnType(types);
             var result = new AddressOfSyntax(Location, target);
 
             var capturedVars = target.GetCapturedVariables(types)
-                .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, varSig))
+                .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, x.Signature))
                 .ToArray();
 
-            result.SetReturnType(varSig, types);
+            result.SetReturnType(varType, types);
             result.SetCapturedVariables(capturedVars, types);
             result.SetPredicate(target, types);
             result.SetLifetimes(AnalyzeFlow(this.Location, target, types), types);
