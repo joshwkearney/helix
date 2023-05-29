@@ -28,8 +28,10 @@ namespace Helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var varSig = (PointerType)target.GetReturnType(types);
+            var varSig = target.GetReturnType(types).AsVariable(types).GetValue();
             var result = new AddressOfSyntax(Location, target);
+
+            target = target.UnifyTo(varSig, types);
 
             var capturedVars = target.GetCapturedVariables(types)
                 .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, varSig))

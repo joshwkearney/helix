@@ -162,8 +162,8 @@ namespace Helix.Features.FlowControl {
 
             var role = LifetimeRole.Alias;
             var newRoots = false
-                || this.HasNewRoots(ifTrueBounds.ValueLifetime, flow) 
-                || this.HasNewRoots(ifFalseBounds.ValueLifetime, flow);
+                || HasNewRoots(ifTrueBounds.ValueLifetime, flow) 
+                || HasNewRoots(ifFalseBounds.ValueLifetime, flow);
 
             if (newRoots) {
                 role = LifetimeRole.Root;
@@ -184,7 +184,7 @@ namespace Helix.Features.FlowControl {
             this.SetLifetimes(new LifetimeBounds(valueLifetime), flow);
         }
 
-        private bool HasNewRoots(Lifetime lifetime, FlowFrame flow) {
+        private static bool HasNewRoots(Lifetime lifetime, FlowFrame flow) {
             var roots = flow.GetMaximumRoots(lifetime);
 
             return roots.Any(x => !flow.LifetimeRoots.Contains(x));
@@ -216,8 +216,7 @@ namespace Helix.Features.FlowControl {
                     .OrElse(() => new LifetimeBounds())
                     .ValueLifetime;
 
-                var postLifetime = Lifetime.None;
-
+                Lifetime postLifetime;
                 if (trueLifetime.Version >= falseLifetime.Version || falseLifetime == Lifetime.None) {
                     postLifetime = trueLifetime.IncrementVersion();
                 }
@@ -227,6 +226,22 @@ namespace Helix.Features.FlowControl {
 
                 flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime);
                 flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime);
+
+                var roots = flow.GetMaximumRoots(postLifetime);
+
+                // If the new value of this if expression depends on a root that was created
+                // inside one of the branches, we need to emit a new root because any code
+                // after the if statement can't access our branch's roots
+                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
+                    var newRoot = new ValueLifetime(
+                        postLifetime.Path,
+                        LifetimeRole.Root,
+                        LifetimeOrigin.TempValue,
+                        postLifetime.Version + 1);
+
+                    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
+                    postLifetime = newRoot;
+                }
 
                 var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
                 flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);

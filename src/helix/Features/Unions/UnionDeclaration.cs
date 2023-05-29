@@ -79,7 +79,7 @@ namespace Helix.Features.Aggregates {
             var structSig = this.signature.ResolveNames(types);
             var unionSig = new UnionType(structSig.Members);
 
-            types.NominalSignatures = types.NominalSignatures.SetItem(path, unionSig);
+            types.NominalSignatures.Add(path, unionSig);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {

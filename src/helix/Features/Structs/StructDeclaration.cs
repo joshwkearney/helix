@@ -78,7 +78,7 @@ namespace Helix.Features.Aggregates {
             var path = types.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
 
-            types.NominalSignatures = types.NominalSignatures.SetItem(path, sig);
+            types.NominalSignatures.Add(path, sig);
         }
 
         public IDeclaration CheckTypes(TypeFrame types) {

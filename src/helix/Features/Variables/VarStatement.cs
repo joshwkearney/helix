@@ -90,7 +90,7 @@ namespace Helix {
             var basePath = types.Scope.Append(this.names[0]);
             var varSig = new PointerType(assignType, this.isWritable);
 
-            types.NominalSignatures = types.NominalSignatures.SetItem(basePath, varSig);
+            types.NominalSignatures.Add(basePath, varSig);
 
             var result = new VarStatement(
                 this.Location,
@@ -169,7 +169,8 @@ namespace Helix {
         }
 
         public Option<HelixType> AsType(TypeFrame types) {
-            return new PointerType(this.assignSyntax.GetReturnType(types), this.isWritable);
+            return new NominalType(this.path, NominalTypeKind.Variable);
+            //return new PointerType(this.assignSyntax.GetReturnType(types), this.isWritable);
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) => this;

@@ -53,6 +53,7 @@ namespace Helix.Features.Unions {
             var path = types.Scope.Append(this.Path);
 
             types.SyntaxValues = types.SyntaxValues.SetItem(path, new TypeSyntax(this.Location, varSig));
+            types.NominalSignatures.Add(path, varSig);
 
             var result = new FlowVarStatement(
                 this.Location, 

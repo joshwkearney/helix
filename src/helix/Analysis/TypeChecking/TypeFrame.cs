@@ -26,10 +26,10 @@ namespace Helix.Analysis.TypeChecking {
 
         public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
-        public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
-
 
         // Global things
+        public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
+
         public Dictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
 
         public Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
@@ -64,7 +64,7 @@ namespace Helix.Analysis.TypeChecking {
             this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
             this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
             this.Predicates = new Dictionary<ISyntaxTree, ISyntaxPredicate>();
-            this.NominalSignatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
+            this.NominalSignatures =  new Dictionary<IdentifierPath, HelixType>();
         }
 
         private TypeFrame(TypeFrame prev) {

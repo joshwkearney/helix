@@ -27,7 +27,14 @@ namespace Helix.Analysis.Types {
             }
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) => this;
+        public override HelixType GetMutationSupertype(ITypeContext types) {
+            if (this.Kind == NominalTypeKind.Variable) {
+                return this.GetSignatureSupertype(types);
+            }
+            else {
+                return this;
+            }
+        }
 
         public override HelixType GetSignatureSupertype(ITypeContext types) {
             return types.GlobalNominalSignatures[this.Path].GetSignatureSupertype(types);

@@ -81,7 +81,7 @@ namespace Helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var targetType = ((PointerType)target.GetReturnType(types)).InnerType;
+            var targetType = target.GetReturnType(types).AsVariable(types).GetValue().InnerType;
 
             var assign = this.assign
                 .CheckTypes(types)

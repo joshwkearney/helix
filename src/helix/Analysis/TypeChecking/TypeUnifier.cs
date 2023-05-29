@@ -114,6 +114,19 @@ namespace Helix.Analysis.TypeChecking {
             else if (first is ArrayType arrayType) {
                 return TryUnifyFromArray(arrayType, second, types);
             }
+            else if (first is NominalType nom) {
+                return TryUnifyFromNominal(nom, second, types);
+            }
+
+            return UnificationResult.None;
+        }
+
+        private static UnificationResult TryUnifyFromNominal(NominalType nom, HelixType second, TypeFrame types) {
+            if (nom.Kind == NominalTypeKind.Variable) {
+                if (nom.GetSignatureSupertype(types) == second) {
+                    return UnificationResult.Pun(second);
+                }
+            }
 
             return UnificationResult.None;
         }
