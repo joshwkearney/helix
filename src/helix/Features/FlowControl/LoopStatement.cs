@@ -87,6 +87,8 @@ namespace Helix.Features.FlowControl {
             result.SetCapturedVariables(body, types);
             result.SetPredicate(types);
 
+            types.MergeFrom(bodyTypes);
+
             return result;
         }
 

@@ -26,7 +26,6 @@ namespace Helix.Analysis.TypeChecking {
 
         public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
 
-
         // Global things
         public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
 
@@ -84,5 +83,45 @@ namespace Helix.Analysis.TypeChecking {
         public string GetVariableName() {
             return "$t_" + this.tempCounter++;
         }        
+
+        public void MergeFrom(params TypeFrame[] subFrames) {
+            var dict = new DefaultDictionary<IdentifierPath, HashSet<ISyntaxTree>>(_ => new HashSet<ISyntaxTree>());
+
+            foreach (var frame in subFrames) {
+                var locals = frame.SyntaxValues
+                    .Where(x => x.Value.AsType(frame).HasValue)
+                    .Where(x => {
+                        if (!this.SyntaxValues.TryGetValue(x.Key, out var syntax)) {
+                            return false;
+                        }
+
+                        if (!syntax.AsType(this).TryGetValue(out var type)) {
+                            return false;
+                        }
+
+                        return x.Value.AsType(frame) != type;
+                    })
+                    .ToArray();
+
+                foreach (var (key, value) in locals) {
+                    dict[key].Add(value);
+                }
+            }
+
+            foreach (var (key, valueSet) in dict) {
+                if (valueSet.Count == 0) {
+                    continue;
+                }
+                else if (valueSet.Count == 1) {
+                    this.SyntaxValues = this.SyntaxValues.SetItem(key, valueSet.First());
+                }
+                else {
+                    var oldSyntax = this.SyntaxValues[key];
+                    var newType = this.SyntaxValues[key].AsType(this).GetValue().GetMutationSupertype(this);
+
+                    this.SyntaxValues = this.SyntaxValues.SetItem(key, newType.ToSyntax(oldSyntax.Location));
+                }
+            }
+        }
     }
 }

@@ -8,6 +8,7 @@ using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
+using System;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -30,6 +31,7 @@ namespace Helix.Parsing {
 namespace Helix.Features.FlowControl {
     public record BlockSyntax : ISyntaxTree {
         private static int blockCounter = 0;
+        private static int statCounter = 0;
 
         public TokenLocation Location { get; }
 
@@ -58,37 +60,19 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
+            if (this.Statements.Count == 1) {
+                return this.Statements[0].CheckTypes(types);
+            }
+
             var name = this.Path.Segments.Last();
-            types = new TypeFrame(types, name);
+            var bodyTypes = new TypeFrame(types, name);
 
             var stats = new List<ISyntaxTree>();
             var predicate = ISyntaxPredicate.Empty;
-            var statCounter = 0;
-            var statTypes = types;
+            var statTypes = bodyTypes;
 
             foreach (var forStat in this.Statements) {
-                var stat = forStat;
-
-                // Apply this predicate's effects to the later statements
-                if (predicate != ISyntaxPredicate.Empty) {
-                    // Deepen the scope because the predicate might want to shadow variables
-                    // and it will need a new path to do so
-                    statTypes = new TypeFrame(statTypes, "$s" + statCounter++);
-
-                    // Apply this predicate to the current context
-                    var newStats = predicate
-                        .ApplyToTypes(stat.Location, statTypes)
-                        .Append(stat)
-                        .ToArray();
-
-                    // Only make a new block if the predicate injected any statements
-                    if (newStats.Length > 0) {
-                        stat = new BlockSyntax(stat.Location, newStats);
-                    }
-                }
-
-                // Evaluate this statement and get the next predicate
-                stat = stat.CheckTypes(statTypes).ToRValue(statTypes);
+                var stat = this.CheckStatement(forStat, predicate, bodyTypes);                
                 stats.Add(stat);
 
                 // Get this predicate's effects for the next statement
@@ -98,14 +82,45 @@ namespace Helix.Features.FlowControl {
             var result = new BlockSyntax(this.Location, stats, this.Path);
             var returnType = stats
                 .LastOrNone()
-                .Select(x => types.ReturnTypes[x])
+                .Select(x => bodyTypes.ReturnTypes[x])
                 .OrElse(() => PrimitiveType.Void);
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(stats, types);
-            result.SetPredicate(ISyntaxPredicate.Empty, types);
+            result.SetReturnType(returnType, bodyTypes);
+            result.SetCapturedVariables(stats, bodyTypes);
+            result.SetPredicate(ISyntaxPredicate.Empty, bodyTypes);
+
+            types.MergeFrom(bodyTypes);
 
             return result;
+        }
+
+        private ISyntaxTree CheckStatement(ISyntaxTree stat, ISyntaxPredicate predicate, TypeFrame types) {
+            // Apply this predicate's effects to the later statements
+            if (predicate == ISyntaxPredicate.Empty) {
+                return stat.CheckTypes(types).ToRValue(types);
+            }
+            else { 
+                // Deepen the scope because the predicate might want to shadow variables
+                // and it will need a new path to do so
+                var statTypes = new TypeFrame(types, "$s" + statCounter++);
+
+                // Apply this predicate to the current context
+                var newStats = predicate
+                    .ApplyToTypes(stat.Location, statTypes)
+                    .Append(stat)
+                    .ToArray();
+
+                // Only make a new block if the predicate injected any statements
+                if (newStats.Length > 0) {
+                    stat = new BlockSyntax(stat.Location, newStats);
+                }
+
+                // Evaluate this statement and get the next predicate
+                stat = stat.CheckTypes(statTypes).ToRValue(statTypes);
+
+                types.MergeFrom(statTypes);
+                return stat;
+            }
         }
 
         public void AnalyzeFlow(FlowFrame flow) {

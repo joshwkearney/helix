@@ -71,9 +71,9 @@ namespace Helix {
         public ISyntaxTree CheckTypes(TypeFrame types) {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);
-            //if (this.isWritable) {
-            //    assign = assign.WithMutationType(types);
-            //}
+            if (this.isWritable) {
+                assign = assign.WithMutationType(types);
+            }
 
             // If this is a compound assignment, check if we have the right
             // number of names and then recurse
@@ -170,7 +170,6 @@ namespace Helix {
 
         public Option<HelixType> AsType(TypeFrame types) {
             return new NominalType(this.path, NominalTypeKind.Variable);
-            //return new PointerType(this.assignSyntax.GetReturnType(types), this.isWritable);
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) => this;

@@ -1,15 +1,9 @@
-﻿func test3(let x as bool) as int* {
-	var a = 10;
-	var b = 15;
+﻿func test(var a as bool) as int {
+	var x = 45;
 
-	var aa = &a;
-	var bb = &b;
-	var cc = &a;
-
-	while x {
-		cc = aa;
-		aa = bb;
+	if a then {
+		x = 10;
 	};
 
-	cc;
+	x;
 };

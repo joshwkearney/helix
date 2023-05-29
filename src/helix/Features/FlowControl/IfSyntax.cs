@@ -126,6 +126,8 @@ namespace Helix.Features.FlowControl {
             result.SetCapturedVariables(cond, iftrue, iffalse, types);
             result.SetPredicate(iftrue, iffalse, types);
 
+            types.MergeFrom(iftrueTypes, iffalseTypes);
+
             return result;
         }
 
