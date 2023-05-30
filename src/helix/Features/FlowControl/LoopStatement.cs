@@ -102,6 +102,8 @@ namespace Helix.Features.FlowControl {
                 .WithChildren(body)
                 .BuildFor(result);
 
+            types.MergeFrom(bodyTypes);
+
             return result;
         }
 

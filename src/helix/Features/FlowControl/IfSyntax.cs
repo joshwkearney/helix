@@ -131,6 +131,8 @@ namespace Helix.Features.FlowControl {
                 .WithLifetimes(AnalyzeFlow(this.path, iftrue, iffalse, types))
                 .BuildFor(result);
 
+            types.MergeFrom(iftrueTypes, iffalseTypes);
+
             return result;
         }
 

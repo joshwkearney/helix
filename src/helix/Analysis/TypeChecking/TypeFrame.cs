@@ -28,7 +28,6 @@ namespace Helix.Analysis.TypeChecking {
 
         public ImmutableHashSet<Lifetime> ValidRoots { get; set; }
 
-
         // Global things
         public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; }
 
