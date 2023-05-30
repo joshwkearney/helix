@@ -108,7 +108,7 @@ namespace Helix.Features.Functions {
             var sig = this.signature.ResolveNames(types);
             var named = new NominalType(path, NominalTypeKind.Function);
 
-            types.SyntaxValues = types.SyntaxValues.SetItem(path, new TypeSyntax(this.Location, named));
+            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(named));
 
             // Declare this function
             types.NominalSignatures.Add(path, sig);
@@ -122,8 +122,7 @@ namespace Helix.Features.Functions {
             types = new TypeFrame(types, this.signature.Name);
 
             // Declare parameters
-            FunctionsHelper.DeclareParameterTypes(this.Location, sig, path, types);
-            FunctionsHelper.DeclareParameterFlow(sig, path, types);
+            FunctionsHelper.DeclareParameters(sig, path, types);
 
             // Make sure we include the heap in the root set
             types.LifetimeRoots = types.LifetimeRoots.Add(Lifetime.Heap);
@@ -211,12 +210,12 @@ namespace Helix.Features.Functions {
 
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
-                : writer.ConvertType(this.Signature.ReturnType);
+                : writer.ConvertType(this.Signature.ReturnType, types);
 
             var pars = this.Signature
                 .Parameters
                 .Select((x, i) => new CParameter() { 
-                    Type = writer.ConvertType(x.Type),
+                    Type = writer.ConvertType(x.Type, types),
                     Name = writer.GetVariableName(this.Path.Append(x.Name))
                 })
                 .Prepend(new CParameter() {

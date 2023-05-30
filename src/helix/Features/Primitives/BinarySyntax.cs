@@ -294,7 +294,7 @@ namespace Helix.Features.Primitives {
                     throw new Exception();
             }
 
-            var result = returnType.ToSyntax(this.Location);
+            var result = returnType.ToSyntax(this.Location).GetValue();
 
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(types);
@@ -370,7 +370,7 @@ namespace Helix.Features.Primitives {
             }
 
             var returnType = new SingularBoolType(value, pred);
-            var result = returnType.ToSyntax(this.Location);
+            var result = returnType.ToSyntax(this.Location).GetValue();
 
             result.SetReturnType(returnType, types);
             result.SetCapturedVariables(types);

@@ -209,7 +209,13 @@ namespace Helix.Analysis.TypeChecking {
                 Unifier = (syntax, t) => {
                     var block = new BlockSyntax(syntax.Location, new[] {
                         syntax,
-                        new NewSyntax(syntax.Location, structType.ToSyntax(syntax.Location))
+                        new NewStructSyntax(
+                            syntax.Location, 
+                            structType, 
+                            sig, 
+                            Array.Empty<string>(), 
+                            Array.Empty<ISyntaxTree>(), 
+                            types.Scope)
                     });
 
                     return block.CheckTypes(t);
@@ -227,7 +233,12 @@ namespace Helix.Analysis.TypeChecking {
                 Unifier = (syntax, t) => {
                     var block = new BlockSyntax(syntax.Location, new[] {
                         syntax,
-                        new NewSyntax(syntax.Location, unionType.ToSyntax(syntax.Location))
+                        new NewUnionSyntax(
+                            syntax.Location,
+                            sig,
+                            sig,
+                            Array.Empty<string>(),
+                            Array.Empty<ISyntaxTree>())
                     });
 
                     return block.CheckTypes(t);

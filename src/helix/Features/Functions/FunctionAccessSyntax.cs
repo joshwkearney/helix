@@ -32,7 +32,7 @@ namespace Helix.Features.Functions {
                 return this;
             }
 
-            var funcType = types.SyntaxValues[this.FunctionPath].AsType(types).GetValue();
+            var funcType = types.LocalValues[this.FunctionPath].Type;
 
             this.SetReturnType(funcType, types);
             this.SetCapturedVariables(types);

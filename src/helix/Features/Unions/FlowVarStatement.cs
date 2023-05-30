@@ -52,7 +52,7 @@ namespace Helix.Features.Unions {
             var varSig = new PointerType(this.UnionMember.Type, this.UnionMember.IsWritable && this.ShadowedType.IsWritable);
             var path = types.Scope.Append(this.Path);
 
-            types.SyntaxValues = types.SyntaxValues.SetItem(path, new TypeSyntax(this.Location, varSig));
+            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(varSig));
             types.NominalSignatures.Add(path, varSig);
 
             var result = new FlowVarStatement(
@@ -75,13 +75,14 @@ namespace Helix.Features.Unions {
 
         public static LifetimeBounds AnalyzeFlow(IdentifierPath shadowedPath, IdentifierPath newPath, 
                                                  TypeFrame flow) {
-            var shadowedBounds = flow.LocalLifetimes[shadowedPath];
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newPath, shadowedBounds);
+
+            var shadowedBounds = flow.LocalValues[shadowedPath];
+            flow.LocalValues = flow.LocalValues.SetItem(newPath, shadowedBounds);
 
             return new LifetimeBounds();
         }
 
-        public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             ICSyntax assign = new CAddressOf() {
                 Target = new CMemberAccess() {
                     Target = new CMemberAccess() {
@@ -93,7 +94,7 @@ namespace Helix.Features.Unions {
             };
 
             var name = writer.GetVariableName(this.Path);
-            var cReturnType = new CPointerType(writer.ConvertType(this.UnionMember.Type));
+            var cReturnType = new CPointerType(writer.ConvertType(this.UnionMember.Type, types));
 
             var stat = new CVariableDeclaration() {
                 Type = cReturnType,

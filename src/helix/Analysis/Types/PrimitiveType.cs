@@ -27,7 +27,7 @@ namespace Helix.Analysis.Types {
 
         public override HelixType GetSignatureSupertype(TypeFrame types) => this;
 
-        public override ISyntaxTree ToSyntax(TokenLocation loc) {
+        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc) {
             if (this == Void) {
                 return new VoidLiteral(loc);
             }

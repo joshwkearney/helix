@@ -37,10 +37,8 @@ namespace Helix.Features.Variables {
 
         public Option<HelixType> AsType(TypeFrame types) {
             // If we're pointing at a type then return it
-            if (types.TryResolveName(types.Scope, this.Name, out var syntax)) {
-                if (syntax.AsType(types).TryGetValue(out var type)) {
-                    return type;
-                }
+            if (types.TryResolveName(types.Scope, this.Name, out var type)) {
+                return type;
             }
 
             return Option.None;
@@ -112,7 +110,7 @@ namespace Helix.Features.Variables {
                 types);
 
             this.SetPredicate(types);
-            this.SetLifetimes(types.LocalLifetimes[this.VariablePath], types);
+            this.SetLifetimes(types.LocalValues[this.VariablePath].Bounds, types);
 
             return this;
         }

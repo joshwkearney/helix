@@ -11,36 +11,47 @@ extern void* _region_malloc(_Region* region, int size);
 extern void _region_delete(_Region* region);
 static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth < r2->depth ? r1 : r2;  }
 
-typedef struct Test4Struct_$Pointer Test4Struct_$Pointer;
-typedef struct Test4Struct Test4Struct;
-int test4(_Region* _return_region, Test4Struct_$Pointer a);
+typedef struct int_$Pointer int_$Pointer;
+typedef struct int_$Pointer_$Pointer int_$Pointer_$Pointer;
+void test16(_Region* _return_region, int_$Pointer a);
 
-struct Test4Struct_$Pointer {
-    Test4Struct* data;
+struct int_$Pointer {
+    int* data;
     _Region* region;
 };
 
-struct Test4Struct {
-    Test4Struct_$Pointer next;
-    int data;
+struct int_$Pointer_$Pointer {
+    int_$Pointer* data;
+    _Region* region;
 };
 
-int test4(_Region* _return_region, Test4Struct_$Pointer a) {
-    /* Line 7: New variable declaration 'A' */
-    Test4Struct A = (Test4Struct){ .next= a, .data= 0U };
+void test16(_Region* _return_region, int_$Pointer a) {
+    /* Line 2: New variable declaration 'x' */
+    int_$Pointer_$Pointer x = (int_$Pointer_$Pointer){ (&a), _return_region };
 
-    /* Line 8: New variable declaration 'B' */
-    A B = (A){ (&A), _return_region };
+    /* Line 4: New variable declaration 'i' */
+    int i = 0U;
 
-    /* Line 10: Pointer dereference */
-    Test4Struct $deref0 = (*(B.data));
+    /* Line 4: While or for loop */
+    while (1U) {
+        /* Line 4: If statement */
+        if ((i > 10U)) { 
+            break;
+        } 
 
-    /* Line 10: Pointer dereference */
-    Test4Struct $deref1 = (*(($deref0.next).data));
+        /* Line 5: New variable declaration 'b' */
+        int* b = _region_malloc(_return_region, sizeof(int));
+        (*b) = 10U;
 
-    /* Line 10: Pointer dereference */
-    Test4Struct $deref2 = (*(($deref1.next).data));
+        /* Line 6: New variable declaration 'c' */
+        int_$Pointer* c = _region_malloc(_return_region, sizeof(int_$Pointer));
+        (*c) = (int_$Pointer){ b, _return_region };
 
-    return ($deref2.data);
+        /* Line 8: Assignment statement */
+        x = (int_$Pointer_$Pointer){ c, _return_region };
+
+        /* Line 4: Assignment statement */
+        i = (i + 1U);
+    }
 }
 

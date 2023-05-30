@@ -159,7 +159,7 @@ namespace Helix.Features.Functions {
 
             var stat = new CVariableDeclaration() {
                 Name = name,
-                Type = writer.ConvertType(this.sig.ReturnType),
+                Type = writer.ConvertType(this.sig.ReturnType, types),
                 Assignment = result
             };
 

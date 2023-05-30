@@ -60,6 +60,10 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
+            if (this.Statements.Count == 1) {
+                return this.Statements[0].CheckTypes(types);
+            }
+
             var name = this.Path.Segments.Last();
             var bodyTypes = new TypeFrame(types, name);
 
@@ -126,20 +130,17 @@ namespace Helix.Features.FlowControl {
                 return;
             }
 
-            var modifiedLocalLifetimes = bodyTypes.LocalLifetimes
-                .Where(x => !types.LocalLifetimes.Contains(x))
+            var modifiedLocalLifetimes = bodyTypes.LocalValues
+                .Where(x => !types.LocalValues.Contains(x))
                 .Select(x => x.Key)
-                .Where(types.LocalLifetimes.ContainsKey)
+                .Where(types.LocalValues.ContainsKey)
                 .ToArray();
 
-            // For every variable that might be modified in the loop, create a new lifetime
-            // for it in the loop body so that if it does change, it is only changing the
-            // new variable signature and not the old one
             foreach (var path in modifiedLocalLifetimes) {
-                var oldBounds = types.LocalLifetimes[path];
-                var newBounds = bodyTypes.LocalLifetimes[path];
+                var oldBounds = types.LocalValues[path];
+                var newBounds = bodyTypes.LocalValues[path];
 
-                var roots = types.GetMaximumRoots(newBounds.ValueLifetime);
+               // var roots = types.GetMaximumRoots(newBounds.ValueLifetime);
 
                 // If the new value of this variable depends on a lifetime that was created
                 // inside the loop, we need to declare a new root so that nothing after the
@@ -158,7 +159,7 @@ namespace Helix.Features.FlowControl {
                 //}
 
                 // Replace the current value with our root
-                types.LocalLifetimes = types.LocalLifetimes.SetItem(newBounds.ValueLifetime.Path, newBounds);
+                types.LocalValues = types.LocalValues.SetItem(path, newBounds);
             }
         }
 

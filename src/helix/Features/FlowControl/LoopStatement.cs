@@ -94,20 +94,27 @@ namespace Helix.Features.FlowControl {
         }
 
         private static void MutateLocals(TypeFrame bodyFlow, TypeFrame flow) {
-            var modifiedLocalLifetimes = bodyFlow.LocalLifetimes
-                .Where(x => !flow.LocalLifetimes.Contains(x))
+            var modifiedLocalLifetimes = bodyFlow.LocalValues
+                .Where(x => !flow.LocalValues.Contains(x))
                 .Select(x => x.Key)
-                .Where(flow.LocalLifetimes.ContainsKey)
+                .Where(flow.LocalValues.ContainsKey)
                 .ToArray();
 
             // For every variable that might be modified in the loop, create a new lifetime
             // for it in the loop body so that if it does change, it is only changing the
             // new variable signature and not the old one
             foreach (var path in modifiedLocalLifetimes) {
-                var oldBounds = flow.LocalLifetimes[path];
-                var newBounds = bodyFlow.LocalLifetimes[path];
+                var oldLocal = flow.LocalValues[path];
+                var newLocal = bodyFlow.LocalValues[path];
 
-                var roots = flow.GetMaximumRoots(newBounds.ValueLifetime);
+                flow.DataFlowGraph.AddAssignment(
+                    newLocal.Bounds.ValueLifetime, 
+                    oldLocal.Bounds.ValueLifetime);
+
+                oldLocal = oldLocal.WithType(oldLocal.Type.GetMutationSupertype(flow));
+                flow.LocalValues = flow.LocalValues.SetItem(path, oldLocal);
+
+                //var roots = flow.GetMaximumRoots(newBounds.ValueLifetime);
 
                 // If the new value of this variable depends on a lifetime that was created
                 // inside the loop, we need to declare a new root so that nothing after the
@@ -129,10 +136,9 @@ namespace Helix.Features.FlowControl {
                 //    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newRoot.Path, oldBounds);
                 //}
                 //else {
-                    // Add a dependency between the new lifetime and the old lifetime
-                    // because things outside the loop may depend on things inside
-                    // the loop, because it's a loop
-                    flow.DataFlowGraph.AddAssignment(newBounds.ValueLifetime, oldBounds.ValueLifetime);
+                // Add a dependency between the new lifetime and the old lifetime
+                // because things outside the loop may depend on things inside
+                // the loop, because it's a loop
                 //}
             }
         }

@@ -73,7 +73,7 @@ namespace Helix.Features.Arrays {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Array to pointer conversion");
 
-            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, true));
+            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, true), types);
             var ptrValue = new CCompoundExpression() {
                 Arguments = new[] {
                     newData,

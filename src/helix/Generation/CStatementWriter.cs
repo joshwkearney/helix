@@ -161,7 +161,7 @@ namespace Helix.Generation {
 
         public void WriteDeclaration4(ICStatement decl) => this.prev.WriteDeclaration4(decl);
 
-        public ICSyntax ConvertType(HelixType type) => this.prev.ConvertType(type);
+        public ICSyntax ConvertType(HelixType type, TypeFrame types) => this.prev.ConvertType(type, types);
 
         public void ResetTempNames() => this.prev.ResetTempNames();
     }

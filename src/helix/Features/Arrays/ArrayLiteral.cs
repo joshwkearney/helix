@@ -153,8 +153,8 @@ namespace Helix.Features.Arrays {
             var lifetime = this.GetLifetimes(types).ValueLifetime;
             var helixArrayType = (ArrayType)this.GetReturnType(types);
 
-            var cArrayType = writer.ConvertType(helixArrayType);
-            var cInnerType = writer.ConvertType(helixArrayType.InnerType);
+            var cArrayType = writer.ConvertType(helixArrayType, types);
+            var cInnerType = writer.ConvertType(helixArrayType.InnerType, types);
 
             var backingName = writer.GetVariableName();
             var tempName = writer.GetVariableName(this.tempPath);
@@ -208,8 +208,8 @@ namespace Helix.Features.Arrays {
             var args = this.args.Select(x => x.GenerateCode(types, writer)).ToArray();
             var helixArrayType = (ArrayType)this.GetReturnType(types);
 
-            var cArrayType = writer.ConvertType(helixArrayType);
-            var cInnerType = writer.ConvertType(helixArrayType.InnerType);
+            var cArrayType = writer.ConvertType(helixArrayType, types);
+            var cInnerType = writer.ConvertType(helixArrayType.InnerType, types);
 
             var backingName = writer.GetVariableName();
             var tempName = writer.GetVariableName(this.tempPath);

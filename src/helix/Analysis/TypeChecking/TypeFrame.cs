@@ -24,9 +24,7 @@ namespace Helix.Analysis.TypeChecking {
         // Frame-specific things
         public IdentifierPath Scope { get; }
 
-        public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
-
-        public ImmutableDictionary<IdentifierPath, LifetimeBounds> LocalLifetimes { get; set; }
+        public ImmutableDictionary<IdentifierPath, LocalInfo> LocalValues { get; set; }
 
         public ImmutableHashSet<Lifetime> LifetimeRoots { get; set; }
 
@@ -36,28 +34,28 @@ namespace Helix.Analysis.TypeChecking {
 
         public DataFlowGraph DataFlowGraph { get; }
 
-        public Dictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
-
         public Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
 
         public Dictionary<ISyntaxTree, ISyntaxPredicate> Predicates { get; }
 
+        public Dictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
+
         public IDictionary<ISyntaxTree, LifetimeBounds> SyntaxLifetimes { get; }
 
         public TypeFrame() {
-            this.SyntaxValues = ImmutableDictionary<IdentifierPath, ISyntaxTree>.Empty;
+            this.LocalValues = ImmutableDictionary<IdentifierPath, LocalInfo>.Empty;
 
-            this.SyntaxValues = this.SyntaxValues.Add(
+            this.LocalValues = this.LocalValues.Add(
                 new IdentifierPath("void"),
-                new TypeSyntax(default, PrimitiveType.Void));
+                new LocalInfo(PrimitiveType.Void));
 
-            this.SyntaxValues = this.SyntaxValues.Add(
+            this.LocalValues = this.LocalValues.Add(
                 new IdentifierPath("int"),
-                new TypeSyntax(default, PrimitiveType.Int));
+                new LocalInfo(PrimitiveType.Int));
 
-            this.SyntaxValues = this.SyntaxValues.Add(
+            this.LocalValues = this.LocalValues.Add(
                 new IdentifierPath("bool"),
-                new TypeSyntax(default, PrimitiveType.Bool));
+                new LocalInfo(PrimitiveType.Bool));
 
             this.Scope = new IdentifierPath();
             this.DataFlowGraph = new DataFlowGraph();
@@ -68,13 +66,10 @@ namespace Helix.Analysis.TypeChecking {
             this.NominalSignatures = new Dictionary<IdentifierPath, HelixType>();
 
             this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBounds>();
-            this.LocalLifetimes = ImmutableDictionary<IdentifierPath, LifetimeBounds>.Empty;
             this.LifetimeRoots = ImmutableHashSet<Lifetime>.Empty;
         }
 
         private TypeFrame(TypeFrame prev) {
-            this.SyntaxValues = prev.SyntaxValues;
-
             this.Scope = prev.Scope;
             this.DataFlowGraph = prev.DataFlowGraph;
 
@@ -84,7 +79,7 @@ namespace Helix.Analysis.TypeChecking {
             this.NominalSignatures = prev.NominalSignatures;
 
             this.SyntaxLifetimes = prev.SyntaxLifetimes;
-            this.LocalLifetimes = prev.LocalLifetimes;
+            this.LocalValues = prev.LocalValues;
             this.LifetimeRoots = prev.LifetimeRoots;
         }
 

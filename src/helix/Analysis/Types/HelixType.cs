@@ -48,8 +48,8 @@ namespace Helix.Analysis.Types {
 
         public abstract HelixType GetSignatureSupertype(TypeFrame types);
 
-        public virtual ISyntaxTree ToSyntax(TokenLocation loc) {
-            return new TypeSyntaxWrapper(loc, this);
+        public virtual Option<ISyntaxTree> ToSyntax(TokenLocation loc) {
+            return Option.None;
         }
 
         public virtual IEnumerable<HelixType> GetContainedTypes(TypeFrame frame) {
@@ -58,35 +58,6 @@ namespace Helix.Analysis.Types {
 
         public bool IsValueType(TypeFrame types) {
             return this.GetSemantics(types) == PassingSemantics.ValueType;
-        }
-        
-        private class TypeSyntaxWrapper : ISyntaxTree {
-            private readonly HelixType type;
-
-            public TokenLocation Location { get; }
-
-            public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
-
-            public bool IsPure => true;
-
-            public TypeSyntaxWrapper(TokenLocation loc, HelixType type) {
-                this.Location = loc;
-                this.type = type;
-            }
-
-            public Option<HelixType> AsType(TypeFrame types) => this.type;
-
-            public ISyntaxTree CheckTypes(TypeFrame types) {
-                throw new InvalidOperationException();
-            }
-
-            public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-                throw new InvalidOperationException();
-            }
-
-            public void AnalyzeFlow(TypeFrame flow) {
-                throw new InvalidOperationException();
-            }
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Helix.Analysis {
         public static bool TryResolvePath(this TypeFrame types, IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
                 path = scope.Append(name);
-                if (types.SyntaxValues.ContainsKey(path)) {
+                if (types.LocalValues.ContainsKey(path)) {
                     return true;
                 }
 
@@ -31,17 +31,23 @@ namespace Helix.Analysis {
                 $"Compiler error: The path '{name}' does not contain a value.");
         }
 
-        public static bool TryResolveName(this TypeFrame types, IdentifierPath scope, string name, out ISyntaxTree value) {
+        public static bool TryResolveName(this TypeFrame types, IdentifierPath scope, string name, out HelixType value) {
             if (!types.TryResolvePath(scope, name, out var path)) {
                 value = null;
                 return false;
             }
 
-            return types.SyntaxValues.TryGetValue(path, out value);
+            if (!types.LocalValues.TryGetValue(path, out var info)) {
+                value = null;
+                return false;
+            }
+
+            value = info.Type;
+            return true;
         }
 
-        public static ISyntaxTree ResolveName(this TypeFrame types, IdentifierPath scope, string name) {
-            return types.SyntaxValues[types.ResolvePath(scope, name)];
+        public static HelixType ResolveName(this TypeFrame types, IdentifierPath scope, string name) {
+            return types.LocalValues[types.ResolvePath(scope, name)].Type;
         }
 
         public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {

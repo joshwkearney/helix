@@ -21,6 +21,15 @@ namespace Helix.Analysis.Flow {
                 .ToDefaultDictionary(_ => new HashSet<Edge>());
         }
 
+        public void Print() {
+            foreach (var (node, edges) in this.outlivesGraph) {
+                foreach (var edge in edges) {
+                    Console.Write(node.Path.Segments.Last() + ", " + node.Origin + " -> ");
+                    Console.WriteLine(edge.Lifetime.Path.Segments.Last() + ", " + edge.Lifetime.Origin);
+                }
+            }
+        }
+
         public void AddAssignment(Lifetime lifetime1, Lifetime lifetime2) {
             if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None || lifetime1 == lifetime2) {
                 return;

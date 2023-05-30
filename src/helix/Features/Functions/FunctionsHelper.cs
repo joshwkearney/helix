@@ -32,58 +32,35 @@ namespace Helix.Features.Functions {
 
             // Declare this function
             var path = types.Scope.Append(sig.Name);
-            var named = new TypeSyntax(sig.Location, new NominalType(path, NominalTypeKind.Function));
+            var named = new NominalType(path, NominalTypeKind.Function);
 
-            types.SyntaxValues = types.SyntaxValues.SetItem(path, named);
+            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(named));
         }
 
-        public static void DeclareParameterTypes(TokenLocation loc, FunctionType sig, IdentifierPath path, TypeFrame types) {            
-            // Declare the parameters
-            for (int i = 0; i < sig.Parameters.Count; i++) {
-                var parsePar = sig.Parameters[i];
-                var type = sig.Parameters[i].Type;
-                var parPath = path.Append(parsePar.Name);
-
-                if (parsePar.IsWritable) {
-                    type = type.GetMutationSupertype(types);
-                }
-
-                var varSig = new PointerType(type, parsePar.IsWritable);
-                types.SyntaxValues = types.SyntaxValues.Add(parPath, varSig.ToSyntax(loc));
-                types.NominalSignatures.Add(parPath, varSig);
-
-                // Declare this parameter as a root by making an end cycle in the graph
-                foreach (var (relPath, memType) in type.GetMembers(types)) {
-                    var memPath = parPath.Append(relPath);
-                    var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
-                    var valueLifetime = new ValueLifetime(memPath, LifetimeRole.Root, LifetimeOrigin.LocalValue, 0);
-                }
-            }
-        }
-
-        public static void DeclareParameterFlow(FunctionType sig, IdentifierPath path, TypeFrame flow) {
+        public static void DeclareParameters(FunctionType sig, IdentifierPath path, TypeFrame flow) {
             // Declare the parameters
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
                 var parPath = path.Append(parsePar.Name);
-                var type = sig.Parameters[i].Type;
+                var parType = sig.Parameters[i].Type;
+                var parSig = new PointerType(parType, parsePar.IsWritable);
 
                 if (parsePar.IsWritable) {
-                    type = type.GetMutationSupertype(flow);
+                    parType = parType.GetMutationSupertype(flow);
                 }
 
                 var parLifetime = new ValueLifetime(
                     parPath, 
-                    type.IsValueType(flow) ? LifetimeRole.Alias : LifetimeRole.Root, 
+                    parType.IsValueType(flow) ? LifetimeRole.Alias : LifetimeRole.Root, 
                     LifetimeOrigin.LocalValue);
 
                 // Declare this parameter as a root by making an end cycle in the graph
-                foreach (var (relPath, memType) in type.GetMembers(flow)) {
+                foreach (var (relPath, memType) in parType.GetMembers(flow)) {
                     var memPath = parPath.Append(relPath);
 
                     var valueLifetime = new ValueLifetime(
                         memPath,
-                        type.IsValueType(flow) ? LifetimeRole.Alias : LifetimeRole.Root, 
+                        parType.IsValueType(flow) ? LifetimeRole.Alias : LifetimeRole.Root, 
                         LifetimeOrigin.LocalValue);
 
                     var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
@@ -95,9 +72,13 @@ namespace Helix.Features.Functions {
                     flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime);
 
                     // Put these lifetimes in the main table
-                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(
+                    flow.LocalValues = flow.LocalValues.SetItem(
                         memPath, 
-                        new LifetimeBounds(valueLifetime, locationLifetime));
+                        new LocalInfo(
+                            parSig, 
+                            new LifetimeBounds(valueLifetime, locationLifetime)));
+
+                    flow.NominalSignatures.Add(memPath, parSig);
 
                     flow.LifetimeRoots = flow.LifetimeRoots.Add(locationLifetime);
                     flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);

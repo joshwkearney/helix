@@ -93,7 +93,7 @@ namespace Helix.Features.Aggregates {
                     result.SetReturnType(PrimitiveType.Int, types);
                     result.SetCapturedVariables(target, types);
                     result.SetPredicate(target, types);
-                    result.SetLifetimes(AnalyzeFlow(this.MemberName, this.path, target, types), types);
+                    result.SetLifetimes(AnalyzeFlow(this.MemberName, PrimitiveType.Int, this.path, target, types), types);
 
                     return result;
                 }
@@ -118,7 +118,7 @@ namespace Helix.Features.Aggregates {
                     result.SetReturnType(field.Type, types);
                     result.SetCapturedVariables(target, types);
                     result.SetPredicate(target, types);
-                    result.SetLifetimes(AnalyzeFlow(this.MemberName, result.path, target, types), types);
+                    result.SetLifetimes(AnalyzeFlow(this.MemberName, field.Type, result.path, target, types), types);
 
                     return result;
                 }               
@@ -127,7 +127,7 @@ namespace Helix.Features.Aggregates {
             throw TypeException.MemberUndefined(this.Location, targetType, this.MemberName);
         }
 
-        private static LifetimeBounds AnalyzeFlow(string memName, IdentifierPath path, 
+        private static LifetimeBounds AnalyzeFlow(string memName, HelixType memType, IdentifierPath path, 
                                                   ISyntaxTree target, TypeFrame flow) {
             var targetLifetimes = target.GetLifetimes(flow);
             var parentLifetimes = flow.DataFlowGraph.GetMemberLifetimes(targetLifetimes.ValueLifetime, memName);
@@ -137,7 +137,8 @@ namespace Helix.Features.Aggregates {
                 LifetimeRole.Alias, 
                 LifetimeOrigin.TempValue);
 
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, new LifetimeBounds(memLifetime));
+            var newLocal = new LocalInfo(memType, new LifetimeBounds(memLifetime));
+            flow.LocalValues = flow.LocalValues.SetItem(path, newLocal);
 
             foreach (var parent in parentLifetimes) {
                 flow.DataFlowGraph.AddAssignment(parent, memLifetime);

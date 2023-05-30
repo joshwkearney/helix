@@ -69,9 +69,9 @@ namespace Helix.Features.Aggregates {
             }
 
             var path = types.Scope.Append(this.signature.Name);
-            var syntax = new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Struct));
+            var named = new NominalType(path, NominalTypeKind.Struct);
 
-            types.SyntaxValues = types.SyntaxValues.SetItem(path, syntax);
+            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(named));
         }
 
         public void DeclareTypes(TypeFrame types) {
@@ -124,7 +124,7 @@ namespace Helix.Features.Aggregates {
 
             var mems = this.signature.Members
                 .Select(x => new CParameter() {
-                    Type = writer.ConvertType(x.Type),
+                    Type = writer.ConvertType(x.Type, types),
                     Name = x.Name
                 })
                 .ToArray();

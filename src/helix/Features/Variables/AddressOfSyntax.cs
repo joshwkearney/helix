@@ -65,7 +65,7 @@ namespace Helix.Features.Variables {
                     target.GenerateCode(types, writer),
                     writer.GetLifetime(this.GetLifetimes(types).ValueLifetime, types)
                 },
-                Type = writer.ConvertType(this.GetReturnType(types))
+                Type = writer.ConvertType(this.GetReturnType(types), types)
             };
         }
     }

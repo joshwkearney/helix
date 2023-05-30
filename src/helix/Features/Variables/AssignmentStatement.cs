@@ -152,9 +152,10 @@ namespace Helix.Features.Variables {
                 // value will not depend on future use of this variable
                 var newValue = targetBounds.ValueLifetime.IncrementVersion();
                 var newTargetBounds = targetBounds.WithValue(newValue);
+                var newLocal = new LocalInfo(new PointerType(assignType, true), newTargetBounds);
 
                 // Update this variable's value
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newValue.Path, newTargetBounds);
+                flow.LocalValues = flow.LocalValues.SetItem(newValue.Path, newLocal);
 
                 // Make sure the new value outlives its variable
                 flow.DataFlowGraph.AddStored(newValue, newTargetBounds.LocationLifetime);

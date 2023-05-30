@@ -186,28 +186,30 @@ namespace Helix.Features.FlowControl {
             TypeFrame falseFrame,
             TypeFrame flow) {
 
-            var modifiedLocals = trueFrame.LocalLifetimes
-                .Concat(falseFrame.LocalLifetimes)
-                .Where(x => !flow.LocalLifetimes.Contains(x))
+            var modifiedLocals = trueFrame.LocalValues
+                .Concat(falseFrame.LocalValues)
+                .Where(x => !flow.LocalValues.Contains(x))
                 .Select(x => x.Key)
-                .Where(flow.LocalLifetimes.ContainsKey)
+                .Where(flow.LocalValues.ContainsKey)
                 .ToArray();
 
             foreach (var varPath in modifiedLocals) {
-                var trueLifetime = trueFrame
-                    .LocalLifetimes
+                var parentType = flow.LocalValues[varPath].Type;
+
+                var trueLocal = trueFrame
+                    .LocalValues
                     .GetValueOrNone(varPath)
-                    .OrElse(() => new LifetimeBounds())
-                    .ValueLifetime;
+                    .OrElse(() => new LocalInfo(parentType));
 
-                var falseLifetime = falseFrame
-                    .LocalLifetimes
+                var falseLocal = falseFrame
+                    .LocalValues
                     .GetValueOrNone(varPath)
-                    .OrElse(() => new LifetimeBounds())
-                    .ValueLifetime;
+                    .OrElse(() => new LocalInfo(parentType));
 
-                var postLifetime = Lifetime.None;
+                var trueLifetime = trueLocal.Bounds.ValueLifetime;
+                var falseLifetime = falseLocal.Bounds.ValueLifetime;
 
+                Lifetime postLifetime;
                 if (trueLifetime.Version >= falseLifetime.Version || falseLifetime == Lifetime.None) {
                     postLifetime = trueLifetime.IncrementVersion();
                 }
@@ -218,8 +220,12 @@ namespace Helix.Features.FlowControl {
                 flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime);
                 flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime);
 
-                var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);
+                var newLocal = flow.LocalValues[varPath].WithBounds(new LifetimeBounds(postLifetime));
+                if (trueLocal.Type != falseLocal.Type) {
+                    newLocal = newLocal.WithType(parentType.GetMutationSupertype(flow));
+                }
+
+                flow.LocalValues = flow.LocalValues.SetItem(varPath, newLocal);
             }
         }
 
@@ -249,7 +255,7 @@ namespace Helix.Features.FlowControl {
             }
 
             var tempStat = new CVariableDeclaration() {
-                Type = writer.ConvertType(returnType),
+                Type = writer.ConvertType(returnType, types),
                 Name = tempName
             };
 

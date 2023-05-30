@@ -22,10 +22,9 @@ namespace Helix.Analysis {
         }
 
         public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
-            return types.SyntaxValues
+            return types.LocalValues
                 .GetValueOrNone(path)
-                .SelectMany(x => x.AsType(types))
-                .SelectMany(x => x.AsVariable(types))
+                .SelectMany(x => x.Type.AsVariable(types))
                 .TryGetValue(out type);
         }
 

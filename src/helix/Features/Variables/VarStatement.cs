@@ -87,24 +87,21 @@ namespace Helix {
                 throw TypeException.IdentifierDefined(this.Location, this.names[0]);
             }
 
-            var basePath = types.Scope.Append(this.names[0]);
+            var path = types.Scope.Append(this.names[0]);
             var varSig = new PointerType(assignType, this.isWritable);
 
-            types.NominalSignatures.Add(basePath, varSig);
+            types.NominalSignatures.Add(path, varSig);
 
             var result = new VarStatement(
                 this.Location,
-                basePath,
+                path,
                 assign,
                 this.isWritable);
-
-            // Put this variable's value in the main table
-            types.SyntaxValues = types.SyntaxValues.SetItem(basePath, result);
 
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(assign, types);
             result.SetPredicate(assign, types);
-            result.SetLifetimes(AnalyzeFlow(this.Location, assign, basePath, types), types);
+            result.SetLifetimes(AnalyzeFlow(this.Location, assign, path, types), types);
 
             return result.CheckTypes(types);
         }
@@ -133,8 +130,10 @@ namespace Helix {
 
             // Add this variable lifetimes to the current frame
             var bounds = new LifetimeBounds(valueLifetime, locationLifetime);
+            var named = new NominalType(path, NominalTypeKind.Variable);
+            var local = new LocalInfo(named, bounds);
 
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, bounds);
+            flow.LocalValues = flow.LocalValues.Add(path, local);
 
             // TODO: Fix this
             // HACK: Even though we're returning void, set the lifetime of this syntax
@@ -205,7 +204,6 @@ namespace Helix {
         }
 
         public Option<HelixType> AsType(TypeFrame types) {
-            //return new PointerType(this.assignSyntax.GetReturnType(types), this.isWritable);
             return new NominalType(this.path, NominalTypeKind.Variable);
         }
 
@@ -231,10 +229,10 @@ namespace Helix {
             return new CIntLiteral(0);
         }
 
-        private void GenerateStackAllocation(ICSyntax assign, TypeFrame flow, ICStatementWriter writer) {
+        private void GenerateStackAllocation(ICSyntax assign, TypeFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
-            var assignType = this.assignSyntax.GetReturnType(flow);
-            var cReturnType = writer.ConvertType(assignType);
+            var assignType = this.assignSyntax.GetReturnType(types);
+            var cReturnType = writer.ConvertType(assignType, types);
 
             var stat = new CVariableDeclaration() {
                 Type = cReturnType,
@@ -248,10 +246,10 @@ namespace Helix {
         }
 
         private void GenerateRegionAllocation(ICSyntax assign, ICSyntax allocLifetime,
-                                              TypeFrame flow, ICStatementWriter writer) {
+                                              TypeFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
-            var assignType = this.assignSyntax.GetReturnType(flow);
-            var cReturnType = writer.ConvertType(assignType);
+            var assignType = this.assignSyntax.GetReturnType(types);
+            var cReturnType = writer.ConvertType(assignType, types);
 
             writer.WriteStatement(new CVariableDeclaration() {
                 Name = name,
