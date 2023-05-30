@@ -208,3 +208,14 @@ func test3() as int* {
 
 	p.x;
 };
+
+// ###
+func test16(var B as bool) as int {
+	var x = 45;
+
+	if B then {
+		x = 89;
+	};
+
+	(x + 3) - 2;
+};

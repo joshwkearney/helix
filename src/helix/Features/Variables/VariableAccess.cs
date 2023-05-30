@@ -54,6 +54,10 @@ namespace Helix.Features.Variables {
                 return new VoidLiteral(this.Location).CheckTypes(types);
             }
 
+            if (types.LocalValues[path].Type.ToSyntax(this.Location).TryGetValue(out var syntax)) {
+                return syntax.CheckTypes(types);
+            }
+
             // See if we are accessing a variable
             if (types.TryGetVariable(path, out var type)) {
                 return new VariableAccessSyntax(this.Location, path, type).CheckTypes(types);

@@ -81,17 +81,20 @@ namespace Helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var targetType = target.GetReturnType(types).AsVariable(types).GetValue().InnerType;
+
+            var varSig = target.GetReturnType(types)
+                .AsVariable(types)
+                .GetValue()
+                .InnerType
+                .GetMutationSupertype(types);
 
             var assign = this.assign
                 .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(targetType, types);
-            
-            //if (assign.CanUnifyTo(targetType, types)) {
-            //    // Crap: We need lifetimes here
-            //    //types.SyntaxValues = types.SyntaxValues.SetItem()
-            //}
+                .ToRValue(types);
+
+            var assignType = assign.GetReturnType(types);
+
+            assign = assign.UnifyTo(varSig, types);
 
             var result = new AssignmentStatement(
                 this.Location,
@@ -101,20 +104,13 @@ namespace Helix.Features.Variables {
             result.SetReturnType(PrimitiveType.Void, types);
             result.SetCapturedVariables(target, assign, types);
             result.SetPredicate(target, assign, types);
-            result.SetLifetimes(AnalyzeFlow(this.Location, target, assign, types), types);
+            result.SetLifetimes(AnalyzeFlow(this.Location, target, assign, assignType, types), types);
 
             return result;
         }
 
         public static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree target, 
-                                                 ISyntaxTree assign, TypeFrame flow) {
-            var assignType = assign.GetReturnType(flow);
-
-            // Skip value types
-            if (assignType.IsValueType(flow)) {
-                return new LifetimeBounds();
-            }
-
+                                                 ISyntaxTree assign, HelixType assignType, TypeFrame flow) {
             var targetBounds = target.GetLifetimes(flow);
             var assignBounds = assign.GetLifetimes(flow);
 
@@ -145,7 +141,8 @@ namespace Helix.Features.Variables {
                 }
             }
 
-            if (targetBounds.ValueLifetime.Origin == LifetimeOrigin.LocalValue) {
+            var targetType = target.GetReturnType(flow);
+            if (targetType is NominalType nom && nom.Kind == NominalTypeKind.Variable) {
                 // Here we are storing into a known local variable, so we can replace its
                 // current value instead of adding more lifetimes to it. This is the
                 // best-case scenario because any lifetime inferences based on the previous

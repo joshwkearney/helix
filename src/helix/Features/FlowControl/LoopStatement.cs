@@ -124,35 +124,29 @@ namespace Helix.Features.FlowControl {
                     newLocal.Bounds.ValueLifetime, 
                     oldLocal.Bounds.ValueLifetime);
 
-                oldLocal = oldLocal.WithType(oldLocal.Type.GetMutationSupertype(flow));
-                flow.LocalValues = flow.LocalValues.SetItem(path, oldLocal);
-
-                //var roots = flow.GetMaximumRoots(newBounds.ValueLifetime);
+                var roots = flow.GetMaximumRoots(newLocal.Bounds.ValueLifetime);
 
                 // If the new value of this variable depends on a lifetime that was created
                 // inside the loop, we need to declare a new root so that nothing after the
-                //// loop uses code that is no longer in scope
-                //if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
-                //    var newRoot = new ValueLifetime(
-                //        oldBounds.ValueLifetime.Path,
-                //        LifetimeRole.Root,
-                //        LifetimeOrigin.TempValue,
-                //        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
+                // loop uses code that is no longer in scope
+                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
+                    var newRoot = new ValueLifetime(
+                        oldLocal.Bounds.ValueLifetime.Path,
+                        LifetimeRole.Root,
+                        LifetimeOrigin.TempValue,
+                        newLocal.Bounds.ValueLifetime.Version + 1);
 
-                //    flow.DataFlowGraph.AddStored(oldBounds.ValueLifetime, newRoot);
-                //    flow.DataFlowGraph.AddStored()
+                    flow.DataFlowGraph.AddStored(newLocal.Bounds.ValueLifetime, newRoot);
+                    flow.DataFlowGraph.AddStored(oldLocal.Bounds.ValueLifetime, newRoot);
 
-                //    // Add our new root to the list of acceptable roots
-                //    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
+                    // Add our new root to the list of acceptable roots
+                    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
 
-                //    oldBounds = oldBounds.WithValue(newRoot);
-                //    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newRoot.Path, oldBounds);
-                //}
-                //else {
-                // Add a dependency between the new lifetime and the old lifetime
-                // because things outside the loop may depend on things inside
-                // the loop, because it's a loop
-                //}
+                    oldLocal = new LocalInfo(oldLocal.Type, oldLocal.Bounds.WithValue(newRoot));
+                }
+
+                oldLocal = oldLocal.WithType(oldLocal.Type.GetMutationSupertype(flow));
+                flow.LocalValues = flow.LocalValues.SetItem(path, oldLocal);
             }
         }
 

@@ -220,10 +220,22 @@ namespace Helix.Features.FlowControl {
                 flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime);
                 flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime);
 
-                var newLocal = flow.LocalValues[varPath].WithBounds(new LifetimeBounds(postLifetime));
-                if (trueLocal.Type != falseLocal.Type) {
-                    newLocal = newLocal.WithType(parentType.GetMutationSupertype(flow));
+                var roots = flow.GetMaximumRoots(postLifetime);
+
+                // If the new value of this variable depends on a lifetime that was created
+                // inside the loop, we need to declare a new root so that nothing after the
+                // loop uses code that is no longer in scope
+                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
+                    postLifetime = new ValueLifetime(
+                        postLifetime.Path,
+                        LifetimeRole.Root,
+                        LifetimeOrigin.TempValue,
+                        postLifetime.Version + 1);
                 }
+
+                var newLocal = flow.LocalValues[varPath]
+                    .WithBounds(new LifetimeBounds(postLifetime))
+                    .WithType(parentType.GetMutationSupertype(flow));                
 
                 flow.LocalValues = flow.LocalValues.SetItem(varPath, newLocal);
             }

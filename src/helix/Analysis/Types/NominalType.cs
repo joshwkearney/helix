@@ -29,7 +29,7 @@ namespace Helix.Analysis.Types {
 
         public override HelixType GetMutationSupertype(TypeFrame types) {
             if (this.Kind == NominalTypeKind.Variable) {
-                return this.GetSignatureSupertype(types);
+                return this.GetSignatureSupertype(types).GetMutationSupertype(types);
             }
             else {
                 return this;

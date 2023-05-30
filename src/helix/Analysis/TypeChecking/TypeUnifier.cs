@@ -123,8 +123,12 @@ namespace Helix.Analysis.TypeChecking {
 
         private static UnificationResult TryUnifyFromNominalType(NominalType type, HelixType second, TypeFrame types) {
             if (type.Kind == NominalTypeKind.Variable) {
-                if (type.GetSignatureSupertype(types) == second) {
-                    return UnificationResult.Pun(second);
+                var typeSig = type.AsVariable(types).GetValue();
+
+                if (second is PointerType secondPtr) {
+                    if (TryUnify(typeSig.InnerType, secondPtr.InnerType, types).Kind == UnificationKind.Pun) {
+                        return UnificationResult.Pun(second);
+                    }
                 }
             }
 
