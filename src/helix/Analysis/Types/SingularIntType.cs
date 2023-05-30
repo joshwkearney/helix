@@ -23,7 +23,7 @@ namespace Helix.Analysis.Types {
             return PrimitiveType.Int;
         }
 
-        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc) {
+        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             return new IntLiteral(loc, this.Value);
         }       
 

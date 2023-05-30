@@ -9,6 +9,7 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Features.Functions;
+using System.IO;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -52,10 +53,6 @@ namespace Helix.Features.Variables {
 
             if (path == new IdentifierPath("void")) {
                 return new VoidLiteral(this.Location).CheckTypes(types);
-            }
-
-            if (types.Locals[path].Type.ToSyntax(this.Location).TryGetValue(out var syntax)) {
-                return syntax.CheckTypes(types);
             }
 
             // See if we are accessing a variable
@@ -138,7 +135,18 @@ namespace Helix.Features.Variables {
             return result;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            var hasSingularValue = types.Locals[this.VariablePath].Type
+                .AsVariable(types)
+                .SelectMany(x => x.InnerType.ToSyntax(this.Location, types))
+                .TryGetValue(out var singularSyntax);
+
+            if (hasSingularValue) {
+                return singularSyntax.CheckTypes(types);
+            }
+
+            return this;
+        }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             ICSyntax result = new CVariableLiteral(writer.GetVariableName(this.VariablePath));

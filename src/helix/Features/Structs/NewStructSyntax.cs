@@ -186,8 +186,8 @@ namespace Helix.Features.Aggregates {
                 var bounds = new LifetimeBounds(valueLifetime);
 
                 flow.Locals = flow.Locals.SetItem(path, new LocalInfo(type, bounds));
-                flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime);
-                flow.DataFlowGraph.AddMember(rootLifetime, valueLifetime);
+                flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime, type);
+                flow.DataFlowGraph.AddMember(rootLifetime, valueLifetime, type);
             }
 
             return new LifetimeBounds(rootLifetime);

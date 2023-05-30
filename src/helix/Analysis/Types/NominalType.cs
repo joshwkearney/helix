@@ -40,8 +40,16 @@ namespace Helix.Analysis.Types {
             return types.NominalSignatures[this.Path].GetSignatureSupertype(types);
         }
 
-        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame types) {
-            return types.NominalSignatures[this.Path].GetContainedTypes(types);
+        public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame types) {
+            yield return this;
+
+            foreach (var access in types.NominalSignatures[this.Path].GetAccessibleTypes(types)) {
+                yield return access;
+            }
+        }
+
+        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+            return types.NominalSignatures[this.Path].ToSyntax(loc, types);
         }
 
         public override string ToString() {

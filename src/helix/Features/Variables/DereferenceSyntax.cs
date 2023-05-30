@@ -161,7 +161,10 @@ namespace Helix.Features.Variables {
             flow.ValidRoots = flow.ValidRoots.Add(derefValueLifetime);
 
             // The lifetime that is stored in the pointer must outlive the pointer itself
-            flow.DataFlowGraph.AddStored(derefValueLifetime, pointerLifetime.ValueLifetime);
+            flow.DataFlowGraph.AddStored(
+                derefValueLifetime, 
+                pointerLifetime.ValueLifetime, 
+                pointerType.InnerType);
 
             return new LifetimeBounds(derefValueLifetime);
         }
@@ -233,30 +236,28 @@ namespace Helix.Features.Variables {
             // If we are dereferencing a pointer and the following three conditions hold,
             // we don't have to make up a new lifetime: 1) We're dereferencing a local variable
             // 2) That local variable is storing the location of another variable
-            if (AnalyzeLocalDeref(targetBounds, flow, out var bounds)) {
-                return bounds;
-            }
+            //if (AnalyzeLocalDeref(targetBounds, flow, out var bounds)) {
+            //    return bounds;
+            //}
 
-            var derefValueLifetime = new ValueLifetime(
-                    tempPath,
-                    LifetimeRole.Alias,
-                    LifetimeOrigin.TempValue);
+            //var derefValueLifetime = new ValueLifetime(
+            //        tempPath,
+            //        LifetimeRole.Alias,
+            //        LifetimeOrigin.TempValue);
 
-            var precursors = flow.DataFlowGraph
-                .GetPrecursorLifetimes(targetBounds.ValueLifetime)
-                .ToArray();
+            //var precursors = flow.DataFlowGraph
+            //    .GetPrecursorLifetimes(targetBounds.ValueLifetime)
+            //    .Append(targetBounds.ValueLifetime)
+            //    .ToArray();
 
-            // We could potentially be storing into anything upstream of our target
-            // with pointer aliasing, so assume that is the case and add the correct
-            // dependencies
-            foreach (var root in precursors) {
-                flow.DataFlowGraph.AddStored(derefValueLifetime, root);
-            }
+            //// We could potentially be storing into anything upstream of our target
+            //// with pointer aliasing, so assume that is the case and add the correct
+            //// dependencies
+            //foreach (var root in precursors) {
+            //    //flow.DataFlowGraph.AddStored(derefValueLifetime, root, target.GetReturnType(flow));
+            //}
 
-            // The lifetime that is stored in the pointer must outlive the pointer itself
-            flow.DataFlowGraph.AddStored(derefValueLifetime, targetBounds.ValueLifetime);
-
-            return new LifetimeBounds(derefValueLifetime, targetBounds.ValueLifetime);
+            return new LifetimeBounds(Lifetime.None, targetBounds.ValueLifetime);
         }
 
         private static bool AnalyzeLocalDeref(LifetimeBounds targetBounds, TypeFrame flow, out LifetimeBounds bounds) {

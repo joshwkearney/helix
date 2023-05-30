@@ -24,7 +24,7 @@ namespace Helix.Analysis.Types {
             return this;
         }
 
-        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame frame) {
+        public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame frame) {
             yield return this;
             yield return this.InnerType;
         }

@@ -165,8 +165,15 @@ namespace Helix.Features.FlowControl {
                 role, 
                 LifetimeOrigin.TempValue);
 
-            flow.DataFlowGraph.AddAssignment(valueLifetime, ifTrueBounds.ValueLifetime);
-            flow.DataFlowGraph.AddAssignment(valueLifetime, ifFalseBounds.ValueLifetime);
+            flow.DataFlowGraph.AddAssignment(
+                valueLifetime, 
+                ifTrueBounds.ValueLifetime, 
+                iftrue.GetReturnType(flow));
+
+            flow.DataFlowGraph.AddAssignment(
+                valueLifetime, 
+                ifFalseBounds.ValueLifetime,
+                iffalse.GetReturnType(flow));
 
             if (newRoots) {
                 flow.ValidRoots = flow.ValidRoots.Add(valueLifetime);
@@ -217,8 +224,8 @@ namespace Helix.Features.FlowControl {
                     postLifetime = falseLifetime.IncrementVersion();
                 }
 
-                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime);
-                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime);
+                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime, trueLocal.Type);
+                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime, falseLocal.Type);
 
                 var roots = flow.GetMaximumRoots(postLifetime);
 

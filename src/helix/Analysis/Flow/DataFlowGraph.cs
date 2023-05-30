@@ -1,4 +1,5 @@
-﻿using Helix.Analysis.Types;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Analysis.Types;
 using Helix.Collections;
 using System.Collections.Immutable;
 
@@ -8,7 +9,7 @@ namespace Helix.Analysis.Flow {
             Dependence, Equality, Member
         }
 
-        private record Edge(Lifetime Lifetime, NodeRelationship EdgeKind) { }
+        private record Edge(Lifetime Lifetime, NodeRelationship EdgeKind, HelixType type) { }
 
         private readonly IDictionary<Lifetime, ISet<Edge>> outlivesGraph;
         private readonly IDictionary<Lifetime, ISet<Edge>> reverseOutlivesGraph;
@@ -30,34 +31,34 @@ namespace Helix.Analysis.Flow {
             }
         }
 
-        public void AddAssignment(Lifetime lifetime1, Lifetime lifetime2) {
+        public void AddAssignment(Lifetime lifetime1, Lifetime lifetime2, HelixType type) {
             if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None || lifetime1 == lifetime2) {
                 return;
             }
 
-            this.outlivesGraph[lifetime1].Add(new Edge(lifetime2, NodeRelationship.Equality));
-            this.outlivesGraph[lifetime2].Add(new Edge(lifetime1, NodeRelationship.Equality));
+            this.outlivesGraph[lifetime1].Add(new Edge(lifetime2, NodeRelationship.Equality, type));
+            this.outlivesGraph[lifetime2].Add(new Edge(lifetime1, NodeRelationship.Equality, type));
 
-            this.reverseOutlivesGraph[lifetime1].Add(new Edge(lifetime2, NodeRelationship.Equality));
-            this.reverseOutlivesGraph[lifetime2].Add(new Edge(lifetime1, NodeRelationship.Equality));
+            this.reverseOutlivesGraph[lifetime1].Add(new Edge(lifetime2, NodeRelationship.Equality, type));
+            this.reverseOutlivesGraph[lifetime2].Add(new Edge(lifetime1, NodeRelationship.Equality, type));
         }
 
-        public void AddStored(Lifetime lifetime1, Lifetime lifetime2) {
+        public void AddStored(Lifetime lifetime1, Lifetime lifetime2, HelixType type) {
             if (lifetime1 == Lifetime.None || lifetime2 == Lifetime.None || lifetime1 == lifetime2) {
                 return;
             }
 
-            this.outlivesGraph[lifetime1].Add(new Edge(lifetime2, NodeRelationship.Dependence));
-            this.reverseOutlivesGraph[lifetime2].Add(new Edge(lifetime1, NodeRelationship.Dependence));
+            this.outlivesGraph[lifetime1].Add(new Edge(lifetime2, NodeRelationship.Dependence, type));
+            this.reverseOutlivesGraph[lifetime2].Add(new Edge(lifetime1, NodeRelationship.Dependence, type));
         }
 
-        public void AddMember(Lifetime parent, Lifetime member) {
+        public void AddMember(Lifetime parent, Lifetime member, HelixType memType) {
             if (parent == Lifetime.None || member == Lifetime.None || parent == member) {
                 return;
             }
 
-            this.outlivesGraph[parent].Add(new Edge(member, NodeRelationship.Member));
-            this.reverseOutlivesGraph[member].Add(new Edge(parent, NodeRelationship.Member));
+            this.outlivesGraph[parent].Add(new Edge(member, NodeRelationship.Member, memType));
+            this.reverseOutlivesGraph[member].Add(new Edge(parent, NodeRelationship.Member, memType));
         }
 
 
@@ -73,6 +74,22 @@ namespace Helix.Analysis.Flow {
             static bool canFollow(Edge edge) => false
                 || edge.EdgeKind == NodeRelationship.Equality
                 || edge.EdgeKind == NodeRelationship.Dependence;
+
+            return TraverseGraph(time, this.reverseOutlivesGraph, canFollow);
+        }
+
+        public IEnumerable<Lifetime> GetAliasedLifetimes(Lifetime time, HelixType type, TypeFrame types) {
+            bool canFollow(Edge edge) {
+                var goodEdge = false
+                    || edge.EdgeKind == NodeRelationship.Equality
+                    || edge.EdgeKind == NodeRelationship.Dependence;
+
+                var goodType = edge.type
+                    .GetAccessibleTypes(types)
+                    .Any(x => x.CanUnifyTo(type, types));
+
+                return goodEdge && goodType;
+            }
 
             return TraverseGraph(time, this.reverseOutlivesGraph, canFollow);
         }

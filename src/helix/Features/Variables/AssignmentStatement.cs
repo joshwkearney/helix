@@ -9,6 +9,7 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Collections;
+using System.IO;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -142,29 +143,74 @@ namespace Helix.Features.Variables {
             }
 
             var targetType = target.GetReturnType(flow);
+
             if (targetType is NominalType nom && nom.Kind == NominalTypeKind.Variable) {
-                // Here we are storing into a known local variable, so we can replace its
-                // current value instead of adding more lifetimes to it. This is the
-                // best-case scenario because any lifetime inferences based on the previous
-                // value will not depend on future use of this variable
-                var newValue = targetBounds.ValueLifetime.IncrementVersion();
-                var newTargetBounds = targetBounds.WithValue(newValue);
-                var newLocal = new LocalInfo(new PointerType(assignType, true), newTargetBounds);
-
-                // Update this variable's value
-                flow.Locals = flow.Locals.SetItem(newValue.Path, newLocal);
-
-                // Make sure the new value outlives its variable
-                flow.DataFlowGraph.AddStored(newValue, newTargetBounds.LocationLifetime);
-
-                targetBounds = newTargetBounds;
+                AnalyzeLocalAssignment(nom.Path, assignType, assignLifetime, flow);
+            }
+            else {
+                AnalyzeAliasedAssignment(targetBounds.LocationLifetime, targetType, assignLifetime, assignType, flow);
             }
 
-            // Add dependencies between our new target and the assignment lifetimes
-            flow.DataFlowGraph.AddStored(assignLifetime, targetBounds.LocationLifetime);
-            flow.DataFlowGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime);
-
             return new LifetimeBounds();
+        }
+
+        private static void AnalyzeLocalAssignment(IdentifierPath path, HelixType assignType, 
+                                                   Lifetime assignLifetime, TypeFrame flow) {
+            // Here we are storing into a known local variable, so we can replace its
+            // current value instead of adding more lifetimes to it. This is the
+            // best-case scenario because any lifetime inferences based on the previous
+            // value will not depend on future use of this variable
+            var newValueLifetime = flow.Locals[path].Bounds.ValueLifetime.IncrementVersion();
+            var newTargetBounds = flow.Locals[path].Bounds.WithValue(newValueLifetime);
+            var newLocal = new LocalInfo(new PointerType(assignType, true), newTargetBounds);
+
+            // Update this variable's value
+            flow.Locals = flow.Locals.SetItem(newValueLifetime.Path, newLocal);
+
+            // Make sure the new value outlives its variable
+            flow.DataFlowGraph.AddStored(newValueLifetime, newTargetBounds.LocationLifetime, assignType);
+
+            // Add dependencies between our new target and the assignment lifetimes
+            flow.DataFlowGraph.AddStored(assignLifetime, newTargetBounds.LocationLifetime, assignType);
+            flow.DataFlowGraph.AddAssignment(assignLifetime, newTargetBounds.ValueLifetime, assignType);
+        }
+
+        private static void AnalyzeAliasedAssignment(
+            Lifetime targetLifetime, 
+            HelixType targetType,
+            Lifetime assignLifetime,
+            HelixType assignType, 
+            TypeFrame flow) {
+
+            var aliasedLifetimes = flow.DataFlowGraph.GetAliasedLifetimes(
+                targetLifetime, 
+                targetType.GetSignatureSupertype(flow), 
+                flow);
+
+            var aliasedLocals = aliasedLifetimes
+                .Where(x => x.Origin == LifetimeOrigin.LocalLocation)
+                .Select(x => x.Path)
+                .ToArray();
+
+            foreach (var path in aliasedLocals) {
+                var local = flow.Locals[path];
+                local = local.WithType(local.Type.GetMutationSupertype(flow));
+
+                flow.Locals = flow.Locals.SetItem(path, local);
+
+                flow.DataFlowGraph.AddAssignment(
+                    assignLifetime, 
+                    local.Bounds.ValueLifetime, 
+                    assignType);
+            }
+
+            foreach (var aliased in aliasedLifetimes) {
+                // Add dependencies between our new target and the assignment lifetimes
+                flow.DataFlowGraph.AddStored(
+                    assignLifetime, 
+                    aliased, 
+                    assignType);
+            }
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {

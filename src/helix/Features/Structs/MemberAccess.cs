@@ -147,7 +147,7 @@ namespace Helix.Features.Aggregates {
             flow.Locals = flow.Locals.SetItem(path, newLocal);
 
             foreach (var parent in parentLifetimes) {
-                flow.DataFlowGraph.AddAssignment(parent, memLifetime);
+                flow.DataFlowGraph.AddAssignment(parent, memLifetime, memType);
             }
 
             return new LifetimeBounds(memLifetime);

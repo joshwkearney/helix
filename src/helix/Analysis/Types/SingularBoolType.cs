@@ -28,7 +28,7 @@ namespace Helix.Analysis.Types {
             this.Value = value;
         }
 
-        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc) {
+        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             return new BoolLiteral(loc, this.Value);
         }      
 

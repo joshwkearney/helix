@@ -126,7 +126,11 @@ namespace Helix.Features.Arrays {
 
             foreach (var arg in args) {
                 var valueLifetime = arg.GetLifetimes(flow).ValueLifetime;
-                flow.DataFlowGraph.AddStored(valueLifetime, arrayLifetime);
+
+                flow.DataFlowGraph.AddStored(
+                    valueLifetime, 
+                    arrayLifetime, 
+                    arg.GetReturnType(flow));
             }
 
             return new LifetimeBounds(arrayLifetime);

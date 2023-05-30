@@ -87,7 +87,7 @@ namespace Helix.Features.FlowControl {
                 var newBounds = local.Bounds.WithValue(newValue);
                 var newLocal = local.WithBounds(newBounds);
 
-                types.DataFlowGraph.AddStored(local.Bounds.ValueLifetime, newValue);
+                types.DataFlowGraph.AddStored(local.Bounds.ValueLifetime, newValue, local.Type);
 
                 types.Locals = types.Locals.SetItem(path, newLocal);
             }
@@ -121,7 +121,8 @@ namespace Helix.Features.FlowControl {
 
                 flow.DataFlowGraph.AddAssignment(
                     newLocal.Bounds.ValueLifetime, 
-                    oldLocal.Bounds.ValueLifetime);
+                    oldLocal.Bounds.ValueLifetime,
+                    newLocal.Type);
 
                 var roots = flow.GetMaximumRoots(newLocal.Bounds.ValueLifetime);
 
@@ -135,8 +136,8 @@ namespace Helix.Features.FlowControl {
                         LifetimeOrigin.TempValue,
                         newLocal.Bounds.ValueLifetime.Version + 1);
 
-                    flow.DataFlowGraph.AddStored(newLocal.Bounds.ValueLifetime, newRoot);
-                    flow.DataFlowGraph.AddStored(oldLocal.Bounds.ValueLifetime, newRoot);
+                    flow.DataFlowGraph.AddStored(newLocal.Bounds.ValueLifetime, newRoot, newLocal.Type);
+                    flow.DataFlowGraph.AddStored(oldLocal.Bounds.ValueLifetime, newRoot, oldLocal.Type);
 
                     // Add our new root to the list of acceptable roots
                     flow.ValidRoots = flow.ValidRoots.Add(newRoot);

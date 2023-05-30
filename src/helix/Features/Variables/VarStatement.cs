@@ -122,10 +122,14 @@ namespace Helix {
             // variable's value
             flow.DataFlowGraph.AddAssignment(
                 assignBounds.ValueLifetime,
-                valueLifetime);
+                valueLifetime,
+                assign.GetReturnType(flow));
 
             // The value of a variable must outlive its location
-            flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime);
+            flow.DataFlowGraph.AddStored(
+                valueLifetime, 
+                locationLifetime, 
+                assign.GetReturnType(flow));
 
             // Add this variable lifetimes to the current frame
             var bounds = new LifetimeBounds(valueLifetime, locationLifetime);

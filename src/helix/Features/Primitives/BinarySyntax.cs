@@ -294,7 +294,7 @@ namespace Helix.Features.Primitives {
                     throw new Exception();
             }
 
-            var result = returnType.ToSyntax(this.Location).GetValue();
+            var result = returnType.ToSyntax(this.Location, types).GetValue();
 
             SyntaxTagBuilder.AtFrame(types)
                 // .WithChildren(left, right) <-- Add this back??
@@ -371,7 +371,7 @@ namespace Helix.Features.Primitives {
             }
 
             var returnType = new SingularBoolType(value, pred);
-            var result = returnType.ToSyntax(this.Location).GetValue();
+            var result = returnType.ToSyntax(this.Location, types).GetValue();
 
             SyntaxTagBuilder.AtFrame(types)
                 .WithReturnType(returnType)

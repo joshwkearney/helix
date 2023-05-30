@@ -48,11 +48,11 @@ namespace Helix.Analysis.Types {
 
         public abstract HelixType GetSignatureSupertype(TypeFrame types);
 
-        public virtual Option<ISyntaxTree> ToSyntax(TokenLocation loc) {
+        public virtual Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             return Option.None;
         }
 
-        public virtual IEnumerable<HelixType> GetContainedTypes(TypeFrame frame) {
+        public virtual IEnumerable<HelixType> GetAccessibleTypes(TypeFrame frame) {
             yield return this;
         }
 
