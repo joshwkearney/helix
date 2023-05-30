@@ -70,7 +70,7 @@ namespace Helix.Features.Arrays {
 
             var adapter = new ArrayToPointerAdapter(arrayType, target, index);
 
-            var deref = new DereferenceSyntax(
+            var deref = new DereferenceParseSyntax(
                 this.Location,
                 adapter);
 
