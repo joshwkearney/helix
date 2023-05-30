@@ -71,9 +71,6 @@ namespace Helix {
         public ISyntaxTree CheckTypes(TypeFrame types) {
             // Type check the assignment value
             var assign = this.assign.CheckTypes(types).ToRValue(types);
-            if (this.isWritable) {
-                assign = assign.WithMutationType(types);
-            }
 
             // If this is a compound assignment, check if we have the right
             // number of names and then recurse

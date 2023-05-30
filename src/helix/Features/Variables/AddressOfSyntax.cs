@@ -31,8 +31,6 @@ namespace Helix.Features.Variables {
             var varType = target.GetReturnType(types);
             var result = new AddressOfSyntax(Location, target);
 
-            target = target.UnifyTo(varSig, types);
-
             var capturedVars = target.GetCapturedVariables(types)
                 .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, x.Signature))
                 .ToArray();
