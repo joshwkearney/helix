@@ -52,21 +52,27 @@ namespace Helix.Features.Unions {
             var varSig = new PointerType(this.UnionMember.Type, this.UnionMember.IsWritable && this.ShadowedType.IsWritable);
             var path = types.Scope.Append(this.Path);
 
-            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(varSig));
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(varSig));
             types.NominalSignatures.Add(path, varSig);
 
             var result = new FlowVarStatement(
-
                 this.Location, 
                 this.UnionMember,
                 this.ShadowedPath, 
                 this.ShadowedType, 
                 path);
 
-            result.SetReturnType(PrimitiveType.Void, types);
-            result.SetCapturedVariables(this.ShadowedPath, VariableCaptureKind.LocationCapture, this.ShadowedType, types);
-            result.SetPredicate(types);
-            result.SetLifetimes(AnalyzeFlow(this.ShadowedPath, path, types), types);
+            var cap = new VariableCapture(
+                this.ShadowedPath, 
+                VariableCaptureKind.LocationCapture, 
+                this.ShadowedType);
+
+            var bounds = AnalyzeFlow(this.ShadowedPath, path, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithCapturedVariables(cap)
+                .WithLifetimes(bounds)
+                .BuildFor(result);
 
             return result;
         }
@@ -76,8 +82,8 @@ namespace Helix.Features.Unions {
         public static LifetimeBounds AnalyzeFlow(IdentifierPath shadowedPath, IdentifierPath newPath, 
                                                  TypeFrame flow) {
 
-            var shadowedBounds = flow.LocalValues[shadowedPath];
-            flow.LocalValues = flow.LocalValues.SetItem(newPath, shadowedBounds);
+            var shadowedBounds = flow.Locals[shadowedPath];
+            flow.Locals = flow.Locals.SetItem(newPath, shadowedBounds);
 
             return new LifetimeBounds();
         }

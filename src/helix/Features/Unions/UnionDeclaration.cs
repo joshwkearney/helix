@@ -71,7 +71,7 @@ namespace Helix.Features.Aggregates {
             var path = types.Scope.Append(this.signature.Name);
             var named = new NominalType(path, NominalTypeKind.Union);
 
-            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(named));
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
         }
 
         public void DeclareTypes(TypeFrame types) {

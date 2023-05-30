@@ -35,10 +35,14 @@ namespace Helix.Features.Variables {
                 .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, x.Signature))
                 .ToArray();
 
-            result.SetReturnType(varType, types);
-            result.SetCapturedVariables(capturedVars, types);
-            result.SetPredicate(target, types);
-            result.SetLifetimes(AnalyzeFlow(this.Location, target, types), types);
+            var bounds = AnalyzeFlow(this.Location, target, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(target)
+                .WithReturnType(varType)
+                .WithLifetimes(bounds)
+                .WithCapturedVariables(capturedVars)
+                .BuildFor(result);
 
             return result;
         }

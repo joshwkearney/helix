@@ -82,13 +82,15 @@ namespace Helix.Features.FlowControl {
             var result = new BlockSyntax(this.Location, stats, this.Path);
             var returnType = stats
                 .LastOrNone()
-                .Select(x => bodyTypes.ReturnTypes[x])
+                .Select(x => x.GetReturnType(bodyTypes))
                 .OrElse(() => PrimitiveType.Void);
 
-            result.SetReturnType(returnType, bodyTypes);
-            result.SetCapturedVariables(stats, bodyTypes);
-            result.SetPredicate(predicate, bodyTypes);
-            result.SetLifetimes(AnalyzeFlow(stats, bodyTypes), bodyTypes);
+            SyntaxTagBuilder.AtFrame(bodyTypes)
+                .WithChildren(stats)
+                .WithReturnType(returnType)
+                .WithPredicate(predicate)
+                .WithLifetimes(AnalyzeFlow(stats, bodyTypes))
+                .BuildFor(result);
 
             MutateLocals(bodyTypes, types);
 
@@ -130,15 +132,15 @@ namespace Helix.Features.FlowControl {
                 return;
             }
 
-            var modifiedLocalLifetimes = bodyTypes.LocalValues
-                .Where(x => !types.LocalValues.Contains(x))
+            var modifiedLocalLifetimes = bodyTypes.Locals
+                .Where(x => !types.Locals.Contains(x))
                 .Select(x => x.Key)
-                .Where(types.LocalValues.ContainsKey)
+                .Where(types.Locals.ContainsKey)
                 .ToArray();
 
             foreach (var path in modifiedLocalLifetimes) {
-                var oldBounds = types.LocalValues[path];
-                var newBounds = bodyTypes.LocalValues[path];
+                var oldBounds = types.Locals[path];
+                var newBounds = bodyTypes.Locals[path];
 
                // var roots = types.GetMaximumRoots(newBounds.ValueLifetime);
 
@@ -159,7 +161,7 @@ namespace Helix.Features.FlowControl {
                 //}
 
                 // Replace the current value with our root
-                types.LocalValues = types.LocalValues.SetItem(path, newBounds);
+                types.Locals = types.Locals.SetItem(path, newBounds);
             }
         }
 

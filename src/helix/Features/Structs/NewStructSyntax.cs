@@ -153,10 +153,13 @@ namespace Helix.Features.Aggregates {
                 this.path,
                 true);
 
-            result.SetReturnType(this.structType, types);
-            result.SetCapturedVariables(allValues, types);
-            result.SetPredicate(allValues, types);
-            result.SetLifetimes(AnalyzeFlow(this.path, allNames, allValues, types), types);
+            var bounds = AnalyzeFlow(this.path, allNames, allValues, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(allValues)
+                .WithReturnType(this.structType)
+                .WithLifetimes(bounds)
+                .BuildFor(result);
 
             return result;
         }
@@ -182,7 +185,7 @@ namespace Helix.Features.Aggregates {
                 var assignLifetime = value.GetLifetimes(flow).ValueLifetime;
                 var bounds = new LifetimeBounds(valueLifetime);
 
-                flow.LocalValues = flow.LocalValues.SetItem(path, new LocalInfo(type, bounds));
+                flow.Locals = flow.Locals.SetItem(path, new LocalInfo(type, bounds));
                 flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime);
                 flow.DataFlowGraph.AddMember(rootLifetime, valueLifetime);
             }
@@ -204,7 +207,7 @@ namespace Helix.Features.Aggregates {
             }
 
             return new CCompoundExpression() {
-                Type = writer.ConvertType(types.ReturnTypes[this], types),
+                Type = writer.ConvertType(this.GetReturnType(types), types),
                 MemberNames = this.names,
                 Arguments = memValues,
             };

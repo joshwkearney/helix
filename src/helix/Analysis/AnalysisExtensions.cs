@@ -3,13 +3,14 @@ using Helix.Analysis.Types;
 using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
+using Helix.Analysis.Predicates;
 
 namespace Helix.Analysis {
     public static class AnalysisExtensions {
         public static bool TryResolvePath(this TypeFrame types, IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
                 path = scope.Append(name);
-                if (types.LocalValues.ContainsKey(path)) {
+                if (types.Locals.ContainsKey(path)) {
                     return true;
                 }
 
@@ -37,17 +38,13 @@ namespace Helix.Analysis {
                 return false;
             }
 
-            if (!types.LocalValues.TryGetValue(path, out var info)) {
+            if (!types.Locals.TryGetValue(path, out var info)) {
                 value = null;
                 return false;
             }
 
             value = info.Type;
             return true;
-        }
-
-        public static HelixType ResolveName(this TypeFrame types, IdentifierPath scope, string name) {
-            return types.LocalValues[types.ResolvePath(scope, name)].Type;
         }
 
         public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {
@@ -121,15 +118,40 @@ namespace Helix.Analysis {
         }
 
         public static bool IsTypeChecked(this ISyntaxTree syntax, TypeFrame types) {
-            return types.ReturnTypes.ContainsKey(syntax);
+            return types.SyntaxTags.ContainsKey(syntax);
         }
 
         public static HelixType GetReturnType(this ISyntaxTree syntax, TypeFrame types) {
-            return types.ReturnTypes[syntax];
+            return types.SyntaxTags[syntax].ReturnType;
         }
 
         public static IReadOnlyList<VariableCapture> GetCapturedVariables(this ISyntaxTree syntax, TypeFrame types) {
-            return types.CapturedVariables[syntax];
+            return types.SyntaxTags[syntax].CapturedVariables;
+        }
+
+        public static PointerType AssertIsPointer(this ISyntaxTree syntax, TypeFrame types) {
+            var type = syntax.GetReturnType(types);
+
+            if (!type.AsVariable(types).TryGetValue(out var pointer)) {
+                throw TypeException.ExpectedVariableType(syntax.Location, type);
+            }
+
+            return pointer;
+        }
+
+        public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
+            return types.Locals
+                .GetValueOrNone(path)
+                .SelectMany(x => x.Type.AsVariable(types))
+                .TryGetValue(out type);
+        }
+
+        public static ISyntaxPredicate GetPredicate(this ISyntaxTree syntax, TypeFrame types) {
+            return types.SyntaxTags[syntax].Predicate;
+        }
+
+        public static LifetimeBounds GetLifetimes(this ISyntaxTree syntax, TypeFrame flow) {
+            return flow.SyntaxTags[syntax].Bounds;
         }
 
         public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, TypeFrame types) {

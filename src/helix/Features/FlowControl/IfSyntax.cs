@@ -84,7 +84,7 @@ namespace Helix.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (types.ReturnTypes.ContainsKey(this)) {
+            if (this.IsTypeChecked(types)) {
                 return this;
             }
 
@@ -116,7 +116,7 @@ namespace Helix.Features.FlowControl {
             // Update any variables modified in either branch
             MutateLocals(iftrueTypes, iffalseTypes, types);
 
-            var resultType = types.ReturnTypes[iftrue];
+            var resultType = iftrue.GetReturnType(types);
 
             var result = new IfSyntax(
                 this.Location,
@@ -125,21 +125,21 @@ namespace Helix.Features.FlowControl {
                 iffalse,
                 types.Scope.Append(name));
 
-            result.SetReturnType(resultType, types);
-            result.SetCapturedVariables(cond, iftrue, iffalse, types);
-            result.SetPredicate(iftrue, iffalse, types);
-            result.SetLifetimes(AnalyzeFlow(this.path, iftrue, iffalse, types), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(cond, iftrue, iffalse)
+                .WithReturnType(resultType)
+                .WithLifetimes(AnalyzeFlow(this.path, iftrue, iffalse, types))
+                .BuildFor(result);
 
             return result;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
-            if (types.ReturnTypes.ContainsKey(this)) {
-                return this;
-            }
-            else {
+            if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
+
+            return this;
         }
 
         private static LifetimeBounds AnalyzeFlow(IdentifierPath path, ISyntaxTree iftrue, 
@@ -169,7 +169,7 @@ namespace Helix.Features.FlowControl {
             flow.DataFlowGraph.AddAssignment(valueLifetime, ifFalseBounds.ValueLifetime);
 
             if (newRoots) {
-                flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
+                flow.ValidRoots = flow.ValidRoots.Add(valueLifetime);
             }
 
             return new LifetimeBounds(valueLifetime);
@@ -178,7 +178,7 @@ namespace Helix.Features.FlowControl {
         private static bool HasNewRoots(Lifetime lifetime, TypeFrame flow) {
             var roots = flow.GetMaximumRoots(lifetime);
 
-            return roots.Any(x => !flow.LifetimeRoots.Contains(x));
+            return roots.Any(x => !flow.ValidRoots.Contains(x));
         }
 
         private static void MutateLocals(
@@ -186,23 +186,23 @@ namespace Helix.Features.FlowControl {
             TypeFrame falseFrame,
             TypeFrame flow) {
 
-            var modifiedLocals = trueFrame.LocalValues
-                .Concat(falseFrame.LocalValues)
-                .Where(x => !flow.LocalValues.Contains(x))
+            var modifiedLocals = trueFrame.Locals
+                .Concat(falseFrame.Locals)
+                .Where(x => !flow.Locals.Contains(x))
                 .Select(x => x.Key)
-                .Where(flow.LocalValues.ContainsKey)
+                .Where(flow.Locals.ContainsKey)
                 .ToArray();
 
             foreach (var varPath in modifiedLocals) {
-                var parentType = flow.LocalValues[varPath].Type;
+                var parentType = flow.Locals[varPath].Type;
 
                 var trueLocal = trueFrame
-                    .LocalValues
+                    .Locals
                     .GetValueOrNone(varPath)
                     .OrElse(() => new LocalInfo(parentType));
 
                 var falseLocal = falseFrame
-                    .LocalValues
+                    .Locals
                     .GetValueOrNone(varPath)
                     .OrElse(() => new LocalInfo(parentType));
 
@@ -225,7 +225,7 @@ namespace Helix.Features.FlowControl {
                 // If the new value of this variable depends on a lifetime that was created
                 // inside the loop, we need to declare a new root so that nothing after the
                 // loop uses code that is no longer in scope
-                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
+                if (roots.Any(x => !flow.ValidRoots.Contains(x))) {
                     postLifetime = new ValueLifetime(
                         postLifetime.Path,
                         LifetimeRole.Root,
@@ -233,11 +233,11 @@ namespace Helix.Features.FlowControl {
                         postLifetime.Version + 1);
                 }
 
-                var newLocal = flow.LocalValues[varPath]
+                var newLocal = flow.Locals[varPath]
                     .WithBounds(new LifetimeBounds(postLifetime))
                     .WithType(parentType.GetMutationSupertype(flow));                
 
-                flow.LocalValues = flow.LocalValues.SetItem(varPath, newLocal);
+                flow.Locals = flow.Locals.SetItem(varPath, newLocal);
             }
         }
 

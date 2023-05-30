@@ -35,10 +35,7 @@ namespace Helix.Features.Primitives {
         public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            this.SetReturnType(PrimitiveType.Void, types);
-            this.SetCapturedVariables(types);
-            this.SetPredicate(types);
-            this.SetLifetimes(new LifetimeBounds(), types);
+            SyntaxTagBuilder.AtFrame(types).BuildFor(this);
 
             return this;
         }

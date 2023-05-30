@@ -78,7 +78,7 @@ namespace Helix.Features.Aggregates {
             }
 
             var target = this.Target.CheckTypes(types).ToRValue(types);
-            var targetType = types.ReturnTypes[target];
+            var targetType = target.GetReturnType(types);
 
             // Handle getting the count of an array
             if (targetType is ArrayType array) {
@@ -90,10 +90,13 @@ namespace Helix.Features.Aggregates {
                         types.Scope,
                         false);
 
-                    result.SetReturnType(PrimitiveType.Int, types);
-                    result.SetCapturedVariables(target, types);
-                    result.SetPredicate(target, types);
-                    result.SetLifetimes(AnalyzeFlow(this.MemberName, PrimitiveType.Int, this.path, target, types), types);
+                    var bounds = AnalyzeFlow(this.MemberName, PrimitiveType.Int, this.path, target, types);
+
+                    SyntaxTagBuilder.AtFrame(types)
+                        .WithChildren(target)
+                        .WithReturnType(PrimitiveType.Int)
+                        .WithLifetimes(bounds)
+                        .BuildFor(result);
 
                     return result;
                 }
@@ -115,10 +118,13 @@ namespace Helix.Features.Aggregates {
                         types.Scope,
                         field.IsWritable);                    
 
-                    result.SetReturnType(field.Type, types);
-                    result.SetCapturedVariables(target, types);
-                    result.SetPredicate(target, types);
-                    result.SetLifetimes(AnalyzeFlow(this.MemberName, field.Type, result.path, target, types), types);
+                    var bounds = AnalyzeFlow(this.MemberName, field.Type, result.path, target, types);
+
+                    SyntaxTagBuilder.AtFrame(types)
+                        .WithChildren(target)
+                        .WithReturnType(field.Type)
+                        .WithLifetimes(bounds)
+                        .BuildFor(result);
 
                     return result;
                 }               
@@ -138,7 +144,7 @@ namespace Helix.Features.Aggregates {
                 LifetimeOrigin.TempValue);
 
             var newLocal = new LocalInfo(memType, new LifetimeBounds(memLifetime));
-            flow.LocalValues = flow.LocalValues.SetItem(path, newLocal);
+            flow.Locals = flow.Locals.SetItem(path, newLocal);
 
             foreach (var parent in parentLifetimes) {
                 flow.DataFlowGraph.AddAssignment(parent, memLifetime);
@@ -184,10 +190,10 @@ namespace Helix.Features.Aggregates {
                 return this;
             }
 
-            this.SetReturnType(new PointerType(this.memberType, true), types);
-            this.SetLifetimes(this.target.GetLifetimes(types), types);
-            this.SetPredicate(types);
-            this.SetCapturedVariables(types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(target)
+                .WithReturnType(new PointerType(this.memberType, true))
+                .BuildFor(this);
 
             return this;
         }

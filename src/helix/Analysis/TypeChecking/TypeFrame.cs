@@ -24,9 +24,9 @@ namespace Helix.Analysis.TypeChecking {
         // Frame-specific things
         public IdentifierPath Scope { get; }
 
-        public ImmutableDictionary<IdentifierPath, LocalInfo> LocalValues { get; set; }
+        public ImmutableDictionary<IdentifierPath, LocalInfo> Locals { get; set; }
 
-        public ImmutableHashSet<Lifetime> LifetimeRoots { get; set; }
+        public ImmutableHashSet<Lifetime> ValidRoots { get; set; }
 
 
         // Global things
@@ -34,53 +34,39 @@ namespace Helix.Analysis.TypeChecking {
 
         public DataFlowGraph DataFlowGraph { get; }
 
-        public Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
-
-        public Dictionary<ISyntaxTree, ISyntaxPredicate> Predicates { get; }
-
-        public Dictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
-
-        public IDictionary<ISyntaxTree, LifetimeBounds> SyntaxLifetimes { get; }
+        public Dictionary<ISyntaxTree, SyntaxTag> SyntaxTags { get; }
 
         public TypeFrame() {
-            this.LocalValues = ImmutableDictionary<IdentifierPath, LocalInfo>.Empty;
+            this.Locals = ImmutableDictionary<IdentifierPath, LocalInfo>.Empty;
 
-            this.LocalValues = this.LocalValues.Add(
+            this.Locals = this.Locals.Add(
                 new IdentifierPath("void"),
                 new LocalInfo(PrimitiveType.Void));
 
-            this.LocalValues = this.LocalValues.Add(
+            this.Locals = this.Locals.Add(
                 new IdentifierPath("int"),
                 new LocalInfo(PrimitiveType.Int));
 
-            this.LocalValues = this.LocalValues.Add(
+            this.Locals = this.Locals.Add(
                 new IdentifierPath("bool"),
                 new LocalInfo(PrimitiveType.Bool));
 
+            this.ValidRoots = ImmutableHashSet<Lifetime>.Empty;
+            this.NominalSignatures = new Dictionary<IdentifierPath, HelixType>();
             this.Scope = new IdentifierPath();
             this.DataFlowGraph = new DataFlowGraph();
-
-            this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
-            this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
-            this.Predicates = new Dictionary<ISyntaxTree, ISyntaxPredicate>();
-            this.NominalSignatures = new Dictionary<IdentifierPath, HelixType>();
-
-            this.SyntaxLifetimes = new Dictionary<ISyntaxTree, LifetimeBounds>();
-            this.LifetimeRoots = ImmutableHashSet<Lifetime>.Empty;
+            this.SyntaxTags = new Dictionary<ISyntaxTree, SyntaxTag>();
         }
 
         private TypeFrame(TypeFrame prev) {
             this.Scope = prev.Scope;
             this.DataFlowGraph = prev.DataFlowGraph;
 
-            this.ReturnTypes = prev.ReturnTypes;
-            this.CapturedVariables = prev.CapturedVariables;
-            this.Predicates = prev.Predicates;
+            this.SyntaxTags = prev.SyntaxTags;
             this.NominalSignatures = prev.NominalSignatures;
 
-            this.SyntaxLifetimes = prev.SyntaxLifetimes;
-            this.LocalValues = prev.LocalValues;
-            this.LifetimeRoots = prev.LifetimeRoots;
+            this.Locals = prev.Locals;
+            this.ValidRoots = prev.ValidRoots;
         }
 
         public TypeFrame(TypeFrame prev, string scopeSegment) : this(prev) {

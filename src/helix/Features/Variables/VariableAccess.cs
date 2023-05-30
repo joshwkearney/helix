@@ -54,7 +54,7 @@ namespace Helix.Features.Variables {
                 return new VoidLiteral(this.Location).CheckTypes(types);
             }
 
-            if (types.LocalValues[path].Type.ToSyntax(this.Location).TryGetValue(out var syntax)) {
+            if (types.Locals[path].Type.ToSyntax(this.Location).TryGetValue(out var syntax)) {
                 return syntax.CheckTypes(types);
             }
 
@@ -97,24 +97,16 @@ namespace Helix.Features.Variables {
                 return this;
             }
 
-            //if (types.TryGetVariable(this.VariablePath, types, out var varType)) {
-            this.SetReturnType(this.VariableSignature.InnerType, types);
-            //}
-            //else if (types.Functions.ContainsKey(this.VariablePath)) {
-            //    this.SetReturnType(new NamedType(this.VariablePath), types);
-            //}
-            //else {
-            //    throw new InvalidOperationException("Compiler bug");
-            //}
+            var cap = new VariableCapture(
+                this.VariablePath,
+                VariableCaptureKind.ValueCapture,
+                this.VariableSignature);
 
-            this.SetCapturedVariables(
-                this.VariablePath, 
-                VariableCaptureKind.ValueCapture, 
-                this.VariableSignature, 
-                types);
-
-            this.SetPredicate(types);
-            this.SetLifetimes(types.LocalValues[this.VariablePath].Bounds, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(this.VariableSignature.InnerType)
+                .WithCapturedVariables(cap)
+                .WithLifetimes(types.Locals[this.VariablePath].Bounds)
+                .BuildFor(this);
 
             return this;
         }
@@ -133,14 +125,15 @@ namespace Helix.Features.Variables {
             
             result = result.CheckTypes(types);
 
-            var returnType = new NominalType(this.VariablePath, NominalTypeKind.Variable);
-            result.SetReturnType(returnType, types);
+            var captured = new VariableCapture(
+                this.VariablePath,
+                VariableCaptureKind.LocationCapture,
+                this.VariableSignature);
 
-            result.SetCapturedVariables(
-                this.VariablePath, 
-                VariableCaptureKind.LocationCapture, 
-                this.VariableSignature,
-                types);
+            SyntaxTagBuilder.AtFrame(types, result)
+                .WithReturnType(new NominalType(this.VariablePath, NominalTypeKind.Variable))
+                .WithCapturedVariables(captured)
+                .BuildFor(result);
 
             return result;
         }

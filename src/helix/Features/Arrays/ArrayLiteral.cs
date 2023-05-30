@@ -102,10 +102,12 @@ namespace Helix.Features.Arrays {
                 args, 
                 types.Scope.Append(this.tempPath));
 
-            result.SetCapturedVariables(args, types);
-            result.SetPredicate(args, types);
-            result.SetReturnType(new ArrayType(totalType), types);
-            result.SetLifetimes(AnalyzeFlow(this.Location, this.tempPath, args, types), types);
+            var bounds = AnalyzeFlow(this.Location, this.tempPath, args, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(new ArrayType(totalType))
+                .WithLifetimes(bounds)
+                .BuildFor(result);
 
             return result;
         }
@@ -119,7 +121,7 @@ namespace Helix.Features.Arrays {
             var arrayLifetime = new InferredLocationLifetime(
                 loc, 
                 tempPath, 
-                flow.LifetimeRoots, 
+                flow.ValidRoots, 
                 LifetimeOrigin.TempValue);
 
             foreach (var arg in args) {

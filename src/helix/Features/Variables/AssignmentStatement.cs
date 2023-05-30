@@ -76,7 +76,7 @@ namespace Helix.Features.Variables {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (types.ReturnTypes.ContainsKey(this)) {
+            if (this.IsTypeChecked(types)) {
                 return this;
             }
 
@@ -101,10 +101,10 @@ namespace Helix.Features.Variables {
                 target,
                 assign);
 
-            result.SetReturnType(PrimitiveType.Void, types);
-            result.SetCapturedVariables(target, assign, types);
-            result.SetPredicate(target, assign, types);
-            result.SetLifetimes(AnalyzeFlow(this.Location, target, assign, assignType, types), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(target, assign)
+                .WithLifetimes(AnalyzeFlow(this.Location, target, assign, assignType, types))
+                .BuildFor(result);
 
             return result;
         }
@@ -152,7 +152,7 @@ namespace Helix.Features.Variables {
                 var newLocal = new LocalInfo(new PointerType(assignType, true), newTargetBounds);
 
                 // Update this variable's value
-                flow.LocalValues = flow.LocalValues.SetItem(newValue.Path, newLocal);
+                flow.Locals = flow.Locals.SetItem(newValue.Path, newLocal);
 
                 // Make sure the new value outlives its variable
                 flow.DataFlowGraph.AddStored(newValue, newTargetBounds.LocationLifetime);
@@ -169,7 +169,7 @@ namespace Helix.Features.Variables {
 
         public ISyntaxTree ToRValue(TypeFrame types) {
             // We need to be type checked to be an r-value
-            if (!types.ReturnTypes.ContainsKey(this)) {
+            if (!this.IsTypeChecked(types)) {
                 throw TypeException.RValueRequired(this.Location);
             }
 

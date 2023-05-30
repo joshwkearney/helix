@@ -108,7 +108,7 @@ namespace Helix.Features.Functions {
             var sig = this.signature.ResolveNames(types);
             var named = new NominalType(path, NominalTypeKind.Function);
 
-            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(named));
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
 
             // Declare this function
             types.NominalSignatures.Add(path, sig);
@@ -125,7 +125,7 @@ namespace Helix.Features.Functions {
             FunctionsHelper.DeclareParameters(sig, path, types);
 
             // Make sure we include the heap in the root set
-            types.LifetimeRoots = types.LifetimeRoots.Add(Lifetime.Heap);
+            types.ValidRoots = types.ValidRoots.Add(Lifetime.Heap);
 
             // Check types
             var body = this.body;
@@ -144,31 +144,10 @@ namespace Helix.Features.Functions {
             FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, body, types);
 
 #if DEBUG
-            // Debug check: make sure that every syntax tree has a return type
+            // Debug check: make sure that every syntax tree was type checked
             foreach (var expr in body.GetAllChildren()) {
-                if (!types.ReturnTypes.ContainsKey(expr)) {
+                if (!expr.IsTypeChecked(types)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have a return type");
-                }
-            }
-
-            // Debug check: make sure that every syntax tree has captured variables
-            foreach (var expr in body.GetAllChildren()) {
-                if (!types.CapturedVariables.ContainsKey(expr)) {
-                    throw new Exception("Compiler assertion failed: syntax tree does not have captured variables");
-                }
-            }
-
-            // Debug check: make sure that every syntax tree has captured variables
-            foreach (var expr in body.GetAllChildren()) {
-                if (!types.Predicates.ContainsKey(expr)) {
-                    throw new Exception("Compiler assertion failed: syntax tree does not have any predicates");
-                }
-            }
-
-            // Debug check: Make sure every part of the syntax tree has a lifetime
-            foreach (var expr in body.GetAllChildren()) {
-                if (!types.SyntaxLifetimes.ContainsKey(expr)) {
-                    throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
                 }
             }
 #endif

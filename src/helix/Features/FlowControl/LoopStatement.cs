@@ -75,21 +75,21 @@ namespace Helix.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (types.ReturnTypes.ContainsKey(this)) {
+            if (this.IsTypeChecked(types)) {
                 return this;
             }
 
             // TODO: Confirm this works
             // This is to prevent things in the loop from depending on things before
             // the loop, since we will introduce cyclical lifetime dependencies below
-            foreach (var (path, local) in types.LocalValues) {
+            foreach (var (path, local) in types.Locals) {
                 var newValue = local.Bounds.ValueLifetime.IncrementVersion();
                 var newBounds = local.Bounds.WithValue(newValue);
                 var newLocal = local.WithBounds(newBounds);
 
                 types.DataFlowGraph.AddStored(local.Bounds.ValueLifetime, newValue);
 
-                types.LocalValues = types.LocalValues.SetItem(path, newLocal);
+                types.Locals = types.Locals.SetItem(path, newLocal);
             }
 
             var bodyTypes = new TypeFrame(types, this.name);
@@ -98,27 +98,26 @@ namespace Helix.Features.FlowControl {
 
             MutateLocals(bodyTypes, types);
 
-            result.SetReturnType(PrimitiveType.Void, types);
-            result.SetCapturedVariables(body, types);
-            result.SetPredicate(types);
-            result.SetLifetimes(new LifetimeBounds(), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(body)
+                .BuildFor(result);
 
             return result;
         }
 
         private static void MutateLocals(TypeFrame bodyFlow, TypeFrame flow) {
-            var modifiedLocalLifetimes = bodyFlow.LocalValues
-                .Where(x => !flow.LocalValues.Contains(x))
+            var modifiedLocalLifetimes = bodyFlow.Locals
+                .Where(x => !flow.Locals.Contains(x))
                 .Select(x => x.Key)
-                .Where(flow.LocalValues.ContainsKey)
+                .Where(flow.Locals.ContainsKey)
                 .ToArray();
 
             // For every variable that might be modified in the loop, create a new lifetime
             // for it in the loop body so that if it does change, it is only changing the
             // new variable signature and not the old one
             foreach (var path in modifiedLocalLifetimes) {
-                var oldLocal = flow.LocalValues[path];
-                var newLocal = bodyFlow.LocalValues[path];
+                var oldLocal = flow.Locals[path];
+                var newLocal = bodyFlow.Locals[path];
 
                 flow.DataFlowGraph.AddAssignment(
                     newLocal.Bounds.ValueLifetime, 
@@ -129,7 +128,7 @@ namespace Helix.Features.FlowControl {
                 // If the new value of this variable depends on a lifetime that was created
                 // inside the loop, we need to declare a new root so that nothing after the
                 // loop uses code that is no longer in scope
-                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
+                if (roots.Any(x => !flow.ValidRoots.Contains(x))) {
                     var newRoot = new ValueLifetime(
                         oldLocal.Bounds.ValueLifetime.Path,
                         LifetimeRole.Root,
@@ -140,13 +139,13 @@ namespace Helix.Features.FlowControl {
                     flow.DataFlowGraph.AddStored(oldLocal.Bounds.ValueLifetime, newRoot);
 
                     // Add our new root to the list of acceptable roots
-                    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
+                    flow.ValidRoots = flow.ValidRoots.Add(newRoot);
 
                     oldLocal = new LocalInfo(oldLocal.Type, oldLocal.Bounds.WithValue(newRoot));
                 }
 
                 oldLocal = oldLocal.WithType(oldLocal.Type.GetMutationSupertype(flow));
-                flow.LocalValues = flow.LocalValues.SetItem(path, oldLocal);
+                flow.Locals = flow.Locals.SetItem(path, oldLocal);
             }
         }
 

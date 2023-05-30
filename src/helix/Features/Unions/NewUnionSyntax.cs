@@ -101,10 +101,13 @@ namespace Helix.Features.Aggregates {
                 new[] { value },
                 types.Scope.Append(this.tempPath));
 
-            result.SetReturnType(this.unionType, types);
-            result.SetCapturedVariables(value, types);
-            result.SetPredicate(value, types);
-            result.SetLifetimes(AnalyzeFlow(this.tempPath, value, types), types);
+            var bounds = AnalyzeFlow(this.tempPath, value, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(value)
+                .WithReturnType(this.unionType)
+                .WithLifetimes(bounds)
+                .BuildFor(result);
 
             return result;
         }

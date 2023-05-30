@@ -46,10 +46,11 @@ namespace Helix.Features.Arrays {
                 return this;
             }
 
-            this.SetReturnType(new PointerType(this.arrayType.InnerType, true), types);
-            this.SetCapturedVariables(this.target, this.offset, types);
-            this.SetPredicate(this.target, this.offset, types);
-            this.SetLifetimes(this.target.GetLifetimes(types), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(this.target, this.offset)
+                .WithLifetimes(this.target.GetLifetimes(types))
+                .WithReturnType(new PointerType(this.arrayType.InnerType, true))
+                .BuildFor(this);
 
             return this;
         }

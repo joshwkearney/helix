@@ -67,10 +67,12 @@ namespace Helix.Features.Unions {
                 VariablePath = path
             };
 
-            result.SetReturnType(returnType, types);
-            result.SetPredicate(types);
-            result.SetCapturedVariables(path, VariableCaptureKind.ValueCapture, varSig, types);
-            result.SetLifetimes(new LifetimeBounds(), types);
+            var cap = new VariableCapture(path, VariableCaptureKind.ValueCapture, varSig);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(returnType)
+                .WithCapturedVariables(cap)
+                .BuildFor(result);
 
             return result;
         }

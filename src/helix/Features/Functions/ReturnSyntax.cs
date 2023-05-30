@@ -58,11 +58,7 @@ namespace Helix.Features.Functions {
 
             var result = new ReturnSyntax(this.Location, payload, sig);
 
-            result.SetReturnType(PrimitiveType.Void, types);
-            result.SetCapturedVariables(types);
-            result.SetPredicate(types);
-            result.SetLifetimes(new LifetimeBounds(), types);
-
+            SyntaxTagBuilder.AtFrame(types).BuildFor(result);
             FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, this.payload, types);
 
             return result;

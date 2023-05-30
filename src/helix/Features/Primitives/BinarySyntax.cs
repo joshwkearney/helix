@@ -239,10 +239,10 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(left, right, types);
-            result.SetPredicate(left, right, types);
-            result.SetLifetimes(new LifetimeBounds(), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(left, right)
+                .WithReturnType(returnType)
+                .BuildFor(result);
 
             return result;
         }
@@ -296,10 +296,10 @@ namespace Helix.Features.Primitives {
 
             var result = returnType.ToSyntax(this.Location).GetValue();
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(types);
-            result.SetPredicate(types);
-            result.SetLifetimes(new LifetimeBounds(), types);
+            SyntaxTagBuilder.AtFrame(types)
+                // .WithChildren(left, right) <-- Add this back??
+                .WithReturnType(returnType)
+                .BuildFor(result);
 
             return result;
         }
@@ -341,9 +341,10 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(left, right, types);
-            result.SetPredicate(left, right, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(left, right)
+                .WithReturnType(returnType)
+                .BuildFor(result);
 
             return result;
         }
@@ -372,9 +373,9 @@ namespace Helix.Features.Primitives {
             var returnType = new SingularBoolType(value, pred);
             var result = returnType.ToSyntax(this.Location).GetValue();
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(types);
-            result.SetPredicate(types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(returnType)
+                .BuildFor(result);
 
             return result;
         }

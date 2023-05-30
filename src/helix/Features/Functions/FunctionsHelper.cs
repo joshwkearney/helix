@@ -34,7 +34,7 @@ namespace Helix.Features.Functions {
             var path = types.Scope.Append(sig.Name);
             var named = new NominalType(path, NominalTypeKind.Function);
 
-            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(named));
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
         }
 
         public static void DeclareParameters(FunctionType sig, IdentifierPath path, TypeFrame flow) {
@@ -72,7 +72,7 @@ namespace Helix.Features.Functions {
                     flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime);
 
                     // Put these lifetimes in the main table
-                    flow.LocalValues = flow.LocalValues.SetItem(
+                    flow.Locals = flow.Locals.SetItem(
                         memPath, 
                         new LocalInfo(
                             parSig, 
@@ -80,8 +80,8 @@ namespace Helix.Features.Functions {
 
                     flow.NominalSignatures.Add(memPath, parSig);
 
-                    flow.LifetimeRoots = flow.LifetimeRoots.Add(locationLifetime);
-                    flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
+                    flow.ValidRoots = flow.ValidRoots.Add(locationLifetime);
+                    flow.ValidRoots = flow.ValidRoots.Add(valueLifetime);
                 }
             }
         }
@@ -121,7 +121,7 @@ namespace Helix.Features.Functions {
 
             // Add a dependency between every returned lifetime and the heap
             flow.DataFlowGraph.AddStored(
-                flow.SyntaxLifetimes[body].ValueLifetime, 
+                body.GetLifetimes(flow).ValueLifetime, 
                 Lifetime.Heap);
         }
     }

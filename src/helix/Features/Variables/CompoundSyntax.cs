@@ -28,10 +28,10 @@ namespace Helix.Features.Variables {
             var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
             var result = new CompoundSyntax(this.Location, args);
 
-            this.SetReturnType(PrimitiveType.Void, types);
-            this.SetCapturedVariables(args, types);
-            this.SetPredicate(args, types);
-            this.SetLifetimes(new LifetimeBounds(), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(args)
+                .WithLifetimes(new LifetimeBounds())
+                .BuildFor(result);
 
             return result;
         }

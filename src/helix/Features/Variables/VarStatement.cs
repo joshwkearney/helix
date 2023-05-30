@@ -98,10 +98,9 @@ namespace Helix {
                 assign,
                 this.isWritable);
 
-            result.SetReturnType(PrimitiveType.Void, types);
-            result.SetCapturedVariables(assign, types);
-            result.SetPredicate(assign, types);
-            result.SetLifetimes(AnalyzeFlow(this.Location, assign, path, types), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithLifetimes(AnalyzeFlow(this.Location, assign, path, types))
+                .BuildFor(result);
 
             return result.CheckTypes(types);
         }
@@ -109,7 +108,7 @@ namespace Helix {
         private static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree assign, 
                                                   IdentifierPath path, TypeFrame flow) {
             var assignBounds = assign.GetLifetimes(flow);
-            var allowedRoots = flow.LifetimeRoots.ToValueSet();
+            var allowedRoots = flow.ValidRoots.ToValueSet();
 
             var locationLifetime = new InferredLocationLifetime(
                 loc,
@@ -133,7 +132,7 @@ namespace Helix {
             var named = new NominalType(path, NominalTypeKind.Variable);
             var local = new LocalInfo(named, bounds);
 
-            flow.LocalValues = flow.LocalValues.Add(path, local);
+            flow.Locals = flow.Locals.Add(path, local);
 
             // TODO: Fix this
             // HACK: Even though we're returning void, set the lifetime of this syntax

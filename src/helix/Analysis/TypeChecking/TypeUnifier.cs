@@ -24,7 +24,10 @@ namespace Helix.Analysis.TypeChecking {
                     Kind = UnificationKind.Pun,
                     Unifier = (s, t) => {
                         var block = new BlockSyntax(s.Location, new[] { s }).CheckTypes(t);
-                        block.SetReturnType(adaptedType, t);
+
+                        SyntaxTagBuilder.AtFrame(t, block)
+                            .WithReturnType(adaptedType)
+                            .BuildFor(block);
 
                         return block;
                     }

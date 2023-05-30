@@ -93,10 +93,10 @@ namespace Helix.Features.Primitives {
                     this.Location,
                     arg);
 
-                result.SetReturnType(returnType, types);
-                result.SetCapturedVariables(arg, types);
-                result.SetPredicate(arg, types);
-                result.SetLifetimes(new LifetimeBounds(), types);
+                SyntaxTagBuilder.AtFrame(types)
+                    .WithChildren(arg)
+                    .WithReturnType(returnType)
+                    .BuildFor(result);
 
                 return result;
             }

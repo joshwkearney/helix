@@ -58,9 +58,10 @@ namespace Helix.Features.Variables {
             var pointerType = target.AssertIsPointer(types);
             var result = new DereferenceSyntax(this.Location, target);
 
-            result.SetReturnType(pointerType.InnerType, types);
-            result.SetCapturedVariables(target, types);
-            result.SetPredicate(target, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(target)
+                .WithReturnType(pointerType.InnerType)
+                .BuildFor(result);
 
             return result;
         }
@@ -109,13 +110,14 @@ namespace Helix.Features.Variables {
                 return this;
             }
 
-            // this.target is already type checked
             var pointerType = this.target.AssertIsPointer(types);
+            var bounds = AnalyzeFlow(this.tempPath, this.target, types);
 
-            this.SetReturnType(pointerType.InnerType, types);
-            this.SetCapturedVariables(this.target, types);
-            this.SetPredicate(this.target, types);
-            this.SetLifetimes(AnalyzeFlow(this.tempPath, this.target, types), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(this.target)
+                .WithReturnType(pointerType.InnerType)
+                .WithLifetimes(bounds)
+                .BuildFor(this);
 
             return this;
         }
@@ -125,7 +127,7 @@ namespace Helix.Features.Variables {
             var pointerLifetime = target.GetLifetimes(flow);
 
             if (pointerType.InnerType.IsValueType(flow)) {
-                flow.LocalValues = flow.LocalValues.SetItem(tempPath, new LocalInfo(target.GetReturnType(flow)));
+                flow.Locals = flow.Locals.SetItem(tempPath, new LocalInfo(target.GetReturnType(flow)));
                 return new LifetimeBounds();
             }
 
@@ -134,7 +136,7 @@ namespace Helix.Features.Variables {
             // 2) That local variable could not have been mutated by an alias since the last 
             // time it was set 3) That local variable is storing the location of another variable
             if (pointerLifetime.LocationLifetime != Lifetime.None) {
-                var valueLifetime = flow.LocalValues[pointerLifetime.LocationLifetime.Path].Bounds.ValueLifetime;
+                var valueLifetime = flow.Locals[pointerLifetime.LocationLifetime.Path].Bounds.ValueLifetime;
 
                 var equivalents = flow
                     .DataFlowGraph
@@ -156,7 +158,7 @@ namespace Helix.Features.Variables {
             var derefValueLifetime = new ValueLifetime(tempPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
 
             // Make sure we add this as a root
-            flow.LifetimeRoots = flow.LifetimeRoots.Add(derefValueLifetime);
+            flow.ValidRoots = flow.ValidRoots.Add(derefValueLifetime);
 
             // The lifetime that is stored in the pointer must outlive the pointer itself
             flow.DataFlowGraph.AddStored(derefValueLifetime, pointerLifetime.ValueLifetime);
@@ -214,10 +216,13 @@ namespace Helix.Features.Variables {
                 return this;
             }
 
-            this.SetReturnType(this.target.GetReturnType(types), types);
-            this.SetCapturedVariables(this.target, types);
-            this.SetPredicate(this.target, types);
-            this.SetLifetimes(AnalyzeFlow(this.tempPath, this.target, types), types);
+            var bounds = AnalyzeFlow(this.tempPath, this.target, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(this.target)
+                .WithReturnType(this.target.GetReturnType(types))
+                .WithLifetimes(bounds)
+                .BuildFor(this);
 
             return this;
         }
@@ -260,7 +265,7 @@ namespace Helix.Features.Variables {
                 return false;
             }
 
-            var valueLifetime = flow.LocalValues[targetBounds.LocationLifetime.Path].Bounds.ValueLifetime;
+            var valueLifetime = flow.Locals[targetBounds.LocationLifetime.Path].Bounds.ValueLifetime;
             var dict = new Dictionary<IdentifierPath, LocalInfo>();
 
             var equivalents = flow
@@ -277,7 +282,7 @@ namespace Helix.Features.Variables {
             }
 
             var loc = equivalents.First();
-            var value = flow.LocalValues[loc.Path].Bounds.ValueLifetime;
+            var value = flow.Locals[loc.Path].Bounds.ValueLifetime;
 
             bounds = new LifetimeBounds(value, loc);
             return true;

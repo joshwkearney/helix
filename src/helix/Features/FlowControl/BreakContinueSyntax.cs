@@ -53,10 +53,7 @@ namespace Helix.Features.FlowControl {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            this.SetReturnType(PrimitiveType.Void, types);
-            this.SetCapturedVariables(types);
-            this.SetPredicate(types);
-            this.SetLifetimes(new LifetimeBounds(), types);
+            SyntaxTagBuilder.AtFrame(types).BuildFor(this);
 
             return this;
         }

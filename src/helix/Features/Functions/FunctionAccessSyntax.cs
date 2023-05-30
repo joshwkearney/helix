@@ -32,12 +32,11 @@ namespace Helix.Features.Functions {
                 return this;
             }
 
-            var funcType = types.LocalValues[this.FunctionPath].Type;
+            var funcType = types.Locals[this.FunctionPath].Type;
 
-            this.SetReturnType(funcType, types);
-            this.SetCapturedVariables(types);
-            this.SetPredicate(types);
-            this.SetLifetimes(new LifetimeBounds(), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(funcType)
+                .BuildFor(this);
 
             return this;
         }

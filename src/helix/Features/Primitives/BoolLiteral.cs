@@ -39,10 +39,9 @@ namespace Helix.Features.Primitives {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            this.SetReturnType(new SingularBoolType(this.Value), types);
-            this.SetCapturedVariables(types);
-            this.SetPredicate(types);
-            this.SetLifetimes(new LifetimeBounds(), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(new SingularBoolType(this.Value))
+                .BuildFor(this);
 
             return this;
         }

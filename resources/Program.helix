@@ -1,5 +1,8 @@
-﻿func test1() as int* {
+﻿func test1() as int {
 	var x = 45;
+	var y = &x;
+	
+	//y* = 10;
 
-	&x;
+	x;
 };

@@ -55,7 +55,7 @@ namespace Helix.Features.Functions {
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
-            var targetType = types.ReturnTypes[target];
+            var targetType = target.GetReturnType(types);
 
             // TODO: Support invoking non-nominal functions
             // Make sure the target is a function
@@ -82,11 +82,13 @@ namespace Helix.Features.Functions {
 
             var path = types.Scope.Append("$call" + tempCounter++);
             var result = new InvokeSyntax(this.Location, sig, newArgs, named.Path, path);
+            var bounds = AnalyzeFlow(this.Location, path, types);
 
-            result.SetReturnType(sig.ReturnType, types);
-            result.SetCapturedVariables(newArgs.Append(target), types);
-            result.SetPredicate(newArgs.Append(target), types);
-            result.SetLifetimes(AnalyzeFlow(this.Location, path, types), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(newArgs.Append(target))
+                .WithReturnType(sig.ReturnType)
+                .WithLifetimes(bounds)
+                .BuildFor(result);
 
             return result;            
         }
@@ -101,7 +103,7 @@ namespace Helix.Features.Functions {
             var invokeLifetime = new InferredLocationLifetime(
                 loc,
                 path,
-                flow.LifetimeRoots,
+                flow.ValidRoots,
                 LifetimeOrigin.TempValue);
 
             return new LifetimeBounds(invokeLifetime);

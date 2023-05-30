@@ -48,7 +48,7 @@ namespace Helix.Features.Functions {
             var named = new NominalType(path, NominalTypeKind.Function);
 
             // Replace the temporary wrapper object with a full declaration
-            types.LocalValues = types.LocalValues.SetItem(path, new LocalInfo(named));
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
 
             // Declare this function
             types.NominalSignatures.Add(path, sig);
