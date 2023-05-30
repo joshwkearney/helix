@@ -18,30 +18,38 @@ namespace Helix.Analysis.Types {
             this.Kind = kind;
         }
 
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             switch (this.Kind) {
                 case NominalTypeKind.Function:
                     return PassingSemantics.ValueType;
                 default:
-                    return types.GlobalNominalSignatures[this.Path].GetSemantics(types);
+                    return types.NominalSignatures[this.Path].GetSemantics(types);
             }
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) {
+        public override HelixType GetMutationSupertype(TypeFrame types) {
             if (this.Kind == NominalTypeKind.Variable) {
-                return this.GetSignatureSupertype(types);
+                return this.GetSignatureSupertype(types).GetMutationSupertype(types);
             }
             else {
                 return this;
             }
         }
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) {
-            return types.GlobalNominalSignatures[this.Path].GetSignatureSupertype(types);
+        public override HelixType GetSignatureSupertype(TypeFrame types) {
+            return types.NominalSignatures[this.Path].GetSignatureSupertype(types);
         }
 
-        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame types) {
-            return types.NominalSignatures[this.Path].GetContainedTypes(types);
+        public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame types) {
+            yield return this;
+
+            foreach (var access in types.NominalSignatures[this.Path].GetAccessibleTypes(types)) {
+                yield return access;
+            }
+        }
+
+        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+            return types.NominalSignatures[this.Path].ToSyntax(loc, types);
         }
 
         public override string ToString() {

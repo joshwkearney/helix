@@ -18,6 +18,7 @@ DONE - Reimplement array literals
 DONE - Fix binary expressions
 DONE - Fix for loops
 Check if we're in a loop for break/continue
+Fix loop lifetime backpropagation
 
 PROJECT ZIP: Merge the typechecking and flow analysis phases
 	- Get loops to flow analyze without prior information (variable capture)

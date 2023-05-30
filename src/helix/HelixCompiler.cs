@@ -38,15 +38,10 @@ namespace Helix {
 
                 // We need to declare the flow frame down here after types is done being
                 // modified, because it uses immutable dictionaries
-                var flow = new FlowFrame(types);
                 var writer = new CWriter(this.header);
 
                 foreach (var stat in stats) {
-                    stat.AnalyzeFlow(flow);
-                }
-
-                foreach (var stat in stats) {
-                    stat.GenerateCode(flow, writer);
+                    stat.GenerateCode(types, writer);
                 }
 
                 return writer.ToString();

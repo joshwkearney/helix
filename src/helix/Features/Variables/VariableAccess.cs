@@ -9,6 +9,7 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Features.Functions;
+using System.IO;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -37,10 +38,8 @@ namespace Helix.Features.Variables {
 
         public Option<HelixType> AsType(TypeFrame types) {
             // If we're pointing at a type then return it
-            if (types.TryResolveName(types.Scope, this.Name, out var syntax)) {
-                if (syntax.AsType(types).TryGetValue(out var type)) {
-                    return type;
-                }
+            if (types.TryResolveName(types.Scope, this.Name, out var type)) {
+                return type;
             }
 
             return Option.None;
@@ -95,23 +94,16 @@ namespace Helix.Features.Variables {
                 return this;
             }
 
-            //if (types.TryGetVariable(this.VariablePath, types, out var varType)) {
-            this.SetReturnType(this.VariableSignature.InnerType, types);
-            //}
-            //else if (types.Functions.ContainsKey(this.VariablePath)) {
-            //    this.SetReturnType(new NamedType(this.VariablePath), types);
-            //}
-            //else {
-            //    throw new InvalidOperationException("Compiler bug");
-            //}
+            var cap = new VariableCapture(
+                this.VariablePath,
+                VariableCaptureKind.ValueCapture,
+                this.VariableSignature);
 
-            this.SetCapturedVariables(
-                this.VariablePath, 
-                VariableCaptureKind.ValueCapture, 
-                this.VariableSignature, 
-                types);
-
-            this.SetPredicate(types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(this.VariableSignature.InnerType)
+                .WithCapturedVariables(cap)
+                .WithLifetimes(types.Locals[this.VariablePath].Bounds)
+                .BuildFor(this);
 
             return this;
         }
@@ -130,27 +122,33 @@ namespace Helix.Features.Variables {
             
             result = result.CheckTypes(types);
 
-            var nom = new NominalType(this.VariablePath, NominalTypeKind.Variable);
-            result.SetReturnType(nom, types);
+            var captured = new VariableCapture(
+                this.VariablePath,
+                VariableCaptureKind.LocationCapture,
+                this.VariableSignature);
 
-            result.SetCapturedVariables(
-                this.VariablePath, 
-                VariableCaptureKind.LocationCapture, 
-                this.VariableSignature,
-                types);
+            SyntaxTagBuilder.AtFrame(types, result)
+                .WithReturnType(new NominalType(this.VariablePath, NominalTypeKind.Variable))
+                .WithCapturedVariables(captured)
+                .BuildFor(result);
 
             return result;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) => this;
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            var hasSingularValue = types.Locals[this.VariablePath].Type
+                .AsVariable(types)
+                .SelectMany(x => x.InnerType.ToSyntax(this.Location, types))
+                .TryGetValue(out var singularSyntax);
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            var bounds = flow.LocalLifetimes[this.VariablePath];
+            if (hasSingularValue) {
+                return singularSyntax.CheckTypes(types);
+            }
 
-            this.SetLifetimes(bounds, flow);
+            return this;
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             ICSyntax result = new CVariableLiteral(writer.GetVariableName(this.VariablePath));
 
             if (writer.VariableKinds[this.VariablePath] == CVariableKind.Allocated) {

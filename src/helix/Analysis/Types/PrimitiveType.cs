@@ -19,20 +19,20 @@ namespace Helix.Analysis.Types {
             this.kind = kind;
         }
 
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             return PassingSemantics.ValueType;
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) => this;
+        public override HelixType GetMutationSupertype(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) => this;
+        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
 
-        public override ISyntaxTree ToSyntax(TokenLocation loc) {
+        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             if (this == Void) {
                 return new VoidLiteral(loc);
             }
 
-            return base.ToSyntax(loc);
+            return base.ToSyntax(loc, types);
         }
 
         public override string ToString() {

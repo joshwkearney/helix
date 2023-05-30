@@ -46,25 +46,16 @@ namespace Helix.Features.Arrays {
                 return this;
             }
 
-            this.SetReturnType(new PointerType(this.arrayType.InnerType, true), types);
-            this.SetCapturedVariables(this.target, this.offset, types);
-            this.SetPredicate(this.target, this.offset, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(this.target, this.offset)
+                .WithLifetimes(this.target.GetLifetimes(types))
+                .WithReturnType(new PointerType(this.arrayType.InnerType, true))
+                .BuildFor(this);
 
             return this;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
-                return;
-            }
-
-            this.target.AnalyzeFlow(flow);
-            this.offset.AnalyzeFlow(flow);
-
-            flow.SyntaxLifetimes[this] = flow.SyntaxLifetimes[this.target];
-        }
-
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
 
             ICSyntax newData = new CMemberAccess() {
@@ -83,7 +74,7 @@ namespace Helix.Features.Arrays {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Array to pointer conversion");
 
-            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, true));
+            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, true), types);
             var ptrValue = new CCompoundExpression() {
                 Arguments = new[] {
                     newData,

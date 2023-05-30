@@ -239,9 +239,10 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(left, right, types);
-            result.SetPredicate(left, right, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(left, right)
+                .WithReturnType(returnType)
+                .BuildFor(result);
 
             return result;
         }
@@ -293,11 +294,12 @@ namespace Helix.Features.Primitives {
                     throw new Exception();
             }
 
-            var result = returnType.ToSyntax(this.Location);
+            var result = returnType.ToSyntax(this.Location, types).GetValue();
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(types);
-            result.SetPredicate(types);
+            SyntaxTagBuilder.AtFrame(types)
+                // .WithChildren(left, right) <-- Add this back??
+                .WithReturnType(returnType)
+                .BuildFor(result);
 
             return result;
         }
@@ -339,9 +341,10 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(left, right, types);
-            result.SetPredicate(left, right, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(left, right)
+                .WithReturnType(returnType)
+                .BuildFor(result);
 
             return result;
         }
@@ -368,20 +371,13 @@ namespace Helix.Features.Primitives {
             }
 
             var returnType = new SingularBoolType(value, pred);
-            var result = returnType.ToSyntax(this.Location);
+            var result = returnType.ToSyntax(this.Location, types).GetValue();
 
-            result.SetReturnType(returnType, types);
-            result.SetCapturedVariables(types);
-            result.SetPredicate(types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(returnType)
+                .BuildFor(result);
 
             return result;
-        }
-
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.left.AnalyzeFlow(flow);
-            this.right.AnalyzeFlow(flow);
-
-            this.SetLifetimes(new LifetimeBounds(), flow);
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
@@ -392,7 +388,7 @@ namespace Helix.Features.Primitives {
             return this;
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CBinaryExpression() {
                 Left = this.left.GenerateCode(types, writer),
                 Right = this.right.GenerateCode(types, writer),

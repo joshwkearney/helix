@@ -62,10 +62,10 @@ namespace Helix.Features.Arrays {
                 .UnifyTo(PrimitiveType.Int, types);
 
             // Make sure we have an array
-            if (types.ReturnTypes[target] is not ArrayType arrayType) {
+            if (target.GetReturnType(types) is not ArrayType arrayType) {
                 throw TypeException.ExpectedArrayType(
                     this.target.Location, 
-                    types.ReturnTypes[target]);
+                    target.GetReturnType(types));
             }
 
             var adapter = new ArrayToPointerAdapter(arrayType, target, index);

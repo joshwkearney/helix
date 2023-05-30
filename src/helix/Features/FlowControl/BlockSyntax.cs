@@ -72,7 +72,7 @@ namespace Helix.Features.FlowControl {
             var statTypes = bodyTypes;
 
             foreach (var forStat in this.Statements) {
-                var stat = this.CheckStatement(forStat, predicate, bodyTypes);                
+                var stat = CheckStatement(forStat, predicate, bodyTypes);                
                 stats.Add(stat);
 
                 // Get this predicate's effects for the next statement
@@ -82,19 +82,23 @@ namespace Helix.Features.FlowControl {
             var result = new BlockSyntax(this.Location, stats, this.Path);
             var returnType = stats
                 .LastOrNone()
-                .Select(x => bodyTypes.ReturnTypes[x])
+                .Select(x => x.GetReturnType(bodyTypes))
                 .OrElse(() => PrimitiveType.Void);
 
-            result.SetReturnType(returnType, bodyTypes);
-            result.SetCapturedVariables(stats, bodyTypes);
-            result.SetPredicate(ISyntaxPredicate.Empty, bodyTypes);
+            SyntaxTagBuilder.AtFrame(bodyTypes)
+                .WithChildren(stats)
+                .WithReturnType(returnType)
+                .WithPredicate(predicate)
+                .WithLifetimes(AnalyzeFlow(stats, bodyTypes))
+                .BuildFor(result);
 
-            types.MergeFrom(bodyTypes);
+            MutateLocals(bodyTypes, types);
 
             return result;
         }
 
-        private ISyntaxTree CheckStatement(ISyntaxTree stat, ISyntaxPredicate predicate, TypeFrame types) {
+        private static ISyntaxTree CheckStatement(ISyntaxTree stat, ISyntaxPredicate predicate,
+                                                  TypeFrame types) {
             // Apply this predicate's effects to the later statements
             if (predicate == ISyntaxPredicate.Empty) {
                 return stat.CheckTypes(types).ToRValue(types);
@@ -116,24 +120,58 @@ namespace Helix.Features.FlowControl {
                 }
 
                 // Evaluate this statement and get the next predicate
-                stat = stat.CheckTypes(statTypes).ToRValue(statTypes);
+                var result = stat.CheckTypes(statTypes).ToRValue(statTypes);
 
-                types.MergeFrom(statTypes);
-                return stat;
+                MutateLocals(statTypes, types);
+                return result;
+            }            
+        }
+
+        private static void MutateLocals(TypeFrame bodyTypes, TypeFrame types) {
+            if (types == bodyTypes) {
+                return;
+            }
+
+            var modifiedLocalLifetimes = bodyTypes.Locals
+                .Where(x => !types.Locals.Contains(x))
+                .Select(x => x.Key)
+                .Where(types.Locals.ContainsKey)
+                .ToArray();
+
+            foreach (var path in modifiedLocalLifetimes) {
+                var oldBounds = types.Locals[path];
+                var newBounds = bodyTypes.Locals[path];
+
+               // var roots = types.GetMaximumRoots(newBounds.ValueLifetime);
+
+                // If the new value of this variable depends on a lifetime that was created
+                // inside the loop, we need to declare a new root so that nothing after the
+                // loop uses code that is no longer in scope
+                //if (roots.Any(x => !types.LifetimeRoots.Contains(x))) {
+                //    var newRoot = new ValueLifetime(
+                //        oldBounds.ValueLifetime.Path,
+                //        LifetimeRole.Root,
+                //        LifetimeOrigin.TempValue,
+                //        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
+
+                //    // Add our new root to the list of acceptable roots
+                //    types.LifetimeRoots = types.LifetimeRoots.Add(newRoot);
+
+                //    newBounds = newBounds.WithValue(newRoot);
+                //}
+
+                // Replace the current value with our root
+                types.Locals = types.Locals.SetItem(path, newBounds);
             }
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            foreach (var stat in this.Statements) {
-                stat.AnalyzeFlow(flow);
-            }
-
-            var bundle = this.Statements
+        private static LifetimeBounds AnalyzeFlow(IReadOnlyList<ISyntaxTree> stats, TypeFrame flow) {
+            var bundle = stats
                 .LastOrNone()
                 .Select(x => x.GetLifetimes(flow))
                 .OrElse(() => new LifetimeBounds());
 
-            this.SetLifetimes(bundle, flow);
+            return bundle;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
@@ -144,7 +182,7 @@ namespace Helix.Features.FlowControl {
             return this;
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }

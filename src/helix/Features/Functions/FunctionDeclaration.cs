@@ -108,7 +108,7 @@ namespace Helix.Features.Functions {
             var sig = this.signature.ResolveNames(types);
             var named = new NominalType(path, NominalTypeKind.Function);
 
-            types.SyntaxValues = types.SyntaxValues.SetItem(path, new TypeSyntax(this.Location, named));
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
 
             // Declare this function
             types.NominalSignatures.Add(path, sig);
@@ -122,7 +122,10 @@ namespace Helix.Features.Functions {
             types = new TypeFrame(types, this.signature.Name);
 
             // Declare parameters
-            FunctionsHelper.DeclareParameterTypes(this.Location, sig, path, types);
+            FunctionsHelper.DeclareParameters(sig, path, types);
+
+            // Make sure we include the heap in the root set
+            types.ValidRoots = types.ValidRoots.Add(Lifetime.Heap);
 
             // Check types
             var body = this.body;
@@ -138,25 +141,13 @@ namespace Helix.Features.Functions {
                 .ToRValue(types)
                 .UnifyTo(sig.ReturnType, types);
 
+            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, body, types);
+
 #if DEBUG
-            // Debug check: make sure that every syntax tree has a return type
+            // Debug check: make sure that every syntax tree was type checked
             foreach (var expr in body.GetAllChildren()) {
-                if (!types.ReturnTypes.ContainsKey(expr)) {
+                if (!expr.IsTypeChecked(types)) {
                     throw new Exception("Compiler assertion failed: syntax tree does not have a return type");
-                }
-            }
-
-            // Debug check: make sure that every syntax tree has captured variables
-            foreach (var expr in body.GetAllChildren()) {
-                if (!types.CapturedVariables.ContainsKey(expr)) {
-                    throw new Exception("Compiler assertion failed: syntax tree does not have captured variables");
-                }
-            }
-
-            // Debug check: make sure that every syntax tree has captured variables
-            foreach (var expr in body.GetAllChildren()) {
-                if (!types.Predicates.ContainsKey(expr)) {
-                    throw new Exception("Compiler assertion failed: syntax tree does not have any predicates");
                 }
             }
 #endif
@@ -193,40 +184,17 @@ namespace Helix.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            // Set the scope for flow analyzing the body
-            flow = new FlowFrame(flow);
-
-            // Declare parameters
-            FunctionsHelper.DeclareParameterFlow(this.Signature, this.Path, flow);
-
-            // Make sure we include the heap in the root set
-            flow.LifetimeRoots = flow.LifetimeRoots.Add(Lifetime.Heap);
-
-            this.body.AnalyzeFlow(flow);
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.Signature, this.body, flow);
-
-#if DEBUG
-            // Debug check: Make sure every part of the syntax tree has a lifetime
-            foreach (var expr in this.body.GetAllChildren()) {
-                if (!flow.SyntaxLifetimes.ContainsKey(expr)) {
-                    throw new Exception("Compiler assertion failed: syntax tree does not have any captured variables");
-                }
-            }
-#endif
-        }
-
-        public void GenerateCode(FlowFrame types, ICWriter writer) {
+        public void GenerateCode(TypeFrame types, ICWriter writer) {
             writer.ResetTempNames();
 
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
-                : writer.ConvertType(this.Signature.ReturnType);
+                : writer.ConvertType(this.Signature.ReturnType, types);
 
             var pars = this.Signature
                 .Parameters
                 .Select((x, i) => new CParameter() { 
-                    Type = writer.ConvertType(x.Type),
+                    Type = writer.ConvertType(x.Type, types),
                     Name = writer.GetVariableName(this.Path.Append(x.Name))
                 })
                 .Prepend(new CParameter() {

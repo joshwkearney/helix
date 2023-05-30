@@ -39,6 +39,14 @@ namespace Helix.Features.Aggregates {
             this.IsPure = this.values.All(x => x.IsPure);
         }
 
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            if (!this.isTypeChecked) {
+                throw TypeException.RValueRequired(this.Location);
+            }
+
+            return this;
+        }
+
         public ISyntaxTree CheckTypes(TypeFrame types) {
             var names = new string[this.names.Count];
             int missingCounter = 0;
@@ -145,47 +153,47 @@ namespace Helix.Features.Aggregates {
                 this.path,
                 true);
 
-            result.SetReturnType(this.structType, types);
-            result.SetCapturedVariables(allValues, types);
-            result.SetPredicate(allValues, types);
+            var bounds = AnalyzeFlow(this.path, allNames, allValues, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(allValues)
+                .WithReturnType(this.structType)
+                .WithLifetimes(bounds)
+                .BuildFor(result);
 
             return result;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            if (!this.isTypeChecked) {
-                throw TypeException.RValueRequired(this.Location);
-            }
+        private static LifetimeBounds AnalyzeFlow(
+            IdentifierPath tempPath,
+            IReadOnlyList<string> names, 
+            IReadOnlyList<ISyntaxTree> values, 
+            TypeFrame flow) {
 
-            return this;
-        }
-
-        public void AnalyzeFlow(FlowFrame flow) {
             var rootLifetime = new ValueLifetime(
-                this.path,
+                tempPath,
                 LifetimeRole.Alias,
                 LifetimeOrigin.TempValue);
 
-            for (int i = 0; i < this.names.Count; i++) {
-                var name = this.names[i];
-                var value = this.values[i];
-                var path = this.path.Append(name);
-
-                value.AnalyzeFlow(flow);
+            for (int i = 0; i < names.Count; i++) {
+                var name = names[i];
+                var value = values[i];
+                var type = value.GetReturnType(flow);
+                var path = tempPath.Append(name);
 
                 var valueLifetime = new ValueLifetime(path, LifetimeRole.Alias, LifetimeOrigin.TempValue);
                 var assignLifetime = value.GetLifetimes(flow).ValueLifetime;
                 var bounds = new LifetimeBounds(valueLifetime);
 
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(path, bounds);
-                flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime);
-                flow.DataFlowGraph.AddMember(rootLifetime, valueLifetime);
+                flow.Locals = flow.Locals.SetItem(path, new LocalInfo(type, bounds));
+                flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime, type);
+                flow.DataFlowGraph.AddMember(rootLifetime, valueLifetime, type);
             }
 
-            this.SetLifetimes(new LifetimeBounds(rootLifetime), flow);
+            return new LifetimeBounds(rootLifetime);
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (!this.isTypeChecked) {
                 throw new InvalidOperationException();
             }
@@ -199,7 +207,7 @@ namespace Helix.Features.Aggregates {
             }
 
             return new CCompoundExpression() {
-                Type = writer.ConvertType(types.ReturnTypes[this]),
+                Type = writer.ConvertType(this.GetReturnType(types), types),
                 MemberNames = this.names,
                 Arguments = memValues,
             };

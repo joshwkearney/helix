@@ -55,7 +55,7 @@ namespace Helix.Features.Functions {
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             var target = this.target.CheckTypes(types).ToRValue(types);
-            var targetType = types.ReturnTypes[target];
+            var targetType = target.GetReturnType(types);
 
             // TODO: Support invoking non-nominal functions
             // Make sure the target is a function
@@ -82,13 +82,33 @@ namespace Helix.Features.Functions {
 
             var path = types.Scope.Append("$call" + tempCounter++);
             var result = new InvokeSyntax(this.Location, sig, newArgs, named.Path, path);
+            var bounds = AnalyzeFlow(this.Location, path, types);
 
-            result.SetReturnType(sig.ReturnType, types);
-            result.SetCapturedVariables(newArgs.Append(target), types);
-            result.SetPredicate(newArgs.Append(target), types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(newArgs.Append(target))
+                .WithReturnType(sig.ReturnType)
+                .WithLifetimes(bounds)
+                .BuildFor(result);
 
             return result;            
         }
+
+        private static LifetimeBounds AnalyzeFlow(TokenLocation loc, IdentifierPath path, TypeFrame flow) {
+            // Things to do:
+            // 1) Figure out possible reference type aliasing through arguments
+            // 1) Figure out possible pointer aliasing through arguments
+            // 2) Figure out possible argument dependencies for the return value
+            // 3) Create new inferenced return value lifetime
+
+            var invokeLifetime = new InferredLocationLifetime(
+                loc,
+                path,
+                flow.ValidRoots,
+                LifetimeOrigin.TempValue);
+
+            return new LifetimeBounds(invokeLifetime);
+        }
+
     }
 
     public record InvokeSyntax : ISyntaxTree {
@@ -121,27 +141,7 @@ namespace Helix.Features.Functions {
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            foreach (var arg in this.args) {
-                arg.AnalyzeFlow(flow);
-            }
-
-            // Things to do:
-            // 1) Figure out possible reference type aliasing through arguments
-            // 1) Figure out possible pointer aliasing through arguments
-            // 2) Figure out possible argument dependencies for the return value
-            // 3) Create new inferenced return value lifetime
-
-            var invokeLifetime = new InferredLocationLifetime(
-                this.Location,
-                this.invokeTempPath,
-                flow.LifetimeRoots,
-                LifetimeOrigin.TempValue);
-
-            this.SetLifetimes(new LifetimeBounds(invokeLifetime), flow);
-        }
-
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var region = this
                 .GetLifetimes(types)
                 .ValueLifetime
@@ -161,7 +161,7 @@ namespace Helix.Features.Functions {
 
             var stat = new CVariableDeclaration() {
                 Name = name,
-                Type = writer.ConvertType(this.sig.ReturnType),
+                Type = writer.ConvertType(this.sig.ReturnType, types),
                 Assignment = result
             };
 

@@ -28,20 +28,17 @@ namespace Helix.Features.Variables {
             var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
             var result = new CompoundSyntax(this.Location, args);
 
-            this.SetReturnType(PrimitiveType.Void, types);
-            this.SetCapturedVariables(args, types);
-            this.SetPredicate(args, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(args)
+                .WithLifetimes(new LifetimeBounds())
+                .BuildFor(result);
 
             return result;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.SetLifetimes(new LifetimeBounds(), flow);
-        }
-
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             foreach (var arg in this.args) {
                 arg.GenerateCode(types, writer);
             }

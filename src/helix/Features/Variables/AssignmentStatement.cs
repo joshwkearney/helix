@@ -9,6 +9,7 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Collections;
+using System.IO;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -76,57 +77,43 @@ namespace Helix.Features.Variables {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (types.ReturnTypes.ContainsKey(this)) {
+            if (this.IsTypeChecked(types)) {
                 return this;
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var targetType = target.GetReturnType(types).AsVariable(types).GetValue().InnerType;
+
+            var varSig = target.GetReturnType(types)
+                .AsVariable(types)
+                .GetValue()
+                .InnerType
+                .GetMutationSupertype(types);
 
             var assign = this.assign
                 .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(targetType, types);
+                .ToRValue(types);
+
+            var assignType = assign.GetReturnType(types);
+
+            assign = assign.UnifyTo(varSig, types);
 
             var result = new AssignmentStatement(
                 this.Location,
                 target,
                 assign);
 
-            result.SetReturnType(PrimitiveType.Void, types);
-            result.SetCapturedVariables(target, assign, types);
-            result.SetPredicate(target, assign, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(target, assign)
+                .WithLifetimes(AnalyzeFlow(this.Location, target, assign, assignType, types))
+                .BuildFor(result);
 
             return result;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            // We need to be type checked to be an r-value
-            if (!types.ReturnTypes.ContainsKey(this)) {
-                throw TypeException.RValueRequired(this.Location);
-            }
-
-            return this;
-        }
-
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (flow.SyntaxLifetimes.ContainsKey(this)) {
-                return;
-            }
-
-            this.target.AnalyzeFlow(flow);
-            this.assign.AnalyzeFlow(flow);
-
-            var assignType = this.assign.GetReturnType(flow);
-
-            // Skip value types
-            if (assignType.IsValueType(flow)) {
-                this.SetLifetimes(new LifetimeBounds(), flow);
-                return;
-            }
-
-            var targetBounds = this.target.GetLifetimes(flow);
-            var assignBounds = this.assign.GetLifetimes(flow);
+        public static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree target, 
+                                                 ISyntaxTree assign, HelixType assignType, TypeFrame flow) {
+            var targetBounds = target.GetLifetimes(flow);
+            var assignBounds = assign.GetLifetimes(flow);
 
             // Check to see if the assigned value has the same origins
             // (or more restricted origins) than the target expression.
@@ -144,7 +131,7 @@ namespace Helix.Features.Variables {
                     }
 
                     throw new LifetimeException(
-                        this.Location,
+                        loc,
                         "Unsafe Memory Store",
                         $"Unable to verify that the assigned value outlives its container. " +
                         $"The region '{assignRoot}' is not known to outlive the region '{targetRoot}', " +
@@ -155,31 +142,87 @@ namespace Helix.Features.Variables {
                 }
             }
 
-            if (targetBounds.ValueLifetime.Origin == LifetimeOrigin.LocalValue) {
-                // Here we are storing into a known local variable, so we can replace its
-                // current value instead of adding more lifetimes to it. This is the
-                // best-case scenario because any lifetime inferences based on the previous
-                // value will not depend on future use of this variable
-                var newValue = targetBounds.ValueLifetime.IncrementVersion();
-                var newTargetBounds = targetBounds.WithValue(newValue);
+            var targetType = target.GetReturnType(flow);
 
-                // Update this variable's value
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newValue.Path, newTargetBounds);
-
-                // Make sure the new value outlives its variable
-                flow.DataFlowGraph.AddStored(newValue, newTargetBounds.LocationLifetime);
-
-                targetBounds = newTargetBounds;
+            if (targetType is NominalType nom && nom.Kind == NominalTypeKind.Variable) {
+                AnalyzeLocalAssignment(nom.Path, assignType, assignLifetime, flow);
+            }
+            else {
+                AnalyzeAliasedAssignment(targetBounds.LocationLifetime, targetType, assignLifetime, assignType, flow);
             }
 
-            // Add dependencies between our new target and the assignment lifetimes
-            flow.DataFlowGraph.AddStored(assignLifetime, targetBounds.LocationLifetime);
-            flow.DataFlowGraph.AddAssignment(assignLifetime, targetBounds.ValueLifetime);
-
-            this.SetLifetimes(new LifetimeBounds(), flow);
+            return new LifetimeBounds();
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        private static void AnalyzeLocalAssignment(IdentifierPath path, HelixType assignType, 
+                                                   Lifetime assignLifetime, TypeFrame flow) {
+            // Here we are storing into a known local variable, so we can replace its
+            // current value instead of adding more lifetimes to it. This is the
+            // best-case scenario because any lifetime inferences based on the previous
+            // value will not depend on future use of this variable
+            var newValueLifetime = flow.Locals[path].Bounds.ValueLifetime.IncrementVersion();
+            var newTargetBounds = flow.Locals[path].Bounds.WithValue(newValueLifetime);
+            var newLocal = new LocalInfo(new PointerType(assignType, true), newTargetBounds);
+
+            // Update this variable's value
+            flow.Locals = flow.Locals.SetItem(newValueLifetime.Path, newLocal);
+
+            // Make sure the new value outlives its variable
+            flow.DataFlowGraph.AddStored(newValueLifetime, newTargetBounds.LocationLifetime, assignType);
+
+            // Add dependencies between our new target and the assignment lifetimes
+            flow.DataFlowGraph.AddStored(assignLifetime, newTargetBounds.LocationLifetime, assignType);
+            flow.DataFlowGraph.AddAssignment(assignLifetime, newTargetBounds.ValueLifetime, assignType);
+        }
+
+        private static void AnalyzeAliasedAssignment(
+            Lifetime targetLifetime, 
+            HelixType targetType,
+            Lifetime assignLifetime,
+            HelixType assignType, 
+            TypeFrame flow) {
+
+            var aliasedLifetimes = flow.DataFlowGraph.GetAliasedLifetimes(
+                targetLifetime, 
+                targetType.GetSignatureSupertype(flow), 
+                flow);
+
+            var aliasedLocals = aliasedLifetimes
+                .Where(x => x.Origin == LifetimeOrigin.LocalLocation)
+                .Select(x => x.Path)
+                .ToArray();
+
+            foreach (var path in aliasedLocals) {
+                var local = flow.Locals[path];
+                local = local.WithType(local.Type.GetMutationSupertype(flow));
+
+                flow.Locals = flow.Locals.SetItem(path, local);
+
+                flow.DataFlowGraph.AddAssignment(
+                    assignLifetime, 
+                    local.Bounds.ValueLifetime, 
+                    assignType);
+            }
+
+            foreach (var aliased in aliasedLifetimes) {
+                // Add dependencies between our new target and the assignment lifetimes
+                flow.DataFlowGraph.AddStored(
+                    assignLifetime, 
+                    aliased, 
+                    assignType);
+            }
+        }
+
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            // We need to be type checked to be an r-value
+            if (!this.IsTypeChecked(types)) {
+                throw TypeException.RValueRequired(this.Location);
+            }
+
+            return this;
+        }
+
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = new CPointerDereference() {
                 Target = this.target.GenerateCode(types, writer)
             };

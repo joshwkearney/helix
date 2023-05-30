@@ -28,18 +28,23 @@ namespace Helix.Features.Variables {
             }
 
             var target = this.target.CheckTypes(types).ToLValue(types);
-            var varSig = target.GetReturnType(types).AsVariable(types).GetValue();
+            var varType = target.GetReturnType(types);
             var result = new AddressOfSyntax(Location, target);
 
             target = target.UnifyTo(varSig, types);
 
             var capturedVars = target.GetCapturedVariables(types)
-                .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, varSig))
+                .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, x.Signature))
                 .ToArray();
 
-            result.SetReturnType(varSig, types);
-            result.SetCapturedVariables(capturedVars, types);
-            result.SetPredicate(target, types);
+            var bounds = AnalyzeFlow(this.Location, target, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(target)
+                .WithReturnType(varType)
+                .WithLifetimes(bounds)
+                .WithCapturedVariables(capturedVars)
+                .BuildFor(result);
 
             return result;
         }
@@ -48,30 +53,25 @@ namespace Helix.Features.Variables {
             return this;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
-                return;
-            }
-
-            target.AnalyzeFlow(flow);
+        public static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree target, TypeFrame flow) {
             var locationLifetime = target.GetLifetimes(flow).LocationLifetime;
 
             // Make sure we're taking the address of a variable location
             if (locationLifetime == Lifetime.None) {
                 // TODO: Add more specific error message
-                throw TypeException.ExpectedVariableType(Location, target.GetReturnType(flow));
+                throw TypeException.ExpectedVariableType(loc, target.GetReturnType(flow));
             }
 
-            this.SetLifetimes(new LifetimeBounds(locationLifetime), flow);
+            return new LifetimeBounds(locationLifetime);
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
                     target.GenerateCode(types, writer),
                     writer.GetLifetime(this.GetLifetimes(types).ValueLifetime, types)
                 },
-                Type = writer.ConvertType(this.GetReturnType(types))
+                Type = writer.ConvertType(this.GetReturnType(types), types)
             };
         }
     }

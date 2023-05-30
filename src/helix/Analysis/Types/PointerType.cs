@@ -2,20 +2,29 @@
 using Helix.Syntax;
 
 namespace Helix.Analysis.Types {
-    public record PointerType(HelixType InnerType, bool IsWritable) : HelixType {
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+    public record PointerType : HelixType {
+        public HelixType InnerType { get; }
+
+        public bool IsWritable { get; }
+
+        public PointerType(HelixType innerType, bool isWritable) {
+            this.InnerType = innerType;
+            this.IsWritable = isWritable;
+        }
+
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             return PassingSemantics.ReferenceType;
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) {
+        public override HelixType GetMutationSupertype(TypeFrame types) {
+            return new PointerType(this.InnerType.GetMutationSupertype(types), true);
+        }
+
+        public override HelixType GetSignatureSupertype(TypeFrame types) {
             return this;
         }
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) {
-            return this;
-        }
-
-        public override IEnumerable<HelixType> GetContainedTypes(TypeFrame frame) {
+        public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame frame) {
             yield return this;
             yield return this.InnerType;
         }

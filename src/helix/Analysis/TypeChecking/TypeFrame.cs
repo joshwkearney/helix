@@ -18,62 +18,54 @@ namespace Helix.Analysis.TypeChecking {
 
     public record struct VariableCapture(IdentifierPath VariablePath, VariableCaptureKind Kind, PointerType Signature) { }
 
-    public class TypeFrame : ITypeContext {
+    public class TypeFrame {
         private int tempCounter = 0;
 
         // Frame-specific things
         public IdentifierPath Scope { get; }
 
-        public ImmutableDictionary<IdentifierPath, ISyntaxTree> SyntaxValues { get; set; }
+        public ImmutableDictionary<IdentifierPath, LocalInfo> Locals { get; set; }
+
+        public ImmutableHashSet<Lifetime> ValidRoots { get; set; }
 
         // Global things
-        public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; set; }
+        public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; }
 
-        public Dictionary<ISyntaxTree, HelixType> ReturnTypes { get; }
+        public DataFlowGraph DataFlowGraph { get; }
 
-        public Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> CapturedVariables { get; }
-
-        public Dictionary<ISyntaxTree, ISyntaxPredicate> Predicates { get; }
-
-        // Explicit interface implementations
-        IReadOnlyDictionary<IdentifierPath, ISyntaxTree> ITypeContext.GlobalSyntaxValues => this.SyntaxValues;
-
-        IReadOnlyDictionary<IdentifierPath, HelixType> ITypeContext.GlobalNominalSignatures => this.NominalSignatures;
-
-        IReadOnlyDictionary<ISyntaxTree, HelixType> ITypeContext.ReturnTypes => this.ReturnTypes;
-
-        IReadOnlyDictionary<ISyntaxTree, IReadOnlyList<VariableCapture>> ITypeContext.CapturedVariables => this.CapturedVariables;
+        public Dictionary<ISyntaxTree, SyntaxTag> SyntaxTags { get; }
 
         public TypeFrame() {
-            this.SyntaxValues = ImmutableDictionary<IdentifierPath, ISyntaxTree>.Empty;
+            this.Locals = ImmutableDictionary<IdentifierPath, LocalInfo>.Empty;
 
-            this.SyntaxValues = this.SyntaxValues.Add(
+            this.Locals = this.Locals.Add(
                 new IdentifierPath("void"),
-                new TypeSyntax(default, PrimitiveType.Void));
+                new LocalInfo(PrimitiveType.Void));
 
-            this.SyntaxValues = this.SyntaxValues.Add(
+            this.Locals = this.Locals.Add(
                 new IdentifierPath("int"),
-                new TypeSyntax(default, PrimitiveType.Int));
+                new LocalInfo(PrimitiveType.Int));
 
-            this.SyntaxValues = this.SyntaxValues.Add(
+            this.Locals = this.Locals.Add(
                 new IdentifierPath("bool"),
-                new TypeSyntax(default, PrimitiveType.Bool));
+                new LocalInfo(PrimitiveType.Bool));
 
+            this.ValidRoots = ImmutableHashSet<Lifetime>.Empty;
+            this.NominalSignatures = new Dictionary<IdentifierPath, HelixType>();
             this.Scope = new IdentifierPath();
-            this.ReturnTypes = new Dictionary<ISyntaxTree, HelixType>();
-            this.CapturedVariables = new Dictionary<ISyntaxTree, IReadOnlyList<VariableCapture>>();
-            this.Predicates = new Dictionary<ISyntaxTree, ISyntaxPredicate>();
-            this.NominalSignatures =  new Dictionary<IdentifierPath, HelixType>();
+            this.DataFlowGraph = new DataFlowGraph();
+            this.SyntaxTags = new Dictionary<ISyntaxTree, SyntaxTag>();
         }
 
         private TypeFrame(TypeFrame prev) {
-            this.SyntaxValues = prev.SyntaxValues;
-
             this.Scope = prev.Scope;
-            this.ReturnTypes = prev.ReturnTypes;
-            this.CapturedVariables = prev.CapturedVariables;
-            this.Predicates = prev.Predicates;
+            this.DataFlowGraph = prev.DataFlowGraph;
+
+            this.SyntaxTags = prev.SyntaxTags;
             this.NominalSignatures = prev.NominalSignatures;
+
+            this.Locals = prev.Locals;
+            this.ValidRoots = prev.ValidRoots;
         }
 
         public TypeFrame(TypeFrame prev, string scopeSegment) : this(prev) {
@@ -82,46 +74,45 @@ namespace Helix.Analysis.TypeChecking {
 
         public string GetVariableName() {
             return "$t_" + this.tempCounter++;
-        }        
+        }
 
-        public void MergeFrom(params TypeFrame[] subFrames) {
-            var dict = new DefaultDictionary<IdentifierPath, HashSet<ISyntaxTree>>(_ => new HashSet<ISyntaxTree>());
+        private IEnumerable<Lifetime> MaximizeRootSet(IEnumerable<Lifetime> roots) {
+            var result = new List<Lifetime>(roots);
 
-            foreach (var frame in subFrames) {
-                var locals = frame.SyntaxValues
-                    .Where(x => x.Value.AsType(frame).HasValue)
-                    .Where(x => {
-                        if (!this.SyntaxValues.TryGetValue(x.Key, out var syntax)) {
-                            return false;
-                        }
+            foreach (var root in roots) {
+                foreach (var otherRoot in roots) {
+                    // Don't compare a lifetime against itself
+                    if (root == otherRoot) {
+                        continue;
+                    }
 
-                        if (!syntax.AsType(this).TryGetValue(out var type)) {
-                            return false;
-                        }
+                    // If these two lifetimes are equivalent (ie, they are supposed to
+                    // outlive each other), then keep both as roots
+                    if (this.DataFlowGraph.GetEquivalentLifetimes(root).Contains(otherRoot)) {
+                        continue;
+                    }
 
-                        return x.Value.AsType(frame) != type;
-                    })
-                    .ToArray();
-
-                foreach (var (key, value) in locals) {
-                    dict[key].Add(value);
+                    // If the other root is outlived by this root (and they're not equivalent),
+                    // then remove it because "root" is a more useful, longer-lived root
+                    if (this.DataFlowGraph.DoesOutlive(root, otherRoot)) {
+                        result.Remove(otherRoot);
+                    }
                 }
             }
 
-            foreach (var (key, valueSet) in dict) {
-                if (valueSet.Count == 0) {
-                    continue;
-                }
-                else if (valueSet.Count == 1) {
-                    this.SyntaxValues = this.SyntaxValues.SetItem(key, valueSet.First());
-                }
-                else {
-                    var oldSyntax = this.SyntaxValues[key];
-                    var newType = this.SyntaxValues[key].AsType(this).GetValue().GetMutationSupertype(this);
+            return result;
+        }
 
-                    this.SyntaxValues = this.SyntaxValues.SetItem(key, newType.ToSyntax(oldSyntax.Location));
-                }
-            }
+        public IEnumerable<Lifetime> GetMaximumRoots(Lifetime lifetime) {
+            var roots = this
+                .DataFlowGraph
+                .GetOutlivedLifetimes(lifetime)
+                .Where(x => x.Role != LifetimeRole.Alias)
+                .Where(x => x != lifetime);
+
+            roots = this.MaximizeRootSet(roots);
+
+            return roots;
         }
     }
 }

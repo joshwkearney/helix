@@ -75,70 +75,84 @@ namespace Helix.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (types.ReturnTypes.ContainsKey(this)) {
+            if (this.IsTypeChecked(types)) {
                 return this;
+            }
+
+            // TODO: Confirm this works
+            // This is to prevent things in the loop from depending on things before
+            // the loop, since we will introduce cyclical lifetime dependencies below
+            foreach (var (path, local) in types.Locals) {
+                var newValue = local.Bounds.ValueLifetime.IncrementVersion();
+                var newBounds = local.Bounds.WithValue(newValue);
+                var newLocal = local.WithBounds(newBounds);
+
+                types.DataFlowGraph.AddStored(local.Bounds.ValueLifetime, newValue, local.Type);
+
+                types.Locals = types.Locals.SetItem(path, newLocal);
             }
 
             var bodyTypes = new TypeFrame(types, this.name);
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = (ISyntaxTree)new LoopStatement(this.Location, body, this.name);
 
-            result.SetReturnType(PrimitiveType.Void, types);
-            result.SetCapturedVariables(body, types);
-            result.SetPredicate(types);
+            MutateLocals(bodyTypes, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(body)
+                .BuildFor(result);
 
             types.MergeFrom(bodyTypes);
 
             return result;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            var bodyFlow = new FlowFrame(flow);
-            this.body.AnalyzeFlow(bodyFlow);
-
-            var modifiedLocalLifetimes = bodyFlow.LocalLifetimes
-                .Where(x => !flow.LocalLifetimes.Contains(x))
+        private static void MutateLocals(TypeFrame bodyFlow, TypeFrame flow) {
+            var modifiedLocalLifetimes = bodyFlow.Locals
+                .Where(x => !flow.Locals.Contains(x))
                 .Select(x => x.Key)
-                .Where(flow.LocalLifetimes.ContainsKey)
+                .Where(flow.Locals.ContainsKey)
                 .ToArray();
 
             // For every variable that might be modified in the loop, create a new lifetime
             // for it in the loop body so that if it does change, it is only changing the
             // new variable signature and not the old one
             foreach (var path in modifiedLocalLifetimes) {
-                var oldBounds = flow.LocalLifetimes[path];
-                var newBounds = bodyFlow.LocalLifetimes[path];
+                var oldLocal = flow.Locals[path];
+                var newLocal = bodyFlow.Locals[path];
 
-                // Add a dependency between the new lifetime and the old lifetime
-                // because things outside the loop may depend on things inside
-                // the loop, because it's a loop
-                flow.DataFlowGraph.AddStored(newBounds.ValueLifetime, oldBounds.ValueLifetime);
+                flow.DataFlowGraph.AddAssignment(
+                    newLocal.Bounds.ValueLifetime, 
+                    oldLocal.Bounds.ValueLifetime,
+                    newLocal.Type);
 
-                var roots = flow.GetMaximumRoots(newBounds.ValueLifetime);
+                var roots = flow.GetMaximumRoots(newLocal.Bounds.ValueLifetime);
 
                 // If the new value of this variable depends on a lifetime that was created
                 // inside the loop, we need to declare a new root so that nothing after the
                 // loop uses code that is no longer in scope
-                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
+                if (roots.Any(x => !flow.ValidRoots.Contains(x))) {
                     var newRoot = new ValueLifetime(
-                        oldBounds.ValueLifetime.Path,
+                        oldLocal.Bounds.ValueLifetime.Path,
                         LifetimeRole.Root,
                         LifetimeOrigin.TempValue,
-                        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
+                        newLocal.Bounds.ValueLifetime.Version + 1);
+
+                    flow.DataFlowGraph.AddStored(newLocal.Bounds.ValueLifetime, newRoot, newLocal.Type);
+                    flow.DataFlowGraph.AddStored(oldLocal.Bounds.ValueLifetime, newRoot, oldLocal.Type);
 
                     // Add our new root to the list of acceptable roots
-                    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
+                    flow.ValidRoots = flow.ValidRoots.Add(newRoot);
 
-                    // Replace the current value with our root
-                    oldBounds = oldBounds.WithValue(newRoot);
-                    flow.LocalLifetimes = flow.LocalLifetimes.SetItem(newRoot.Path, oldBounds);
+                    oldLocal = new LocalInfo(oldLocal.Type, oldLocal.Bounds.WithValue(newRoot));
                 }
-            }
 
-            this.SetLifetimes(new LifetimeBounds(), flow);
+                oldLocal = oldLocal.WithType(oldLocal.Type.GetMutationSupertype(flow));
+                flow.Locals = flow.Locals.SetItem(path, oldLocal);
+            }
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var bodyStats = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, bodyStats);
 

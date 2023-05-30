@@ -13,11 +13,7 @@ namespace Helix.Syntax {
 
         public IDeclaration CheckTypes(TypeFrame types);
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            throw new InvalidOperationException();
-        }
-
-        public void GenerateCode(FlowFrame types, ICWriter writer) {
+        public void GenerateCode(TypeFrame types, ICWriter writer) {
             throw new InvalidOperationException();
         }
     }

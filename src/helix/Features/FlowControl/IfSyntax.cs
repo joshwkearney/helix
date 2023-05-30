@@ -84,13 +84,9 @@ namespace Helix.Features.FlowControl {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (types.ReturnTypes.ContainsKey(this)) {
+            if (this.IsTypeChecked(types)) {
                 return this;
             }
-
-            var name = this.path.Segments.Last();
-            var iftrueTypes = new TypeFrame(types, name + "T");
-            var iffalseTypes = new TypeFrame(types, name + "F");
 
             var cond = this.cond.CheckTypes(types).ToRValue(types);
             var condPredicate = ISyntaxPredicate.Empty;
@@ -100,6 +96,10 @@ namespace Helix.Features.FlowControl {
             }
 
             cond = cond.UnifyTo(PrimitiveType.Bool, types);
+
+            var name = this.path.Segments.Last();
+            var iftrueTypes = new TypeFrame(types, name + "T");
+            var iffalseTypes = new TypeFrame(types, name + "F");
 
             var ifTruePrepend = condPredicate.ApplyToTypes(this.cond.Location, iftrueTypes);
             var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.cond.Location, iffalseTypes);
@@ -113,7 +113,10 @@ namespace Helix.Features.FlowControl {
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
 
-            var resultType = types.ReturnTypes[iftrue];
+            // Update any variables modified in either branch
+            MutateLocals(iftrueTypes, iffalseTypes, types);
+
+            var resultType = iftrue.GetReturnType(types);
 
             var result = new IfSyntax(
                 this.Location,
@@ -122,9 +125,11 @@ namespace Helix.Features.FlowControl {
                 iffalse,
                 types.Scope.Append(name));
 
-            result.SetReturnType(resultType, types);
-            result.SetCapturedVariables(cond, iftrue, iffalse, types);
-            result.SetPredicate(iftrue, iffalse, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(cond, iftrue, iffalse)
+                .WithReturnType(resultType)
+                .WithLifetimes(AnalyzeFlow(this.path, iftrue, iffalse, types))
+                .BuildFor(result);
 
             types.MergeFrom(iftrueTypes, iffalseTypes);
 
@@ -132,34 +137,20 @@ namespace Helix.Features.FlowControl {
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
-            if (types.ReturnTypes.ContainsKey(this)) {
-                return this;
-            }
-            else {
+            if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
+
+            return this;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
-                return;
-            }
+        private static LifetimeBounds AnalyzeFlow(IdentifierPath path, ISyntaxTree iftrue, 
+                                                  ISyntaxTree iffalse, TypeFrame flow) {
+            var ifTrueBounds = iftrue.GetLifetimes(flow);
+            var ifFalseBounds = iffalse.GetLifetimes(flow);
 
-            var iftrueFlow = new FlowFrame(flow);
-            var iffalseFlow = new FlowFrame(flow);
-
-            this.cond.AnalyzeFlow(flow);
-            this.iftrue.AnalyzeFlow(iftrueFlow);
-            this.iffalse.AnalyzeFlow(iffalseFlow);
-
-            var ifTrueBounds = this.iftrue.GetLifetimes(flow);
-            var ifFalseBounds = this.iffalse.GetLifetimes(flow);
-
-            MutateLocals(iftrueFlow, iffalseFlow, flow);
-
-            if (this.GetReturnType(flow).IsValueType(flow)) {
-                this.SetLifetimes(new LifetimeBounds(), flow);
-                return;
+            if (iftrue.GetReturnType(flow).IsValueType(flow) || iffalse.GetReturnType(flow).IsValueType(flow)) {
+                return new LifetimeBounds();
             }
 
             var role = LifetimeRole.Alias;
@@ -172,51 +163,60 @@ namespace Helix.Features.FlowControl {
             }
 
             var valueLifetime = new ValueLifetime(
-                this.path,  
+                path,  
                 role, 
                 LifetimeOrigin.TempValue);
 
-            flow.DataFlowGraph.AddAssignment(valueLifetime, ifTrueBounds.ValueLifetime);
-            flow.DataFlowGraph.AddAssignment(valueLifetime, ifFalseBounds.ValueLifetime);
+            flow.DataFlowGraph.AddAssignment(
+                valueLifetime, 
+                ifTrueBounds.ValueLifetime, 
+                iftrue.GetReturnType(flow));
+
+            flow.DataFlowGraph.AddAssignment(
+                valueLifetime, 
+                ifFalseBounds.ValueLifetime,
+                iffalse.GetReturnType(flow));
 
             if (newRoots) {
-                flow.LifetimeRoots = flow.LifetimeRoots.Add(valueLifetime);
+                flow.ValidRoots = flow.ValidRoots.Add(valueLifetime);
             }
 
-            this.SetLifetimes(new LifetimeBounds(valueLifetime), flow);
+            return new LifetimeBounds(valueLifetime);
         }
 
-        private static bool HasNewRoots(Lifetime lifetime, FlowFrame flow) {
+        private static bool HasNewRoots(Lifetime lifetime, TypeFrame flow) {
             var roots = flow.GetMaximumRoots(lifetime);
 
-            return roots.Any(x => !flow.LifetimeRoots.Contains(x));
+            return roots.Any(x => !flow.ValidRoots.Contains(x));
         }
 
         private static void MutateLocals(
-            FlowFrame trueFrame,
-            FlowFrame falseFrame,
-            FlowFrame flow) {
+            TypeFrame trueFrame,
+            TypeFrame falseFrame,
+            TypeFrame flow) {
 
-            var modifiedLocals = trueFrame.LocalLifetimes
-                .Concat(falseFrame.LocalLifetimes)
-                .Where(x => !flow.LocalLifetimes.Contains(x))
-                .Distinct()
+            var modifiedLocals = trueFrame.Locals
+                .Concat(falseFrame.Locals)
+                .Where(x => !flow.Locals.Contains(x))
                 .Select(x => x.Key)
-                .Where(flow.LocalLifetimes.ContainsKey)
+                .Where(flow.Locals.ContainsKey)
                 .ToArray();
 
             foreach (var varPath in modifiedLocals) {
-                var trueLifetime = trueFrame
-                    .LocalLifetimes
-                    .GetValueOrNone(varPath)
-                    .OrElse(() => new LifetimeBounds())
-                    .ValueLifetime;
+                var parentType = flow.Locals[varPath].Type;
 
-                var falseLifetime = falseFrame
-                    .LocalLifetimes
+                var trueLocal = trueFrame
+                    .Locals
                     .GetValueOrNone(varPath)
-                    .OrElse(() => new LifetimeBounds())
-                    .ValueLifetime;
+                    .OrElse(() => new LocalInfo(parentType));
+
+                var falseLocal = falseFrame
+                    .Locals
+                    .GetValueOrNone(varPath)
+                    .OrElse(() => new LocalInfo(parentType));
+
+                var trueLifetime = trueLocal.Bounds.ValueLifetime;
+                var falseLifetime = falseLocal.Bounds.ValueLifetime;
 
                 Lifetime postLifetime;
                 if (trueLifetime.Version >= falseLifetime.Version || falseLifetime == Lifetime.None) {
@@ -226,31 +226,31 @@ namespace Helix.Features.FlowControl {
                     postLifetime = falseLifetime.IncrementVersion();
                 }
 
-                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime);
-                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime);
+                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime, trueLocal.Type);
+                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime, falseLocal.Type);
 
                 var roots = flow.GetMaximumRoots(postLifetime);
 
-                // If the new value of this if expression depends on a root that was created
-                // inside one of the branches, we need to emit a new root because any code
-                // after the if statement can't access our branch's roots
-                if (roots.Any(x => !flow.LifetimeRoots.Contains(x))) {
-                    var newRoot = new ValueLifetime(
+                // If the new value of this variable depends on a lifetime that was created
+                // inside the loop, we need to declare a new root so that nothing after the
+                // loop uses code that is no longer in scope
+                if (roots.Any(x => !flow.ValidRoots.Contains(x))) {
+                    postLifetime = new ValueLifetime(
                         postLifetime.Path,
                         LifetimeRole.Root,
                         LifetimeOrigin.TempValue,
                         postLifetime.Version + 1);
-
-                    flow.LifetimeRoots = flow.LifetimeRoots.Add(newRoot);
-                    postLifetime = newRoot;
                 }
 
-                var newValue = flow.LocalLifetimes[varPath].WithValue(postLifetime);
-                flow.LocalLifetimes = flow.LocalLifetimes.SetItem(varPath, newValue);
+                var newLocal = flow.Locals[varPath]
+                    .WithBounds(new LifetimeBounds(postLifetime))
+                    .WithType(parentType.GetMutationSupertype(flow));                
+
+                flow.Locals = flow.Locals.SetItem(varPath, newLocal);
             }
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();
             var negList = new List<ICStatement>();
 
@@ -276,7 +276,7 @@ namespace Helix.Features.FlowControl {
             }
 
             var tempStat = new CVariableDeclaration() {
-                Type = writer.ConvertType(returnType),
+                Type = writer.ConvertType(returnType, types),
                 Name = tempName
             };
 

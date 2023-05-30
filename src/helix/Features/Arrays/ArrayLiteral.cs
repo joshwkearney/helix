@@ -63,6 +63,14 @@ namespace Helix.Features.Arrays {
             this.tempPath = tempPath;
         }
 
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            if (!this.IsTypeChecked(types)) {
+                throw TypeException.RValueRequired(this.Location);
+            }
+
+            return this;
+        }
+
         public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
@@ -94,45 +102,41 @@ namespace Helix.Features.Arrays {
                 args, 
                 types.Scope.Append(this.tempPath));
 
-            result.SetCapturedVariables(args, types);
-            result.SetPredicate(args, types);
-            result.SetReturnType(new ArrayType(totalType), types);
+            var bounds = AnalyzeFlow(this.Location, this.tempPath, args, types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(new ArrayType(totalType))
+                .WithLifetimes(bounds)
+                .BuildFor(result);
 
             return result;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            if (!this.IsTypeChecked(types)) {
-                throw TypeException.RValueRequired(this.Location);
-            }
-
-            return this;
-        }
-
-        public void AnalyzeFlow(FlowFrame flow) {
-            if (this.IsFlowAnalyzed(flow)) {
-                return;
-            }
-
-            foreach (var arg in this.args) {
-                arg.AnalyzeFlow(flow);
-            }
+        private static LifetimeBounds AnalyzeFlow(
+            TokenLocation loc, 
+            IdentifierPath tempPath,                                                   
+            IReadOnlyList<ISyntaxTree> args, 
+            TypeFrame flow) {
 
             var arrayLifetime = new InferredLocationLifetime(
-                this.Location, 
-                this.tempPath, 
-                flow.LifetimeRoots, 
+                loc, 
+                tempPath, 
+                flow.ValidRoots, 
                 LifetimeOrigin.TempValue);
 
-            foreach (var arg in this.args) {
+            foreach (var arg in args) {
                 var valueLifetime = arg.GetLifetimes(flow).ValueLifetime;
-                flow.DataFlowGraph.AddStored(valueLifetime, arrayLifetime);
+
+                flow.DataFlowGraph.AddStored(
+                    valueLifetime, 
+                    arrayLifetime, 
+                    arg.GetReturnType(flow));
             }
 
-            this.SetLifetimes(new LifetimeBounds(arrayLifetime), flow);
+            return new LifetimeBounds(arrayLifetime);
         }
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
@@ -150,13 +154,13 @@ namespace Helix.Features.Arrays {
             }
         }
 
-        private ICSyntax GenerateRegionCode(FlowFrame types, ICStatementWriter writer) {
+        private ICSyntax GenerateRegionCode(TypeFrame types, ICStatementWriter writer) {
             var args = this.args.Select(x => x.GenerateCode(types, writer)).ToArray();
             var lifetime = this.GetLifetimes(types).ValueLifetime;
             var helixArrayType = (ArrayType)this.GetReturnType(types);
 
-            var cArrayType = writer.ConvertType(helixArrayType);
-            var cInnerType = writer.ConvertType(helixArrayType.InnerType);
+            var cArrayType = writer.ConvertType(helixArrayType, types);
+            var cInnerType = writer.ConvertType(helixArrayType.InnerType, types);
 
             var backingName = writer.GetVariableName();
             var tempName = writer.GetVariableName(this.tempPath);
@@ -206,12 +210,12 @@ namespace Helix.Features.Arrays {
             return new CVariableLiteral(tempName);
         }
 
-        private ICSyntax GenerateStackCode(FlowFrame types, ICStatementWriter writer) {
+        private ICSyntax GenerateStackCode(TypeFrame types, ICStatementWriter writer) {
             var args = this.args.Select(x => x.GenerateCode(types, writer)).ToArray();
             var helixArrayType = (ArrayType)this.GetReturnType(types);
 
-            var cArrayType = writer.ConvertType(helixArrayType);
-            var cInnerType = writer.ConvertType(helixArrayType.InnerType);
+            var cArrayType = writer.ConvertType(helixArrayType, types);
+            var cInnerType = writer.ConvertType(helixArrayType.InnerType, types);
 
             var backingName = writer.GetVariableName();
             var tempName = writer.GetVariableName(this.tempPath);

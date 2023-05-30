@@ -1,5 +1,6 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Collections;
 using Helix.Features.Primitives;
@@ -21,9 +22,9 @@ namespace Helix.Generation {
 
         public ICStatementWriter WriteEmptyLine();
 
-        public ICSyntax GetLifetime(Lifetime lifetime, FlowFrame flow);
+        public ICSyntax GetLifetime(Lifetime lifetime, TypeFrame flow);
 
-        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, FlowFrame flow);
+        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, TypeFrame flow);
 
         // Mixins
         public ICStatementWriter WriteComment(string comment) {
@@ -92,7 +93,7 @@ namespace Helix.Generation {
             return this;
         }
 
-        public ICSyntax GetLifetime(Lifetime lifetime, FlowFrame flow) {
+        public ICSyntax GetLifetime(Lifetime lifetime, TypeFrame flow) {
             if (this.prev is CStatementWriter statWriter) {
                 if (statWriter.lifetimes.TryGetValue(lifetime, out var value)) {
                     return value;
@@ -106,7 +107,7 @@ namespace Helix.Generation {
             return this.lifetimes[lifetime];
         }
 
-        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, FlowFrame flow) {
+        public ICSyntax CalculateSmallestLifetime(TokenLocation loc, IEnumerable<Lifetime> lifetimes, TypeFrame flow) {
             var lifetimeList = lifetimes.ToValueSet();
 
             if (lifetimeList.Count == 0) {
@@ -160,7 +161,7 @@ namespace Helix.Generation {
 
         public void WriteDeclaration4(ICStatement decl) => this.prev.WriteDeclaration4(decl);
 
-        public ICSyntax ConvertType(HelixType type) => this.prev.ConvertType(type);
+        public ICSyntax ConvertType(HelixType type, TypeFrame types) => this.prev.ConvertType(type, types);
 
         public void ResetTempNames() => this.prev.ResetTempNames();
     }

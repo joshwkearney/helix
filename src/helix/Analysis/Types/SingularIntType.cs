@@ -11,19 +11,19 @@ namespace Helix.Analysis.Types {
             this.Value = value;
         }
 
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             return PassingSemantics.ValueType;
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) {
+        public override HelixType GetMutationSupertype(TypeFrame types) {
             return PrimitiveType.Int;
         }
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) {
+        public override HelixType GetSignatureSupertype(TypeFrame types) {
             return PrimitiveType.Int;
         }
 
-        public override ISyntaxTree ToSyntax(TokenLocation loc) {
+        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             return new IntLiteral(loc, this.Value);
         }       
 

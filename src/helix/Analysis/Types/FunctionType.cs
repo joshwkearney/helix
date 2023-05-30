@@ -13,13 +13,13 @@ namespace Helix.Features.Types {
             this.Parameters = pars;
         }
 
-        public override PassingSemantics GetSemantics(ITypeContext types) {
+        public override PassingSemantics GetSemantics(TypeFrame types) {
             return PassingSemantics.ReferenceType;
         }
 
-        public override HelixType GetMutationSupertype(ITypeContext types) => this;
+        public override HelixType GetMutationSupertype(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) => this;
+        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
     }
 
     public record FunctionParameter {

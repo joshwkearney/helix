@@ -3,13 +3,14 @@ using Helix.Analysis.Types;
 using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
+using Helix.Analysis.Predicates;
 
 namespace Helix.Analysis {
     public static class AnalysisExtensions {
-        public static bool TryResolvePath(this ITypeContext types, IdentifierPath scope, string name, out IdentifierPath path) {
+        public static bool TryResolvePath(this TypeFrame types, IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
                 path = scope.Append(name);
-                if (types.GlobalSyntaxValues.ContainsKey(path)) {
+                if (types.Locals.ContainsKey(path)) {
                     return true;
                 }
 
@@ -22,7 +23,7 @@ namespace Helix.Analysis {
             }
         }
 
-        public static IdentifierPath ResolvePath(this ITypeContext types, IdentifierPath scope, string name) {
+        public static IdentifierPath ResolvePath(this TypeFrame types, IdentifierPath scope, string name) {
             if (types.TryResolvePath(scope, name, out var value)) {
                 return value;
             }
@@ -31,27 +32,29 @@ namespace Helix.Analysis {
                 $"Compiler error: The path '{name}' does not contain a value.");
         }
 
-        public static bool TryResolveName(this ITypeContext types, IdentifierPath scope, string name, out ISyntaxTree value) {
+        public static bool TryResolveName(this TypeFrame types, IdentifierPath scope, string name, out HelixType value) {
             if (!types.TryResolvePath(scope, name, out var path)) {
                 value = null;
                 return false;
             }
 
-            return types.GlobalSyntaxValues.TryGetValue(path, out value);
+            if (!types.Locals.TryGetValue(path, out var info)) {
+                value = null;
+                return false;
+            }
+
+            value = info.Type;
+            return true;
         }
 
-        public static ISyntaxTree ResolveName(this ITypeContext types, IdentifierPath scope, string name) {
-            return types.GlobalSyntaxValues[types.ResolvePath(scope, name)];
-        }
-
-        public static bool TryGetFunction(this ITypeContext types, IdentifierPath path, out FunctionType type) {
-            return types.GlobalNominalSignatures
+        public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {
+            return types.NominalSignatures
                 .GetValueOrNone(path)
                 .SelectMany(x => x.AsFunction(types))
                 .TryGetValue(out type);
         }
 
-        public static Option<PointerType> AsVariable(this HelixType type, ITypeContext types) {
+        public static Option<PointerType> AsVariable(this HelixType type, TypeFrame types) {
             if (type.GetSignatureSupertype(types) is PointerType sig) {
                 return sig;
             }
@@ -60,7 +63,7 @@ namespace Helix.Analysis {
             }
         }
 
-        public static Option<FunctionType> AsFunction(this HelixType type, ITypeContext types) {
+        public static Option<FunctionType> AsFunction(this HelixType type, TypeFrame types) {
             if (type.GetSignatureSupertype(types) is FunctionType funcSig) {
                 return funcSig;
             }
@@ -69,7 +72,7 @@ namespace Helix.Analysis {
             }            
         }
 
-        public static Option<StructType> AsStruct(this HelixType type, ITypeContext types) {
+        public static Option<StructType> AsStruct(this HelixType type, TypeFrame types) {
             if (type.GetSignatureSupertype(types) is StructType sig) {
                 return sig;
             }
@@ -78,7 +81,7 @@ namespace Helix.Analysis {
             }
         }
 
-        public static Option<UnionType> AsUnion(this HelixType type, ITypeContext types) {
+        public static Option<UnionType> AsUnion(this HelixType type, TypeFrame types) {
             if (type.GetSignatureSupertype(types) is UnionType sig) {
                 return sig;
             }
@@ -87,7 +90,7 @@ namespace Helix.Analysis {
             }
         }
 
-        public static Option<ArrayType> AsArray(this HelixType type, ITypeContext types) {
+        public static Option<ArrayType> AsArray(this HelixType type, TypeFrame types) {
             if (type.GetSignatureSupertype(types) is ArrayType sig) {
                 return sig;
             }
@@ -96,7 +99,7 @@ namespace Helix.Analysis {
             }
         }
 
-        public static bool IsBool(this HelixType type, ITypeContext types) {
+        public static bool IsBool(this HelixType type, TypeFrame types) {
             if (type.GetSignatureSupertype(types) == PrimitiveType.Bool) {
                 return true;
             }
@@ -105,7 +108,7 @@ namespace Helix.Analysis {
             }
         }
 
-        public static bool IsInt(this HelixType type, ITypeContext types) {
+        public static bool IsInt(this HelixType type, TypeFrame types) {
             if (type.GetSignatureSupertype(types) == PrimitiveType.Int) {
                 return true;
             }
@@ -114,19 +117,44 @@ namespace Helix.Analysis {
             }
         }
 
-        public static bool IsTypeChecked(this ISyntaxTree syntax, ITypeContext types) {
-            return types.ReturnTypes.ContainsKey(syntax);
+        public static bool IsTypeChecked(this ISyntaxTree syntax, TypeFrame types) {
+            return types.SyntaxTags.ContainsKey(syntax);
         }
 
-        public static HelixType GetReturnType(this ISyntaxTree syntax, ITypeContext types) {
-            return types.ReturnTypes[syntax];
+        public static HelixType GetReturnType(this ISyntaxTree syntax, TypeFrame types) {
+            return types.SyntaxTags[syntax].ReturnType;
         }
 
-        public static IReadOnlyList<VariableCapture> GetCapturedVariables(this ISyntaxTree syntax, ITypeContext types) {
-            return types.CapturedVariables[syntax];
+        public static IReadOnlyList<VariableCapture> GetCapturedVariables(this ISyntaxTree syntax, TypeFrame types) {
+            return types.SyntaxTags[syntax].CapturedVariables;
         }
 
-        public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, ITypeContext types) {
+        public static PointerType AssertIsPointer(this ISyntaxTree syntax, TypeFrame types) {
+            var type = syntax.GetReturnType(types);
+
+            if (!type.AsVariable(types).TryGetValue(out var pointer)) {
+                throw TypeException.ExpectedVariableType(syntax.Location, type);
+            }
+
+            return pointer;
+        }
+
+        public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
+            return types.Locals
+                .GetValueOrNone(path)
+                .SelectMany(x => x.Type.AsVariable(types))
+                .TryGetValue(out type);
+        }
+
+        public static ISyntaxPredicate GetPredicate(this ISyntaxTree syntax, TypeFrame types) {
+            return types.SyntaxTags[syntax].Predicate;
+        }
+
+        public static LifetimeBounds GetLifetimes(this ISyntaxTree syntax, TypeFrame flow) {
+            return flow.SyntaxTags[syntax].Bounds;
+        }
+
+        public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, TypeFrame types) {
             var dict = new Dictionary<IdentifierPath, HelixType>();
 
             foreach (var (memPath, memType) in GetMemberPaths(type, types)) {
@@ -138,7 +166,7 @@ namespace Helix.Analysis {
 
         private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPaths(
             HelixType type,
-            ITypeContext types) {
+            TypeFrame types) {
 
             return GetMemberPathsHelper(new IdentifierPath(), type, types);
         }
@@ -146,7 +174,7 @@ namespace Helix.Analysis {
         private static IEnumerable<(IdentifierPath path, HelixType type)> GetMemberPathsHelper(
             IdentifierPath basePath,
             HelixType type,
-            ITypeContext types) {
+            TypeFrame types) {
 
             yield return (basePath, type);
 

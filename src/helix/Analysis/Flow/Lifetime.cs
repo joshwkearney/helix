@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Collections;
 using Helix.Generation;
 using Helix.Generation.Syntax;
@@ -56,7 +57,7 @@ namespace Helix.Analysis.Flow {
 
         public abstract Lifetime IncrementVersion();
 
-        public abstract ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer);
+        public abstract ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer);
     }
 
     public record StackLocationLifetime : Lifetime {
@@ -74,7 +75,7 @@ namespace Helix.Analysis.Flow {
             this.Origin = origin;
         }
 
-        public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+        public override ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             // TODO: Put back _region_min
             return new CVariableLiteral("_return_region");
         }
@@ -108,7 +109,7 @@ namespace Helix.Analysis.Flow {
             this.Origin = origin;
         }
 
-        public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+        public override ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var targetName = writer.GetVariableName(this.Path);
             var roots = flow.GetMaximumRoots(this).ToValueSet();
 
@@ -147,7 +148,7 @@ namespace Helix.Analysis.Flow {
             this.Origin = origin;
         }
 
-        public override ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+        public override ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             if (this == Heap) {
                 return new CVariableLiteral("_return_region");
             }

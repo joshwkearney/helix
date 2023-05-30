@@ -67,9 +67,12 @@ namespace Helix.Features.Unions {
                 VariablePath = path
             };
 
-            result.SetReturnType(returnType, types);
-            result.SetPredicate(types);
-            result.SetCapturedVariables(path, VariableCaptureKind.ValueCapture, varSig, types);
+            var cap = new VariableCapture(path, VariableCaptureKind.ValueCapture, varSig);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(returnType)
+                .WithCapturedVariables(cap)
+                .BuildFor(result);
 
             return result;
         }
@@ -92,11 +95,7 @@ namespace Helix.Features.Unions {
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.SetLifetimes(new LifetimeBounds(), flow);
-        }
-
-        public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var varName = writer.GetVariableName(this.VariablePath);
 
             var index = this.UnionSignature

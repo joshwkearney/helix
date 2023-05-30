@@ -24,7 +24,10 @@ namespace Helix.Analysis.TypeChecking {
                     Kind = UnificationKind.Pun,
                     Unifier = (s, t) => {
                         var block = new BlockSyntax(s.Location, new[] { s }).CheckTypes(t);
-                        block.SetReturnType(adaptedType, t);
+
+                        SyntaxTagBuilder.AtFrame(t, block)
+                            .WithReturnType(adaptedType)
+                            .BuildFor(block);
 
                         return block;
                     }
@@ -115,16 +118,20 @@ namespace Helix.Analysis.TypeChecking {
                 return TryUnifyFromArray(arrayType, second, types);
             }
             else if (first is NominalType nom) {
-                return TryUnifyFromNominal(nom, second, types);
+                return TryUnifyFromNominalType(nom, second, types);
             }
 
             return UnificationResult.None;
         }
 
-        private static UnificationResult TryUnifyFromNominal(NominalType nom, HelixType second, TypeFrame types) {
-            if (nom.Kind == NominalTypeKind.Variable) {
-                if (nom.GetSignatureSupertype(types) == second) {
-                    return UnificationResult.Pun(second);
+        private static UnificationResult TryUnifyFromNominalType(NominalType type, HelixType second, TypeFrame types) {
+            if (type.Kind == NominalTypeKind.Variable) {
+                var typeSig = type.AsVariable(types).GetValue();
+
+                if (second is PointerType secondPtr) {
+                    if (TryUnify(typeSig.InnerType, secondPtr.InnerType, types).Kind == UnificationKind.Pun) {
+                        return UnificationResult.Pun(second);
+                    }
                 }
             }
 
@@ -209,7 +216,13 @@ namespace Helix.Analysis.TypeChecking {
                 Unifier = (syntax, t) => {
                     var block = new BlockSyntax(syntax.Location, new[] {
                         syntax,
-                        new NewSyntax(syntax.Location, structType.ToSyntax(syntax.Location))
+                        new NewStructSyntax(
+                            syntax.Location, 
+                            structType, 
+                            sig, 
+                            Array.Empty<string>(), 
+                            Array.Empty<ISyntaxTree>(), 
+                            types.Scope)
                     });
 
                     return block.CheckTypes(t);
@@ -227,7 +240,12 @@ namespace Helix.Analysis.TypeChecking {
                 Unifier = (syntax, t) => {
                     var block = new BlockSyntax(syntax.Location, new[] {
                         syntax,
-                        new NewSyntax(syntax.Location, unionType.ToSyntax(syntax.Location))
+                        new NewUnionSyntax(
+                            syntax.Location,
+                            sig,
+                            sig,
+                            Array.Empty<string>(),
+                            Array.Empty<ISyntaxTree>())
                     });
 
                     return block.CheckTypes(t);

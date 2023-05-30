@@ -12,11 +12,11 @@ namespace Helix.Analysis.Types {
             this.Predicate = predicate;
         }
 
-        public override PassingSemantics GetSemantics(ITypeContext types) => PassingSemantics.ValueType;
+        public override PassingSemantics GetSemantics(TypeFrame types) => PassingSemantics.ValueType;
 
-        public override HelixType GetMutationSupertype(ITypeContext types) => PrimitiveType.Bool;
+        public override HelixType GetMutationSupertype(TypeFrame types) => PrimitiveType.Bool;
 
-        public override HelixType GetSignatureSupertype(ITypeContext types) => PrimitiveType.Bool;
+        public override HelixType GetSignatureSupertype(TypeFrame types) => PrimitiveType.Bool;
     }
 
     public record SingularBoolType : PredicateBool {
@@ -28,7 +28,7 @@ namespace Helix.Analysis.Types {
             this.Value = value;
         }
 
-        public override ISyntaxTree ToSyntax(TokenLocation loc) {
+        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             return new BoolLiteral(loc, this.Value);
         }      
 

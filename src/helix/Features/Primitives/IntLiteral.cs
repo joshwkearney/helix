@@ -39,20 +39,16 @@ namespace Helix.Features.Primitives {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            this.SetReturnType(new SingularIntType(this.Value), types);
-            this.SetCapturedVariables(types);
-            this.SetPredicate(types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithReturnType(new SingularIntType(this.Value))
+                .BuildFor(this);
 
             return this;
         }
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.SetLifetimes(new LifetimeBounds(), flow);
-        }
-
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value);
         }
     }

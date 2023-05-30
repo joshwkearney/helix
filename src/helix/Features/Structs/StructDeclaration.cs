@@ -69,9 +69,9 @@ namespace Helix.Features.Aggregates {
             }
 
             var path = types.Scope.Append(this.signature.Name);
-            var syntax = new TypeSyntax(this.Location, new NominalType(path, NominalTypeKind.Struct));
+            var named = new NominalType(path, NominalTypeKind.Struct);
 
-            types.SyntaxValues = types.SyntaxValues.SetItem(path, syntax);
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
         }
 
         public void DeclareTypes(TypeFrame types) {
@@ -89,7 +89,7 @@ namespace Helix.Features.Aggregates {
             var isRecursive = sig.Members
                 .Select(x => x.Type)
                 .Where(x => x.IsValueType(types))
-                .SelectMany(x => x.GetContainedTypes(types))
+                .SelectMany(x => x.GetAccessibleTypes(types))
                 .Contains(named);
 
             // Make sure this is not a recursive struct or union
@@ -119,14 +119,12 @@ namespace Helix.Features.Aggregates {
 
         public IDeclaration CheckTypes(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) { }
-
-        public void GenerateCode(FlowFrame types, ICWriter writer) {
+        public void GenerateCode(TypeFrame types, ICWriter writer) {
             var name = writer.GetVariableName(this.path);
 
             var mems = this.signature.Members
                 .Select(x => new CParameter() {
-                    Type = writer.ConvertType(x.Type),
+                    Type = writer.ConvertType(x.Type, types),
                     Name = x.Name
                 })
                 .ToArray();

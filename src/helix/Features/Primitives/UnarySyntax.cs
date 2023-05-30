@@ -93,9 +93,10 @@ namespace Helix.Features.Primitives {
                     this.Location,
                     arg);
 
-                result.SetReturnType(returnType, types);
-                result.SetCapturedVariables(arg, types);
-                result.SetPredicate(arg, types);
+                SyntaxTagBuilder.AtFrame(types)
+                    .WithChildren(arg)
+                    .WithReturnType(returnType)
+                    .BuildFor(result);
 
                 return result;
             }
@@ -123,13 +124,7 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.target.AnalyzeFlow(flow);
-
-            this.SetLifetimes(this.target.GetLifetimes(flow), flow);
-        }
-
-        public ICSyntax GenerateCode(FlowFrame types, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CNot() {
                 Target = this.target.GenerateCode(types, writer)
             };

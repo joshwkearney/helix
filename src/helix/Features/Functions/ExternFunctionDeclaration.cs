@@ -48,9 +48,7 @@ namespace Helix.Features.Functions {
             var named = new NominalType(path, NominalTypeKind.Function);
 
             // Replace the temporary wrapper object with a full declaration
-            types.SyntaxValues = types.SyntaxValues.SetItem(
-                path, 
-                new TypeSyntax(this.Location, named));
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
 
             // Declare this function
             types.NominalSignatures.Add(path, sig);
@@ -89,15 +87,15 @@ namespace Helix.Features.Functions {
 
         public IDeclaration CheckTypes(TypeFrame types) => this;
 
-        public void GenerateCode(FlowFrame types, ICWriter writer) {
+        public void GenerateCode(TypeFrame types, ICWriter writer) {
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
                 ? new CNamedType("void")
-                : writer.ConvertType(this.Signature.ReturnType);
+                : writer.ConvertType(this.Signature.ReturnType, types);
 
             var pars = this.Signature
                 .Parameters
                 .Select((x, i) => new CParameter() {
-                    Type = writer.ConvertType(x.Type),
+                    Type = writer.ConvertType(x.Type, types),
                     Name = writer.GetVariableName(this.Path.Append(x.Name))
                 })
                 .Prepend(new CParameter() {

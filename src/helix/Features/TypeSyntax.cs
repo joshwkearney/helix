@@ -23,12 +23,6 @@ namespace Helix.Features {
 
         public Option<HelixType> AsType(TypeFrame types) => this.type;
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            throw new InvalidOperationException();
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            throw new InvalidOperationException();
-        }
+        public ISyntaxTree CheckTypes(TypeFrame types) => this;
     }
 }

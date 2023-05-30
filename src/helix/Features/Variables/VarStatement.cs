@@ -77,7 +77,7 @@ namespace Helix {
 
             // If this is a compound assignment, check if we have the right
             // number of names and then recurse
-            var assignType = types.ReturnTypes[assign];
+            var assignType = assign.GetReturnType(types);
             if (this.names.Count > 1) {
                 return this.Destructure(assignType, types);
             }
@@ -87,25 +87,63 @@ namespace Helix {
                 throw TypeException.IdentifierDefined(this.Location, this.names[0]);
             }
 
-            var basePath = types.Scope.Append(this.names[0]);
+            var path = types.Scope.Append(this.names[0]);
             var varSig = new PointerType(assignType, this.isWritable);
 
-            types.NominalSignatures.Add(basePath, varSig);
+            types.NominalSignatures.Add(path, varSig);
 
             var result = new VarStatement(
                 this.Location,
-                basePath,
+                path,
                 assign,
                 this.isWritable);
 
-            // Put this variable's value in the main table
-            types.SyntaxValues = types.SyntaxValues.SetItem(basePath, result);
-
-            result.SetReturnType(PrimitiveType.Void, types);
-            result.SetCapturedVariables(assign, types);
-            result.SetPredicate(assign, types);
+            SyntaxTagBuilder.AtFrame(types)
+                .WithLifetimes(AnalyzeFlow(this.Location, assign, path, types))
+                .BuildFor(result);
 
             return result.CheckTypes(types);
+        }
+
+        private static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree assign, 
+                                                  IdentifierPath path, TypeFrame flow) {
+            var assignBounds = assign.GetLifetimes(flow);
+            var allowedRoots = flow.ValidRoots.ToValueSet();
+
+            var locationLifetime = new InferredLocationLifetime(
+                loc,
+                path,
+                allowedRoots,
+                LifetimeOrigin.LocalLocation);
+
+            var valueLifetime = new ValueLifetime(path, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
+
+            // Add a dependency between whatever is being assigned to this variable and the
+            // variable's value
+            flow.DataFlowGraph.AddAssignment(
+                assignBounds.ValueLifetime,
+                valueLifetime,
+                assign.GetReturnType(flow));
+
+            // The value of a variable must outlive its location
+            flow.DataFlowGraph.AddStored(
+                valueLifetime, 
+                locationLifetime, 
+                assign.GetReturnType(flow));
+
+            // Add this variable lifetimes to the current frame
+            var bounds = new LifetimeBounds(valueLifetime, locationLifetime);
+            var named = new NominalType(path, NominalTypeKind.Variable);
+            var local = new LocalInfo(named, bounds);
+
+            flow.Locals = flow.Locals.Add(path, local);
+
+            // TODO: Fix this
+            // HACK: Even though we're returning void, set the lifetime of this syntax
+            // to be the lifetime of our variable. This gets around the issue of variable
+            // lifetimes being stored per-flow frame and means that we don't have to 
+            // regenerate the syntax tree on flow analysis (very good)
+            return bounds;
         }
 
         private ISyntaxTree Destructure(HelixType assignType, TypeFrame types) {
@@ -176,49 +214,7 @@ namespace Helix {
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
-        public void AnalyzeFlow(FlowFrame flow) {
-            this.assignSyntax.AnalyzeFlow(flow);
-
-            var bundle = this.DeclareValueLifetimes(flow);
-
-            // TODO: Fix this
-            // HACK: Even though we're returning void, set the lifetime of this syntax
-            // to be the lifetime of our variable. This gets around the issue of variable
-            // lifetimes being stored per-flow frame and means that we don't have to 
-            // regenerate the syntax tree on flow analysis (very good)
-            this.SetLifetimes(bundle, flow);
-        }
-
-        private LifetimeBounds DeclareValueLifetimes(FlowFrame flow) {
-            var assignBounds = this.assignSyntax.GetLifetimes(flow);
-            var allowedRoots = flow.LifetimeRoots.ToValueSet();
-
-            var locationLifetime = new InferredLocationLifetime(
-                this.Location, 
-                this.path, 
-                allowedRoots, 
-                LifetimeOrigin.LocalLocation);
-
-            var valueLifetime = new ValueLifetime(this.path, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
-            var type = this.assignSyntax.GetReturnType(flow);
-
-            // Add a dependency between whatever is being assigned to this variable and the
-            // variable's value
-            flow.DataFlowGraph.AddAssignment(
-                assignBounds.ValueLifetime,
-                valueLifetime);
-
-            // The value of a variable must outlive its location
-            flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime);
-
-            // Add this variable lifetimes to the current frame
-            var bounds = new LifetimeBounds(valueLifetime, locationLifetime);
-
-            flow.LocalLifetimes = flow.LocalLifetimes.SetItem(this.path, bounds);
-            return bounds;
-        }
-
-        public ICSyntax GenerateCode(FlowFrame flow, ICStatementWriter writer) {
+        public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var assign = this.assignSyntax.GenerateCode(flow, writer);
             var lifetime = this.GetLifetimes(flow).LocationLifetime;
             var allocLifetime = lifetime.GenerateCode(flow, writer);
@@ -236,10 +232,10 @@ namespace Helix {
             return new CIntLiteral(0);
         }
 
-        private void GenerateStackAllocation(ICSyntax assign, FlowFrame flow, ICStatementWriter writer) {
+        private void GenerateStackAllocation(ICSyntax assign, TypeFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
-            var assignType = this.assignSyntax.GetReturnType(flow);
-            var cReturnType = writer.ConvertType(assignType);
+            var assignType = this.assignSyntax.GetReturnType(types);
+            var cReturnType = writer.ConvertType(assignType, types);
 
             var stat = new CVariableDeclaration() {
                 Type = cReturnType,
@@ -253,10 +249,10 @@ namespace Helix {
         }
 
         private void GenerateRegionAllocation(ICSyntax assign, ICSyntax allocLifetime,
-                                              FlowFrame flow, ICStatementWriter writer) {
+                                              TypeFrame types, ICStatementWriter writer) {
             var name = writer.GetVariableName(this.path);
-            var assignType = this.assignSyntax.GetReturnType(flow);
-            var cReturnType = writer.ConvertType(assignType);
+            var assignType = this.assignSyntax.GetReturnType(types);
+            var cReturnType = writer.ConvertType(assignType, types);
 
             writer.WriteStatement(new CVariableDeclaration() {
                 Name = name,

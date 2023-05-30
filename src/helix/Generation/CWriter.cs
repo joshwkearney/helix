@@ -22,7 +22,7 @@ namespace Helix.Generation {
 
         public void WriteDeclaration4(ICStatement decl);
 
-        public ICSyntax ConvertType(HelixType type);
+        public ICSyntax ConvertType(HelixType type, TypeFrame types);
     }
 
     public class CWriter : ICWriter {
@@ -106,13 +106,13 @@ namespace Helix.Generation {
             decl.WriteToC(0, this.decl4Sb);
         }
 
-        public ICSyntax ConvertType(HelixType type) {
+        public ICSyntax ConvertType(HelixType type, TypeFrame types) {
             // Normalize types by removing dependent types so we dont' have duplicate definitions
             if (type is SingularIntType) {
-                return this.ConvertType(PrimitiveType.Int);
+                return this.ConvertType(PrimitiveType.Int, types);
             }
             else if (type is SingularBoolType) {
-                return this.ConvertType(PrimitiveType.Bool);
+                return this.ConvertType(PrimitiveType.Bool, types);
             }
 
             if (type == PrimitiveType.Bool) {
@@ -125,9 +125,13 @@ namespace Helix.Generation {
                 return new CNamedType("int");
             }
             else if (type is PointerType type2) {
-                return new CNamedType(this.GeneratePointerType(type2));
+                return new CNamedType(this.GeneratePointerType(type2, types));
             }
             else if (type is NominalType named) {
+                if (named.AsVariable(types).TryGetValue(out var varSig)) {
+                    return ConvertType(varSig, types);
+                }
+                
                 if (this.pathNames.TryGetValue(named.Path, out var cname)) {
                     return new CNamedType(cname);
                 }                   
@@ -137,15 +141,15 @@ namespace Helix.Generation {
                 return new CNamedType(cname);
             }
             else if (type is ArrayType array) {
-                return new CNamedType(this.GenerateArrayType(array));
+                return new CNamedType(this.GenerateArrayType(array, types));
             }
             else {
                 throw new Exception();
             }
         }
 
-        private string GenerateArrayType(ArrayType arrayType) {
-            var inner = this.ConvertType(arrayType.InnerType);
+        private string GenerateArrayType(ArrayType arrayType, TypeFrame types) {
+            var inner = this.ConvertType(arrayType.InnerType, types);
             var innerName = inner.WriteToC();
 
             if (this.arrayNames.TryGetValue(innerName, out var name)) {
@@ -175,7 +179,7 @@ namespace Helix.Generation {
                     },
                     new CParameter() {
                         Name = "count",
-                        Type = this.ConvertType(PrimitiveType.Int)
+                        Type = this.ConvertType(PrimitiveType.Int, types)
                     }
                 }
             };
@@ -193,8 +197,8 @@ namespace Helix.Generation {
             return name;
         }
 
-        private string GeneratePointerType(PointerType pointerType) {
-            var inner = this.ConvertType(pointerType.InnerType);
+        private string GeneratePointerType(PointerType pointerType, TypeFrame types) {
+            var inner = this.ConvertType(pointerType.InnerType, types);
             var innerName = inner.WriteToC();
 
             if (this.pointerNames.TryGetValue(innerName, out var name)) {
