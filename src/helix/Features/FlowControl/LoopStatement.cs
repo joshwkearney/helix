@@ -79,6 +79,19 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
+            // TODO: Confirm this works
+            // This is to prevent things in the loop from depending on things before
+            // the loop, since we will introduce cyclical lifetime dependencies below
+            foreach (var (path, local) in types.LocalValues) {
+                var newValue = local.Bounds.ValueLifetime.IncrementVersion();
+                var newBounds = local.Bounds.WithValue(newValue);
+                var newLocal = local.WithBounds(newBounds);
+
+                types.DataFlowGraph.AddStored(local.Bounds.ValueLifetime, newValue);
+
+                types.LocalValues = types.LocalValues.SetItem(path, newLocal);
+            }
+
             var bodyTypes = new TypeFrame(types, this.name);
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = (ISyntaxTree)new LoopStatement(this.Location, body, this.name);
