@@ -7,7 +7,7 @@ namespace Helix.Analysis.Types {
     public record PrimitiveType : HelixType {
         private readonly PrimitiveTypeKind kind;
 
-        public static PrimitiveType Int { get; } = new PrimitiveType(PrimitiveTypeKind.Int);
+        public static PrimitiveType Word { get; } = new PrimitiveType(PrimitiveTypeKind.Int);
 
         public static PrimitiveType Bool { get; } = new PrimitiveType(PrimitiveTypeKind.Bool);
 

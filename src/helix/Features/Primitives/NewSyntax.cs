@@ -98,14 +98,14 @@ namespace Helix.Features.Primitives {
             if (type == PrimitiveType.Void) {
                 return new VoidLiteral(this.Location).CheckTypes(types);
             }
-            else if (type == PrimitiveType.Int) {
-                return new IntLiteral(this.Location, 0).CheckTypes(types);
+            else if (type == PrimitiveType.Word) {
+                return new WordLiteral(this.Location, 0).CheckTypes(types);
             }
             else if (type == PrimitiveType.Bool) {
-                return new IntLiteral(this.Location, 0).CheckTypes(types);
+                return new WordLiteral(this.Location, 0).CheckTypes(types);
             }
-            else if (type is SingularIntType singInt) {
-                return new IntLiteral(this.Location, singInt.Value).CheckTypes(types);
+            else if (type is SingularWordType singInt) {
+                return new WordLiteral(this.Location, singInt.Value).CheckTypes(types);
             }
             else if (type is SingularBoolType singBool) {
                 return new BoolLiteral(this.Location, singBool.Value).CheckTypes(types);

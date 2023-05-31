@@ -112,8 +112,8 @@ namespace Helix.Parsing {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
-            else if (this.Peek(TokenKind.IntLiteral)) {
-                return this.IntLiteral();
+            else if (this.Peek(TokenKind.WordLiteral)) {
+                return this.WordLiteral();
             }
             else if (this.Peek(TokenKind.VoidKeyword)) {
                 return this.VoidLiteral();
@@ -133,10 +133,10 @@ namespace Helix.Parsing {
             else if (this.Peek(TokenKind.OpenBrace)) {
                 return this.Block();
             }
-            else if (this.Peek(TokenKind.IntKeyword)) {
-                var tok = this.Advance(TokenKind.IntKeyword);
+            else if (this.Peek(TokenKind.WordKeyword)) {
+                var tok = this.Advance(TokenKind.WordKeyword);
 
-                return new VariableAccessParseSyntax(tok.Location, "int");
+                return new VariableAccessParseSyntax(tok.Location, "word");
             }
             else if (this.Peek(TokenKind.BoolKeyword)) {
                 var tok = this.Advance(TokenKind.BoolKeyword);

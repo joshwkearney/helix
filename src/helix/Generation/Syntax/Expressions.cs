@@ -5,8 +5,18 @@ namespace Helix.Generation.Syntax {
         public string WriteToC();
     }
 
-    public record CIntLiteral(int Value) : ICSyntax {
-        public string WriteToC() => this.Value + "U";
+    public record CIntLiteral : ICSyntax {
+        public string Value { get; }
+
+        public CIntLiteral(int value) {
+            this.Value = value.ToString();
+        }
+
+        public CIntLiteral(long value) {
+            this.Value = value.ToString();
+        }
+
+        public string WriteToC() => this.Value;
     }
 
     public record CRegionAllocExpression : ICSyntax {

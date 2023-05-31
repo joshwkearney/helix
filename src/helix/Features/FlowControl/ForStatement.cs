@@ -23,12 +23,12 @@ namespace Helix.Parsing {
             startIndex = new AsParseTree(
                 startIndex.Location,
                 startIndex,
-                new VariableAccessParseSyntax(startIndex.Location, "int"));
+                new VariableAccessParseSyntax(startIndex.Location, "word"));
 
             endIndex = new AsParseTree(
                 endIndex.Location,
                 endIndex,
-                new VariableAccessParseSyntax(endIndex.Location, "int"));
+                new VariableAccessParseSyntax(endIndex.Location, "word"));
 
             var counterName = id.Value;
             var counterDecl = new VarParseStatement(startTok.Location, new[] { counterName }, startIndex, true);
@@ -40,7 +40,7 @@ namespace Helix.Parsing {
                 new BinarySyntax(
                     startTok.Location,
                     counterAccess,
-                    new IntLiteral(startTok.Location, 1),
+                    new WordLiteral(startTok.Location, 1),
                     BinaryOperationKind.Add));
 
             var totalBlock = new List<ISyntaxTree> { counterDecl };

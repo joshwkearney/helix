@@ -90,11 +90,11 @@ namespace Helix.Features.Aggregates {
                         types.Scope,
                         false);
 
-                    var bounds = AnalyzeFlow(this.MemberName, PrimitiveType.Int, this.path, target, types);
+                    var bounds = AnalyzeFlow(this.MemberName, PrimitiveType.Word, this.path, target, types);
 
                     SyntaxTagBuilder.AtFrame(types)
                         .WithChildren(target)
-                        .WithReturnType(PrimitiveType.Int)
+                        .WithReturnType(PrimitiveType.Word)
                         .WithLifetimes(bounds)
                         .BuildFor(result);
 

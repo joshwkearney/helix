@@ -4,10 +4,10 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 
 namespace Helix.Analysis.Types {
-    public record SingularIntType : HelixType {
-        public int Value { get; }
+    public record SingularWordType : HelixType {
+        public long Value { get; }
 
-        public SingularIntType(int value) {
+        public SingularWordType(long value) {
             this.Value = value;
         }
 
@@ -16,15 +16,15 @@ namespace Helix.Analysis.Types {
         }
 
         public override HelixType GetMutationSupertype(TypeFrame types) {
-            return PrimitiveType.Int;
+            return PrimitiveType.Word;
         }
 
         public override HelixType GetSignatureSupertype(TypeFrame types) {
-            return PrimitiveType.Int;
+            return PrimitiveType.Word;
         }
 
         public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
-            return new IntLiteral(loc, this.Value);
+            return new WordLiteral(loc, this.Value);
         }       
 
         public override string ToString() => this.Value.ToString();

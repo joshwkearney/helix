@@ -1,5 +1,5 @@
 ﻿// ###
-func test1() as int* {
+func test1() as word* {
 	var x = 45;
 
 	&x;
@@ -7,7 +7,7 @@ func test1() as int* {
 
 // ###
 struct Test2Struct {
-	var field as int**;
+	var field as word**;
 };
 
 func test2(var n as Test2Struct) {
@@ -18,20 +18,20 @@ func test2(var n as Test2Struct) {
 
 // ###
 struct Test3Struct {
-	let field as int;
+	let field as word;
 };
 
-func test3(let arg as Test3Struct) as int {
+func test3(let arg as Test3Struct) as word {
 	arg.field;
 };
 
 // ###
 struct Test4Struct {
 	let next as Test4Struct*;
-	let data as int;
+	let data as word;
 };
 
-func test4(let a as Test4Struct*) as int {
+func test4(let a as Test4Struct*) as word {
 	var A = new Test4Struct { next= a };
 	let B = &A;
 
@@ -39,14 +39,14 @@ func test4(let a as Test4Struct*) as int {
 };
 
 // ###
-func test5(let arr as int*[]) as void {
+func test5(let arr as word*[]) as void {
 	var x = 45;
 
 	arr[0] = &x;
 };
 
 // ###
-func test6(let arr as int*[]) as int* {
+func test6(let arr as word*[]) as word* {
 	var x = 45;
 
 	arr[0] = &x;
@@ -54,27 +54,27 @@ func test6(let arr as int*[]) as int* {
 };
 
 // ###
-func test7(let arr as int*[]) as void {
+func test7(let arr as word*[]) as void {
 	arr[0] = arr[1];
 };
 
 // ###
-func test8(let a as int**) {
+func test8(let a as word**) {
 	var c = 10;
 
 	a* = &c;	
 };
 
 // ###
-func test9(let a as int**, let b as int**) as void {
+func test9(let a as word**, let b as word**) as void {
 	var c = a;	
-	var d = new int;
+	var d = new word;
 
 	c* = &d;
 };
 
 // ###
-func test10() as int* {
+func test10() as word* {
 	var x = 5;
 	var y = 10;
 
@@ -85,7 +85,7 @@ func test10() as int* {
 };
 
 // ###
-func test11() as int* {
+func test11() as word* {
 	var a = 10;
 	var b = &a;
 	var c = &b;
@@ -94,7 +94,7 @@ func test11() as int* {
 };
 
 // ###
-func test12(let A as int**) as int* {
+func test12(let A as word**) as word* {
 	var a = 5;
 	var b = 10;
 
@@ -108,8 +108,8 @@ func test12(let A as int**) as int* {
 
 // ###
 struct Point {
-	var x as int;
-	var y as int;
+	var x as word;
+	var y as word;
 };
 
 func test13(let z as Point**) as Point* {
@@ -127,8 +127,8 @@ func create() as Point* {
 
 // ###
 struct Point {
-	var x as int;
-	var y as int;
+	var x as word;
+	var y as word;
 };
 
 func test14(let z as Point**) as Point* {
@@ -152,8 +152,8 @@ func create() as Point* {
 
 // ###
 struct Point {
-	var x as int;
-	var y as int;
+	var x as word;
+	var y as word;
 };
 
 func test15(let a as Point**, let b as Point**) {
@@ -168,7 +168,7 @@ func test15(let a as Point**, let b as Point**) {
 };
 
 // ###
-func test16(var a as int*) {
+func test16(var a as word*) {
 	var x = &a;
 
 	for i = 0 to 10 {
@@ -182,7 +182,7 @@ func test16(var a as int*) {
 // ###
 union Option {
 	var none as void;
-	var some as int*;
+	var some as word*;
 };
 
 func test17() as Option {
@@ -199,10 +199,10 @@ func test17() as Option {
 
 // ###
 struct Point {
-	let x as int*;
+	let x as word*;
 };
 
-func test3() as int* {
+func test3() as word* {
 	var x = 15;
 	let p = new Point { x = &x };
 
@@ -210,7 +210,7 @@ func test3() as int* {
 };
 
 // ###
-func test16(var B as bool) as int {
+func test16(var B as bool) as word {
 	var x = 45;
 
 	if B then {

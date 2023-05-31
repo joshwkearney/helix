@@ -43,8 +43,8 @@ namespace Helix.Analysis.TypeChecking {
                 new LocalInfo(PrimitiveType.Void));
 
             this.Locals = this.Locals.Add(
-                new IdentifierPath("int"),
-                new LocalInfo(PrimitiveType.Int));
+                new IdentifierPath("word"),
+                new LocalInfo(PrimitiveType.Word));
 
             this.Locals = this.Locals.Add(
                 new IdentifierPath("bool"),

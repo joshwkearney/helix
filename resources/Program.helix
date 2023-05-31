@@ -1,7 +1,11 @@
-func test11() as int* {
-	var a = 10;
-	var b = &a;
-	var c = &b;
+func test12(let A as word**) as word* {
+	var a = 5;
+	var b = 10;
 
-	c*;
+	var x = &a;
+	var z = &x;
+	
+	z* = &b;
+
+	x;
 };

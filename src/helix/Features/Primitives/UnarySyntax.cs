@@ -67,7 +67,7 @@ namespace Helix.Features.Primitives {
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
-                var left = new IntLiteral(this.Location, 0);
+                var left = new WordLiteral(this.Location, 0);
 
                 var op = this.op == UnaryOperatorKind.Plus
                     ? BinaryOperationKind.Add

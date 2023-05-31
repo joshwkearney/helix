@@ -10,37 +10,37 @@ using Helix.Analysis;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree IntLiteral() {
-            var tok = this.Advance(TokenKind.IntLiteral);
-            var num = int.Parse(tok.Value);
+        private ISyntaxTree WordLiteral() {
+            var tok = this.Advance(TokenKind.WordLiteral);
+            var num = long.Parse(tok.Value);
 
-            return new IntLiteral(tok.Location, num);
+            return new WordLiteral(tok.Location, num);
         }
     }
 }
 
 namespace Helix.Features.Primitives {
-    public record IntLiteral : ISyntaxTree {
+    public record WordLiteral : ISyntaxTree {
         public TokenLocation Location { get; }
 
-        public int Value { get; }
+        public long Value { get; }
 
         public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
 
         public bool IsPure => true;
 
-        public IntLiteral(TokenLocation loc, int value) {
+        public WordLiteral(TokenLocation loc, long value) {
             this.Location = loc;
             this.Value = value;
         }
 
         public Option<HelixType> AsType(TypeFrame types) {
-            return new SingularIntType(this.Value);
+            return new SingularWordType(this.Value);
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             SyntaxTagBuilder.AtFrame(types)
-                .WithReturnType(new SingularIntType(this.Value))
+                .WithReturnType(new SingularWordType(this.Value))
                 .BuildFor(this);
 
             return this;

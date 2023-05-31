@@ -5,7 +5,7 @@ namespace Helix.Parsing {
         private static readonly Dictionary<string, TokenKind> keywords = new() {
             { "var", TokenKind.VarKeyword }, { "let", TokenKind.LetKeyword }, 
             { "func", TokenKind.FunctionKeyword }, { "extern", TokenKind.ExternKeyword },
-            { "int", TokenKind.IntKeyword }, { "void", TokenKind.VoidKeyword },
+            { "word", TokenKind.WordKeyword }, { "void", TokenKind.VoidKeyword },
             { "bool", TokenKind.BoolKeyword }, { "as", TokenKind.AsKeyword },
             { "is", TokenKind.IsKeyword }, { "if", TokenKind.IfKeyword },
             { "then", TokenKind.ThenKeyword }, { "else", TokenKind.ElseKeyword },
@@ -119,7 +119,7 @@ namespace Helix.Parsing {
             var loc = new TokenLocation(start, strNum.Length, this.line);
 
             if (int.TryParse(strNum, out int num)) {
-                return new Token(TokenKind.IntLiteral, loc, strNum);
+                return new Token(TokenKind.WordLiteral, loc, strNum);
             }
             else {
                 throw ParseException.InvalidNumber(loc, strNum);
@@ -167,7 +167,7 @@ namespace Helix.Parsing {
                 throw ParseException.UnexpectedCharacter(this.Location, this.Current);
             }
 
-            return new Token(TokenKind.IntLiteral, new TokenLocation(start, 3, this.line), c.ToString());
+            return new Token(TokenKind.WordLiteral, new TokenLocation(start, 3, this.line), c.ToString());
         }
 
         private Token GetSlashOrCommentOrDivideAssignment() {

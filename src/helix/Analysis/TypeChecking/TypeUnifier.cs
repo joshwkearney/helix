@@ -105,7 +105,7 @@ namespace Helix.Analysis.TypeChecking {
             else if (first == PrimitiveType.Bool) {
                 return TryUnifyFromBool(second, types);
             }
-            else if (first is SingularIntType) {
+            else if (first is SingularWordType) {
                 return TryUnifyFromSingularInt(second, types);
             }
             else if (first is SingularBoolType || first is PredicateBool) {
@@ -172,16 +172,16 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         private static UnificationResult TryUnifyFromSingularInt(HelixType second, TypeFrame types) {
-            if (second == PrimitiveType.Int) {
+            if (second == PrimitiveType.Word) {
                 return UnificationResult.Pun(second);
             }
             else {
-                return TryUnify(PrimitiveType.Int, second, types);
+                return TryUnify(PrimitiveType.Word, second, types);
             }
         }
 
         private static UnificationResult TryUnifyFromBool(HelixType second, TypeFrame types) {
-            if (second == PrimitiveType.Int) {
+            if (second == PrimitiveType.Word) {
                 return UnificationResult.Pun(second);
             }
             else {
@@ -190,7 +190,7 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         private static UnificationResult TryUnifyFromVoid(HelixType second, TypeFrame types) {
-            if (second == PrimitiveType.Int || second == PrimitiveType.Float || second == PrimitiveType.Bool) {
+            if (second == PrimitiveType.Word || second == PrimitiveType.Float || second == PrimitiveType.Bool) {
                 return UnificationResult.Pun(second);
             }
             else if (second.AsStruct(types).TryGetValue(out var structSig)) {

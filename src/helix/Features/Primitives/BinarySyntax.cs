@@ -162,14 +162,14 @@ namespace Helix.Features.Primitives {
 
     public record BinarySyntax : ISyntaxTree {
         private static readonly Dictionary<BinaryOperationKind, HelixType> intOperations = new() {
-            { BinaryOperationKind.Add,                  PrimitiveType.Int },
-            { BinaryOperationKind.Subtract,             PrimitiveType.Int },
-            { BinaryOperationKind.Multiply,             PrimitiveType.Int },
-            { BinaryOperationKind.Modulo,               PrimitiveType.Int },
-            { BinaryOperationKind.FloorDivide,          PrimitiveType.Int },
-            { BinaryOperationKind.And,                  PrimitiveType.Int },
-            { BinaryOperationKind.Or,                   PrimitiveType.Int },
-            { BinaryOperationKind.Xor,                  PrimitiveType.Int },
+            { BinaryOperationKind.Add,                  PrimitiveType.Word },
+            { BinaryOperationKind.Subtract,             PrimitiveType.Word },
+            { BinaryOperationKind.Multiply,             PrimitiveType.Word },
+            { BinaryOperationKind.Modulo,               PrimitiveType.Word },
+            { BinaryOperationKind.FloorDivide,          PrimitiveType.Word },
+            { BinaryOperationKind.And,                  PrimitiveType.Word },
+            { BinaryOperationKind.Or,                   PrimitiveType.Word },
+            { BinaryOperationKind.Xor,                  PrimitiveType.Word },
             { BinaryOperationKind.EqualTo,              PrimitiveType.Bool },
             { BinaryOperationKind.NotEqualTo,           PrimitiveType.Bool },
             { BinaryOperationKind.GreaterThan,          PrimitiveType.Bool },
@@ -230,7 +230,7 @@ namespace Helix.Features.Primitives {
             var leftType = left.GetReturnType(types);
             var rightType = right.GetReturnType(types);
 
-            if (leftType is SingularIntType singLeft && rightType is SingularIntType singRight) {
+            if (leftType is SingularWordType singLeft && rightType is SingularWordType singRight) {
                 return this.EvaluateIntExpression(singLeft.Value, singRight.Value, types);
             }
 
@@ -247,30 +247,30 @@ namespace Helix.Features.Primitives {
             return result;
         }
 
-        private ISyntaxTree EvaluateIntExpression(int int1, int int2, TypeFrame types) {
+        private ISyntaxTree EvaluateIntExpression(long int1, long int2, TypeFrame types) {
             HelixType returnType;
 
             switch (this.op) {
                 case BinaryOperationKind.Add:
-                    returnType = new SingularIntType(int1 + int2);
+                    returnType = new SingularWordType(int1 + int2);
                     break;
                 case BinaryOperationKind.Subtract:
-                    returnType = new SingularIntType(int1 - int2);
+                    returnType = new SingularWordType(int1 - int2);
                     break;
                 case BinaryOperationKind.Modulo:
-                    returnType = new SingularIntType(int1 % int2);
+                    returnType = new SingularWordType(int1 % int2);
                     break;
                 case BinaryOperationKind.FloorDivide:
-                    returnType = new SingularIntType(int1 / int2);
+                    returnType = new SingularWordType(int1 / int2);
                     break;
                 case BinaryOperationKind.And:
-                    returnType = new SingularIntType(int1 & int2);
+                    returnType = new SingularWordType(int1 & int2);
                     break;
                 case BinaryOperationKind.Or:
-                    returnType = new SingularIntType(int1 | int2);
+                    returnType = new SingularWordType(int1 | int2);
                     break;
                 case BinaryOperationKind.Xor:
-                    returnType = new SingularIntType(int1 ^ int2);
+                    returnType = new SingularWordType(int1 ^ int2);
                     break;
                 case BinaryOperationKind.EqualTo:
                     returnType = new SingularBoolType(int1 == int2);

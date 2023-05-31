@@ -1,15 +1,15 @@
 ﻿// ###
-func test1(let a as int**, let b as int*) {
+func test1(let a as word**, let b as word*) {
 	a* = b;	
 };
 
 // ###
-func test2(let a as int*) as int* {
+func test2(let a as word*) as word* {
 	a;
 };
 
 // ###
-func test3(let a as int***) as void {
+func test3(let a as word***) as void {
 	var b = 45;
 
 	a** = &b;

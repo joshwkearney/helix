@@ -59,7 +59,7 @@ namespace Helix.Features.Arrays {
             var index = this.index
                 .CheckTypes(types)
                 .ToRValue(types)
-                .UnifyTo(PrimitiveType.Int, types);
+                .UnifyTo(PrimitiveType.Word, types);
 
             // Make sure we have an array
             if (target.GetReturnType(types) is not ArrayType arrayType) {

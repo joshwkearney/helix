@@ -37,7 +37,7 @@ namespace Helix.Features.Arrays {
         }
 
         public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target)
-            : this(arrayType, target, new IntLiteral(target.Location, 0)) { }
+            : this(arrayType, target, new WordLiteral(target.Location, 0)) { }
 
         ISyntaxTree ISyntaxTree.ToRValue(TypeFrame types) => this;
 

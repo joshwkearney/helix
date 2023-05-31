@@ -14,7 +14,7 @@
         PlusAssignment, MinusAssignment, StarAssignment, DivideAssignment, ModuloAssignment,
         FunctionKeyword, ExternKeyword, Yields,
 
-        IntKeyword, VoidKeyword, BoolKeyword, AsKeyword, IsKeyword,
+        WordKeyword, VoidKeyword, BoolKeyword, AsKeyword, IsKeyword,
 
         IfKeyword, ThenKeyword, ElseKeyword, 
         WhileKeyword, ForKeyword, DoKeyword, ToKeyword, UntilKeyword,
@@ -23,7 +23,7 @@
 
         TrueKeyword, FalseKeyword, AndKeyword, OrKeyword, XorKeyword,
 
-        Identifier, Whitespace, IntLiteral, BoolLiteral, EOF
+        Identifier, Whitespace, WordLiteral, BoolLiteral, EOF
     }
 
     public record struct Token {

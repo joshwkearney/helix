@@ -108,8 +108,8 @@ namespace Helix.Generation {
 
         public ICSyntax ConvertType(HelixType type, TypeFrame types) {
             // Normalize types by removing dependent types so we dont' have duplicate definitions
-            if (type is SingularIntType) {
-                return this.ConvertType(PrimitiveType.Int, types);
+            if (type is SingularWordType) {
+                return this.ConvertType(PrimitiveType.Word, types);
             }
             else if (type is SingularBoolType) {
                 return this.ConvertType(PrimitiveType.Bool, types);
@@ -118,8 +118,8 @@ namespace Helix.Generation {
             if (type == PrimitiveType.Bool) {
                 return new CNamedType("int");
             }
-            else if (type == PrimitiveType.Int) {
-                return new CNamedType("int");
+            else if (type == PrimitiveType.Word) {
+                return new CNamedType("_Word");
             }
             else if (type == PrimitiveType.Void) {
                 return new CNamedType("int");
@@ -179,7 +179,7 @@ namespace Helix.Generation {
                     },
                     new CParameter() {
                         Name = "count",
-                        Type = this.ConvertType(PrimitiveType.Int, types)
+                        Type = this.ConvertType(PrimitiveType.Word, types)
                     }
                 }
             };

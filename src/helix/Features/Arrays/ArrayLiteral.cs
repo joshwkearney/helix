@@ -178,7 +178,7 @@ namespace Helix.Features.Arrays {
 
             writer.WriteStatement(backingAssign);
 
-            for (int i = 0; i < args.Length; i++) {
+            for (uint i = 0; i < args.Length; i++) {
                 var arg = args[i];
 
                 var argAssign = new CAssignment() {

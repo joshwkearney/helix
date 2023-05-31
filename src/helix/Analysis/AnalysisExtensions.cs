@@ -109,7 +109,7 @@ namespace Helix.Analysis {
         }
 
         public static bool IsInt(this HelixType type, TypeFrame types) {
-            if (type.GetSignatureSupertype(types) == PrimitiveType.Int) {
+            if (type.GetSignatureSupertype(types) == PrimitiveType.Word) {
                 return true;
             }
             else {
