@@ -17,10 +17,18 @@ namespace Helix.Parsing {
         private ISyntaxTree VarExpression() {
             var startLok = this.Advance(TokenKind.VarKeyword).Location;
             var names = new List<string>();
+            var types = new List<Option<ISyntaxTree>>();
 
             while (true) {
                 var name = this.Advance(TokenKind.Identifier).Value;
                 names.Add(name);
+
+                if (this.TryAdvance(TokenKind.AsKeyword)) {
+                    types.Add(Option.Some(this.TopExpression()));
+                }
+                else {
+                    types.Add(Option.None);
+                }
 
                 if (this.TryAdvance(TokenKind.Assignment)) {
                     break;
@@ -33,14 +41,15 @@ namespace Helix.Parsing {
             var assign = this.TopExpression();
             var loc = startLok.Span(assign.Location);
 
-            return new VarParseStatement(loc, names, assign);
+            return new VarParseStatement(loc, names, types, assign);
         }
     }
 }
 
 namespace Helix {
     public record VarParseStatement : ISyntaxTree {
-        private readonly IReadOnlyList<string> names;
+        private readonly IReadOnlyList<string> names; 
+        private readonly IReadOnlyList<Option<ISyntaxTree>> types;
         private readonly ISyntaxTree assign;
 
         public TokenLocation Location { get; }
@@ -49,10 +58,12 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign) {
+        public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, 
+                                 IReadOnlyList<Option<ISyntaxTree>> types, ISyntaxTree assign) {
             this.Location = loc;
             this.names = names;
             this.assign = assign;
+            this.types = types;
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
@@ -64,6 +75,16 @@ namespace Helix {
             var assignType = assign.GetReturnType(types);
             if (this.names.Count > 1) {
                 return this.Destructure(assignType, types);
+            }
+
+            // Make sure assign can unify with our type expression
+            if (this.types[0].TryGetValue(out var typeSyntax)) {
+                if (!typeSyntax.AsType(types).TryGetValue(out var type)) {
+                    throw TypeException.ExpectedTypeExpression(typeSyntax.Location);
+                }
+
+                assign = assign.UnifyTo(type, types);
+                assignType = type;
             }
 
             // Make sure we're not shadowing anybody
@@ -149,6 +170,7 @@ namespace Helix {
             var tempStat = new VarParseStatement(
                 this.Location,
                 new[] { tempName },
+                new Option<ISyntaxTree>[] { Option.None },
                 this.assign);
 
             var stats = new List<ISyntaxTree>() { tempStat };
@@ -160,6 +182,7 @@ namespace Helix {
                 var assign = new VarParseStatement(
                     this.Location,
                     new[] { this.names[i] },
+                    new[] { this.types[i] },
                     access);
 
                 stats.Add(assign);

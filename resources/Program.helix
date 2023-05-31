@@ -1,15 +1,10 @@
-func test12(let A as word**) as word* {
-	var a = 5;
-	var b = 10;
-
-	var x = &a;
-	var z = &x;
-	
-	z* = &b;
-
-	x;
+struct Point {
+	var x as word;
+	var y as word;
 };
 
-var p as word**
+func test12() as word {
+	var a, b = new Point { 8, 9 };
 
-cast p on regionof(R)
+	return a;
+};

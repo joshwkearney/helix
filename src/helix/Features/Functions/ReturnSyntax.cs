@@ -59,7 +59,7 @@ namespace Helix.Features.Functions {
             var result = new ReturnSyntax(this.Location, payload, sig);
 
             SyntaxTagBuilder.AtFrame(types).BuildFor(result);
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, this.payload, types);
+            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, payload, types);
 
             return result;
         }

@@ -190,7 +190,7 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         private static UnificationResult TryUnifyFromVoid(HelixType second, TypeFrame types) {
-            if (second == PrimitiveType.Word || second == PrimitiveType.Float || second == PrimitiveType.Bool) {
+            if (second == PrimitiveType.Word || second == PrimitiveType.Bool) {
                 return UnificationResult.Pun(second);
             }
             else if (second.AsStruct(types).TryGetValue(out var structSig)) {

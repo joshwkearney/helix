@@ -1,30 +1,9 @@
-DONE - Struct unpacking
-DONE - Fix for loops
-DONE - Fix function calls
-DONE - Arrays
-DONE - Character literals
-DONE - Lines numbers in c comments
-
-Improve array type inference
-Add closures
-Add defer
-Bounds check arrays
-Interfaces
-Implicit struct conversions
-DONE - Fix syntax highlighting
-Add function argument region annotations
-Add conditional auto-copying when moving values between regions
-DONE - Reimplement array literals
-DONE - Fix binary expressions
-DONE - Fix for loops
-Check if we're in a loop for break/continue
-Fix loop lifetime backpropagation
-
 ### Roadmap to v0.01
+	DONE - Rename ints to words
 	DONE - Remove let
 	DONE - Remove read only pointers and arrays
 	- Make function returns explicit
-	- Add optional types to locals
+	DONE - Add optional types to locals
 	- Regions types
 	- regionof operator
 	- Region constraints on functions, structs, unions, and locals
@@ -35,6 +14,7 @@ Fix loop lifetime backpropagation
 	- Add C pointers
 	- bytes
 	- strings
+	- Add printing
 
 DONE ### PROJECT ZIP: Merge the typechecking and flow analysis phases
 	DONE - Get loops to flow analyze without prior information (variable capture)
@@ -89,3 +69,24 @@ DONE ### The Imperative Update
 	DONE - Check return values for stack allocations
 	DONE - Track lifetime dependencies between syntax trees
 	DONE - lvalue member access for structs
+
+DONE - Struct unpacking
+DONE - Fix for loops
+DONE - Fix function calls
+DONE - Arrays
+DONE - Character literals
+DONE - Lines numbers in c comments
+Improve array type inference
+Add closures
+Add defer
+Bounds check arrays
+Interfaces
+Implicit struct conversions
+DONE - Fix syntax highlighting
+Add function argument region annotations
+Add conditional auto-copying when moving values between regions
+DONE - Reimplement array literals
+DONE - Fix binary expressions
+DONE - Fix for loops
+Check if we're in a loop for break/continue
+Fix loop lifetime backpropagation

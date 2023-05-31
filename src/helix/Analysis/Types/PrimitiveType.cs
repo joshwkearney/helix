@@ -7,11 +7,9 @@ namespace Helix.Analysis.Types {
     public record PrimitiveType : HelixType {
         private readonly PrimitiveTypeKind kind;
 
-        public static PrimitiveType Word { get; } = new PrimitiveType(PrimitiveTypeKind.Int);
+        public static PrimitiveType Word { get; } = new PrimitiveType(PrimitiveTypeKind.Word);
 
         public static PrimitiveType Bool { get; } = new PrimitiveType(PrimitiveTypeKind.Bool);
-
-        public static PrimitiveType Float { get; } = new PrimitiveType(PrimitiveTypeKind.Float);
 
         public static PrimitiveType Void { get; } = new PrimitiveType(PrimitiveTypeKind.Void);
 
@@ -37,8 +35,7 @@ namespace Helix.Analysis.Types {
 
         public override string ToString() {
             return this.kind switch {
-                PrimitiveTypeKind.Int   => "int",
-                PrimitiveTypeKind.Float => "float",
+                PrimitiveTypeKind.Word  => "word",
                 PrimitiveTypeKind.Bool  => "bool",
                 PrimitiveTypeKind.Void  => "void",
                 _                       => throw new Exception("Unexpected primitive type kind"),
@@ -46,8 +43,7 @@ namespace Helix.Analysis.Types {
         }
 
         private enum PrimitiveTypeKind {
-            Int = 11, 
-            Float = 13, 
+            Word = 11, 
             Bool = 17,
             Void = 19,
         }
