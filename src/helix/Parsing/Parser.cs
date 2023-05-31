@@ -127,7 +127,7 @@ namespace Helix.Parsing {
             else if (this.Peek(TokenKind.IfKeyword)) {
                 return this.IfExpression();
             }     
-            else if (this.Peek(TokenKind.VarKeyword) || this.Peek(TokenKind.LetKeyword)) {
+            else if (this.Peek(TokenKind.VarKeyword)) {
                 return this.VarExpression();
             }
             else if (this.Peek(TokenKind.OpenBrace)) {

@@ -26,7 +26,6 @@ namespace Helix.Features.Aggregates {
     public record MemberAccessSyntax : ISyntaxTree {
         private static int tempCounter = 0;
 
-        private readonly bool isWritable;
         private readonly IdentifierPath path;
 
         public ISyntaxTree Target { get; }
@@ -40,12 +39,10 @@ namespace Helix.Features.Aggregates {
         public bool IsPure => this.Target.IsPure;
 
         public MemberAccessSyntax(TokenLocation location, ISyntaxTree target, 
-                                  string memberName, IdentifierPath scope,
-                                  bool isWritable = false) {
+                                  string memberName, IdentifierPath scope) {
             this.Location = location;
             this.Target = target;
             this.MemberName = memberName;
-            this.isWritable = isWritable;
             this.path = scope?.Append("$mem" + tempCounter++);
         }
 
@@ -60,10 +57,6 @@ namespace Helix.Features.Aggregates {
         public ISyntaxTree ToLValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
-            }
-
-            if (!this.isWritable) {
-                throw TypeException.LValueRequired(this.Location);
             }
 
             var target = this.Target.ToLValue(types);
@@ -87,8 +80,7 @@ namespace Helix.Features.Aggregates {
                         this.Location,
                         target,
                         "count",
-                        types.Scope,
-                        false);
+                        types.Scope);
 
                     var bounds = AnalyzeFlow(this.MemberName, PrimitiveType.Word, this.path, target, types);
 
@@ -115,8 +107,7 @@ namespace Helix.Features.Aggregates {
                         this.Location,
                         target,
                         this.MemberName,
-                        types.Scope,
-                        field.IsWritable);                    
+                        types.Scope);                    
 
                     var bounds = AnalyzeFlow(this.MemberName, field.Type, result.path, target, types);
 
@@ -192,7 +183,7 @@ namespace Helix.Features.Aggregates {
 
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(target)
-                .WithReturnType(new PointerType(this.memberType, true))
+                .WithReturnType(new PointerType(this.memberType))
                 .BuildFor(this);
 
             return this;

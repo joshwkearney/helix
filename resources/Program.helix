@@ -9,3 +9,7 @@ func test12(let A as word**) as word* {
 
 	x;
 };
+
+var p as word**
+
+cast p on regionof(R)

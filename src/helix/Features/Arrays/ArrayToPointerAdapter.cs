@@ -49,7 +49,7 @@ namespace Helix.Features.Arrays {
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(this.target, this.offset)
                 .WithLifetimes(this.target.GetLifetimes(types))
-                .WithReturnType(new PointerType(this.arrayType.InnerType, true))
+                .WithReturnType(new PointerType(this.arrayType.InnerType))
                 .BuildFor(this);
 
             return this;
@@ -74,7 +74,7 @@ namespace Helix.Features.Arrays {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Array to pointer conversion");
 
-            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType, true), types);
+            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType), types);
             var ptrValue = new CCompoundExpression() {
                 Arguments = new[] {
                     newData,

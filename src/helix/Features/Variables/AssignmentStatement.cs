@@ -162,7 +162,7 @@ namespace Helix.Features.Variables {
             // value will not depend on future use of this variable
             var newValueLifetime = flow.Locals[path].Bounds.ValueLifetime.IncrementVersion();
             var newTargetBounds = flow.Locals[path].Bounds.WithValue(newValueLifetime);
-            var newLocal = new LocalInfo(new PointerType(assignType, true), newTargetBounds);
+            var newLocal = new LocalInfo(new PointerType(assignType), newTargetBounds);
 
             // Update this variable's value
             flow.Locals = flow.Locals.SetItem(newValueLifetime.Path, newLocal);

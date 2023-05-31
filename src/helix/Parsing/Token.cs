@@ -10,7 +10,7 @@
         Not, Equals, NotEquals, 
         LessThan, GreaterThan, LessThanOrEqualTo, GreaterThanOrEqualTo,
 
-        VarKeyword, LetKeyword, Assignment, 
+        VarKeyword, Assignment, 
         PlusAssignment, MinusAssignment, StarAssignment, DivideAssignment, ModuloAssignment,
         FunctionKeyword, ExternKeyword, Yields,
 

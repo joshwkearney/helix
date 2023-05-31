@@ -33,7 +33,7 @@ namespace Helix.Features.Functions {
                     throw TypeException.ExpectedTypeExpression(par.Location);
                 }
 
-                pars.Add(new FunctionParameter(par.Name, parType, par.IsWritable));
+                pars.Add(new FunctionParameter(par.Name, parType));
             }
 
             return new FunctionType(retType, pars);
@@ -45,15 +45,12 @@ namespace Helix.Features.Functions {
 
         public ISyntaxTree Type { get; }
 
-        public bool IsWritable { get; }
-
         public TokenLocation Location { get; }
 
-        public ParseFunctionParameter(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
+        public ParseFunctionParameter(TokenLocation loc, string name, ISyntaxTree type) {
             this.Location = loc;
             this.Name = name;
             this.Type = type;
-            this.IsWritable = isWritable;
         }
     }
 }

@@ -27,12 +27,9 @@ namespace Helix.Features.Types {
 
         public HelixType Type { get; }
 
-        public bool IsWritable { get; }
-
-        public FunctionParameter(string name, HelixType type, bool isWritable) {
+        public FunctionParameter(string name, HelixType type) {
             this.Name = name;
             this.Type = type;
-            this.IsWritable = isWritable;
         }
     }
 }

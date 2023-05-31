@@ -44,7 +44,7 @@ namespace Helix.Features.Variables {
 
         public Option<HelixType> AsType(TypeFrame types) {
             return this.target.AsType(types)
-                .Select(x => new PointerType(x, true))
+                .Select(x => new PointerType(x))
                 .Select(x => (HelixType)x);
         }
 

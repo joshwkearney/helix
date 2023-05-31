@@ -20,14 +20,27 @@ DONE - Fix for loops
 Check if we're in a loop for break/continue
 Fix loop lifetime backpropagation
 
-PROJECT ZIP: Merge the typechecking and flow analysis phases
-	- Get loops to flow analyze without prior information (variable capture)
-	- Merge return types, captured variables, predicates, and syntax lifetimes
-	  into a single "tag" dictionary
-	- Maybe merge SyntaxValues, NominalSignatures, and LocalLifetimes into one "names"
-	  dictionary
-	- Merge type frame and flow frame
-	- No other phase dependencies? They used to be one phase anyway so it shouldn't be too bad
+### Roadmap to v0.01
+	DONE - Remove let
+	DONE - Remove read only pointers and arrays
+	- Make function returns explicit
+	- Add optional types to locals
+	- Regions types
+	- regionof operator
+	- Region constraints on functions, structs, unions, and locals
+	- Explicit regions
+	- Helix exported functions
+	- C exported functions
+	- Rename pointers to references
+	- Add C pointers
+	- bytes
+	- strings
+
+DONE ### PROJECT ZIP: Merge the typechecking and flow analysis phases
+	DONE - Get loops to flow analyze without prior information (variable capture)
+	DONE - Merge return types, captured variables, predicates, and syntax lifetimes
+		   into a single "tag" dictionary
+	DONE - Merge type frame and flow frame
 
 DONE ### The Lifetimes Update
 	DONE - Reimplement lvalues
@@ -62,14 +75,6 @@ DONE ### The Imperative Update
 	DONE - Parser tree to imperative conversion
 	DONE - Loop state machine conversion
 	DONE - break, continue, return
-
-### The Enum Update
-	Pointer member access
-	Methods
-	Enum interface methods
-	Enums
-	Singular bool constraints
-	Match expression
 
 ### The Specialization Update
 	Loop unrolling, inlining

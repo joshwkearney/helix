@@ -5,11 +5,8 @@ namespace Helix.Analysis.Types {
     public record PointerType : HelixType {
         public HelixType InnerType { get; }
 
-        public bool IsWritable { get; }
-
-        public PointerType(HelixType innerType, bool isWritable) {
+        public PointerType(HelixType innerType) {
             this.InnerType = innerType;
-            this.IsWritable = isWritable;
         }
 
         public override PassingSemantics GetSemantics(TypeFrame types) {
@@ -17,7 +14,7 @@ namespace Helix.Analysis.Types {
         }
 
         public override HelixType GetMutationSupertype(TypeFrame types) {
-            return new PointerType(this.InnerType.GetMutationSupertype(types), true);
+            return new PointerType(this.InnerType.GetMutationSupertype(types));
         }
 
         public override HelixType GetSignatureSupertype(TypeFrame types) {
@@ -30,12 +27,7 @@ namespace Helix.Analysis.Types {
         }
 
         public override string ToString() {
-            if (this.IsWritable) {
-                return this.InnerType + "*";
-            }
-            else {
-                return "let " + this.InnerType + "*";
-            }
+            return this.InnerType + "*";
         }
     }
 }

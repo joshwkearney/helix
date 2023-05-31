@@ -25,18 +25,7 @@ namespace Helix.Parsing {
 
             var pars = ImmutableList<ParseFunctionParameter>.Empty;
             while (!this.Peek(TokenKind.CloseParenthesis)) {
-                bool isWritable;
-                Token parStart;
-
-                if (this.Peek(TokenKind.VarKeyword)) {
-                    parStart = this.Advance(TokenKind.VarKeyword);
-                    isWritable = true;
-                }
-                else {
-                    parStart = this.Advance(TokenKind.LetKeyword);
-                    isWritable = false;
-                }
-
+                var parStart = this.Advance(TokenKind.VarKeyword);
                 var parName = this.Advance(TokenKind.Identifier).Value;
                 this.Advance(TokenKind.AsKeyword);
 
@@ -47,7 +36,7 @@ namespace Helix.Parsing {
                     this.Advance(TokenKind.Comma);
                 }
 
-                pars = pars.Add(new ParseFunctionParameter(parLoc, parName, parType, isWritable));
+                pars = pars.Add(new ParseFunctionParameter(parLoc, parName, parType));
             }
 
             var end = this.Advance(TokenKind.CloseParenthesis);

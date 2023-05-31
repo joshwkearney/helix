@@ -19,18 +19,7 @@ namespace Helix.Parsing {
             this.Advance(TokenKind.OpenBrace);
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                bool isWritable;
-                Token memStart;
-
-                if (this.Peek(TokenKind.VarKeyword)) {
-                    memStart = this.Advance(TokenKind.VarKeyword);
-                    isWritable = true;
-                }
-                else {
-                    memStart = this.Advance(TokenKind.LetKeyword);
-                    isWritable = false;
-                }
-
+                var memStart = this.Advance(TokenKind.VarKeyword);              
                 var memName = this.Advance(TokenKind.Identifier);
                 this.Advance(TokenKind.AsKeyword);
 
@@ -38,7 +27,7 @@ namespace Helix.Parsing {
                 var memLoc = memStart.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);
-                mems.Add(new ParseStructMember(memLoc, memName.Value, memType, isWritable));
+                mems.Add(new ParseStructMember(memLoc, memName.Value, memType));
             }
 
             this.Advance(TokenKind.CloseBrace);

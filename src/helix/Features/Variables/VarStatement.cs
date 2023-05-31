@@ -15,18 +15,7 @@ using Helix.Collections;
 namespace Helix.Parsing {
     public partial class Parser {
         private ISyntaxTree VarExpression() {
-            TokenLocation startLok;
-            bool isWritable;
-
-            if (this.Peek(TokenKind.VarKeyword)) {
-                startLok = this.Advance(TokenKind.VarKeyword).Location;
-                isWritable = true;
-            }
-            else {
-                startLok = this.Advance(TokenKind.LetKeyword).Location;
-                isWritable = false;
-            }
-
+            var startLok = this.Advance(TokenKind.VarKeyword).Location;
             var names = new List<string>();
 
             while (true) {
@@ -44,7 +33,7 @@ namespace Helix.Parsing {
             var assign = this.TopExpression();
             var loc = startLok.Span(assign.Location);
 
-            return new VarParseStatement(loc, names, assign, isWritable);
+            return new VarParseStatement(loc, names, assign);
         }
     }
 }
@@ -53,7 +42,6 @@ namespace Helix {
     public record VarParseStatement : ISyntaxTree {
         private readonly IReadOnlyList<string> names;
         private readonly ISyntaxTree assign;
-        private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
@@ -61,11 +49,10 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign, bool isWritable) {
+        public VarParseStatement(TokenLocation loc, IReadOnlyList<string> names, ISyntaxTree assign) {
             this.Location = loc;
             this.names = names;
             this.assign = assign;
-            this.isWritable = isWritable;
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
@@ -85,15 +72,14 @@ namespace Helix {
             }
 
             var path = types.Scope.Append(this.names[0]);
-            var varSig = new PointerType(assignType, this.isWritable);
+            var varSig = new PointerType(assignType);
 
             types.NominalSignatures.Add(path, varSig);
 
             var result = new VarStatement(
                 this.Location,
                 path,
-                assign,
-                this.isWritable);
+                assign);
 
             SyntaxTagBuilder.AtFrame(types)
                 .WithLifetimes(AnalyzeFlow(this.Location, assign, path, types))
@@ -163,20 +149,18 @@ namespace Helix {
             var tempStat = new VarParseStatement(
                 this.Location,
                 new[] { tempName },
-                this.assign,
-                false);
+                this.assign);
 
             var stats = new List<ISyntaxTree>() { tempStat };
 
             for (int i = 0; i < sig.Members.Count; i++) {
                 var literal = new VariableAccessParseSyntax(this.Location, tempName);
-                var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name, types.Scope, this.isWritable);
+                var access = new MemberAccessSyntax(this.Location, literal, sig.Members[i].Name, types.Scope);
 
                 var assign = new VarParseStatement(
                     this.Location,
                     new[] { this.names[i] },
-                    access,
-                    this.isWritable);
+                    access);
 
                 stats.Add(assign);
             }
@@ -188,7 +172,6 @@ namespace Helix {
     public record VarStatement : ISyntaxTree {
         private readonly ISyntaxTree assignSyntax;
         private readonly IdentifierPath path;
-        private readonly bool isWritable;
 
         public TokenLocation Location { get; }
 
@@ -196,11 +179,10 @@ namespace Helix {
 
         public bool IsPure => false;
 
-        public VarStatement(TokenLocation loc, IdentifierPath path, ISyntaxTree assign, bool isWritable) {
+        public VarStatement(TokenLocation loc, IdentifierPath path, ISyntaxTree assign) {
             this.Location = loc;
             this.path = path;
             this.assignSyntax = assign;
-            this.isWritable = isWritable;
         }
 
         public Option<HelixType> AsType(TypeFrame types) {

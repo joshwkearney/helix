@@ -109,11 +109,6 @@ namespace Helix.Features.Variables {
         }
 
         public virtual ISyntaxTree ToLValue(TypeFrame types) {
-            // Make sure this variable is writable
-            if (types.TryGetVariable(this.VariablePath, out var varType) && !varType.IsWritable) { 
-                throw TypeException.WritingToConstVariable(this.Location);
-            }
-
             ISyntaxTree result = new VariableAccessSyntax(
                 this.Location,
                 this.VariablePath,

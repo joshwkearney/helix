@@ -43,11 +43,7 @@ namespace Helix.Features.Functions {
                 var parsePar = sig.Parameters[i];
                 var parPath = path.Append(parsePar.Name);
                 var parType = sig.Parameters[i].Type;
-                var parSig = new PointerType(parType, parsePar.IsWritable);
-
-                if (parsePar.IsWritable) {
-                    parType = parType.GetMutationSupertype(flow);
-                }
+                var parSig = new PointerType(parType);
 
                 var parLifetime = new ValueLifetime(
                     parPath, 

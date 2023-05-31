@@ -27,5 +27,5 @@ namespace Helix.Analysis.Types {
         }
     }
 
-    public record StructMember(string Name, HelixType Type, bool IsWritable) { }
+    public record StructMember(string Name, HelixType Type) { }
 }

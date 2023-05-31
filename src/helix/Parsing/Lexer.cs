@@ -3,7 +3,7 @@
 namespace Helix.Parsing {
     public class Lexer {
         private static readonly Dictionary<string, TokenKind> keywords = new() {
-            { "var", TokenKind.VarKeyword }, { "let", TokenKind.LetKeyword }, 
+            { "var", TokenKind.VarKeyword },
             { "func", TokenKind.FunctionKeyword }, { "extern", TokenKind.ExternKeyword },
             { "word", TokenKind.WordKeyword }, { "void", TokenKind.VoidKeyword },
             { "bool", TokenKind.BoolKeyword }, { "as", TokenKind.AsKeyword },

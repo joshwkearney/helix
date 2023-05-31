@@ -26,7 +26,7 @@ namespace Helix.Features.Aggregates {
                     throw TypeException.ExpectedTypeExpression(mem.Location);
                 }
 
-                mems.Add(new StructMember(mem.MemberName, type, mem.IsWritable));
+                mems.Add(new StructMember(mem.MemberName, type));
             }
 
             return new StructType(mems);
@@ -40,13 +40,10 @@ namespace Helix.Features.Aggregates {
 
         public TokenLocation Location { get; }
 
-        public bool IsWritable { get; }
-
-        public ParseStructMember(TokenLocation loc, string name, ISyntaxTree type, bool isWritable) {
+        public ParseStructMember(TokenLocation loc, string name, ISyntaxTree type) {
             this.Location = loc;
             this.MemberName = name;
             this.MemberType = type;
-            this.IsWritable = isWritable;
         }
     }
 }

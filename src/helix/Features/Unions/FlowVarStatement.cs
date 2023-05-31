@@ -49,7 +49,7 @@ namespace Helix.Features.Unions {
                 return this;
             }
 
-            var varSig = new PointerType(this.UnionMember.Type, this.UnionMember.IsWritable && this.ShadowedType.IsWritable);
+            var varSig = new PointerType(this.UnionMember.Type);
             var path = types.Scope.Append(this.Path);
 
             types.Locals = types.Locals.SetItem(path, new LocalInfo(varSig));

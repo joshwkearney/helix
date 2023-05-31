@@ -18,35 +18,35 @@ func test2(var n as Test2Struct) {
 
 // ###
 struct Test3Struct {
-	let field as word;
+	var field as word;
 };
 
-func test3(let arg as Test3Struct) as word {
+func test3(var arg as Test3Struct) as word {
 	arg.field;
 };
 
 // ###
 struct Test4Struct {
-	let next as Test4Struct*;
-	let data as word;
+	var next as Test4Struct*;
+	var data as word;
 };
 
-func test4(let a as Test4Struct*) as word {
+func test4(var a as Test4Struct*) as word {
 	var A = new Test4Struct { next= a };
-	let B = &A;
+	var B = &A;
 
 	B*.next*.next*.data;
 };
 
 // ###
-func test5(let arr as word*[]) as void {
+func test5(var arr as word*[]) as void {
 	var x = 45;
 
 	arr[0] = &x;
 };
 
 // ###
-func test6(let arr as word*[]) as word* {
+func test6(var arr as word*[]) as word* {
 	var x = 45;
 
 	arr[0] = &x;
@@ -54,19 +54,19 @@ func test6(let arr as word*[]) as word* {
 };
 
 // ###
-func test7(let arr as word*[]) as void {
+func test7(var arr as word*[]) as void {
 	arr[0] = arr[1];
 };
 
 // ###
-func test8(let a as word**) {
+func test8(var a as word**) {
 	var c = 10;
 
 	a* = &c;	
 };
 
 // ###
-func test9(let a as word**, let b as word**) as void {
+func test9(var a as word**, var b as word**) as void {
 	var c = a;	
 	var d = new word;
 
@@ -94,7 +94,7 @@ func test11() as word* {
 };
 
 // ###
-func test12(let A as word**) as word* {
+func test12(var A as word**) as word* {
 	var a = 5;
 	var b = 10;
 
@@ -112,8 +112,8 @@ struct Point {
 	var y as word;
 };
 
-func test13(let z as Point**) as Point* {
-	let p = create() ;
+func test13(var z as Point**) as Point* {
+	var p = create() ;
 
 	z* = p;
 	p;
@@ -131,8 +131,8 @@ struct Point {
 	var y as word;
 };
 
-func test14(let z as Point**) as Point* {
-	let p = if true 
+func test14(var z as Point**) as Point* {
+	var p = if true 
 		then create() 
 		else {
 			var y = new Point;
@@ -156,7 +156,7 @@ struct Point {
 	var y as word;
 };
 
-func test15(let a as Point**, let b as Point**) {
+func test15(var a as Point**, var b as Point**) {
 	var c = a;
 
 	if true then {
@@ -199,12 +199,12 @@ func test17() as Option {
 
 // ###
 struct Point {
-	let x as word*;
+	var x as word*;
 };
 
 func test3() as word* {
 	var x = 15;
-	let p = new Point { x = &x };
+	var p = new Point { x = &x };
 
 	p.x;
 };
