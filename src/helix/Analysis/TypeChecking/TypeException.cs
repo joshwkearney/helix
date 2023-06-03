@@ -5,6 +5,13 @@ namespace Helix.Analysis.TypeChecking {
     public class TypeException : HelixException {
         public TypeException(TokenLocation location, string title, string message) : base(location, title, message) { }
 
+        public static TypeException NoReturn(TokenLocation location) {
+            return new TypeException(
+                location,
+                "Analysis Exception: Invalid function body",
+                $"This function does not return a value on all code paths.");
+        }
+
         public static TypeException WritingToConstVariable(TokenLocation location) {
             return new TypeException(
                 location,

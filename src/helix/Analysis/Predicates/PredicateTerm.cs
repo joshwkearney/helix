@@ -27,7 +27,10 @@ namespace Helix.Analysis.Predicates {
         }
 
         public override ISyntaxPredicate Or(ISyntaxPredicate other) {
-            if (other is PredicatePolynomial poly) {
+            if (other == Empty) {
+                return this;
+            }
+            else if (other is PredicatePolynomial poly) {
                 return poly.Or(this);
             }
             else if (other is PredicateTerm term) {
@@ -41,8 +44,16 @@ namespace Helix.Analysis.Predicates {
         }
 
         public override ISyntaxPredicate And(ISyntaxPredicate other) {
-            if (other is PredicatePolynomial poly) {
-                return new PredicateTerm(this.Operands.Add(poly));
+            if (other == Empty) {
+                return this;
+            }
+            else if (other is PredicatePolynomial poly) {
+                if (poly.Operands.Count == 1) {
+                    return this.And(poly.Operands.First());
+                }
+                else {
+                    return new PredicateTerm(this.Operands.Add(poly));
+                }
             }
             else if (other is PredicateTerm term) {
                 return term.Operands.Aggregate((ISyntaxPredicate)this, (x, y) => x.And(y));
@@ -63,7 +74,7 @@ namespace Helix.Analysis.Predicates {
                 }
             }
 
-            return this.And(new PredicatePolynomial(other));
+            return new PredicateTerm(this.Operands.Add(new PredicatePolynomial(other)));
         }
 
         public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
@@ -92,6 +103,10 @@ namespace Helix.Analysis.Predicates {
 
         public override string ToString() {
             return string.Join(" and ", this.Operands);
+        }
+
+        public override bool Test(ISyntaxPredicate other) {
+            return this.Operands.Any(x => x.Test(other));
         }
     }
 }

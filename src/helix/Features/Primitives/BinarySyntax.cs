@@ -217,9 +217,18 @@ namespace Helix.Features.Primitives {
             else if (left.GetReturnType(types).IsInt(types) && right.GetReturnType(types).IsInt(types)) {
                 return this.CheckIntExpresion(left, right, types);
             }
-            else {
-                throw TypeException.UnexpectedType(this.right.Location, left.GetReturnType(types));
+
+            left = left.UnifyFrom(right, types);
+            right = right.UnifyFrom(left, types);
+
+            if (left.GetReturnType(types).IsBool(types) && right.GetReturnType(types).IsBool(types)) {
+                return this.CheckBoolExpresion(left, right, types);
             }
+            else if (left.GetReturnType(types).IsInt(types) && right.GetReturnType(types).IsInt(types)) {
+                return this.CheckIntExpresion(left, right, types);
+            }
+
+            throw TypeException.UnexpectedType(this.right.Location, left.GetReturnType(types));
         }
 
         private ISyntaxTree CheckIntExpresion(ISyntaxTree left, ISyntaxTree right, TypeFrame types) {
@@ -301,7 +310,7 @@ namespace Helix.Features.Primitives {
                 .WithReturnType(returnType)
                 .BuildFor(result);
 
-            return result;
+            return new BlockSyntax(left, new BlockSyntax(right, result)).CheckTypes(types).ToRValue(types);
         }
 
         private ISyntaxTree CheckBoolExpresion(ISyntaxTree left, ISyntaxTree right, TypeFrame types) {
@@ -346,7 +355,7 @@ namespace Helix.Features.Primitives {
                 .WithReturnType(returnType)
                 .BuildFor(result);
 
-            return result;
+            return new BlockSyntax(left, new BlockSyntax(right, result)).CheckTypes(types).ToRValue(types);
         }
 
         private ISyntaxTree EvaluateBoolExpression(bool b1, bool b2, ISyntaxPredicate pred, TypeFrame types) {

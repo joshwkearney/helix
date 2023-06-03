@@ -3,8 +3,16 @@ struct Point {
 	var y as word;
 };
 
-func test12() as word {
-	var a, b = new Point { 8, 9 };
+func test(var y as bool) as word {
+	var x = 5 + {
+		if y then {
+			return 0;
+		};	
 
-	return a;
+		77;
+	};
+
+	return x - 10;
 };
+
+

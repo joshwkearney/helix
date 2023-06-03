@@ -28,10 +28,14 @@ namespace Helix.Analysis.TypeChecking {
 
         public ImmutableHashSet<Lifetime> ValidRoots { get; set; }
 
+        public Option<IdentifierPath> ControlContinuation { get; }
+
         // Global things
         public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; }
 
-        public DataFlowGraph DataFlowGraph { get; }
+        public DataFlowGraph DataFlow { get; }
+
+        public ControlFlowGraph ControlFlow { get; }
 
         public Dictionary<ISyntaxTree, SyntaxTag> SyntaxTags { get; }
 
@@ -53,13 +57,15 @@ namespace Helix.Analysis.TypeChecking {
             this.ValidRoots = ImmutableHashSet<Lifetime>.Empty;
             this.NominalSignatures = new Dictionary<IdentifierPath, HelixType>();
             this.Scope = new IdentifierPath();
-            this.DataFlowGraph = new DataFlowGraph();
+            this.DataFlow = new DataFlowGraph();
+            this.ControlFlow = new ControlFlowGraph();
             this.SyntaxTags = new Dictionary<ISyntaxTree, SyntaxTag>();
         }
 
         private TypeFrame(TypeFrame prev) {
             this.Scope = prev.Scope;
-            this.DataFlowGraph = prev.DataFlowGraph;
+            this.DataFlow = prev.DataFlow;
+            this.ControlFlow = prev.ControlFlow;
 
             this.SyntaxTags = prev.SyntaxTags;
             this.NominalSignatures = prev.NominalSignatures;
@@ -70,6 +76,10 @@ namespace Helix.Analysis.TypeChecking {
 
         public TypeFrame(TypeFrame prev, string scopeSegment) : this(prev) {
             this.Scope = prev.Scope.Append(scopeSegment);
+        }
+
+        public TypeFrame(TypeFrame prev, IdentifierPath newScope) : this(prev) {
+            this.Scope = newScope;
         }
 
         public string GetVariableName() {
@@ -88,13 +98,13 @@ namespace Helix.Analysis.TypeChecking {
 
                     // If these two lifetimes are equivalent (ie, they are supposed to
                     // outlive each other), then keep both as roots
-                    if (this.DataFlowGraph.GetEquivalentLifetimes(root).Contains(otherRoot)) {
+                    if (this.DataFlow.GetEquivalentLifetimes(root).Contains(otherRoot)) {
                         continue;
                     }
 
                     // If the other root is outlived by this root (and they're not equivalent),
                     // then remove it because "root" is a more useful, longer-lived root
-                    if (this.DataFlowGraph.DoesOutlive(root, otherRoot)) {
+                    if (this.DataFlow.DoesOutlive(root, otherRoot)) {
                         result.Remove(otherRoot);
                     }
                 }
@@ -105,7 +115,7 @@ namespace Helix.Analysis.TypeChecking {
 
         public IEnumerable<Lifetime> GetMaximumRoots(Lifetime lifetime) {
             var roots = this
-                .DataFlowGraph
+                .DataFlow
                 .GetOutlivedLifetimes(lifetime)
                 .Where(x => x.Role != LifetimeRole.Alias)
                 .Where(x => x != lifetime);

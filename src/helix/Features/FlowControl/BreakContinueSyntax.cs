@@ -7,6 +7,7 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Analysis;
+using Helix.Analysis.Predicates;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -53,9 +54,21 @@ namespace Helix.Features.FlowControl {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            SyntaxTagBuilder.AtFrame(types).BuildFor(this);
+            SyntaxTagBuilder
+                .AtFrame(types)
+                .BuildFor(this);
 
             return this;
+        }
+
+        private IdentifierPath FindClosestLoop(TypeFrame types) {
+            var path = types.Scope;
+
+            while (!path.Segments.Last().StartsWith("$loop")) {
+                path = path.Pop();
+            }
+
+            return path;
         }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

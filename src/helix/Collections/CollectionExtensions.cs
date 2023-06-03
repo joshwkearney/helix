@@ -26,5 +26,17 @@ namespace Helix.Collections {
                 return new ValueSet<T>(sequence);
             }
         }
+
+        public static ValueList<T> ToValueList<T>(this IEnumerable<T> sequence) {
+            if (sequence is ValueList<T> list) {
+                return list;
+            }
+            else if (sequence is IImmutableSet<T> immList) {
+                return new ValueList<T>(immList);
+            }
+            else {
+                return new ValueList<T>(sequence);
+            }
+        }
     }
 }

@@ -110,27 +110,23 @@ namespace Helix.Features.Functions {
             // Set the scope for type checking the body
             types = new TypeFrame(types, this.signature.Name);
 
+            var bodyTypes = new TypeFrame(types, "$body");
+
             // Declare parameters
-            FunctionsHelper.DeclareParameters(sig, path, types);
+            FunctionsHelper.DeclareParameters(sig, path, bodyTypes);
 
             // Make sure we include the heap in the root set
-            types.ValidRoots = types.ValidRoots.Add(Lifetime.Heap);
+            bodyTypes.ValidRoots = bodyTypes.ValidRoots.Add(Lifetime.Heap);
+
+            bodyTypes.ControlFlow.AddStartingEdge(types.Scope);
+            bodyTypes.ControlFlow.AddEdge(types.Scope, bodyTypes.Scope);
 
             // Check types
-            var body = this.body;
+            var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
 
-            if (sig.ReturnType == PrimitiveType.Void) {
-                body = new BlockSyntax(this.body.Location, new ISyntaxTree[] { 
-                    this.body,
-                    new VoidLiteral(this.body.Location)
-                });
+            if (sig.ReturnType != PrimitiveType.Void && !body.AlwaysReturns(types)) {
+                throw TypeException.NoReturn(this.Location);
             }
-
-            body = body.CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(sig.ReturnType, types);
-
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, body, types);
 
 #if DEBUG
             // Debug check: make sure that every syntax tree was type checked
@@ -206,14 +202,7 @@ namespace Helix.Features.Functions {
             }
 
             // Generate the body
-            var retExpr = this.body.GenerateCode(types, bodyWriter);
-
-            if (this.Signature.ReturnType != PrimitiveType.Void) {
-                bodyWriter.WriteEmptyLine();
-                bodyWriter.WriteStatement(new CReturn() { 
-                    Target = retExpr
-                });
-            }
+            this.body.GenerateCode(types, bodyWriter);
 
             // If the body ends with an empty line, trim it
             if (body.Any() && body.Last().IsEmpty) {

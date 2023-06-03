@@ -1,6 +1,7 @@
 ﻿using Helix.Analysis.Flow;
 using Helix.Analysis.Predicates;
 using Helix.Analysis.Types;
+using Helix.Features.FlowControl;
 using Helix.Syntax;
 using System;
 using System.Collections.Generic;
@@ -29,14 +30,6 @@ namespace Helix.Analysis.TypeChecking {
             this.CapturedVariables = cap;
             this.Predicate = pred;
         }
-
-        public SyntaxTagBuilder ToBuilder(TypeFrame types) {
-            return SyntaxTagBuilder.AtFrame(types)
-                .WithLifetimes(this.Bounds)
-                .WithCapturedVariables(this.CapturedVariables)
-                .WithPredicate(this.Predicate)
-                .WithReturnType(this.ReturnType);
-        }
     }
 
     public class SyntaxTagBuilder {
@@ -52,7 +45,13 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         public static SyntaxTagBuilder AtFrame(TypeFrame types, ISyntaxTree syntax) {
-            return types.SyntaxTags[syntax].ToBuilder(types);
+            var tag = types.SyntaxTags[syntax];
+
+            return AtFrame(types)
+                .WithLifetimes(tag.Bounds)
+                .WithCapturedVariables(tag.CapturedVariables)
+                .WithPredicate(tag.Predicate)
+                .WithReturnType(tag.ReturnType);
         }
 
         private SyntaxTagBuilder(TypeFrame types) {
@@ -107,7 +106,7 @@ namespace Helix.Analysis.TypeChecking {
             var tag = new SyntaxTag(
                 this.ReturnType, 
                 this.Bounds, 
-                this.CapturedVariables, 
+                this.CapturedVariables,
                 this.Predicate);
 
             this.types.SyntaxTags[syntax] = tag;

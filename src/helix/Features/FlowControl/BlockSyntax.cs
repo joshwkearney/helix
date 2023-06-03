@@ -9,21 +9,35 @@ using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
 using System;
+using Helix.Features.Primitives;
+using System.ComponentModel;
 
 namespace Helix.Parsing {
     public partial class Parser {
         private ISyntaxTree Block() {
             var start = this.Advance(TokenKind.OpenBrace);
-            var stats = new List<ISyntaxTree>();
 
-            while (!this.Peek(TokenKind.CloseBrace)) {
-                stats.Add(this.Statement());
+            ISyntaxTree stat;
+            if (this.Peek(TokenKind.CloseBrace)) {
+                stat = new VoidLiteral(start.Location);
+            }
+            else {
+                stat = this.BlockStatement();
             }
 
-            var end = this.Advance(TokenKind.CloseBrace);
-            var loc = start.Location.Span(end.Location);
+            this.Advance(TokenKind.CloseBrace);
 
-            return new BlockSyntax(loc, stats);
+            return stat;
+        }
+
+        private ISyntaxTree BlockStatement() {
+            var first = this.Statement();
+
+            if (!this.Peek(TokenKind.CloseBrace)) {
+                first = new BlockSyntax(first, this.BlockStatement());
+            }
+
+            return first;
         }
     }
 }
@@ -31,100 +45,104 @@ namespace Helix.Parsing {
 namespace Helix.Features.FlowControl {
     public record BlockSyntax : ISyntaxTree {
         private static int blockCounter = 0;
-        private static int statCounter = 0;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => this.Statements;
+        public ISyntaxTree First { get; }
 
-        public IReadOnlyList<ISyntaxTree> Statements { get; }
+        public ISyntaxTree Second { get; }
+
+        public IEnumerable<ISyntaxTree> Children => new[] { this.First, this.Second };
 
         public bool IsPure { get; }
 
         public IdentifierPath Path { get; }
 
-        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements, IdentifierPath path) {
-            this.Location = statements.Select(x => x.Location).Prepend(location).Last();
-            this.Statements = statements;
-            this.IsPure = this.Statements.All(x => x.IsPure);
+        public BlockSyntax(ISyntaxTree first, ISyntaxTree second, IdentifierPath path) {
+            this.Location = first.Location.Span(second.Location);
+            this.First = first;
+            this.Second = second;
+            this.IsPure = this.First.IsPure && this.Second.IsPure;
             this.Path = path;
         }
 
-        public BlockSyntax(TokenLocation location, IReadOnlyList<ISyntaxTree> statements) 
-            : this(location, statements, new IdentifierPath("$b" + blockCounter++)) { }
+        public BlockSyntax(ISyntaxTree first, ISyntaxTree second) 
+            : this(first, second, new IdentifierPath("$b" + blockCounter++)) { }
 
-        public BlockSyntax(ISyntaxTree statement) : this(statement.Location, new[] { statement }) { }
+        public ISyntaxTree ToRValue(TypeFrame types) {
+            if (!this.IsTypeChecked(types)) {
+                throw TypeException.RValueRequired(this.Location);
+            }
+
+            return this;
+        }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
 
-            if (this.Statements.Count == 1) {
-                return this.Statements[0].CheckTypes(types);
+            var firstScope = types.Scope;
+            var secondScope = firstScope.Append(this.Path);
+
+            var hasParentContinuation = types.ControlFlow.TryGetContinuation(firstScope, out var cont);
+            types.ControlFlow.SetContinuation(firstScope, secondScope);
+
+            var first = this.First.CheckTypes(types).ToRValue(types);
+            if (types.ControlFlow.AlwaysReturns(firstScope)) {
+                return first;
+            }
+            else {
+                types.ControlFlow.AddEdge(firstScope, secondScope);
             }
 
-            var name = this.Path.Segments.Last();
-            var bodyTypes = new TypeFrame(types, name);
+            var secondTypes = new TypeFrame(types, secondScope);
+            var predicate = first.GetPredicate(types);
 
-            var stats = new List<ISyntaxTree>();
-            var predicate = ISyntaxPredicate.Empty;
-            var statTypes = bodyTypes;
-
-            foreach (var forStat in this.Statements) {
-                var stat = CheckStatement(forStat, predicate, bodyTypes);                
-                stats.Add(stat);
-
-                // Get this predicate's effects for the next statement
-                predicate = stat.GetPredicate(statTypes);
+            if (hasParentContinuation) {
+                types.ControlFlow.SetContinuation(secondScope, cont);
             }
 
-            var result = new BlockSyntax(this.Location, stats, this.Path);
-            var returnType = stats
-                .LastOrNone()
-                .Select(x => x.GetReturnType(bodyTypes))
-                .OrElse(() => PrimitiveType.Void);
+            var second = this.CheckStatement(this.Second, secondScope, predicate, secondTypes, out _);
+            if (hasParentContinuation && !types.ControlFlow.AlwaysReturns(secondScope)) {
+                types.ControlFlow.AddEdge(secondScope, cont);
+            }
 
-            SyntaxTagBuilder.AtFrame(bodyTypes)
-                .WithChildren(stats)
+            var result = new BlockSyntax(first, second, this.Path);
+            var returnType = second.GetReturnType(types);
+
+            SyntaxTagBuilder.AtFrame(types)
+                .WithChildren(first, second)
                 .WithReturnType(returnType)
                 .WithPredicate(predicate)
-                .WithLifetimes(AnalyzeFlow(stats, bodyTypes))
+                .WithLifetimes(second.GetLifetimes(types))
                 .BuildFor(result);
-
-            MutateLocals(bodyTypes, types);
 
             return result;
         }
 
-        private static ISyntaxTree CheckStatement(ISyntaxTree stat, ISyntaxPredicate predicate,
-                                                  TypeFrame types) {
-            // Apply this predicate's effects to the later statements
-            if (predicate == ISyntaxPredicate.Empty) {
-                return stat.CheckTypes(types).ToRValue(types);
-            }
-            else { 
-                // Deepen the scope because the predicate might want to shadow variables
-                // and it will need a new path to do so
-                var statTypes = new TypeFrame(types, "$s" + statCounter++);
+        private ISyntaxTree CheckStatement(ISyntaxTree stat, IdentifierPath name, ISyntaxPredicate predicate,
+                                           TypeFrame types, out TypeFrame newTypes) {
+            var statTypes = new TypeFrame(types, name);
 
-                // Apply this predicate to the current context
-                var newStats = predicate
-                    .ApplyToTypes(stat.Location, statTypes)
-                    .Append(stat)
-                    .ToArray();
+            // Apply this predicate to the current context
+            //var newStats = predicate
+            //    .ApplyToTypes(stat.Location, statTypes)
+            //    .Append(stat)
+            //    .ToArray();
 
-                // Only make a new block if the predicate injected any statements
-                if (newStats.Length > 0) {
-                    stat = new BlockSyntax(stat.Location, newStats);
-                }
+            //// Only make a new block if the predicate injected any statements
+            //if (newStats.Length > 1) {
+            //    stat = new BlockSyntax(stat.Location, newStats);
+            //}
 
-                // Evaluate this statement and get the next predicate
-                var result = stat.CheckTypes(statTypes).ToRValue(statTypes);
+            // Evaluate this statement and get the next predicate
+            var result = stat.CheckTypes(statTypes).ToRValue(statTypes);
 
-                MutateLocals(statTypes, types);
-                return result;
-            }            
+            MutateLocals(statTypes, types);
+
+            newTypes = statTypes;
+            return result;
         }
 
         private static void MutateLocals(TypeFrame bodyTypes, TypeFrame types) {
@@ -165,38 +183,13 @@ namespace Helix.Features.FlowControl {
             }
         }
 
-        private static LifetimeBounds AnalyzeFlow(IReadOnlyList<ISyntaxTree> stats, TypeFrame flow) {
-            var bundle = stats
-                .LastOrNone()
-                .Select(x => x.GetLifetimes(flow))
-                .OrElse(() => new LifetimeBounds());
-
-            return bundle;
-        }
-
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            if (!this.IsTypeChecked(types)) {
-                throw TypeException.RValueRequired(this.Location);
-            }
-
-            return this;
-        }
-
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (!this.IsTypeChecked(types)) {
                 throw new InvalidOperationException();
             }
 
-            if (this.Statements.Any()) {
-                foreach (var stat in this.Statements.SkipLast(1)) {
-                    stat.GenerateCode(types, writer);
-                }
-
-                return this.Statements.Last().GenerateCode(types, writer);
-            }
-            else {
-                return new CIntLiteral(0);
-            }
+            this.First.GenerateCode(types, writer);
+            return this.Second.GenerateCode(types, writer);
         }
     }
 }

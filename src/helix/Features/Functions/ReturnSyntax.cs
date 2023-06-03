@@ -9,16 +9,23 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Features.Functions;
 using Helix.Features.Types;
+using Helix.Features.Primitives;
 
 namespace Helix.Parsing {
     public partial class Parser {
         public ISyntaxTree ReturnStatement() {
             var start = this.Advance(TokenKind.ReturnKeyword);
-            var arg = this.TopExpression();
 
-            return new ReturnSyntax(
-                start.Location,
-                arg);
+            if (this.Peek(TokenKind.Semicolon)) {
+                return new ReturnSyntax(
+                    start.Location,
+                    new VoidLiteral(start.Location));
+            }
+            else {
+                return new ReturnSyntax(
+                    start.Location,
+                    this.TopExpression());
+            }
         }
     }
 }
@@ -47,9 +54,11 @@ namespace Helix.Features.Functions {
                 return this;
             }
 
-            if (!this.TryGetCurrentFunction(types, out var sig)) {
+            if (!this.TryGetCurrentFunction(types, out var sig, out var funcPath)) {
                 throw new InvalidOperationException();
             }
+
+            types.ControlFlow.AddEndingContinutation(types.Scope);
 
             var payload = this.payload
                 .CheckTypes(types)
@@ -58,8 +67,17 @@ namespace Helix.Features.Functions {
 
             var result = new ReturnSyntax(this.Location, payload, sig);
 
-            SyntaxTagBuilder.AtFrame(types).BuildFor(result);
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, payload, types);
+            types.ControlFlow.AddEndingEdge(types.Scope);
+
+            SyntaxTagBuilder
+                .AtFrame(types)
+                .BuildFor(result);
+
+            FunctionsHelper.AnalyzeReturnValueFlow(
+                this.Location, 
+                this.funcSig, 
+                payload, 
+                types);
 
             return result;
         }
@@ -72,25 +90,34 @@ namespace Helix.Features.Functions {
             return this;
         }
 
-        private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {
+        private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func, out IdentifierPath resultPath) {
             var path = types.Scope;
 
             while (!path.IsEmpty) {
                 if (types.TryGetFunction(path, out func)) {
+                    resultPath = path;
                     return true;
                 }
 
                 path = path.Pop();
             }
 
-            func = null;
+            func = default;
+            resultPath = default;
             return false;
         }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            writer.WriteStatement(new CReturn() {
-                Target = this.payload.GenerateCode(types, writer)
-            });
+            if (this.funcSig.ReturnType == PrimitiveType.Void) {
+                this.payload.GenerateCode(types, writer);
+
+                writer.WriteStatement(new CReturn());
+            }
+            else {
+                writer.WriteStatement(new CReturn() {
+                    Target = this.payload.GenerateCode(types, writer)
+                });
+            }
 
             return new CIntLiteral(0);
         }

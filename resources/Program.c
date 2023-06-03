@@ -14,25 +14,22 @@ extern void* _region_malloc(_Region* region, int size);
 static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth < r2->depth ? r1 : r2;  }
 
 typedef struct Point Point;
-_Word test12(_Region* _return_region);
+_Word test(_Region* _return_region, int y);
 
 struct Point {
     _Word x;
     _Word y;
 };
 
-_Word test12(_Region* _return_region) {
-    /* Line 7: New variable declaration '$t_0' */
-    Point $t_0 = (Point){ .x= 8, .y= 9 };
+_Word test(_Region* _return_region, int y) {
+    /* Line 8: If statement */
+    if (y) { 
+        return 0;
+    } 
 
-    /* Line 7: New variable declaration 'a' */
-    _Word a = ($t_0.x);
+    /* Line 7: New variable declaration 'x' */
+    _Word x = 82;
 
-    /* Line 7: New variable declaration 'b' */
-    _Word b = ($t_0.y);
-
-    return a;
-
-    return 0;
+    return 72;
 }
 

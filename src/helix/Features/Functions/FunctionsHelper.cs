@@ -62,10 +62,10 @@ namespace Helix.Features.Functions {
                     var locationLifetime = new StackLocationLifetime(memPath, LifetimeOrigin.LocalLocation);
 
                     // Register our members
-                    flow.DataFlowGraph.AddMember(parLifetime, valueLifetime, memType);
+                    flow.DataFlow.AddMember(parLifetime, valueLifetime, memType);
 
                     // Make sure the value outlives the location
-                    flow.DataFlowGraph.AddStored(valueLifetime, locationLifetime, memType);
+                    flow.DataFlow.AddStored(valueLifetime, locationLifetime, memType);
 
                     // Put these lifetimes in the main table
                     flow.Locals = flow.Locals.SetItem(
@@ -97,7 +97,7 @@ namespace Helix.Features.Functions {
             // are all either the heap or an inferred lifetime. This will make sure
             // that no roots other than the heap have allocated a part of the return
             // value.
-            var incompatibleRoots = flow.DataFlowGraph.GetPrecursorLifetimes(body.GetLifetimes(flow).ValueLifetime)
+            var incompatibleRoots = flow.DataFlow.GetPrecursorLifetimes(body.GetLifetimes(flow).ValueLifetime)
                 .Where(x => x.Role == LifetimeRole.Root)
                 .Where(x => x != Lifetime.Heap)
                 .ToValueSet();
@@ -116,7 +116,7 @@ namespace Helix.Features.Functions {
             }
 
             // Add a dependency between every returned lifetime and the heap
-            flow.DataFlowGraph.AddStored(
+            flow.DataFlow.AddStored(
                 body.GetLifetimes(flow).ValueLifetime, 
                 Lifetime.Heap,
                 body.GetReturnType(flow));

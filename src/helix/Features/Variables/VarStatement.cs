@@ -124,13 +124,13 @@ namespace Helix {
 
             // Add a dependency between whatever is being assigned to this variable and the
             // variable's value
-            flow.DataFlowGraph.AddAssignment(
+            flow.DataFlow.AddAssignment(
                 assignBounds.ValueLifetime,
                 valueLifetime,
                 assign.GetReturnType(flow));
 
             // The value of a variable must outlive its location
-            flow.DataFlowGraph.AddStored(
+            flow.DataFlow.AddStored(
                 valueLifetime, 
                 locationLifetime, 
                 assign.GetReturnType(flow));

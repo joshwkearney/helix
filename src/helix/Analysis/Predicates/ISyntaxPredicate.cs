@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 
 namespace Helix.Analysis.Predicates {
     public abstract class SyntaxPredicateLeaf : ISyntaxPredicate {
+        public override bool Test(ISyntaxPredicate other) {
+            return this.Equals(other);
+        }
+
         public abstract bool TryOrWith(ISyntaxPredicate other, out ISyntaxPredicate result);
 
         public abstract bool TryAndWith(ISyntaxPredicate other, out ISyntaxPredicate result);
@@ -18,8 +22,6 @@ namespace Helix.Analysis.Predicates {
 
     public abstract class ISyntaxPredicate : IEquatable<ISyntaxPredicate> {
         public static ISyntaxPredicate Empty { get; } = new EmptyPredicate();
-
-        public abstract ISyntaxPredicate Negate();
 
         public virtual ISyntaxPredicate And(ISyntaxPredicate other) {
             return new PredicateTerm(new PredicatePolynomial(this)).And(other);
@@ -40,10 +42,22 @@ namespace Helix.Analysis.Predicates {
             return Array.Empty<ISyntaxTree>();
         }
 
+        public abstract bool Test(ISyntaxPredicate other);
+
+        public abstract ISyntaxPredicate Negate();
+
         public abstract override bool Equals(object other);
 
         public abstract override int GetHashCode();
 
         public abstract bool Equals(ISyntaxPredicate other);
+
+        public static bool operator==(ISyntaxPredicate first, ISyntaxPredicate second) {
+            return first.Equals(second);
+        }
+
+        public static bool operator !=(ISyntaxPredicate first, ISyntaxPredicate second) {
+            return !first.Equals(second);
+        }
     }
 }
