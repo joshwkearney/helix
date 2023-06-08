@@ -208,6 +208,10 @@ namespace Helix.Features.Primitives {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
+            if (this.IsTypeChecked(types)) {
+                return this;
+            }
+
             var left = this.left.CheckTypes(types).ToRValue(types);
             var right = this.right.CheckTypes(types).ToRValue(types);
 

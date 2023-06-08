@@ -14,6 +14,8 @@ namespace Helix.Syntax {
 
         public bool IsPure { get; }
 
+        public bool IsStatement => false;
+
         public Option<HelixType> AsType(TypeFrame types) => Option.None;
 
         public ISyntaxTree CheckTypes(TypeFrame types);

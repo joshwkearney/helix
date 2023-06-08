@@ -77,10 +77,8 @@ namespace Helix.Analysis.Predicates {
             return new PredicateTerm(this.Operands.Add(new PredicatePolynomial(other)));
         }
 
-        public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
-            return this.Operands
-                .SelectMany(x => x.ApplyToTypes(loc, types))
-                .ToArray();
+        public override ISyntaxTree Apply(ISyntaxTree syntax, TypeFrame types) {
+            return this.Operands.Aggregate(syntax, (inner, op) => op.Apply(inner, types));
         }
 
         public override bool Equals(ISyntaxPredicate other) {

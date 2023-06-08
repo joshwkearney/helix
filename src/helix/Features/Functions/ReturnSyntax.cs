@@ -10,6 +10,7 @@ using Helix.Parsing;
 using Helix.Features.Functions;
 using Helix.Features.Types;
 using Helix.Features.Primitives;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -41,6 +42,8 @@ namespace Helix.Features.Functions {
 
         public bool IsPure => false;
 
+        public bool IsStatement => true;
+
         public ReturnSyntax(TokenLocation loc, ISyntaxTree payload, 
                             FunctionType func = null) {
 
@@ -58,16 +61,20 @@ namespace Helix.Features.Functions {
                 throw new InvalidOperationException();
             }
 
-            types.ControlFlow.AddEndingContinutation(types.Scope);
+            var scope = types.Scope.Append("$return");
+            var payloadTypes = new TypeFrame(types, scope);
+
+            payloadTypes.ControlFlow.AddEdge(types.Scope, payloadTypes.Scope);
+            payloadTypes.ControlFlow.AddContinuation(scope, payloadTypes.Scope);
 
             var payload = this.payload
-                .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(sig.ReturnType, types);
+                .CheckTypes(payloadTypes)
+                .ToRValue(payloadTypes)
+                .UnifyTo(sig.ReturnType, payloadTypes);
+
+            types.ControlFlow.AddEdge(payloadTypes.Scope, IFlowControlNode.End);
 
             var result = new ReturnSyntax(this.Location, payload, sig);
-
-            types.ControlFlow.AddEndingEdge(types.Scope);
 
             SyntaxTagBuilder
                 .AtFrame(types)

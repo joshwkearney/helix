@@ -14,6 +14,7 @@ using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Collections;
 using Helix.Features.Types;
+using Helix.Analysis.Predicates;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -118,7 +119,11 @@ namespace Helix.Features.Functions {
             // Make sure we include the heap in the root set
             bodyTypes.ValidRoots = bodyTypes.ValidRoots.Add(Lifetime.Heap);
 
-            bodyTypes.ControlFlow.AddStartingEdge(types.Scope);
+            bodyTypes.ControlFlow.AddEdge(
+                IFlowControlNode.Start, 
+                IFlowControlNode.FromScope(types.Scope),
+                ISyntaxPredicate.Empty);
+
             bodyTypes.ControlFlow.AddEdge(types.Scope, bodyTypes.Scope);
 
             // Check types

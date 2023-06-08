@@ -28,7 +28,7 @@ namespace Helix.Analysis.TypeChecking {
 
         public ImmutableHashSet<Lifetime> ValidRoots { get; set; }
 
-        public Option<IdentifierPath> ControlContinuation { get; }
+        public ImmutableHashSet<ISyntaxPredicate> AppliedPredicates { get; set; }
 
         // Global things
         public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; }
@@ -60,6 +60,7 @@ namespace Helix.Analysis.TypeChecking {
             this.DataFlow = new DataFlowGraph();
             this.ControlFlow = new ControlFlowGraph();
             this.SyntaxTags = new Dictionary<ISyntaxTree, SyntaxTag>();
+            this.AppliedPredicates = ImmutableHashSet<ISyntaxPredicate>.Empty;
         }
 
         private TypeFrame(TypeFrame prev) {
@@ -72,6 +73,7 @@ namespace Helix.Analysis.TypeChecking {
 
             this.Locals = prev.Locals;
             this.ValidRoots = prev.ValidRoots;
+            this.AppliedPredicates = prev.AppliedPredicates;
         }
 
         public TypeFrame(TypeFrame prev, string scopeSegment) : this(prev) {

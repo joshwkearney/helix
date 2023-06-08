@@ -38,8 +38,8 @@ namespace Helix.Analysis.Predicates {
             return left.Or(right);
         }
 
-        public virtual IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
-            return Array.Empty<ISyntaxTree>();
+        public virtual ISyntaxTree Apply(ISyntaxTree tree, TypeFrame types) {
+            return tree;
         }
 
         public abstract bool Test(ISyntaxPredicate other);

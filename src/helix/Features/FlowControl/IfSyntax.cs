@@ -50,6 +50,8 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure { get; }
 
+        public bool IsStatement => true;
+
         public IfSyntax(
             TokenLocation location,
             ISyntaxTree cond,
@@ -58,8 +60,6 @@ namespace Helix.Features.FlowControl {
             this.Location = location;
             this.cond = cond;
 
-            // TODO: Fix the problem this solved in a different way
-            //this.iftrue = iftrue;
             this.iftrue = new BlockSyntax(
                 iftrue, 
                 new VoidLiteral(iftrue.Location)
@@ -80,8 +80,10 @@ namespace Helix.Features.FlowControl {
 
             this.Location = location;
             this.cond = cond;
+
             this.iftrue = iftrue;
             this.iffalse = iffalse;
+            
             this.path = path;
             this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
         }
@@ -93,41 +95,45 @@ namespace Helix.Features.FlowControl {
 
             var cond = this.cond
                 .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(PrimitiveType.Bool, types);
+                .ToRValue(types);
+
+            var condPredicate = ISyntaxPredicate.Empty;
+            if (cond.GetReturnType(types) is PredicateBool pbool) {
+                condPredicate = pbool.Predicate;
+            }
+
+            cond = cond.UnifyTo(PrimitiveType.Bool, types);
 
             var truePath = types.Scope.Append(this.path.Segments.Last() + "T");
             var falsePath = types.Scope.Append(this.path.Segments.Last() + "F");
 
-            var parentContinuation = types.ControlFlow.TryGetContinuation(types.Scope, out var cont);
-            if (parentContinuation) {
-                types.ControlFlow.SetContinuation(truePath, cont);
-                types.ControlFlow.SetContinuation(falsePath, cont);
-            }
+            types.ControlFlow.AddEdge(types.Scope, truePath, condPredicate);
+            types.ControlFlow.AddEdge(types.Scope, falsePath, condPredicate.Negate());
+
+            var cont = types.ControlFlow.GetContinuation(types.Scope);
+            types.ControlFlow.AddContinuation(truePath, cont);
+            types.ControlFlow.AddContinuation(falsePath, cont);
 
             var iftrueTypes = new TypeFrame(types, truePath);
             var iffalseTypes = new TypeFrame(types, falsePath);
 
-            var iftrue = this.iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
-            var iffalse = this.iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
+            var ifTruePred = types.ControlFlow.GetPredicates(truePath);
+            var ifFalsePred = types.ControlFlow.GetPredicates(falsePath);
+
+            var iftrue = ifTruePred.Apply(this.iftrue, iftrueTypes).CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
+            var iffalse = ifFalsePred.Apply(this.iffalse, iffalseTypes).CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
 
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
 
-            types.ControlFlow.AddEdge(types.Scope, truePath);
-            types.ControlFlow.AddEdge(types.Scope, falsePath);
-
-            if (parentContinuation) {
-                if (!types.ControlFlow.AlwaysReturns(truePath)) {
-                    types.ControlFlow.AddEdge(truePath, cont);
-                }
-
-                if (!types.ControlFlow.AlwaysReturns(falsePath)) {
-                    types.ControlFlow.AddEdge(falsePath, cont);
-                }
+            if (!types.ControlFlow.AlwaysReturns(truePath)) {
+                types.ControlFlow.AddEdge(truePath, cont);
             }
 
-            // Update any variables modified in either branch
+            if (!types.ControlFlow.AlwaysReturns(falsePath)) {
+                types.ControlFlow.AddEdge(falsePath, cont);
+            }
+
             MutateLocals(iftrueTypes, iffalseTypes, types);
 
             var resultType = iftrue.GetReturnType(types);
@@ -141,12 +147,12 @@ namespace Helix.Features.FlowControl {
 
             var pred1 = iftrue.GetPredicate(types);
             var pred2 = iffalse.GetPredicate(types);
-            var pred = pred1.And(pred2);
+            var pred3 = pred1.And(pred2);
 
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(cond, iftrue, iffalse)
                 .WithReturnType(resultType)
-                .WithPredicate(pred)
+                .WithPredicate(pred3)
                 .WithLifetimes(AnalyzeFlow(result.path, iftrue, iffalse, types))
                 .BuildFor(result);
 

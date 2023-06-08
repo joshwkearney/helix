@@ -1,18 +1,19 @@
-struct Point {
-	var x as word;
-	var y as word;
+union Option {
+	var first as void;
+	var second as void;
+	var third as word;
 };
 
-func test(var y as bool) as word {
-	var x = 5 + {
-		if y then {
-			return 0;
-		};	
-
-		77;
+func test2(var opt as Option) as word {
+	if opt is third then {
+		return opt + 10;
 	};
 
-	return x - 10;
+	return 45;
 };
 
-
+func test3(var opt as Option) as word {
+	return if (opt is first) or (opt is second)
+		then 10
+		else opt;
+};

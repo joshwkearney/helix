@@ -58,6 +58,8 @@ namespace Helix.Features.FlowControl {
 
         public IdentifierPath Path { get; }
 
+        public bool IsStatement => true;
+
         public BlockSyntax(ISyntaxTree first, ISyntaxTree second, IdentifierPath path) {
             this.Location = first.Location.Span(second.Location);
             this.First = first;
@@ -82,66 +84,42 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            var firstScope = types.Scope;
-            var secondScope = firstScope.Append(this.Path);
+            var firstScope = types.Scope.Append(this.Path);
+            var secondScope = firstScope.Append("2");
 
-            var hasParentContinuation = types.ControlFlow.TryGetContinuation(firstScope, out var cont);
-            types.ControlFlow.SetContinuation(firstScope, secondScope);
+            types.ControlFlow.AddEdge(types.Scope, firstScope);
 
-            var first = this.First.CheckTypes(types).ToRValue(types);
-            if (types.ControlFlow.AlwaysReturns(firstScope)) {
-                return first;
+            var continuation = types.ControlFlow.GetContinuation(types.Scope);
+            types.ControlFlow.AddContinuation(firstScope, secondScope);
+            types.ControlFlow.AddContinuation(secondScope, continuation);
+
+            var firstTypes = new TypeFrame(types, firstScope);
+            var first = this.First.CheckTypes(firstTypes).ToRValue(firstTypes);
+
+            if (!first.IsStatement && !firstTypes.ControlFlow.AlwaysReturns(firstScope)) {
+                firstTypes.ControlFlow.AddEdge(firstScope, secondScope);
             }
-            else {
-                types.ControlFlow.AddEdge(firstScope, secondScope);
-            }
+            
+            var pred = types.ControlFlow.GetPredicates(secondScope);
+            var secondTypes = new TypeFrame(firstTypes, secondScope);
+            var second = pred.Apply(this.Second, secondTypes).CheckTypes(secondTypes).ToRValue(secondTypes);
 
-            var secondTypes = new TypeFrame(types, secondScope);
-            var predicate = first.GetPredicate(types);
-
-            if (hasParentContinuation) {
-                types.ControlFlow.SetContinuation(secondScope, cont);
-            }
-
-            var second = this.CheckStatement(this.Second, secondScope, predicate, secondTypes, out _);
-            if (hasParentContinuation && !types.ControlFlow.AlwaysReturns(secondScope)) {
-                types.ControlFlow.AddEdge(secondScope, cont);
+            if (!second.IsStatement && !types.ControlFlow.AlwaysReturns(secondScope)) {
+                types.ControlFlow.AddEdge(secondScope, continuation);
             }
 
             var result = new BlockSyntax(first, second, this.Path);
-            var returnType = second.GetReturnType(types);
+            var returnType = second.GetReturnType(firstTypes);
 
-            SyntaxTagBuilder.AtFrame(types)
+            SyntaxTagBuilder.AtFrame(firstTypes)
                 .WithChildren(first, second)
                 .WithReturnType(returnType)
-                .WithPredicate(predicate)
-                .WithLifetimes(second.GetLifetimes(types))
+                .WithLifetimes(second.GetLifetimes(firstTypes))
                 .BuildFor(result);
 
-            return result;
-        }
+            MutateLocals(secondTypes, firstTypes);
+            MutateLocals(firstTypes, types);
 
-        private ISyntaxTree CheckStatement(ISyntaxTree stat, IdentifierPath name, ISyntaxPredicate predicate,
-                                           TypeFrame types, out TypeFrame newTypes) {
-            var statTypes = new TypeFrame(types, name);
-
-            // Apply this predicate to the current context
-            //var newStats = predicate
-            //    .ApplyToTypes(stat.Location, statTypes)
-            //    .Append(stat)
-            //    .ToArray();
-
-            //// Only make a new block if the predicate injected any statements
-            //if (newStats.Length > 1) {
-            //    stat = new BlockSyntax(stat.Location, newStats);
-            //}
-
-            // Evaluate this statement and get the next predicate
-            var result = stat.CheckTypes(statTypes).ToRValue(statTypes);
-
-            MutateLocals(statTypes, types);
-
-            newTypes = statTypes;
             return result;
         }
 
@@ -159,24 +137,6 @@ namespace Helix.Features.FlowControl {
             foreach (var path in modifiedLocalLifetimes) {
                 var oldBounds = types.Locals[path];
                 var newBounds = bodyTypes.Locals[path];
-
-               // var roots = types.GetMaximumRoots(newBounds.ValueLifetime);
-
-                // If the new value of this variable depends on a lifetime that was created
-                // inside the loop, we need to declare a new root so that nothing after the
-                // loop uses code that is no longer in scope
-                //if (roots.Any(x => !types.LifetimeRoots.Contains(x))) {
-                //    var newRoot = new ValueLifetime(
-                //        oldBounds.ValueLifetime.Path,
-                //        LifetimeRole.Root,
-                //        LifetimeOrigin.TempValue,
-                //        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
-
-                //    // Add our new root to the list of acceptable roots
-                //    types.LifetimeRoots = types.LifetimeRoots.Add(newRoot);
-
-                //    newBounds = newBounds.WithValue(newRoot);
-                //}
 
                 // Replace the current value with our root
                 types.Locals = types.Locals.SetItem(path, newBounds);

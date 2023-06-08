@@ -10,29 +10,31 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Helix.Analysis.Flow {
-    public interface IFlowControlNode {
+    public abstract record IFlowControlNode {
         public static IFlowControlNode Start { get; } = new LeafNode(true);
 
         public static IFlowControlNode End { get; } = new LeafNode(false);
+
+        public static IFlowControlNode None { get; } = new NoneNode();
 
         public static IFlowControlNode FromScope(IdentifierPath scope) {
             return new ScopeNode(scope);
         }
 
-        public bool IsStart => false;
+        public virtual bool IsStart => false;
 
-        public bool IsEnd => false;
+        public virtual bool IsEnd => false;
 
-        public Option<IdentifierPath> AsScope() => Option.None;
+        public virtual Option<IdentifierPath> AsScope() => Option.None;
 
         private record ScopeNode(IdentifierPath Scope) : IFlowControlNode {
             public Option<IdentifierPath> AsScope() => this.Scope;
         }
 
         private record LeafNode(bool IsStartProp) : IFlowControlNode {
-            public bool IsStart => this.IsStartProp;
+            public override bool IsStart => this.IsStartProp;
 
-            public bool IsEnd => !this.IsStartProp;
+            public override bool IsEnd => !this.IsStartProp;
 
             public override string ToString() {
                 if (this.IsStartProp) {
@@ -43,6 +45,8 @@ namespace Helix.Analysis.Flow {
                 }
             }
         }
+
+        private record NoneNode : IFlowControlNode { }
     }
 
     public class ControlFlowGraph {
@@ -62,61 +66,65 @@ namespace Helix.Analysis.Flow {
             this.continuations = new Dictionary<IdentifierPath, IFlowControlNode>();
         }
 
-        public void AddEndingEdge(IdentifierPath scope) {
-            var node = IFlowControlNode.FromScope(scope);
-            var end = IFlowControlNode.End;
-
-            this.edges[node][end] = ISyntaxPredicate.Empty;
-            this.reverse_edges[end][node] = ISyntaxPredicate.Empty;
-        }
-
-        public void AddStartingEdge(IdentifierPath scope) {
-            var node = IFlowControlNode.FromScope(scope);
-            var start = IFlowControlNode.Start;
-
-            this.edges[start][node] = ISyntaxPredicate.Empty;
-            this.reverse_edges[node][start] = ISyntaxPredicate.Empty;
-        }
-
         public void AddEdge(IdentifierPath parent, IdentifierPath child) {
-            this.AddEdge(parent, IFlowControlNode.FromScope(child), ISyntaxPredicate.Empty);
-        }
-
-        public void AddEdge(IdentifierPath parent, IFlowControlNode child) {
             this.AddEdge(parent, child, ISyntaxPredicate.Empty);
         }
 
-        public void AddEdge(IdentifierPath parent, IFlowControlNode child, ISyntaxPredicate pred) {
-            var parentNode = IFlowControlNode.FromScope(parent);
-
-            this.edges[parentNode][child] = pred;
-            this.reverse_edges[child][parentNode] = pred;
+        public void AddEdge(IdentifierPath parent, IdentifierPath child, ISyntaxPredicate pred) {
+            this.AddEdge(
+                IFlowControlNode.FromScope(parent),
+                IFlowControlNode.FromScope(child),
+                pred);
         }
 
-        public void SetContinuation(IdentifierPath stat, IdentifierPath sibling) {
-            this.continuations[stat] = IFlowControlNode.FromScope(sibling);
+        public void AddEdge(IdentifierPath parent, IFlowControlNode child) {
+            this.AddEdge(
+                IFlowControlNode.FromScope(parent),
+                child,
+                ISyntaxPredicate.Empty);
         }
 
-        public void SetContinuation(IdentifierPath stat, IFlowControlNode sibling) {
-            this.continuations[stat] = sibling;
+        public void AddEdge(IFlowControlNode parent, IFlowControlNode child, ISyntaxPredicate pred) {
+            if (parent == IFlowControlNode.None || child == IFlowControlNode.None) {
+                return;
+            }
+
+            this.edges[parent][child] = pred;
+            this.reverse_edges[child][parent] = pred;
         }
 
-        public void AddEndingContinutation(IdentifierPath stat) {
-            this.continuations[stat] = IFlowControlNode.End;
+        public void AddContinuation(IdentifierPath stat, IdentifierPath sibling) {
+            this.AddContinuation(stat, IFlowControlNode.FromScope(sibling));
         }
 
-        public bool TryGetContinuation(IdentifierPath stat, out IFlowControlNode result) {
+        public void AddContinuation(IdentifierPath stat, IFlowControlNode sibling) {
+            if (sibling == IFlowControlNode.None) {
+                return;
+            }
+
+            this.continuations.Add(stat, sibling);
+        }
+
+        public IFlowControlNode GetContinuation(IdentifierPath stat) {
             return this.continuations
                 .GetValueOrNone(stat)
-                .TryGetValue(out result);
+                .OrElse(() => IFlowControlNode.None);
         }
 
-        public ISyntaxPredicate GetPredicates(IdentifierPath start, IdentifierPath end) {
-            var startNode = IFlowControlNode.FromScope(start);
-            var endNode = IFlowControlNode.FromScope(end);
+        public ISyntaxPredicate GetPredicates(IdentifierPath path) {
+            var startNode = IFlowControlNode.Start;
+            var endNode = IFlowControlNode.FromScope(path);
 
             var result = this.GetPathPredicate(startNode, endNode);
-            //var negative = this.GetPathPredicate(start, this.end).Negate();
+
+            //var reachable = this.FindReachableNodes(endNode, this.reverse_edges);
+            //var unreachable = this.edges.Keys.Except(reachable).ToHashSet();
+
+            //foreach (var unreach in unreachable) {
+            //    var pred = this.GetPathPredicate(startNode, unreach).Negate();
+
+            //    result = result.And(pred);
+            //}
 
             return result;
         }
@@ -153,8 +161,9 @@ namespace Helix.Analysis.Flow {
 
         private ISyntaxPredicate GetPathPredicate(IFlowControlNode start, IFlowControlNode end) {
             var result = ISyntaxPredicate.Empty;
+            var paths = this.GetAllPaths(start, end);
 
-            foreach (var path in this.GetAllPaths(start, end)) {
+            foreach (var path in paths) {
                 var pred = ISyntaxPredicate.Empty;
 
                 for (int i = 0; i < path.Count - 1; i++) {
@@ -201,13 +210,13 @@ namespace Helix.Analysis.Flow {
             return result;
         }
 
-        private HashSet<object> FindReachableNodes(
-            object start,
-            IDictionary<object, IDictionary<object, ISyntaxPredicate>> graph) {
+        private HashSet<IFlowControlNode> FindReachableNodes(
+            IFlowControlNode start,
+            IDictionary<IFlowControlNode, IDictionary<IFlowControlNode, ISyntaxPredicate>> graph) {
 
-            var visited = new HashSet<object>();
-            var stack = new Stack<object>(new[] { start });
-            var result = new HashSet<object>();
+            var visited = new HashSet<IFlowControlNode>();
+            var stack = new Stack<IFlowControlNode>(new[] { start });
+            var result = new HashSet<IFlowControlNode>();
 
             while (stack.Count > 0) {
                 var item = stack.Pop();

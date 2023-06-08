@@ -52,7 +52,7 @@ namespace Helix.Features.Unions {
             var varSig = new PointerType(this.UnionMember.Type);
             var path = types.Scope.Append(this.Path);
 
-            types.Locals = types.Locals.SetItem(path, new LocalInfo(varSig));
+            types.Locals = types.Locals.SetItem(path, types.Locals[this.ShadowedPath].WithType(varSig));
             types.NominalSignatures.Add(path, varSig);
 
             var result = new FlowVarStatement(
@@ -67,26 +67,15 @@ namespace Helix.Features.Unions {
                 VariableCaptureKind.LocationCapture, 
                 this.ShadowedType);
 
-            var bounds = AnalyzeFlow(this.ShadowedPath, path, types);
-
             SyntaxTagBuilder.AtFrame(types)
                 .WithCapturedVariables(cap)
-                .WithLifetimes(bounds)
+                .WithLifetimes(new LifetimeBounds())
                 .BuildFor(result);
 
             return result;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
-
-        public static LifetimeBounds AnalyzeFlow(IdentifierPath shadowedPath, IdentifierPath newPath, 
-                                                 TypeFrame flow) {
-
-            var shadowedBounds = flow.Locals[shadowedPath];
-            flow.Locals = flow.Locals.SetItem(newPath, shadowedBounds);
-
-            return new LifetimeBounds();
-        }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             ICSyntax assign = new CAddressOf() {
