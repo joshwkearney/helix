@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <RootNamespace>Helix</RootNamespace>
+    <!-- <GenerateDocumentationFile>true</GenerateDocumentationFile>  -->
   </PropertyGroup>
 
 </Project>
