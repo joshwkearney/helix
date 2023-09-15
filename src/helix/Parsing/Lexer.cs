@@ -1,7 +1,13 @@
 ﻿using Helix.Analysis;
 
 namespace Helix.Parsing {
+    /// <summary>
+    /// Represents a lexer that tokenizes the Helix language source code.
+    /// </summary>
     public class Lexer {
+        /// <summary>
+        /// Dictionary of keywords mapped to their respective token kinds.
+        /// </summary>
         private static readonly Dictionary<string, TokenKind> keywords = new() {
             { "var", TokenKind.VarKeyword },
             { "func", TokenKind.FunctionKeyword }, { "extern", TokenKind.ExternKeyword },
@@ -18,7 +24,9 @@ namespace Helix.Parsing {
             { "return", TokenKind.ReturnKeyword }, { "new", TokenKind.NewKeyword },
             { "until", TokenKind.UntilKeyword }
         };
-
+        /// <summary>
+        /// Dictionary of symbols mapped to their respective token kinds.
+        /// </summary>
         private static readonly Dictionary<char, TokenKind> symbols = new() {
             { '(', TokenKind.OpenParenthesis }, { ')', TokenKind.CloseParenthesis },
             { '{', TokenKind.OpenBrace }, { '}', TokenKind.CloseBrace },
@@ -28,15 +36,35 @@ namespace Helix.Parsing {
             { '^', TokenKind.Caret }, { '&', TokenKind.Ampersand }
         };
 
+        /// <summary>
+        /// Source text to be tokenized.
+        /// </summary>
         private readonly string text;
 
+        /// <summary>
+        /// Current position in the source text.
+        /// </summary>
         private int pos = 0;
+
+        /// <summary>
+        /// Current line number in the source text.
+        /// </summary>
         private int line = 1;
 
+        /// <summary>
+        /// Gets the current character from the source text.
+        /// </summary>
         private char Current => this.text[this.pos];
 
+        /// <summary>
+        /// Gets the current location within the source text.
+        /// </summary>
         private TokenLocation Location => new(this.pos, 1, this.line);
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Lexer"/> class.
+        /// </summary>
+        /// <param name="text">The source text to be tokenized.</param>
         public Lexer(string text) {
             this.text = text;
         }
@@ -314,6 +342,11 @@ namespace Helix.Parsing {
             }
         }
 
+        /// <summary>
+        /// Retrieves the next token from the source text.
+        /// </summary>
+        /// <returns>The tokenized segment from the source.</returns>
+        /// <exception cref="ParseException">Thrown when there's a parsing error.</exception>
         public Token GetToken() {
             while (this.pos < this.text.Length) {
                 var tok = this.GetTokenHelper();
@@ -330,6 +363,10 @@ namespace Helix.Parsing {
                 string.Empty);
         }
 
+        /// <summary>
+        /// Peeks at the next token from the source text without advancing the position.
+        /// </summary>
+        /// <returns>The next token from the source.</returns>
         public Token PeekToken() {
             int oldPos = this.pos;
             int oldLine = this.line;

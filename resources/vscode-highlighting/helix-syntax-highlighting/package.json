@@ -1,0 +1,23 @@
+{
+    "name": "helix-syntax-highlighting",
+    "displayName": "Helix Syntax Highlighting",
+    "description": "Syntax highlighting for Helix programs",
+    "version": "0.0.1",
+    "publisher": "Joshua Kearney",
+    "engines": {
+        "vscode": "^1.0.0"
+    },
+    "contributes": {
+        "languages": [{
+            "id": "helix",
+            "aliases": ["Helix", "helix"],
+            "extensions": [".helix"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "helix",
+            "scopeName": "source.helix",
+            "path": "./syntaxes/helix.tmLanguage"
+        }]
+    }
+}
