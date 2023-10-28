@@ -17,3 +17,9 @@ func test3(var opt as Option) as word {
 		then 10
 		else opt;
 };
+
+func test4(var opt as Option) {
+	while opt is third {
+		var x = opt + 10;
+	};
+};

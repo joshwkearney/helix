@@ -2,7 +2,7 @@
 func test1() as word* {
 	var x = 45;
 
-	&x;
+	return &x;
 };
 
 // ###
@@ -22,7 +22,7 @@ struct Test3Struct {
 };
 
 func test3(var arg as Test3Struct) as word {
-	arg.field;
+	return arg.field;
 };
 
 // ###
@@ -35,7 +35,7 @@ func test4(var a as Test4Struct*) as word {
 	var A = new Test4Struct { next= a };
 	var B = &A;
 
-	B*.next*.next*.data;
+	return B*.next*.next*.data;
 };
 
 // ###
@@ -50,7 +50,7 @@ func test6(var arr as word*[]) as word* {
 	var x = 45;
 
 	arr[0] = &x;
-	&x;
+	return &x;
 };
 
 // ###
@@ -81,7 +81,7 @@ func test10() as word* {
 	var z = &x;
 	z = &y;
 
-	z;
+	return z;
 };
 
 // ###
@@ -90,7 +90,7 @@ func test11() as word* {
 	var b = &a;
 	var c = &b;
 
-	c*;
+	return c*;
 };
 
 // ###
@@ -102,8 +102,7 @@ func test12(var A as word**) as word* {
 	var z = &x;
 	
 	z* = &b;
-
-	x;
+	return x;
 };
 
 // ###
@@ -116,13 +115,13 @@ func test13(var z as Point**) as Point* {
 	var p = create() ;
 
 	z* = p;
-	p;
+	return p;
 };
 
 func create() as Point* {
 	var p = new Point { 10, 5 };
 
-	&p;
+	return &p;
 };
 
 // ###
@@ -141,13 +140,13 @@ func test14(var z as Point**) as Point* {
 		};
 
 	z* = p;
-	p;
+	return p;
 };
 
 func create() as Point* {
 	var p = new Point { 10, 5 };
 
-	&p;
+	return &p;
 };
 
 // ###
@@ -194,7 +193,7 @@ func test17() as Option {
 		y = &z;
 	};
 
-	y;
+	return y;
 };
 
 // ###
@@ -206,7 +205,7 @@ func test3() as word* {
 	var x = 15;
 	var p = new Point { x = &x };
 
-	p.x;
+	return p.x;
 };
 
 // ###
@@ -217,5 +216,5 @@ func test16(var B as bool) as word {
 		x = 89;
 	};
 
-	(x + 3) - 2;
+	return (x + 3) - 2;
 };
