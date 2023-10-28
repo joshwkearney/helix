@@ -49,8 +49,6 @@ namespace Helix.Parsing {
                     new WordLiteral(startTok.Location, 1),
                     BinaryOperationKind.Add));
 
-            var totalBlock = new List<ISyntaxTree> { counterDecl };
-            var loopBlock = new List<ISyntaxTree>();
             var loc = startTok.Location.Span(endIndex.Location);
 
             var test = new IfSyntax(
@@ -64,8 +62,6 @@ namespace Helix.Parsing {
                         : BinaryOperationKind.GreaterThanOrEqualTo),
                 new BreakContinueSyntax(loc, true));
 
-            loopBlock.Add(test);
-
             if (!this.Peek(TokenKind.OpenBrace)) {
                 this.Advance(TokenKind.Yields);
             }
@@ -73,13 +69,12 @@ namespace Helix.Parsing {
             var body = this.TopExpression();
             loc = loc.Span(body.Location);
 
-            loopBlock.Add(body);
-            loopBlock.Add(counterInc);
+            var loopBlock = new BlockSyntax(test, new BlockSyntax(body, counterInc));
 
-            var loop = new LoopStatement(loc, new BlockSyntax(loc, loopBlock));
-            totalBlock.Add(loop);
+            var loop = new LoopStatement(loc, loopBlock);
+            var totalBlock = new BlockSyntax(counterDecl, loop);
 
-            return new BlockSyntax(loc, totalBlock);
+            return totalBlock;
         }
     }
 }

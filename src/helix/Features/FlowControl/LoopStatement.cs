@@ -14,7 +14,6 @@ namespace Helix.Parsing {
         private ISyntaxTree WhileStatement() {
             var start = this.Advance(TokenKind.WhileKeyword);
             var cond = this.TopExpression();
-            var newBlock = new List<ISyntaxTree>();
 
             var test = new IfSyntax(
                 cond.Location,
@@ -22,9 +21,9 @@ namespace Helix.Parsing {
                 new BreakContinueSyntax(cond.Location, true));
 
             // False loops will never run and true loops don't need a break test
-            if (cond is not Features.Primitives.BoolLiteral) {
-                newBlock.Add(test);
-            }
+            //if (cond is not Features.Primitives.BoolLiteral) {
+            //    newBlock.Add(test);
+            //}
 
             if (!this.Peek(TokenKind.OpenBrace)) {
                 this.Advance(TokenKind.Yields);
@@ -34,10 +33,9 @@ namespace Helix.Parsing {
             var body = this.TopExpression();
             this.isInLoop.Pop();
 
-            newBlock.Add(body);
-
+            var newBlock = new BlockSyntax(test, body);
             var loc = start.Location.Span(body.Location);
-            var loop = new LoopStatement(loc, new BlockSyntax(loc, newBlock));
+            var loop = new LoopStatement(loc, newBlock);
 
             return loop;
         }
@@ -87,7 +85,7 @@ namespace Helix.Features.FlowControl {
                 var newBounds = local.Bounds.WithValue(newValue);
                 var newLocal = local.WithBounds(newBounds);
 
-                types.DataFlowGraph.AddStored(local.Bounds.ValueLifetime, newValue, local.Type);
+                types.DataFlow.AddStored(local.Bounds.ValueLifetime, newValue, local.Type);
 
                 types.Locals = types.Locals.SetItem(path, newLocal);
             }
@@ -119,7 +117,7 @@ namespace Helix.Features.FlowControl {
                 var oldLocal = flow.Locals[path];
                 var newLocal = bodyFlow.Locals[path];
 
-                flow.DataFlowGraph.AddAssignment(
+                flow.DataFlow.AddAssignment(
                     newLocal.Bounds.ValueLifetime, 
                     oldLocal.Bounds.ValueLifetime,
                     newLocal.Type);
@@ -136,8 +134,8 @@ namespace Helix.Features.FlowControl {
                         LifetimeOrigin.TempValue,
                         newLocal.Bounds.ValueLifetime.Version + 1);
 
-                    flow.DataFlowGraph.AddStored(newLocal.Bounds.ValueLifetime, newRoot, newLocal.Type);
-                    flow.DataFlowGraph.AddStored(oldLocal.Bounds.ValueLifetime, newRoot, oldLocal.Type);
+                    flow.DataFlow.AddStored(newLocal.Bounds.ValueLifetime, newRoot, newLocal.Type);
+                    flow.DataFlow.AddStored(oldLocal.Bounds.ValueLifetime, newRoot, oldLocal.Type);
 
                     // Add our new root to the list of acceptable roots
                     flow.ValidRoots = flow.ValidRoots.Add(newRoot);

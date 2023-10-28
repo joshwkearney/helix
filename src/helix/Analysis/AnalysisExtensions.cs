@@ -4,6 +4,7 @@ using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
 using Helix.Analysis.Predicates;
+using Helix.Features.FlowControl;
 
 namespace Helix.Analysis {
     public static class AnalysisExtensions {
@@ -119,6 +120,10 @@ namespace Helix.Analysis {
 
         public static bool IsTypeChecked(this ISyntaxTree syntax, TypeFrame types) {
             return types.SyntaxTags.ContainsKey(syntax);
+        }
+
+        public static bool AlwaysReturns(this ISyntaxTree syntax, TypeFrame types) {
+            return types.ControlFlow.AlwaysReturns(types.Scope);
         }
 
         public static HelixType GetReturnType(this ISyntaxTree syntax, TypeFrame types) {

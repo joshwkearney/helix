@@ -5,6 +5,7 @@ using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Collections;
 using Helix.Features.Aggregates;
+using Helix.Features.FlowControl;
 using Helix.Parsing;
 using Helix.Syntax;
 using System;
@@ -28,9 +29,16 @@ namespace Helix.Features.Unions {
             this.UnionSignature = unionSig;
         }
 
-        public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
+        public override ISyntaxTree Apply(ISyntaxTree syntax, TypeFrame types) {
             if (this.MemberNames.Count != 1) {
-                return Array.Empty<ISyntaxTree>();
+                return syntax;
+            }
+
+            if (types.AppliedPredicates.Contains(this)) {
+                return syntax;
+            }
+            else {
+                types.AppliedPredicates = types.AppliedPredicates.Add(this);
             }
 
             var memName = this.MemberNames.First();
@@ -40,8 +48,8 @@ namespace Helix.Features.Unions {
                 throw new Exception();
             }
 
-            var inject = new FlowVarStatement(loc, member, this.TargetPath, varSig);
-            return new[] { inject };
+            var inject = new FlowVarStatement(syntax.Location, member, this.TargetPath, varSig);
+            return new BlockSyntax(inject, syntax);
         }
 
         public override bool TryOrWith(ISyntaxPredicate pred, out ISyntaxPredicate result) {

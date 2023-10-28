@@ -126,7 +126,7 @@ namespace Helix.Features.Variables {
             // TODO: Redo this
             foreach (var assignRoot in flow.GetMaximumRoots(assignLifetime)) {
                 foreach (var targetRoot in flow.GetMaximumRoots(targetLocation)) {
-                    if (flow.DataFlowGraph.DoesOutlive(assignRoot, targetRoot)) {
+                    if (flow.DataFlow.DoesOutlive(assignRoot, targetRoot)) {
                         continue;
                     }
 
@@ -168,11 +168,11 @@ namespace Helix.Features.Variables {
             flow.Locals = flow.Locals.SetItem(newValueLifetime.Path, newLocal);
 
             // Make sure the new value outlives its variable
-            flow.DataFlowGraph.AddStored(newValueLifetime, newTargetBounds.LocationLifetime, assignType);
+            flow.DataFlow.AddStored(newValueLifetime, newTargetBounds.LocationLifetime, assignType);
 
             // Add dependencies between our new target and the assignment lifetimes
-            flow.DataFlowGraph.AddStored(assignLifetime, newTargetBounds.LocationLifetime, assignType);
-            flow.DataFlowGraph.AddAssignment(assignLifetime, newTargetBounds.ValueLifetime, assignType);
+            flow.DataFlow.AddStored(assignLifetime, newTargetBounds.LocationLifetime, assignType);
+            flow.DataFlow.AddAssignment(assignLifetime, newTargetBounds.ValueLifetime, assignType);
         }
 
         private static void AnalyzeAliasedAssignment(
@@ -182,7 +182,7 @@ namespace Helix.Features.Variables {
             HelixType assignType, 
             TypeFrame flow) {
 
-            var aliasedLifetimes = flow.DataFlowGraph.GetAliasedLifetimes(
+            var aliasedLifetimes = flow.DataFlow.GetAliasedLifetimes(
                 targetLifetime, 
                 targetType.GetSignatureSupertype(flow), 
                 flow);
@@ -198,7 +198,7 @@ namespace Helix.Features.Variables {
 
                 flow.Locals = flow.Locals.SetItem(path, local);
 
-                flow.DataFlowGraph.AddAssignment(
+                flow.DataFlow.AddAssignment(
                     assignLifetime, 
                     local.Bounds.ValueLifetime, 
                     assignType);
@@ -206,7 +206,7 @@ namespace Helix.Features.Variables {
 
             foreach (var aliased in aliasedLifetimes) {
                 // Add dependencies between our new target and the assignment lifetimes
-                flow.DataFlowGraph.AddStored(
+                flow.DataFlow.AddStored(
                     assignLifetime, 
                     aliased, 
                     assignType);

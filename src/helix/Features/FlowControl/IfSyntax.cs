@@ -50,6 +50,8 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure { get; }
 
+        public bool IsStatement => true;
+
         public IfSyntax(
             TokenLocation location,
             ISyntaxTree cond,
@@ -58,9 +60,10 @@ namespace Helix.Features.FlowControl {
             this.Location = location;
             this.cond = cond;
 
-            this.iftrue = new BlockSyntax(iftrue.Location, new ISyntaxTree[] {
-                iftrue, new VoidLiteral(iftrue.Location)
-            });
+            this.iftrue = new BlockSyntax(
+                iftrue, 
+                new VoidLiteral(iftrue.Location)
+            );
 
             this.iffalse = new VoidLiteral(location);
             this.IsPure = cond.IsPure && iftrue.IsPure;
@@ -77,8 +80,10 @@ namespace Helix.Features.FlowControl {
 
             this.Location = location;
             this.cond = cond;
+
             this.iftrue = iftrue;
             this.iffalse = iffalse;
+            
             this.path = path;
             this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
         }
@@ -88,32 +93,47 @@ namespace Helix.Features.FlowControl {
                 return this;
             }
 
-            var cond = this.cond.CheckTypes(types).ToRValue(types);
-            var condPredicate = ISyntaxPredicate.Empty;
+            var cond = this.cond
+                .CheckTypes(types)
+                .ToRValue(types);
 
-            if (cond.GetReturnType(types) is PredicateBool predBool) {
-                condPredicate = predBool.Predicate;
+            var condPredicate = ISyntaxPredicate.Empty;
+            if (cond.GetReturnType(types) is PredicateBool pbool) {
+                condPredicate = pbool.Predicate;
             }
 
             cond = cond.UnifyTo(PrimitiveType.Bool, types);
 
-            var name = this.path.Segments.Last();
-            var iftrueTypes = new TypeFrame(types, name + "T");
-            var iffalseTypes = new TypeFrame(types, name + "F");
+            var truePath = types.Scope.Append(this.path.Segments.Last() + "T");
+            var falsePath = types.Scope.Append(this.path.Segments.Last() + "F");
 
-            var ifTruePrepend = condPredicate.ApplyToTypes(this.cond.Location, iftrueTypes);
-            var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.cond.Location, iffalseTypes);
+            types.ControlFlow.AddEdge(types.Scope, truePath, condPredicate);
+            types.ControlFlow.AddEdge(types.Scope, falsePath, condPredicate.Negate());
 
-            ISyntaxTree iftrue = new BlockSyntax(this.iftrue.Location, ifTruePrepend.Append(this.iftrue).ToArray());
-            ISyntaxTree iffalse = new BlockSyntax(this.iffalse.Location, ifFalsePrepend.Append(this.iffalse).ToArray());
+            var cont = types.ControlFlow.GetContinuation(types.Scope);
+            types.ControlFlow.AddContinuation(truePath, cont);
+            types.ControlFlow.AddContinuation(falsePath, cont);
 
-            iftrue = iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
-            iffalse = iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
+            var iftrueTypes = new TypeFrame(types, truePath);
+            var iffalseTypes = new TypeFrame(types, falsePath);
+
+            var ifTruePred = types.ControlFlow.GetPredicates(truePath);
+            var ifFalsePred = types.ControlFlow.GetPredicates(falsePath);
+
+            var iftrue = ifTruePred.Apply(this.iftrue, iftrueTypes).CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
+            var iffalse = ifFalsePred.Apply(this.iffalse, iffalseTypes).CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
 
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
 
-            // Update any variables modified in either branch
+            if (!types.ControlFlow.AlwaysReturns(truePath)) {
+                types.ControlFlow.AddEdge(truePath, cont);
+            }
+
+            if (!types.ControlFlow.AlwaysReturns(falsePath)) {
+                types.ControlFlow.AddEdge(falsePath, cont);
+            }
+
             MutateLocals(iftrueTypes, iffalseTypes, types);
 
             var resultType = iftrue.GetReturnType(types);
@@ -123,12 +143,17 @@ namespace Helix.Features.FlowControl {
                 cond,
                 iftrue,
                 iffalse,
-                types.Scope.Append(name));
+                types.Scope.Append(this.path));
+
+            var pred1 = iftrue.GetPredicate(types);
+            var pred2 = iffalse.GetPredicate(types);
+            var pred3 = pred1.And(pred2);
 
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(cond, iftrue, iffalse)
                 .WithReturnType(resultType)
-                .WithLifetimes(AnalyzeFlow(this.path, iftrue, iffalse, types))
+                .WithPredicate(pred3)
+                .WithLifetimes(AnalyzeFlow(result.path, iftrue, iffalse, types))
                 .BuildFor(result);
 
             return result;
@@ -165,12 +190,12 @@ namespace Helix.Features.FlowControl {
                 role, 
                 LifetimeOrigin.TempValue);
 
-            flow.DataFlowGraph.AddAssignment(
+            flow.DataFlow.AddAssignment(
                 valueLifetime, 
                 ifTrueBounds.ValueLifetime, 
                 iftrue.GetReturnType(flow));
 
-            flow.DataFlowGraph.AddAssignment(
+            flow.DataFlow.AddAssignment(
                 valueLifetime, 
                 ifFalseBounds.ValueLifetime,
                 iffalse.GetReturnType(flow));
@@ -224,8 +249,8 @@ namespace Helix.Features.FlowControl {
                     postLifetime = falseLifetime.IncrementVersion();
                 }
 
-                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime, trueLocal.Type);
-                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime, falseLocal.Type);
+                flow.DataFlow.AddAssignment(trueLifetime, postLifetime, trueLocal.Type);
+                flow.DataFlow.AddAssignment(falseLifetime, postLifetime, falseLocal.Type);
 
                 var roots = flow.GetMaximumRoots(postLifetime);
 

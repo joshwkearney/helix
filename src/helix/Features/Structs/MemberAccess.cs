@@ -127,7 +127,7 @@ namespace Helix.Features.Aggregates {
         private static LifetimeBounds AnalyzeFlow(string memName, HelixType memType, IdentifierPath path, 
                                                   ISyntaxTree target, TypeFrame flow) {
             var targetLifetimes = target.GetLifetimes(flow);
-            var parentLifetimes = flow.DataFlowGraph.GetMemberLifetimes(targetLifetimes.ValueLifetime, memName);
+            var parentLifetimes = flow.DataFlow.GetMemberLifetimes(targetLifetimes.ValueLifetime, memName);
 
             var memLifetime = new ValueLifetime(
                 path, 
@@ -138,7 +138,7 @@ namespace Helix.Features.Aggregates {
             flow.Locals = flow.Locals.SetItem(path, newLocal);
 
             foreach (var parent in parentLifetimes) {
-                flow.DataFlowGraph.AddAssignment(parent, memLifetime, memType);
+                flow.DataFlow.AddAssignment(parent, memLifetime, memType);
             }
 
             return new LifetimeBounds(memLifetime);

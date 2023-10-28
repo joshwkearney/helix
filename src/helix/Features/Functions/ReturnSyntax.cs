@@ -3,22 +3,28 @@ using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
-using Helix.Features.FlowControl;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Features.Functions;
 using Helix.Features.Types;
+using Helix.Features.Primitives;
 
 namespace Helix.Parsing {
     public partial class Parser {
         public ISyntaxTree ReturnStatement() {
             var start = this.Advance(TokenKind.ReturnKeyword);
-            var arg = this.TopExpression();
 
-            return new ReturnSyntax(
-                start.Location,
-                arg);
+            if (this.Peek(TokenKind.Semicolon)) {
+                return new ReturnSyntax(
+                    start.Location,
+                    new VoidLiteral(start.Location));
+            }
+            else {
+                return new ReturnSyntax(
+                    start.Location,
+                    this.TopExpression());
+            }
         }
     }
 }
@@ -34,6 +40,8 @@ namespace Helix.Features.Functions {
 
         public bool IsPure => false;
 
+        public bool IsStatement => true;
+
         public ReturnSyntax(TokenLocation loc, ISyntaxTree payload, 
                             FunctionType func = null) {
 
@@ -47,19 +55,34 @@ namespace Helix.Features.Functions {
                 return this;
             }
 
-            if (!this.TryGetCurrentFunction(types, out var sig)) {
+            if (!this.TryGetCurrentFunction(types, out var sig, out var funcPath)) {
                 throw new InvalidOperationException();
             }
 
+            var scope = types.Scope.Append("$return");
+            var payloadTypes = new TypeFrame(types, scope);
+
+            payloadTypes.ControlFlow.AddEdge(types.Scope, payloadTypes.Scope);
+            payloadTypes.ControlFlow.AddContinuation(scope, payloadTypes.Scope);
+
             var payload = this.payload
-                .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(sig.ReturnType, types);
+                .CheckTypes(payloadTypes)
+                .ToRValue(payloadTypes)
+                .UnifyTo(sig.ReturnType, payloadTypes);
+
+            types.ControlFlow.AddEdge(payloadTypes.Scope, IFlowControlNode.End);
 
             var result = new ReturnSyntax(this.Location, payload, sig);
 
-            SyntaxTagBuilder.AtFrame(types).BuildFor(result);
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, payload, types);
+            SyntaxTagBuilder
+                .AtFrame(types)
+                .BuildFor(result);
+
+            FunctionsHelper.AnalyzeReturnValueFlow(
+                this.Location, 
+                this.funcSig, 
+                payload, 
+                types);
 
             return result;
         }
@@ -72,25 +95,34 @@ namespace Helix.Features.Functions {
             return this;
         }
 
-        private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {
+        private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func, out IdentifierPath resultPath) {
             var path = types.Scope;
 
             while (!path.IsEmpty) {
                 if (types.TryGetFunction(path, out func)) {
+                    resultPath = path;
                     return true;
                 }
 
                 path = path.Pop();
             }
 
-            func = null;
+            func = default;
+            resultPath = default;
             return false;
         }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            writer.WriteStatement(new CReturn() {
-                Target = this.payload.GenerateCode(types, writer)
-            });
+            if (this.funcSig.ReturnType == PrimitiveType.Void) {
+                this.payload.GenerateCode(types, writer);
+
+                writer.WriteStatement(new CReturn());
+            }
+            else {
+                writer.WriteStatement(new CReturn() {
+                    Target = this.payload.GenerateCode(types, writer)
+                });
+            }
 
             return new CIntLiteral(0);
         }

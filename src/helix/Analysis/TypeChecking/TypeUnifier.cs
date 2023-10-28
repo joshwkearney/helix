@@ -23,13 +23,13 @@ namespace Helix.Analysis.TypeChecking {
                 return new UnificationResult() {
                     Kind = UnificationKind.Pun,
                     Unifier = (s, t) => {
-                        var block = new BlockSyntax(s.Location, new[] { s }).CheckTypes(t);
+                        //var block = new BlockSyntax(s.Location, new[] { s }).CheckTypes(t);
 
-                        SyntaxTagBuilder.AtFrame(t, block)
+                        SyntaxTagBuilder.AtFrame(t, s)
                             .WithReturnType(adaptedType)
-                            .BuildFor(block);
+                            .BuildFor(s);
 
-                        return block;
+                        return s;
                     }
                 };
             }
@@ -65,8 +65,12 @@ namespace Helix.Analysis.TypeChecking {
                 return true;
             }
 
-            resultType = PrimitiveType.Void;
-            return false;
+            if (abstract1 == type1 && abstract2 == type2) {
+                resultType = null;
+                return false;
+            }
+
+            return abstract1.CanUnifyFrom(abstract2, types, out resultType);
         }
 
         public static bool CanUnifyTo(this ISyntaxTree fromSyntax, HelixType toType, TypeFrame types) {
@@ -214,7 +218,7 @@ namespace Helix.Analysis.TypeChecking {
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var block = new BlockSyntax(syntax.Location, new[] {
+                    var block = new BlockSyntax(
                         syntax,
                         new NewStructSyntax(
                             syntax.Location, 
@@ -223,7 +227,7 @@ namespace Helix.Analysis.TypeChecking {
                             Array.Empty<string>(), 
                             Array.Empty<ISyntaxTree>(), 
                             types.Scope)
-                    });
+                    );
 
                     return block.CheckTypes(t);
                 }
@@ -238,7 +242,7 @@ namespace Helix.Analysis.TypeChecking {
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var block = new BlockSyntax(syntax.Location, new[] {
+                    var block = new BlockSyntax(
                         syntax,
                         new NewUnionSyntax(
                             syntax.Location,
@@ -246,7 +250,7 @@ namespace Helix.Analysis.TypeChecking {
                             sig,
                             Array.Empty<string>(),
                             Array.Empty<ISyntaxTree>())
-                    });
+                    );
 
                     return block.CheckTypes(t);
                 }

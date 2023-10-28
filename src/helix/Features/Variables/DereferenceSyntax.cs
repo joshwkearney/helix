@@ -149,7 +149,7 @@ namespace Helix.Features.Variables {
             flow.ValidRoots = flow.ValidRoots.Add(derefValueLifetime);
 
             // The lifetime that is stored in the pointer must outlive the pointer itself
-            flow.DataFlowGraph.AddStored(
+            flow.DataFlow.AddStored(
                 derefValueLifetime, 
                 pointerLifetime.ValueLifetime, 
                 pointerType.InnerType);

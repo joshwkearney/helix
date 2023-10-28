@@ -5,7 +5,7 @@ func test1(var a as word**, var b as word*) {
 
 // ###
 func test2(var a as word*) as word* {
-	a;
+	return a;
 };
 
 // ###
