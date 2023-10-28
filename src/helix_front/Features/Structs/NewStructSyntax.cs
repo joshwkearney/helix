@@ -4,11 +4,11 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Features.Primitives;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 
-namespace Helix.Features.Aggregates {
+namespace Helix.Features.Aggregates
+{
     public class NewStructSyntax : ISyntaxTree {
         private static int tempCounter = 0;
 
@@ -153,44 +153,12 @@ namespace Helix.Features.Aggregates {
                 this.path,
                 true);
 
-            var bounds = AnalyzeFlow(this.path, allNames, allValues, types);
-
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(allValues)
                 .WithReturnType(this.structType)
-                .WithLifetimes(bounds)
                 .BuildFor(result);
 
             return result;
-        }
-
-        private static LifetimeBounds AnalyzeFlow(
-            IdentifierPath tempPath,
-            IReadOnlyList<string> names, 
-            IReadOnlyList<ISyntaxTree> values, 
-            TypeFrame flow) {
-
-            var rootLifetime = new ValueLifetime(
-                tempPath,
-                LifetimeRole.Alias,
-                LifetimeOrigin.TempValue);
-
-            for (int i = 0; i < names.Count; i++) {
-                var name = names[i];
-                var value = values[i];
-                var type = value.GetReturnType(flow);
-                var path = tempPath.Append(name);
-
-                var valueLifetime = new ValueLifetime(path, LifetimeRole.Alias, LifetimeOrigin.TempValue);
-                var assignLifetime = value.GetLifetimes(flow).ValueLifetime;
-                var bounds = new LifetimeBounds(valueLifetime);
-
-                flow.Locals = flow.Locals.SetItem(path, new LocalInfo(type, bounds));
-                flow.DataFlowGraph.AddAssignment(valueLifetime, assignLifetime, type);
-                flow.DataFlowGraph.AddMember(rootLifetime, valueLifetime, type);
-            }
-
-            return new LifetimeBounds(rootLifetime);
         }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

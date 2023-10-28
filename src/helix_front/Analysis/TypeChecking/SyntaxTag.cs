@@ -1,12 +1,6 @@
-﻿using Helix.Analysis.Flow;
-using Helix.Analysis.Predicates;
+﻿using Helix.Analysis.Predicates;
 using Helix.Analysis.Types;
 using Helix.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Helix.Analysis.TypeChecking {
     public record SyntaxTag {
@@ -16,23 +10,18 @@ namespace Helix.Analysis.TypeChecking {
 
         public HelixType ReturnType { get; }
 
-        public LifetimeBounds Bounds { get; }
-
         public SyntaxTag(
             HelixType returnType,
-            LifetimeBounds bounds, 
             IReadOnlyList<VariableCapture> cap, 
             ISyntaxPredicate pred) {
 
             this.ReturnType = returnType;
-            this.Bounds = bounds;
             this.CapturedVariables = cap;
             this.Predicate = pred;
         }
 
         public SyntaxTagBuilder ToBuilder(TypeFrame types) {
             return SyntaxTagBuilder.AtFrame(types)
-                .WithLifetimes(this.Bounds)
                 .WithCapturedVariables(this.CapturedVariables)
                 .WithPredicate(this.Predicate)
                 .WithReturnType(this.ReturnType);
@@ -45,7 +34,6 @@ namespace Helix.Analysis.TypeChecking {
         private IReadOnlyList<VariableCapture> CapturedVariables = Array.Empty<VariableCapture>();
         private ISyntaxPredicate Predicate = ISyntaxPredicate.Empty;
         private HelixType ReturnType = PrimitiveType.Void;
-        private LifetimeBounds Bounds = new LifetimeBounds();
 
         public static SyntaxTagBuilder AtFrame(TypeFrame types) {
             return new SyntaxTagBuilder(types);
@@ -81,12 +69,6 @@ namespace Helix.Analysis.TypeChecking {
             return this;
         }
 
-        public SyntaxTagBuilder WithLifetimes(LifetimeBounds bounds) {
-            this.Bounds = bounds;
-
-            return this;
-        }
-
         public SyntaxTagBuilder WithCapturedVariables(IEnumerable<VariableCapture> cap) {
             this.CapturedVariables = cap.ToArray();
 
@@ -106,7 +88,6 @@ namespace Helix.Analysis.TypeChecking {
         public void BuildFor(ISyntaxTree syntax) {
             var tag = new SyntaxTag(
                 this.ReturnType, 
-                this.Bounds, 
                 this.CapturedVariables, 
                 this.Predicate);
 

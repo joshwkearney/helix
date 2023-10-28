@@ -5,12 +5,9 @@ using Helix.Features.Variables;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.Aggregates;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.Features.FlowControl;
-using System.Xml.Linq;
-using Helix.Collections;
+using Helix.HelixMinusMinus;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -102,52 +99,9 @@ namespace Helix {
                 path,
                 assign);
 
-            SyntaxTagBuilder.AtFrame(types)
-                .WithLifetimes(AnalyzeFlow(this.Location, assign, path, types))
-                .BuildFor(result);
+            SyntaxTagBuilder.AtFrame(types).BuildFor(result);
 
             return result.CheckTypes(types);
-        }
-
-        private static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree assign, 
-                                                  IdentifierPath path, TypeFrame flow) {
-            var assignBounds = assign.GetLifetimes(flow);
-            var allowedRoots = flow.ValidRoots.ToValueSet();
-
-            var locationLifetime = new InferredLocationLifetime(
-                loc,
-                path,
-                allowedRoots,
-                LifetimeOrigin.LocalLocation);
-
-            var valueLifetime = new ValueLifetime(path, LifetimeRole.Alias, LifetimeOrigin.LocalValue);
-
-            // Add a dependency between whatever is being assigned to this variable and the
-            // variable's value
-            flow.DataFlowGraph.AddAssignment(
-                assignBounds.ValueLifetime,
-                valueLifetime,
-                assign.GetReturnType(flow));
-
-            // The value of a variable must outlive its location
-            flow.DataFlowGraph.AddStored(
-                valueLifetime, 
-                locationLifetime, 
-                assign.GetReturnType(flow));
-
-            // Add this variable lifetimes to the current frame
-            var bounds = new LifetimeBounds(valueLifetime, locationLifetime);
-            var named = new NominalType(path, NominalTypeKind.Variable);
-            var local = new LocalInfo(named, bounds);
-
-            flow.Locals = flow.Locals.Add(path, local);
-
-            // TODO: Fix this
-            // HACK: Even though we're returning void, set the lifetime of this syntax
-            // to be the lifetime of our variable. This gets around the issue of variable
-            // lifetimes being stored per-flow frame and means that we don't have to 
-            // regenerate the syntax tree on flow analysis (very good)
-            return bounds;
         }
 
         private ISyntaxTree Destructure(HelixType assignType, TypeFrame types) {
@@ -218,18 +172,16 @@ namespace Helix {
 
         public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var assign = this.assignSyntax.GenerateCode(flow, writer);
-            var lifetime = this.GetLifetimes(flow).LocationLifetime;
-            var allocLifetime = lifetime.GenerateCode(flow, writer);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: New variable declaration '{this.path.Segments.Last()}'");
 
-            if (flow.GetMaximumRoots(lifetime).Any()) {
-                this.GenerateRegionAllocation(assign, allocLifetime, flow, writer);
-            }
-            else {
+            //if (flow.GetMaximumRoots(lifetime).Any()) {
+                //this.GenerateRegionAllocation(assign, new CVariableLiteral("LIFETIME"), flow, writer);
+            //}
+            //else {
                 this.GenerateStackAllocation(assign, flow, writer);
-            }
+            //}
 
             return new CIntLiteral(0);
         }
@@ -275,6 +227,28 @@ namespace Helix {
             writer.WriteStatement(assignmentDecl);
             writer.WriteEmptyLine();
             writer.VariableKinds[this.path] = CVariableKind.Allocated;
+        }
+
+        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
+            var value = this.assignSyntax.GenerateHelixMinusMinus(types, writer);
+
+            var variable = new HmmVariable() {
+                Name = this.path.Segments.Last(),
+                Type = this.GetReturnType(types)
+            };
+
+            writer.AddStatement(new HmmVariableStatement() {
+                Location = this.Location,
+                Variable = variable
+            });
+
+            writer.AddStatement(new HmmAssignment() {
+                Location = this.Location,
+                Variable = variable,
+                Value = value
+            });
+
+            return HmmValue.Void;
         }
     }
 }

@@ -1,10 +1,10 @@
 ﻿using Helix.Analysis.Types;
 using Helix.Features.Aggregates;
 using Helix.Features.FlowControl;
-using Helix.Features.Primitives;
 using Helix.Syntax;
 
-namespace Helix.Analysis.TypeChecking {
+namespace Helix.Analysis.TypeChecking
+{
     public static class TypeUnifier {
         private delegate ISyntaxTree Unifier(ISyntaxTree tree, TypeFrame frame);
 

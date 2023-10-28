@@ -4,11 +4,10 @@ using Helix.Generation;
 using Helix.Features.FlowControl;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
-using System;
+using Helix.HelixMinusMinus;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -89,10 +88,7 @@ namespace Helix.Features.FlowControl {
                 .WithChildren(stats)
                 .WithReturnType(returnType)
                 .WithPredicate(predicate)
-                .WithLifetimes(AnalyzeFlow(stats, bodyTypes))
                 .BuildFor(result);
-
-            MutateLocals(bodyTypes, types);
 
             return result;
         }
@@ -122,57 +118,10 @@ namespace Helix.Features.FlowControl {
                 // Evaluate this statement and get the next predicate
                 var result = stat.CheckTypes(statTypes).ToRValue(statTypes);
 
-                MutateLocals(statTypes, types);
                 return result;
             }            
         }
 
-        private static void MutateLocals(TypeFrame bodyTypes, TypeFrame types) {
-            if (types == bodyTypes) {
-                return;
-            }
-
-            var modifiedLocalLifetimes = bodyTypes.Locals
-                .Where(x => !types.Locals.Contains(x))
-                .Select(x => x.Key)
-                .Where(types.Locals.ContainsKey)
-                .ToArray();
-
-            foreach (var path in modifiedLocalLifetimes) {
-                var oldBounds = types.Locals[path];
-                var newBounds = bodyTypes.Locals[path];
-
-               // var roots = types.GetMaximumRoots(newBounds.ValueLifetime);
-
-                // If the new value of this variable depends on a lifetime that was created
-                // inside the loop, we need to declare a new root so that nothing after the
-                // loop uses code that is no longer in scope
-                //if (roots.Any(x => !types.LifetimeRoots.Contains(x))) {
-                //    var newRoot = new ValueLifetime(
-                //        oldBounds.ValueLifetime.Path,
-                //        LifetimeRole.Root,
-                //        LifetimeOrigin.TempValue,
-                //        Math.Max(oldBounds.ValueLifetime.Version, newBounds.ValueLifetime.Version));
-
-                //    // Add our new root to the list of acceptable roots
-                //    types.LifetimeRoots = types.LifetimeRoots.Add(newRoot);
-
-                //    newBounds = newBounds.WithValue(newRoot);
-                //}
-
-                // Replace the current value with our root
-                types.Locals = types.Locals.SetItem(path, newBounds);
-            }
-        }
-
-        private static LifetimeBounds AnalyzeFlow(IReadOnlyList<ISyntaxTree> stats, TypeFrame flow) {
-            var bundle = stats
-                .LastOrNone()
-                .Select(x => x.GetLifetimes(flow))
-                .OrElse(() => new LifetimeBounds());
-
-            return bundle;
-        }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
@@ -197,6 +146,18 @@ namespace Helix.Features.FlowControl {
             else {
                 return new CIntLiteral(0);
             }
+        }
+
+        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
+            if (!this.Statements.Any()) {
+                return HmmValue.Void;
+            }
+
+            foreach (var stat in this.Statements.SkipLast(1)) {
+                stat.GenerateHelixMinusMinus(types, writer);
+            }
+
+            return this.Statements.Last().GenerateHelixMinusMinus(types, writer);
         }
     }
 }

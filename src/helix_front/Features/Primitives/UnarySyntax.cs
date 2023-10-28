@@ -4,10 +4,10 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Variables;
+using Helix.HelixMinusMinus;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -128,6 +128,21 @@ namespace Helix.Features.Primitives {
             return new CNot() {
                 Target = this.target.GenerateCode(types, writer)
             };
+        }
+
+        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
+            var value = this.target.GenerateHelixMinusMinus(types, writer);
+            var v = writer.GetTempVariable(this.GetReturnType(types));
+
+            var stat = new UnaryStatement() {
+                ResultVariable = v,
+                Operand = value,
+                Operation = UnaryOperatorKind.Not,
+                Location = this.Location
+            };
+
+            writer.AddStatement(stat);
+            return HmmValue.Variable(v);
         }
     }
 }

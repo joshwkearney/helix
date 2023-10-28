@@ -1,12 +1,8 @@
 ﻿using Helix.Analysis;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Helix.Collections {
+namespace Helix.Collections
+{
     public static class CollectionExtensions {
         public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
             this IDictionary<TKey, TValue> dict, 

@@ -1,9 +1,8 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.HelixMinusMinus;
 using Helix.Parsing;
 
 namespace Helix.Syntax {
@@ -18,8 +17,12 @@ namespace Helix.Syntax {
 
         public ISyntaxTree CheckTypes(TypeFrame types);
 
-        // Mixins
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
+            throw new Exception("Compiler bug");
+        }
+
+        // Mixins
+        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
             throw new Exception("Compiler bug");
         }
 

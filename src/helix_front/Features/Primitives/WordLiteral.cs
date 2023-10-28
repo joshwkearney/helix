@@ -3,12 +3,11 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.Analysis;
+using Helix.HelixMinusMinus;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing { 
     public partial class Parser {
         private ISyntaxTree WordLiteral() {
             var tok = this.Advance(TokenKind.WordLiteral);
@@ -50,6 +49,10 @@ namespace Helix.Features.Primitives {
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value);
+        }
+
+        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
+            return HmmValue.Word(this.Value);
         }
     }
 }

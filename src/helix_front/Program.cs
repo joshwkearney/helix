@@ -1,9 +1,5 @@
 ﻿using Helix;
-using Helix.Analysis.Flow;
 using Helix.Analysis.Predicates;
-using Helix.Analysis.TypeChecking;
-using Helix.Parsing;
-using Helix.Syntax;
 
 var header = File.ReadAllText("../../../../../Resources/Helix.h");
 var contents = File.ReadAllText("../../../../../Resources/Program.helix");

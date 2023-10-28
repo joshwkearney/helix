@@ -1,11 +1,11 @@
 ﻿using Helix.Syntax;
 using Helix.Analysis.Types;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
 using Helix.Analysis.Predicates;
 
-namespace Helix.Analysis {
+namespace Helix.Analysis
+{
     public static class AnalysisExtensions {
         public static bool TryResolvePath(this TypeFrame types, IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
@@ -43,7 +43,7 @@ namespace Helix.Analysis {
                 return false;
             }
 
-            value = info.Type;
+            value = info;
             return true;
         }
 
@@ -142,16 +142,12 @@ namespace Helix.Analysis {
         public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
             return types.Locals
                 .GetValueOrNone(path)
-                .SelectMany(x => x.Type.AsVariable(types))
+                .SelectMany(x => x.AsVariable(types))
                 .TryGetValue(out type);
         }
 
         public static ISyntaxPredicate GetPredicate(this ISyntaxTree syntax, TypeFrame types) {
             return types.SyntaxTags[syntax].Predicate;
-        }
-
-        public static LifetimeBounds GetLifetimes(this ISyntaxTree syntax, TypeFrame flow) {
-            return flow.SyntaxTags[syntax].Bounds;
         }
 
         public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, TypeFrame types) {

@@ -1,16 +1,15 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Collections;
-using Helix.Features.Aggregates;
 using Helix.Features.Variables;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Unions {
+namespace Helix.Features.Unions
+{
     public record IsParseSyntax : ISyntaxTree {
         public TokenLocation Location { get; init; }
 

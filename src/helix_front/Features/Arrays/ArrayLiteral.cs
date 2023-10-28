@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
@@ -7,16 +6,10 @@ using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
 using Helix.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Helix.Features.Functions;
-using System.Collections.Immutable;
 using Helix.Features.Arrays;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
         private ISyntaxTree ArrayLiteral() {
             var start = this.Advance(TokenKind.OpenBracket);
@@ -38,7 +31,8 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Arrays {
+namespace Helix.Features.Arrays
+{
     public record ArrayLiteralSyntax : ISyntaxTree {
         private static int tempCounter = 0;
 
@@ -102,61 +96,15 @@ namespace Helix.Features.Arrays {
                 args, 
                 types.Scope.Append(this.tempPath));
 
-            var bounds = AnalyzeFlow(this.Location, this.tempPath, args, types);
-
             SyntaxTagBuilder.AtFrame(types)
                 .WithReturnType(new ArrayType(totalType))
-                .WithLifetimes(bounds)
                 .BuildFor(result);
 
             return result;
         }
 
-        private static LifetimeBounds AnalyzeFlow(
-            TokenLocation loc, 
-            IdentifierPath tempPath,                                                   
-            IReadOnlyList<ISyntaxTree> args, 
-            TypeFrame flow) {
-
-            var arrayLifetime = new InferredLocationLifetime(
-                loc, 
-                tempPath, 
-                flow.ValidRoots, 
-                LifetimeOrigin.TempValue);
-
-            foreach (var arg in args) {
-                var valueLifetime = arg.GetLifetimes(flow).ValueLifetime;
-
-                flow.DataFlowGraph.AddStored(
-                    valueLifetime, 
-                    arrayLifetime, 
-                    arg.GetReturnType(flow));
-            }
-
-            return new LifetimeBounds(arrayLifetime);
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            if (!this.IsTypeChecked(types)) {
-                throw new InvalidOperationException();
-            }
-
-            var lifetime = this.GetLifetimes(types).ValueLifetime;
-            var roots = types.GetMaximumRoots(lifetime);
-
-            writer.WriteComment($"Line {this.Location.Line}: Array literal");
-
-            if (roots.Any()) {
-                return this.GenerateRegionCode(types, writer);
-            }
-            else {
-                return this.GenerateStackCode(types, writer);
-            }
-        }
-
         private ICSyntax GenerateRegionCode(TypeFrame types, ICStatementWriter writer) {
             var args = this.args.Select(x => x.GenerateCode(types, writer)).ToArray();
-            var lifetime = this.GetLifetimes(types).ValueLifetime;
             var helixArrayType = (ArrayType)this.GetReturnType(types);
 
             var cArrayType = writer.ConvertType(helixArrayType, types);
@@ -164,7 +112,7 @@ namespace Helix.Features.Arrays {
 
             var backingName = writer.GetVariableName();
             var tempName = writer.GetVariableName(this.tempPath);
-            var cLifetime = lifetime.GenerateCode(types, writer);
+            var cLifetime = new CVariableLiteral("TEMPLIFETIME");
 
             var backingAssign = new CVariableDeclaration() {
                 Name = backingName,

@@ -3,10 +3,9 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.Analysis;
+using Helix.HelixMinusMinus;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -50,6 +49,10 @@ namespace Helix.Features.Primitives {
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value ? 1 : 0);
+        }
+
+        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
+            return HmmValue.Bool(this.Value);
         }
     }
 }

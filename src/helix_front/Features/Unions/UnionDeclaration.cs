@@ -5,11 +5,11 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Types;
 using Helix.Syntax;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
         private IDeclaration UnionDeclaration() {
             var start = this.Advance(TokenKind.UnionKeyword);
@@ -40,7 +40,8 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Aggregates {
+namespace Helix.Features.Aggregates
+{
     public record UnionParseDeclaration : IDeclaration {
         private readonly StructParseSignature signature;
 
@@ -60,7 +61,7 @@ namespace Helix.Features.Aggregates {
             var path = types.Scope.Append(this.signature.Name);
             var named = new NominalType(path, NominalTypeKind.Union);
 
-            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
+            types.Locals = types.Locals.SetItem(path, named);
         }
 
         public void DeclareTypes(TypeFrame types) {

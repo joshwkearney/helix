@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
@@ -9,9 +8,9 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Features.Functions;
-using System.IO;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
         private ISyntaxTree VariableAccess() {
             var tok = this.Advance(TokenKind.Identifier);
@@ -21,7 +20,8 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Variables {
+namespace Helix.Features.Variables
+{
     public record VariableAccessParseSyntax : ISyntaxTree {
         public string Name { get; }
 
@@ -102,7 +102,6 @@ namespace Helix.Features.Variables {
             SyntaxTagBuilder.AtFrame(types)
                 .WithReturnType(this.VariableSignature.InnerType)
                 .WithCapturedVariables(cap)
-                .WithLifetimes(types.Locals[this.VariablePath].Bounds)
                 .BuildFor(this);
 
             return this;
@@ -131,7 +130,7 @@ namespace Helix.Features.Variables {
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) {
-            var hasSingularValue = types.Locals[this.VariablePath].Type
+            var hasSingularValue = types.Locals[this.VariablePath]
                 .AsVariable(types)
                 .SelectMany(x => x.InnerType.ToSyntax(this.Location, types))
                 .TryGetValue(out var singularSyntax);

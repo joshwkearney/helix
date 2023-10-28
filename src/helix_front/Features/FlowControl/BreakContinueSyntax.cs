@@ -1,14 +1,12 @@
-﻿using Helix.Analysis.Flow;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
-using Helix.Analysis.Types;
 using Helix.Features.FlowControl;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
-using Helix.Analysis;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
         public ISyntaxTree BreakStatement() {
             Token start;
@@ -35,7 +33,8 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.FlowControl {
+namespace Helix.Features.FlowControl
+{
     public record BreakContinueSyntax : ISyntaxTree {
         private readonly bool isbreak;
 

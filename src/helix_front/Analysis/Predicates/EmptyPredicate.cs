@@ -1,9 +1,5 @@
-﻿using Helix.Analysis.Flow;
-using Helix.Analysis.TypeChecking;
-using Helix.Parsing;
-using Helix.Syntax;
-
-namespace Helix.Analysis.Predicates {
+﻿namespace Helix.Analysis.Predicates
+{
     public class EmptyPredicate : ISyntaxPredicate {
         public override ISyntaxPredicate And(ISyntaxPredicate other) => other;
 

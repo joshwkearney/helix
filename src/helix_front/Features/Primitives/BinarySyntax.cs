@@ -5,11 +5,10 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.FlowControl;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
-using System;
+using Helix.HelixMinusMinus;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -257,6 +256,9 @@ namespace Helix.Features.Primitives {
                 case BinaryOperationKind.Subtract:
                     returnType = new SingularWordType(int1 - int2);
                     break;
+                case BinaryOperationKind.Multiply:
+                    returnType = new SingularWordType(int1 * int2);
+                    break;
                 case BinaryOperationKind.Modulo:
                     returnType = new SingularWordType(int1 % int2);
                     break;
@@ -394,6 +396,23 @@ namespace Helix.Features.Primitives {
                 Right = this.right.GenerateCode(types, writer),
                 Operation = this.op
             };
+        }
+
+        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
+            var left = this.left.GenerateHelixMinusMinus(types, writer);
+            var right = this.right.GenerateHelixMinusMinus(types, writer);
+            var v = writer.GetTempVariable(this.GetReturnType(types));
+
+            var stat = new BinaryStatement() {
+                ResultVariable = v,
+                Left = left,
+                Right = right,
+                Operation = this.op,
+                Location = this.Location
+            };
+
+            writer.AddStatement(stat);
+            return HmmValue.Variable(v);
         }
     }
 }

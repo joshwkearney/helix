@@ -4,11 +4,11 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Features.Primitives;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 
-namespace Helix.Features.Aggregates {
+namespace Helix.Features.Aggregates
+{
     public class NewUnionSyntax : ISyntaxTree {
         private static int tempCounter = 0;
 
@@ -101,12 +101,9 @@ namespace Helix.Features.Aggregates {
                 new[] { value },
                 types.Scope.Append(this.tempPath));
 
-            var bounds = AnalyzeFlow(this.tempPath, value, types);
-
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(value)
                 .WithReturnType(this.unionType)
-                .WithLifetimes(bounds)
                 .BuildFor(result);
 
             return result;
@@ -118,22 +115,6 @@ namespace Helix.Features.Aggregates {
             }
 
             return this;
-        }
-
-        private static LifetimeBounds AnalyzeFlow(IdentifierPath tempPath, ISyntaxTree value, TypeFrame flow) {
-            var valueBounds = value.GetLifetimes(flow);
-
-            var lifetime = new ValueLifetime(
-                tempPath,
-                LifetimeRole.Alias,
-                LifetimeOrigin.TempValue);
-
-            flow.DataFlowGraph.AddStored(
-                valueBounds.ValueLifetime, 
-                lifetime, 
-                value.GetReturnType(flow));
-
-            return new LifetimeBounds(lifetime);
         }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

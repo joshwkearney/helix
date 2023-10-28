@@ -2,9 +2,9 @@
 using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Parsing;
-using Helix.Analysis;
 
-namespace Helix.Features.Arrays {
+namespace Helix.Features.Arrays
+{
     public record ArrayTypeSyntax : ISyntaxTree {
         private readonly ISyntaxTree inner;
 

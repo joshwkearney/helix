@@ -2,9 +2,9 @@
 using Helix.Syntax;
 using Helix.Parsing;
 using Helix.Features.Types;
-using Helix.Analysis;
 
-namespace Helix.Features.Functions {
+namespace Helix.Features.Functions
+{
     public record FunctionParseSignature {
         public ISyntaxTree ReturnType { get; }
 

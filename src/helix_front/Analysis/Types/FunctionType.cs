@@ -1,8 +1,8 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 
-namespace Helix.Features.Types {
+namespace Helix.Features.Types
+{
     public record FunctionType : HelixType {
         public HelixType ReturnType { get; }
 

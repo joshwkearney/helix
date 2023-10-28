@@ -1,10 +1,10 @@
-﻿using Helix.Analysis.Flow;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Collections;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Analysis.Predicates {
+namespace Helix.Analysis.Predicates
+{
     public class PredicatePolynomial : ISyntaxPredicate {
         public ValueSet<ISyntaxPredicate> Operands { get; }
 

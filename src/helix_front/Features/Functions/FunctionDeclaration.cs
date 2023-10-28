@@ -8,12 +8,10 @@ using Helix.Features.Functions;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Features.Variables;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.Collections;
 using Helix.Features.Types;
+using Helix.HelixMinusMinus;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -97,7 +95,7 @@ namespace Helix.Features.Functions {
             var sig = this.signature.ResolveNames(types);
             var named = new NominalType(path, NominalTypeKind.Function);
 
-            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
+            types.Locals = types.Locals.SetItem(path, named);
 
             // Declare this function
             types.NominalSignatures.Add(path, sig);
@@ -113,9 +111,6 @@ namespace Helix.Features.Functions {
             // Declare parameters
             FunctionsHelper.DeclareParameters(sig, path, types);
 
-            // Make sure we include the heap in the root set
-            types.ValidRoots = types.ValidRoots.Add(Lifetime.Heap);
-
             // Check types
             var body = this.body;
 
@@ -129,8 +124,6 @@ namespace Helix.Features.Functions {
             body = body.CheckTypes(types)
                 .ToRValue(types)
                 .UnifyTo(sig.ReturnType, types);
-
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, body, types);
 
 #if DEBUG
             // Debug check: make sure that every syntax tree was type checked
@@ -237,6 +230,23 @@ namespace Helix.Features.Functions {
 
             writer.WriteDeclaration4(decl);
             writer.WriteDeclaration4(new CEmptyLine());
+        }
+
+        public void GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
+            var bodyWriter = new HmmWriter(writer);
+            var result = this.body.GenerateHelixMinusMinus(types, bodyWriter);
+
+            bodyWriter.AddStatement(new HmmReturnStatement() {
+                Location = this.Location,
+                Value = result
+            });
+
+            writer.AddStatement(new HmmFunctionStatement() {
+                Location = this.Location,
+                Body = bodyWriter.Statements,
+                Name = this.Path.Segments.Last(),
+                Signature = this.Signature
+            });
         }
     }
 }

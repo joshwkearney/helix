@@ -1,6 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
-using Helix.Analysis.Types;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
@@ -35,12 +33,9 @@ namespace Helix.Features.Variables {
                 .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, x.Signature))
                 .ToArray();
 
-            var bounds = AnalyzeFlow(this.Location, target, types);
-
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(target)
                 .WithReturnType(varType)
-                .WithLifetimes(bounds)
                 .WithCapturedVariables(capturedVars)
                 .BuildFor(result);
 
@@ -51,23 +46,11 @@ namespace Helix.Features.Variables {
             return this;
         }
 
-        public static LifetimeBounds AnalyzeFlow(TokenLocation loc, ISyntaxTree target, TypeFrame flow) {
-            var locationLifetime = target.GetLifetimes(flow).LocationLifetime;
-
-            // Make sure we're taking the address of a variable location
-            if (locationLifetime == Lifetime.None) {
-                // TODO: Add more specific error message
-                throw TypeException.ExpectedVariableType(loc, target.GetReturnType(flow));
-            }
-
-            return new LifetimeBounds(locationLifetime);
-        }
-
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CCompoundExpression() {
                 Arguments = new ICSyntax[] {
                     target.GenerateCode(types, writer),
-                    writer.GetLifetime(this.GetLifetimes(types).ValueLifetime, types)
+                    new CVariableLiteral("TEMPLIFETIME")
                 },
                 Type = writer.ConvertType(this.GetReturnType(types), types)
             };

@@ -1,7 +1,7 @@
 ﻿using Helix.Analysis.TypeChecking;
-using Helix.Syntax;
 
-namespace Helix.Analysis.Types {
+namespace Helix.Analysis.Types
+{
     public record ArrayType : HelixType {
         public HelixType InnerType { get; }
 

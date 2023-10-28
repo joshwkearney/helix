@@ -1,20 +1,13 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
 using Helix.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Helix.Collections;
 
-namespace Helix.Features.Unions {
+namespace Helix.Features.Unions
+{
     public class FlowVarStatement : ISyntaxTree {
         public StructMember UnionMember { get; }
 
@@ -52,7 +45,7 @@ namespace Helix.Features.Unions {
             var varSig = new PointerType(this.UnionMember.Type);
             var path = types.Scope.Append(this.Path);
 
-            types.Locals = types.Locals.SetItem(path, new LocalInfo(varSig));
+            types.Locals = types.Locals.SetItem(path, varSig);
             types.NominalSignatures.Add(path, varSig);
 
             var result = new FlowVarStatement(
@@ -67,26 +60,14 @@ namespace Helix.Features.Unions {
                 VariableCaptureKind.LocationCapture, 
                 this.ShadowedType);
 
-            var bounds = AnalyzeFlow(this.ShadowedPath, path, types);
-
             SyntaxTagBuilder.AtFrame(types)
                 .WithCapturedVariables(cap)
-                .WithLifetimes(bounds)
                 .BuildFor(result);
 
             return result;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
-
-        public static LifetimeBounds AnalyzeFlow(IdentifierPath shadowedPath, IdentifierPath newPath, 
-                                                 TypeFrame flow) {
-
-            var shadowedBounds = flow.Locals[shadowedPath];
-            flow.Locals = flow.Locals.SetItem(newPath, shadowedBounds);
-
-            return new LifetimeBounds();
-        }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             ICSyntax assign = new CAddressOf() {

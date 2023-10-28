@@ -5,12 +5,12 @@ using Helix.Features.Functions;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Syntax;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
 using Helix.Analysis;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
         private IDeclaration ExternFunctionDeclaration() {
             var start = this.Advance(TokenKind.ExternKeyword);
@@ -23,7 +23,8 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Functions {
+namespace Helix.Features.Functions
+{
     public record ExternFunctionParseDeclaration : IDeclaration {
         public TokenLocation Location { get; }
 
@@ -48,7 +49,7 @@ namespace Helix.Features.Functions {
             var named = new NominalType(path, NominalTypeKind.Function);
 
             // Replace the temporary wrapper object with a full declaration
-            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
+            types.Locals = types.Locals.SetItem(path, named);
 
             // Declare this function
             types.NominalSignatures.Add(path, sig);
