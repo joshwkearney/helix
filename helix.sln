@@ -15,7 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resources", "resources", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix_tests", "src\helix_tests\helix_tests.csproj", "{0BB628A2-75E0-4766-9695-D03F5DE5F781}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "helix", "src\helix\helix.csproj", "{B6AEF241-4749-47A2-947E-FF354F59601C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix", "src\helix\helix.csproj", "{B6AEF241-4749-47A2-947E-FF354F59601C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix_front", "src\helix_front\helix_front.csproj", "{A5104170-0401-432D-A928-811E3B236F34}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,18 @@ Global
 		{B6AEF241-4749-47A2-947E-FF354F59601C}.Release|x64.Build.0 = Release|Any CPU
 		{B6AEF241-4749-47A2-947E-FF354F59601C}.Release|x86.ActiveCfg = Release|Any CPU
 		{B6AEF241-4749-47A2-947E-FF354F59601C}.Release|x86.Build.0 = Release|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Debug|x64.Build.0 = Debug|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Debug|x86.Build.0 = Debug|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Release|x64.ActiveCfg = Release|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Release|x64.Build.0 = Release|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Release|x86.ActiveCfg = Release|Any CPU
+		{A5104170-0401-432D-A928-811E3B236F34}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
