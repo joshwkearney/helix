@@ -16,7 +16,7 @@ namespace Helix.Analysis.Types {
 
         public override HelixType GetMutationSupertype(TypeFrame types) => PrimitiveType.Bool;
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) => PrimitiveType.Bool;
+        public override HelixType GetSignature(TypeFrame types) => PrimitiveType.Bool;
     }
 
     public record SingularBoolType : PredicateBool {
@@ -28,7 +28,7 @@ namespace Helix.Analysis.Types {
             this.Value = value;
         }
 
-        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+        public override Option<IParseTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             return new BoolLiteral(loc, this.Value);
         }      
 

@@ -1,7 +1,7 @@
 ﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 
-namespace Helix.Analysis.Types
-{
+namespace Helix.Analysis.Types {
     public record PointerType : HelixType {
         public HelixType InnerType { get; }
 
@@ -17,7 +17,7 @@ namespace Helix.Analysis.Types
             return new PointerType(this.InnerType.GetMutationSupertype(types));
         }
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) {
+        public override HelixType GetSignature(TypeFrame types) {
             return this;
         }
 

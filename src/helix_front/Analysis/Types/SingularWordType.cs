@@ -19,11 +19,11 @@ namespace Helix.Analysis.Types {
             return PrimitiveType.Word;
         }
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) {
+        public override HelixType GetSignature(TypeFrame types) {
             return PrimitiveType.Word;
         }
 
-        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+        public override Option<IParseTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             return new WordLiteral(loc, this.Value);
         }       
 

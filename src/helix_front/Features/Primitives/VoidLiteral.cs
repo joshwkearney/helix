@@ -3,13 +3,15 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.HelixMinusMinus;
+using Helix.Analysis;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
-        private ISyntaxTree VoidLiteral() {
+        private IParseTree VoidLiteral() {
             var tok = this.Advance(TokenKind.VoidKeyword);
 
             return new VoidLiteral(tok.Location);
@@ -17,11 +19,12 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Primitives {
-    public record VoidLiteral : ISyntaxTree {
+namespace Helix.Features.Primitives
+{
+    public record VoidLiteral : IParseTree {
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+        public IEnumerable<IParseTree> Children => Enumerable.Empty<IParseTree>();
 
         public bool IsPure => true;
 
@@ -29,22 +32,12 @@ namespace Helix.Features.Primitives {
             this.Location = loc;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) => this;
+        public IParseTree ToRValue(TypeFrame types) => this;
 
         public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            SyntaxTagBuilder.AtFrame(types).BuildFor(this);
-
-            return this;
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            return new CIntLiteral(0);
-        }
-
-        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
-            return HmmValue.Void;
+        public ImperativeExpression ToImperativeSyntax(ImperativeSyntaxWriter writer) {
+            return ImperativeExpression.Void;
         }
     }
 }

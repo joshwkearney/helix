@@ -4,6 +4,7 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Variables;
@@ -11,7 +12,7 @@ using Helix.HelixMinusMinus;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree UnaryExpression() {
+        private IParseTree UnaryExpression() {
             var hasOperator = this.Peek(TokenKind.Minus)
                 || this.Peek(TokenKind.Plus)
                 || this.Peek(TokenKind.Not)
@@ -49,100 +50,34 @@ namespace Helix.Features.Primitives {
         Not, Plus, Minus
     }
 
-    public record UnaryParseSyntax : ISyntaxTree {
-        private readonly UnaryOperatorKind op;
-        private readonly ISyntaxTree arg;
+    public record UnaryParseSyntax(
+        TokenLocation Location,
+        IParseTree Operand, 
+        UnaryOperatorKind Operator) : IParseTree {
 
-        public TokenLocation Location { get; }
-
-        public IEnumerable<ISyntaxTree> Children => new[] { this.arg };
-
-        public bool IsPure => this.arg.IsPure;
-
-        public UnaryParseSyntax(TokenLocation location, UnaryOperatorKind op, ISyntaxTree arg) {
-            this.Location = location;
-            this.op = op;
-            this.arg = arg;
-        }
-
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (this.op == UnaryOperatorKind.Plus || this.op == UnaryOperatorKind.Minus) {
-                var left = new WordLiteral(this.Location, 0);
-
-                var op = this.op == UnaryOperatorKind.Plus
+        public ImperativeExpression ToImperativeSyntax(ImperativeSyntaxWriter writer) {
+            if (this.Operator == UnaryOperatorKind.Plus || this.Operator == UnaryOperatorKind.Minus) {
+                var op = this.Operator == UnaryOperatorKind.Plus
                     ? BinaryOperationKind.Add
                     : BinaryOperationKind.Subtract;
 
-                var result = new BinarySyntax(this.Location, left, this.arg, op);
+                var syntax = new BinarySyntax(
+                    this.Location, 
+                    new WordLiteral(this.Location, 0), 
+                    this.Operand, 
+                    op);
 
-                return result.CheckTypes(types);
-            }
-            else if (this.op == UnaryOperatorKind.Not) {
-                var arg = this.arg.CheckTypes(types);
-                var returnType = arg.GetReturnType(types);
-
-                if (returnType is PredicateBool pred) {
-                    returnType = new PredicateBool(pred.Predicate.Negate());
-                }
-                else {
-                    arg = arg.UnifyTo(PrimitiveType.Bool, types);
-                    returnType = PrimitiveType.Bool;
-                }
-
-                var result = new UnaryNotSyntax(
-                    this.Location,
-                    arg);
-
-                SyntaxTagBuilder.AtFrame(types)
-                    .WithChildren(arg)
-                    .WithReturnType(returnType)
-                    .BuildFor(result);
-
-                return result;
+                return syntax.ToImperativeSyntax(writer);
             }
             else {
-                throw new Exception("Unexpected unary operator kind");
+                var syntax = new BinarySyntax(
+                    this.Location,
+                    new BoolLiteral(this.Location, false),
+                    this.Operand,
+                    BinaryOperationKind.Xor);
+
+                return syntax.ToImperativeSyntax(writer);
             }
-        }
-    }
-
-    public record UnaryNotSyntax : ISyntaxTree {
-        private readonly ISyntaxTree target;
-
-        public TokenLocation Location { get; }
-
-        public IEnumerable<ISyntaxTree> Children => new[] { this.target };
-
-        public bool IsPure => this.target.IsPure;
-
-        public UnaryNotSyntax(TokenLocation loc, ISyntaxTree target) {
-            this.Location = loc;
-            this.target = target;
-        }
-
-        public ISyntaxTree CheckTypes(TypeFrame types) => this;
-
-        public ISyntaxTree ToRValue(TypeFrame types) => this;
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            return new CNot() {
-                Target = this.target.GenerateCode(types, writer)
-            };
-        }
-
-        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
-            var value = this.target.GenerateHelixMinusMinus(types, writer);
-            var v = writer.GetTempVariable(this.GetReturnType(types));
-
-            var stat = new UnaryStatement() {
-                ResultVariable = v,
-                Operand = value,
-                Operation = UnaryOperatorKind.Not,
-                Location = this.Location
-            };
-
-            writer.AddStatement(stat);
-            return HmmValue.Variable(v);
         }
     }
 }

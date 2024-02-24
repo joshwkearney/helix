@@ -1,12 +1,14 @@
-﻿using Helix.Features.Primitives;
+﻿using Helix.Analysis;
+using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Unions;
+using Helix.Analysis.Types;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree AsExpression() {
+        private IParseTree AsExpression() {
             var first = this.UnaryExpression();
 
             while (this.Peek(TokenKind.AsKeyword) || this.Peek(TokenKind.IsKeyword)) {
@@ -14,7 +16,7 @@ namespace Helix.Parsing {
                     var target = this.TopExpression();
                     var loc = first.Location.Span(target.Location);
 
-                    first = new AsParseTree(loc, first, target);
+                    first = new AsParseSyntax(loc, first, target);
                 }
                 else {
                     this.Advance(TokenKind.IsKeyword);
@@ -34,34 +36,34 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.Primitives {
-    public record AsParseTree : ISyntaxTree {
-        private readonly ISyntaxTree arg;
-        private readonly ISyntaxTree target;
+    public record AsParseSyntax(
+        TokenLocation Location, 
+        IParseTree Argument, 
+        IParseTree TargetType) : IParseTree {
 
-        public TokenLocation Location { get; }
+        public ImperativeExpression ToImperativeSyntax(ImperativeSyntaxWriter writer) => throw new NotImplementedException();
+    }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.arg, this.target };
+    public record AsStatement(
+        TokenLocation Location, 
+        string VariableName, 
+        ImperativeExpression Value, 
+        HelixType TargetType) : IVariableStatement {
 
-        public bool IsPure { get; }
+        public void CheckTypes(TypeFrame types, ImperativeSyntaxWriter writer) {
+            var newValue = this.Value.UnifyTo(this.TargetType, types, writer);
 
-        public AsParseTree(TokenLocation loc, ISyntaxTree arg, ISyntaxTree target) {
-            this.Location = loc;
-            this.arg = arg;
-            this.target = target;
+            var stat = new VariableStatement() {
+                Location = this.Location,
+                Value = newValue,
+                VariableName = this.VariableName
+            };
 
-            this.IsPure = this.target.IsPure && this.arg.IsPure;
+            stat.CheckTypes(types, writer);
         }
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            var arg = this.arg.CheckTypes(types).ToRValue(types);
-
-            if (!this.target.AsType(types).TryGetValue(out var targetType)) {
-                throw TypeException.ExpectedTypeExpression(this.target.Location);
-            }
-
-            arg = arg.UnifyTo(targetType, types);
-
-            return arg;
+        public string[] Write() {
+            return new[] { $"let {this.VariableName} = {this.Value} as {this.TargetType};" };
         }
     }
 }

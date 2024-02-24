@@ -1,14 +1,17 @@
-﻿using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
+using Helix.Analysis.Types;
 using Helix.Features.FlowControl;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Analysis;
+using Helix.Analysis.Predicates;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
-        public ISyntaxTree BreakStatement() {
+        public IParseTree BreakStatement() {
             Token start;
             bool isBreak;
 
@@ -33,14 +36,13 @@ namespace Helix.Parsing
     }
 }
 
-namespace Helix.Features.FlowControl
-{
-    public record BreakContinueSyntax : ISyntaxTree {
+namespace Helix.Features.FlowControl {
+    public record BreakContinueSyntax : IParseTree {
         private readonly bool isbreak;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+        public IEnumerable<IParseTree> Children => Enumerable.Empty<IParseTree>();
 
         public bool IsPure => false;
 
@@ -49,23 +51,6 @@ namespace Helix.Features.FlowControl
             this.isbreak = isbreak;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) => this;
-
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            SyntaxTagBuilder.AtFrame(types).BuildFor(this);
-
-            return this;
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            if (this.isbreak) {
-                writer.WriteStatement(new CBreak());
-            }
-            else {
-                writer.WriteStatement(new CContinue());
-            }
-
-            return new CIntLiteral(0);
-        }
+        public IParseTree ToRValue(TypeFrame types) => this;
     }
 }

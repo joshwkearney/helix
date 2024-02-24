@@ -96,6 +96,7 @@ namespace Helix {
             var varSig = new PointerType(assignType);
 
             types.NominalSignatures.Add(path, varSig);
+            types.Locals = types.Locals.Add(path, new LocalInfo(varSig));
 
             var result = new VarStatement(
                 this.Location,

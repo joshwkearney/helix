@@ -1,18 +1,7 @@
-﻿namespace Helix.Parsing
-{
-    public record struct TokenLocation {
-        public int StartIndex { get; }
+﻿using Helix.Analysis;
 
-        public int Length { get; }
-
-        public int Line { get; }
-
-        public TokenLocation(int start, int length, int line) {
-            this.StartIndex = start;
-            this.Length = length;
-            this.Line = line;
-        }
-
+namespace Helix.Parsing {
+    public record struct TokenLocation(int StartIndex, int Length, int Line) {
         public TokenLocation Span(TokenLocation other) {
             if (other.StartIndex < this.StartIndex) {
                 return other.Span(this);

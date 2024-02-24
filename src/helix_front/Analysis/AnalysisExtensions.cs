@@ -1,61 +1,15 @@
 ﻿using Helix.Syntax;
 using Helix.Analysis.Types;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
 using Helix.Analysis.Predicates;
+using Helix.Features.FlowControl;
 
-namespace Helix.Analysis
-{
+namespace Helix.Analysis {
     public static class AnalysisExtensions {
-        public static bool TryResolvePath(this TypeFrame types, IdentifierPath scope, string name, out IdentifierPath path) {
-            while (true) {
-                path = scope.Append(name);
-                if (types.Locals.ContainsKey(path)) {
-                    return true;
-                }
-
-                if (scope.Segments.Any()) {
-                    scope = scope.Pop();
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-
-        public static IdentifierPath ResolvePath(this TypeFrame types, IdentifierPath scope, string name) {
-            if (types.TryResolvePath(scope, name, out var value)) {
-                return value;
-            }
-
-            throw new InvalidOperationException(
-                $"Compiler error: The path '{name}' does not contain a value.");
-        }
-
-        public static bool TryResolveName(this TypeFrame types, IdentifierPath scope, string name, out HelixType value) {
-            if (!types.TryResolvePath(scope, name, out var path)) {
-                value = null;
-                return false;
-            }
-
-            if (!types.Locals.TryGetValue(path, out var info)) {
-                value = null;
-                return false;
-            }
-
-            value = info;
-            return true;
-        }
-
-        public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {
-            return types.NominalSignatures
-                .GetValueOrNone(path)
-                .SelectMany(x => x.AsFunction(types))
-                .TryGetValue(out type);
-        }
-
         public static Option<PointerType> AsVariable(this HelixType type, TypeFrame types) {
-            if (type.GetSignatureSupertype(types) is PointerType sig) {
+            if (type.GetSignature(types) is PointerType sig) {
                 return sig;
             }
             else {
@@ -64,7 +18,7 @@ namespace Helix.Analysis
         }
 
         public static Option<FunctionType> AsFunction(this HelixType type, TypeFrame types) {
-            if (type.GetSignatureSupertype(types) is FunctionType funcSig) {
+            if (type.GetSignature(types) is FunctionType funcSig) {
                 return funcSig;
             }
             else {
@@ -73,7 +27,7 @@ namespace Helix.Analysis
         }
 
         public static Option<StructType> AsStruct(this HelixType type, TypeFrame types) {
-            if (type.GetSignatureSupertype(types) is StructType sig) {
+            if (type.GetSignature(types) is StructType sig) {
                 return sig;
             }
             else {
@@ -82,7 +36,7 @@ namespace Helix.Analysis
         }
 
         public static Option<UnionType> AsUnion(this HelixType type, TypeFrame types) {
-            if (type.GetSignatureSupertype(types) is UnionType sig) {
+            if (type.GetSignature(types) is UnionType sig) {
                 return sig;
             }
             else {
@@ -91,7 +45,7 @@ namespace Helix.Analysis
         }
 
         public static Option<ArrayType> AsArray(this HelixType type, TypeFrame types) {
-            if (type.GetSignatureSupertype(types) is ArrayType sig) {
+            if (type.GetSignature(types) is ArrayType sig) {
                 return sig;
             }
             else {
@@ -100,7 +54,7 @@ namespace Helix.Analysis
         }
 
         public static bool IsBool(this HelixType type, TypeFrame types) {
-            if (type.GetSignatureSupertype(types) == PrimitiveType.Bool) {
+            if (type.GetSignature(types) == PrimitiveType.Bool) {
                 return true;
             }
             else {
@@ -109,7 +63,7 @@ namespace Helix.Analysis
         }
 
         public static bool IsInt(this HelixType type, TypeFrame types) {
-            if (type.GetSignatureSupertype(types) == PrimitiveType.Word) {
+            if (type.GetSignature(types) == PrimitiveType.Word) {
                 return true;
             }
             else {
@@ -117,37 +71,11 @@ namespace Helix.Analysis
             }
         }
 
-        public static bool IsTypeChecked(this ISyntaxTree syntax, TypeFrame types) {
-            return types.SyntaxTags.ContainsKey(syntax);
-        }
-
-        public static HelixType GetReturnType(this ISyntaxTree syntax, TypeFrame types) {
-            return types.SyntaxTags[syntax].ReturnType;
-        }
-
-        public static IReadOnlyList<VariableCapture> GetCapturedVariables(this ISyntaxTree syntax, TypeFrame types) {
-            return types.SyntaxTags[syntax].CapturedVariables;
-        }
-
-        public static PointerType AssertIsPointer(this ISyntaxTree syntax, TypeFrame types) {
-            var type = syntax.GetReturnType(types);
-
-            if (!type.AsVariable(types).TryGetValue(out var pointer)) {
-                throw TypeException.ExpectedVariableType(syntax.Location, type);
-            }
-
-            return pointer;
-        }
-
-        public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
+        public static bool TryGetVariable(this TypeFrame types, string name, out PointerType type) {
             return types.Locals
-                .GetValueOrNone(path)
-                .SelectMany(x => x.AsVariable(types))
+                .GetValueOrNone(name)
+                .SelectMany(x => x.Type.AsVariable(types))
                 .TryGetValue(out type);
-        }
-
-        public static ISyntaxPredicate GetPredicate(this ISyntaxTree syntax, TypeFrame types) {
-            return types.SyntaxTags[syntax].Predicate;
         }
 
         public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, TypeFrame types) {

@@ -3,13 +3,15 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.HelixMinusMinus;
+using Helix.Analysis;
 
-namespace Helix.Parsing { 
+namespace Helix.Parsing
+{
     public partial class Parser {
-        private ISyntaxTree WordLiteral() {
+        private IParseTree WordLiteral() {
             var tok = this.Advance(TokenKind.WordLiteral);
             var num = long.Parse(tok.Value);
 
@@ -18,13 +20,14 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Primitives {
-    public record WordLiteral : ISyntaxTree {
+namespace Helix.Features.Primitives
+{
+    public record WordLiteral : IParseTree {
         public TokenLocation Location { get; }
 
         public long Value { get; }
 
-        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+        public IEnumerable<IParseTree> Children => Enumerable.Empty<IParseTree>();
 
         public bool IsPure => true;
 
@@ -37,22 +40,10 @@ namespace Helix.Features.Primitives {
             return new SingularWordType(this.Value);
         }
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            SyntaxTagBuilder.AtFrame(types)
-                .WithReturnType(new SingularWordType(this.Value))
-                .BuildFor(this);
+        public IParseTree ToRValue(TypeFrame types) => this;
 
-            return this;
-        }
-
-        public ISyntaxTree ToRValue(TypeFrame types) => this;
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            return new CIntLiteral(this.Value);
-        }
-
-        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
-            return HmmValue.Word(this.Value);
+        public ImperativeExpression ToImperativeSyntax(ImperativeSyntaxWriter writer) {
+            return ImperativeExpression.Word(this.Value);
         }
     }
 }

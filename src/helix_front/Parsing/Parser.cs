@@ -1,8 +1,8 @@
 ﻿using Helix.Syntax;
+using Helix.Analysis;
 using Helix.Features.Variables;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
         private readonly Lexer lexer;
         private readonly Stack<bool> isInLoop = new();
@@ -74,20 +74,19 @@ namespace Helix.Parsing
         }
 
         /** Expression Parsing **/
-        private ISyntaxTree TopExpression() => this.BinaryExpression();
+        private IParseTree TopExpression() => this.BinaryExpression();
 
-        private ISyntaxTree BinaryExpression() => this.OrExpression();
+        private IParseTree BinaryExpression() => this.OrExpression();
 
-        private ISyntaxTree PrefixExpression() => this.AsExpression();     
+        private IParseTree PrefixExpression() => this.AsExpression();     
 
-        private ISyntaxTree SuffixExpression() {
+        private IParseTree SuffixExpression() {
             var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) 
                 || this.Peek(TokenKind.Dot) 
                 || this.Peek(TokenKind.OpenBracket)
-                //|| this.Peek(TokenKind.Star)
-                ) {
+                || this.Peek(TokenKind.Star)) {
 
                 if (this.Peek(TokenKind.OpenParenthesis)) {
                     first = this.InvokeExpression(first);
@@ -98,9 +97,9 @@ namespace Helix.Parsing
                 else if (this.Peek(TokenKind.OpenBracket)) {
                     first = this.ArrayExpression(first);
                 }
-                //else if (this.Peek(TokenKind.Star)) {
-                //    first = this.DereferenceExpression(first);
-                //}
+                else if (this.Peek(TokenKind.Star)) {
+                    first = this.DereferenceExpression(first);
+                }
                 else {
                     throw new Exception("Unexpected suffix token");
                 }
@@ -109,7 +108,7 @@ namespace Helix.Parsing
             return first;
         }        
 
-        private ISyntaxTree Atom() {
+        private IParseTree Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -157,7 +156,7 @@ namespace Helix.Parsing
             }
         }        
 
-        private ISyntaxTree ParenExpression() {
+        private IParseTree ParenExpression() {
             this.Advance(TokenKind.OpenParenthesis);
             var result = this.TopExpression();
             this.Advance(TokenKind.CloseParenthesis);
@@ -165,8 +164,8 @@ namespace Helix.Parsing
             return result;
         }
 
-        private ISyntaxTree Statement() {
-            ISyntaxTree result;
+        private IParseTree Statement() {
+            IParseTree result;
 
             if (this.Peek(TokenKind.WhileKeyword)) {
                 result = this.WhileStatement();

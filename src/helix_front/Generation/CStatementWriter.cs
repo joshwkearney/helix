@@ -1,7 +1,12 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Collections;
+using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
+using Helix.Parsing;
+using System.Collections.Immutable;
 
 namespace Helix.Generation {
     public enum CVariableKind {

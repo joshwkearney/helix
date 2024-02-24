@@ -1,12 +1,13 @@
 ﻿using Helix.Analysis.Types;
 using Helix.Features.Aggregates;
 using Helix.Features.FlowControl;
+using Helix.Features.Primitives;
 using Helix.Syntax;
 
 namespace Helix.Analysis.TypeChecking
 {
     public static class TypeUnifier {
-        private delegate ISyntaxTree Unifier(ISyntaxTree tree, TypeFrame frame);
+        private delegate ImperativeExpression Unifier(ImperativeExpression tree, TypeFrame frame, ImperativeSyntaxWriter writer);
 
         private readonly struct UnificationResult {
             public static UnificationResult None { get; } = new UnificationResult() {
@@ -16,21 +17,13 @@ namespace Helix.Analysis.TypeChecking
 
             public static UnificationResult Identity { get; } = new UnificationResult() {
                 Kind = UnificationKind.Pun,
-                Unifier = (s, t) => s
+                Unifier = (s, t, w) => s
             };
 
-            public static UnificationResult Pun(HelixType adaptedType) {
+            public static UnificationResult Pun() {
                 return new UnificationResult() {
                     Kind = UnificationKind.Pun,
-                    Unifier = (s, t) => {
-                        var block = new BlockSyntax(s.Location, new[] { s }).CheckTypes(t);
-
-                        SyntaxTagBuilder.AtFrame(t, block)
-                            .WithReturnType(adaptedType)
-                            .BuildFor(block);
-
-                        return block;
-                    }
+                    Unifier = (s, t, w) => s
                 };
             }
 
@@ -65,25 +58,29 @@ namespace Helix.Analysis.TypeChecking
                 return true;
             }
 
-            resultType = PrimitiveType.Void;
-            return false;
+            if (abstract1 == type1 && abstract2 == type2) {
+                resultType = null;
+                return false;
+            }
+
+            return abstract1.CanUnifyFrom(abstract2, types, out resultType);
         }
 
-        public static bool CanUnifyTo(this ISyntaxTree fromSyntax, HelixType toType, TypeFrame types) {
+        public static bool CanUnifyTo(this ImperativeExpression fromSyntax, HelixType toType, TypeFrame types, ImperativeSyntaxWriter writer) {
             return fromSyntax.GetReturnType(types).CanUnifyTo(toType, types);
         }
 
-        public static ISyntaxTree UnifyTo(this ISyntaxTree fromSyntax, HelixType toType, TypeFrame types) {
+        public static ImperativeExpression UnifyTo(this ImperativeExpression fromSyntax, HelixType toType, TypeFrame types, ImperativeSyntaxWriter writer) {
             var fromType = fromSyntax.GetReturnType(types);
 
             if (!fromType.CanUnifyTo(toType, types)) {
                 throw TypeException.UnexpectedType(fromSyntax.Location, toType, fromType);
             }
 
-            return TryUnify(fromType, toType, types).Unifier(fromSyntax, types);
+            return TryUnify(fromType, toType, types).Unifier(fromSyntax, types, writer);
         }
 
-        public static ISyntaxTree UnifyFrom(this ISyntaxTree syntax1, ISyntaxTree syntax2, TypeFrame types) {
+        public static ImperativeExpression UnifyFrom(this ImperativeExpression syntax1, ImperativeExpression syntax2, TypeFrame types, ImperativeSyntaxWriter writer) {
             var type1 = syntax1.GetReturnType(types);
             var type2 = syntax2.GetReturnType(types);
 
@@ -91,7 +88,7 @@ namespace Helix.Analysis.TypeChecking
                 throw TypeException.UnexpectedType(syntax1.Location, type2, type1);
             }
 
-            return syntax1.UnifyTo(result, types);
+            return syntax1.UnifyTo(result, types, writer);
         }
 
         private static UnificationResult TryUnify(HelixType first, HelixType second, TypeFrame types) {
@@ -130,7 +127,7 @@ namespace Helix.Analysis.TypeChecking
 
                 if (second is PointerType secondPtr) {
                     if (TryUnify(typeSig.InnerType, secondPtr.InnerType, types).Kind == UnificationKind.Pun) {
-                        return UnificationResult.Pun(second);
+                        return UnificationResult.Pun();
                     }
                 }
             }
@@ -143,7 +140,7 @@ namespace Helix.Analysis.TypeChecking
                 var innerCompatibility = TryUnify(array1.InnerType, array2.InnerType, types).Kind;
 
                 if (innerCompatibility == UnificationKind.Pun) {
-                    return UnificationResult.Pun(array2);
+                    return UnificationResult.Pun();
                 }
             }
 
@@ -155,7 +152,7 @@ namespace Helix.Analysis.TypeChecking
                 var innerCompatibility = TryUnify(pointer1.InnerType, pointer2.InnerType, types).Kind;
 
                 if (innerCompatibility == UnificationKind.Pun) {
-                    return UnificationResult.Pun(pointer2);
+                    return UnificationResult.Pun();
                 }
             }
 
@@ -164,7 +161,7 @@ namespace Helix.Analysis.TypeChecking
 
         private static UnificationResult TryUnifyFromSingularBool(HelixType second, TypeFrame types) {
             if (second == PrimitiveType.Bool) {
-                return UnificationResult.Pun(second);
+                return UnificationResult.Pun();
             }
             else {
                 return TryUnify(PrimitiveType.Bool, second, types);
@@ -173,7 +170,7 @@ namespace Helix.Analysis.TypeChecking
 
         private static UnificationResult TryUnifyFromSingularInt(HelixType second, TypeFrame types) {
             if (second == PrimitiveType.Word) {
-                return UnificationResult.Pun(second);
+                return UnificationResult.Pun();
             }
             else {
                 return TryUnify(PrimitiveType.Word, second, types);
@@ -182,7 +179,7 @@ namespace Helix.Analysis.TypeChecking
 
         private static UnificationResult TryUnifyFromBool(HelixType second, TypeFrame types) {
             if (second == PrimitiveType.Word) {
-                return UnificationResult.Pun(second);
+                return UnificationResult.Pun();
             }
             else {
                 return UnificationResult.None;
@@ -191,66 +188,66 @@ namespace Helix.Analysis.TypeChecking
 
         private static UnificationResult TryUnifyFromVoid(HelixType second, TypeFrame types) {
             if (second == PrimitiveType.Word || second == PrimitiveType.Bool) {
-                return UnificationResult.Pun(second);
+                return UnificationResult.Pun();
             }
-            else if (second.AsStruct(types).TryGetValue(out var structSig)) {
-                return TryUnifyVoidToStruct(second, structSig, types);
-            }
-            else if (second.AsUnion(types).TryGetValue(out var unionSig)) {
-                return TryUnifyVoidToUnion(second, unionSig, types);
-            }
+            //else if (second.AsStruct(types).TryGetValue(out var structSig)) {
+            //    return TryUnifyVoidToStruct(second, structSig, types);
+            //}
+            //else if (second.AsUnion(types).TryGetValue(out var unionSig)) {
+            //    return TryUnifyVoidToUnion(second, unionSig, types);
+            //}
 
             return UnificationResult.None;
         }
 
-        private static UnificationResult TryUnifyVoidToStruct(HelixType structType, StructType sig, TypeFrame types) {
-            var memsConvertable = sig.Members
-                .All(x => PrimitiveType.Void.CanUnifyTo(x.Type, types));
+        //private static UnificationResult TryUnifyVoidToStruct(HelixType structType, StructType sig, TypeFrame types) {
+        //    var memsConvertable = sig.Members
+        //        .All(x => PrimitiveType.Void.CanUnifyTo(x.Type, types));
 
-            if (!memsConvertable) {
-                return UnificationResult.None;
-            }
+        //    if (!memsConvertable) {
+        //        return UnificationResult.None;
+        //    }
 
-            return new UnificationResult() {
-                Kind = UnificationKind.Convert,
-                Unifier = (syntax, t) => {
-                    var block = new BlockSyntax(syntax.Location, new[] {
-                        syntax,
-                        new NewStructSyntax(
-                            syntax.Location, 
-                            structType, 
-                            sig, 
-                            Array.Empty<string>(), 
-                            Array.Empty<ISyntaxTree>(), 
-                            types.Scope)
-                    });
+        //    return new UnificationResult() {
+        //        Kind = UnificationKind.Convert,
+        //        Unifier = (syntax, t, w) => {
+        //            var block = new BlockSyntax(
+        //                syntax,
+        //                new NewStructSyntax(
+        //                    syntax.Location, 
+        //                    structType, 
+        //                    sig, 
+        //                    Array.Empty<string>(), 
+        //                    Array.Empty<ISyntaxTree>(), 
+        //                    types.Scope)
+        //            );
 
-                    return block.CheckTypes(t);
-                }
-            };
-        }
+        //            return block.CheckTypes(t);
+        //        }
+        //    };
+        //}
 
-        private static UnificationResult TryUnifyVoidToUnion(HelixType unionType, UnionType sig, TypeFrame types) {
-            if (!PrimitiveType.Void.CanUnifyTo(sig.Members[0].Type, types)) {
-                return UnificationResult.None;
-            }
+        //private static UnificationResult TryUnifyVoidToUnion(HelixType unionType, UnionType sig, TypeFrame types) {
+        //    if (!PrimitiveType.Void.CanUnifyTo(sig.Members[0].Type, types)) {
+        //        return UnificationResult.None;
+        //    }
 
-            return new UnificationResult() {
-                Kind = UnificationKind.Convert,
-                Unifier = (syntax, t) => {
-                    var block = new BlockSyntax(syntax.Location, new[] {
-                        syntax,
-                        new NewUnionSyntax(
-                            syntax.Location,
-                            sig,
-                            sig,
-                            Array.Empty<string>(),
-                            Array.Empty<ISyntaxTree>())
-                    });
+        //    return new UnificationResult() {
+        //        Kind = UnificationKind.Convert,
+        //        Unifier = (syntax, t, w) => {
+        //            var block = new BlockSyntax(
+        //                syntax,
+        //                new NewUnionSyntax(
+        //                    syntax.Location,
+        //                    sig,
+        //                    sig,
+        //                    Array.Empty<string>(),
+        //                    Array.Empty<ISyntaxTree>())
+        //            );
 
-                    return block.CheckTypes(t);
-                }
-            };
-        }
+        //            return block.CheckTypes(t);
+        //        }
+        //    };
+        //}
     }
 }

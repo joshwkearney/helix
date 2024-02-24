@@ -5,14 +5,16 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.FlowControl;
+using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
+using System;
 using Helix.HelixMinusMinus;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree OrExpression() {
+        private IParseTree OrExpression() {
             var first = this.XorExpression();
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
@@ -22,7 +24,7 @@ namespace Helix.Parsing {
 
                 if (branching) {
                     first = new IfSyntax(
-                        loc, 
+                        loc,
                         first,
                         new BoolLiteral(loc, true),
                         second);
@@ -35,7 +37,7 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private ISyntaxTree XorExpression() {
+        private IParseTree XorExpression() {
             var first = this.AndExpression();
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
@@ -48,7 +50,7 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private ISyntaxTree AndExpression() {
+        private IParseTree AndExpression() {
             var first = this.ComparisonExpression();
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
@@ -71,7 +73,7 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private ISyntaxTree ComparisonExpression() {
+        private IParseTree ComparisonExpression() {
             var first = this.AddExpression();
             var comparators = new Dictionary<TokenKind, BinaryOperationKind>() {
                 { TokenKind.Equals, BinaryOperationKind.EqualTo }, { TokenKind.NotEquals, BinaryOperationKind.NotEqualTo },
@@ -102,7 +104,7 @@ namespace Helix.Parsing {
         }
 
 
-        private ISyntaxTree AddExpression() {
+        private IParseTree AddExpression() {
             var first = this.MultiplyExpression();
 
             while (true) {
@@ -121,7 +123,7 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private ISyntaxTree MultiplyExpression() {
+        private IParseTree MultiplyExpression() {
             var first = this.PrefixExpression();
 
             while (true) {
@@ -159,7 +161,30 @@ namespace Helix.Features.Primitives {
         GreaterThanOrEqualTo, LessThanOrEqualTo
     }
 
-    public record BinarySyntax : ISyntaxTree {
+    public record BinarySyntax(
+        TokenLocation Location, 
+        IParseTree Left, 
+        IParseTree Right, 
+        BinaryOperationKind Operation) : IParseTree {
+
+        public ImperativeExpression ToImperativeSyntax(ImperativeSyntaxWriter writer) {
+            var left = this.Left.ToImperativeSyntax(writer);
+            var right = this.Right.ToImperativeSyntax(writer);
+            var v = writer.GetTempVariable();
+            var stat = new BinaryStatement(this.Location, v.Name, left, right, this.Operation);
+
+            writer.AddStatement(stat);
+            return ImperativeExpression.Variable(v);
+        }
+    }
+
+    public record BinaryStatement(
+        TokenLocation Location, 
+        string ResultVariable, 
+        ImperativeExpression Left, 
+        ImperativeExpression Right, 
+        BinaryOperationKind Operation) : IImperativeStatement {
+
         private static readonly Dictionary<BinaryOperationKind, HelixType> intOperations = new() {
             { BinaryOperationKind.Add,                  PrimitiveType.Word },
             { BinaryOperationKind.Subtract,             PrimitiveType.Word },
@@ -185,140 +210,105 @@ namespace Helix.Features.Primitives {
             { BinaryOperationKind.NotEqualTo,           PrimitiveType.Bool },
         };
 
-        private readonly ISyntaxTree left, right;
-        private readonly BinaryOperationKind op;
-        private readonly bool isTypeChecked = false;
+        public void CheckTypes(TypeFrame types, ImperativeSyntaxWriter writer) {
+            var leftType = this.Left.GetReturnType(types);
+            var rightType = this.Right.GetReturnType(types);
 
-        public TokenLocation Location { get; }
+            if (leftType.IsBool(types) && rightType.IsBool(types)) {
+                this.CheckBoolExpresion(this.Left, this.Right, types, writer);
+                return;
+            }
+            else if (leftType.IsInt(types) && rightType.IsInt(types)) {
+                this.CheckIntExpresion(this.Left, this.Right, types, writer);
+                return;
+            }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.left, this.right };
-
-        public bool IsPure { get; }
-
-        public BinarySyntax(TokenLocation loc, ISyntaxTree left, ISyntaxTree right, 
-                            BinaryOperationKind op, bool isTypeChecked = false) {
-            this.Location = loc;
-            this.left = left;
-            this.right = right;
-            this.op = op;
-            this.isTypeChecked = isTypeChecked;
-
-            this.IsPure = this.left.IsPure && this.right.IsPure;
-        }
-
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            var left = this.left.CheckTypes(types).ToRValue(types);
-            var right = this.right.CheckTypes(types).ToRValue(types);
+            var left = this.Left.UnifyFrom(this.Right, types, writer);
+            var right = this.Right.UnifyFrom(this.Left, types, writer);
 
             if (left.GetReturnType(types).IsBool(types) && right.GetReturnType(types).IsBool(types)) {
-                return this.CheckBoolExpresion(left, right, types);
+                this.CheckBoolExpresion(left, right, types, writer);
+                return;
             }
             else if (left.GetReturnType(types).IsInt(types) && right.GetReturnType(types).IsInt(types)) {
-                return this.CheckIntExpresion(left, right, types);
+                this.CheckIntExpresion(left, right, types, writer);
+                return;
             }
-            else {
-                throw TypeException.UnexpectedType(this.right.Location, left.GetReturnType(types));
-            }
+
+            throw TypeException.UnexpectedType(this.Right.Location, left.GetReturnType(types));
         }
 
-        private ISyntaxTree CheckIntExpresion(ISyntaxTree left, ISyntaxTree right, TypeFrame types) {
-            if (!intOperations.TryGetValue(this.op, out var returnType)) {
-                throw TypeException.UnexpectedType(this.left.Location, left.GetReturnType(types));
+        private void CheckIntExpresion(ImperativeExpression left, ImperativeExpression right, 
+                                       TypeFrame types, ImperativeSyntaxWriter writer) {
+
+            if (!intOperations.TryGetValue(this.Operation, out var generalReturnType)) {
+                throw TypeException.UnexpectedType(this.Left.Location, left.GetReturnType(types));
             }
 
             var leftType = left.GetReturnType(types);
             var rightType = right.GetReturnType(types);
 
             if (leftType is SingularWordType singLeft && rightType is SingularWordType singRight) {
-                return this.EvaluateIntExpression(singLeft.Value, singRight.Value, types);
+                var value = this.EvaluateIntExpression(singLeft.Value, singRight.Value, types);
+
+                types.Locals = types.Locals.SetItem(this.ResultVariable, new LocalInfo(value));
             }
+            else {
+                var result = new BinaryStatement(this.Location, this.ResultVariable, left, right, this.Operation);
 
-            left = left.UnifyFrom(right, types);
-            right = right.UnifyFrom(left, types);
-
-            var result = new BinarySyntax(this.Location, left, right, this.op, true);
-
-            SyntaxTagBuilder.AtFrame(types)
-                .WithChildren(left, right)
-                .WithReturnType(returnType)
-                .BuildFor(result);
-
-            return result;
+                types.Locals = types.Locals.SetItem(this.ResultVariable, new LocalInfo(generalReturnType));
+                writer.AddStatement(result);
+            }
         }
 
-        private ISyntaxTree EvaluateIntExpression(long int1, long int2, TypeFrame types) {
-            HelixType returnType;
-
-            switch (this.op) {
+        private HelixType EvaluateIntExpression(long int1, long int2, TypeFrame types) {
+            switch (this.Operation) {
                 case BinaryOperationKind.Add:
-                    returnType = new SingularWordType(int1 + int2);
-                    break;
+                    return new SingularWordType(int1 + int2);
                 case BinaryOperationKind.Subtract:
-                    returnType = new SingularWordType(int1 - int2);
-                    break;
-                case BinaryOperationKind.Multiply:
-                    returnType = new SingularWordType(int1 * int2);
-                    break;
+                    return new SingularWordType(int1 - int2);
                 case BinaryOperationKind.Modulo:
-                    returnType = new SingularWordType(int1 % int2);
-                    break;
+                    return new SingularWordType(int1 % int2);
                 case BinaryOperationKind.FloorDivide:
-                    returnType = new SingularWordType(int1 / int2);
-                    break;
+                    return new SingularWordType(int1 / int2);
                 case BinaryOperationKind.And:
-                    returnType = new SingularWordType(int1 & int2);
-                    break;
+                    return new SingularWordType(int1 & int2);
                 case BinaryOperationKind.Or:
-                    returnType = new SingularWordType(int1 | int2);
-                    break;
+                    return new SingularWordType(int1 | int2);
                 case BinaryOperationKind.Xor:
-                    returnType = new SingularWordType(int1 ^ int2);
-                    break;
+                    return new SingularWordType(int1 ^ int2);
                 case BinaryOperationKind.EqualTo:
-                    returnType = new SingularBoolType(int1 == int2);
-                    break;
+                    return new SingularBoolType(int1 == int2);
                 case BinaryOperationKind.NotEqualTo:
-                    returnType = new SingularBoolType(int1 != int2);
-                    break;
+                    return new SingularBoolType(int1 != int2);
                 case BinaryOperationKind.GreaterThan:
-                    returnType = new SingularBoolType(int1 > int2);
-                    break;
+                    return new SingularBoolType(int1 > int2);
                 case BinaryOperationKind.LessThan:
-                    returnType = new SingularBoolType(int1 < int2);
-                    break;
+                    return new SingularBoolType(int1 < int2);
                 case BinaryOperationKind.GreaterThanOrEqualTo:
-                    returnType = new SingularBoolType(int1 >= int2);
-                    break;
+                    return new SingularBoolType(int1 >= int2);
                 case BinaryOperationKind.LessThanOrEqualTo:
-                    returnType = new SingularBoolType(int1 <= int2);
-                    break;
+                    return new SingularBoolType(int1 <= int2);
                 default:
-                    throw new Exception();
+                    throw new InvalidOperationException();
             }
-
-            var result = returnType.ToSyntax(this.Location, types).GetValue();
-
-            SyntaxTagBuilder.AtFrame(types)
-                // .WithChildren(left, right) <-- Add this back??
-                .WithReturnType(returnType)
-                .BuildFor(result);
-
-            return result;
         }
 
-        private ISyntaxTree CheckBoolExpresion(ISyntaxTree left, ISyntaxTree right, TypeFrame types) {
+        private void CheckBoolExpresion(ImperativeExpression left, ImperativeExpression right, 
+                                        TypeFrame types, ImperativeSyntaxWriter writer) {
+
             var leftType = left.GetReturnType(types);
             var rightType = right.GetReturnType(types);
 
-            if (!boolOperations.TryGetValue(this.op, out var ret)) {
-                throw TypeException.UnexpectedType(this.left.Location, leftType);
+            if (!boolOperations.TryGetValue(this.Operation, out _)) {
+                throw TypeException.UnexpectedType(this.Left.Location, leftType);
             }
 
             var predicate = ISyntaxPredicate.Empty;
             var returnType = PrimitiveType.Bool as HelixType;
 
             if (leftType is PredicateBool leftPred && rightType is PredicateBool rightPred) {
-                switch (this.op) {
+                switch (this.Operation) {
                     case BinaryOperationKind.And:
                         predicate = leftPred.Predicate.And(rightPred.Predicate);
                         break;
@@ -338,23 +328,22 @@ namespace Helix.Features.Primitives {
             }
 
             if (leftType is SingularBoolType singLeft && rightType is SingularBoolType singRight) {
-                return this.EvaluateBoolExpression(singLeft.Value, singRight.Value, predicate, types);
+                var value = this.EvaluateBoolExpression(singLeft.Value, singRight.Value, predicate);
+
+                types.Locals = types.Locals.SetItem(this.ResultVariable, new LocalInfo(value));
             }
+            else {
+                var result = new BinaryStatement(this.Location, this.ResultVariable, left, right, this.Operation);
 
-            var result = new BinarySyntax(this.Location, left, right, this.op, true);
-
-            SyntaxTagBuilder.AtFrame(types)
-                .WithChildren(left, right)
-                .WithReturnType(returnType)
-                .BuildFor(result);
-
-            return result;
+                types.Locals = types.Locals.SetItem(this.ResultVariable, new LocalInfo(returnType));
+                writer.AddStatement(result);
+            }
         }
 
-        private ISyntaxTree EvaluateBoolExpression(bool b1, bool b2, ISyntaxPredicate pred, TypeFrame types) {
+        private HelixType EvaluateBoolExpression(bool b1, bool b2, ISyntaxPredicate pred) {
             bool value;
 
-            switch (this.op) {
+            switch (this.Operation) {
                 case BinaryOperationKind.And:
                     value = b1 & b2;
                     break;
@@ -372,47 +361,29 @@ namespace Helix.Features.Primitives {
                     throw new Exception();
             }
 
-            var returnType = new SingularBoolType(value, pred);
-            var result = returnType.ToSyntax(this.Location, types).GetValue();
-
-            SyntaxTagBuilder.AtFrame(types)
-                .WithReturnType(returnType)
-                .BuildFor(result);
-
-            return result;
+            return new SingularBoolType(value, pred);            
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            if (!this.isTypeChecked) {
-                throw TypeException.RValueRequired(this.Location);
-            }
-
-            return this;
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            return new CBinaryExpression() {
-                Left = this.left.GenerateCode(types, writer),
-                Right = this.right.GenerateCode(types, writer),
-                Operation = this.op
-            };
-        }
-
-        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
-            var left = this.left.GenerateHelixMinusMinus(types, writer);
-            var right = this.right.GenerateHelixMinusMinus(types, writer);
-            var v = writer.GetTempVariable(this.GetReturnType(types));
-
-            var stat = new BinaryStatement() {
-                ResultVariable = v,
-                Left = left,
-                Right = right,
-                Operation = this.op,
-                Location = this.Location
+        public string[] Write() {
+            var op = this.Operation switch {
+                BinaryOperationKind.Add => "+",
+                BinaryOperationKind.And => "&",
+                BinaryOperationKind.EqualTo => "==",
+                BinaryOperationKind.GreaterThan => ">",
+                BinaryOperationKind.GreaterThanOrEqualTo => ">=",
+                BinaryOperationKind.LessThan => "<",
+                BinaryOperationKind.LessThanOrEqualTo => "<=",
+                BinaryOperationKind.Multiply => "*",
+                BinaryOperationKind.NotEqualTo => "!=",
+                BinaryOperationKind.Or => "|",
+                BinaryOperationKind.Subtract => "-",
+                BinaryOperationKind.Xor => "^",
+                BinaryOperationKind.Modulo => "%",
+                BinaryOperationKind.FloorDivide => "/",
+                _ => throw new Exception()
             };
 
-            writer.AddStatement(stat);
-            return HmmValue.Variable(v);
+            return new[] { $"var {this.ResultVariable} = {this.Left} {op} {this.Right};" };
         }
     }
 }

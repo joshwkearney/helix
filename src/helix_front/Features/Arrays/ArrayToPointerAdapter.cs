@@ -1,4 +1,5 @@
-﻿using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis;
 using Helix.Analysis.Types;
@@ -7,16 +8,15 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 
-namespace Helix.Features.Arrays
-{
-    public record ArrayToPointerAdapter : ISyntaxTree {
+namespace Helix.Features.Arrays {
+    public record ArrayToPointerAdapter : IParseTree {
         private readonly ArrayType arrayType;
-        private readonly ISyntaxTree target;
-        private readonly ISyntaxTree offset = null;
+        private readonly IParseTree target;
+        private readonly IParseTree offset = null;
 
         public TokenLocation Location => this.target.Location;
 
-        public IEnumerable<ISyntaxTree> Children {
+        public IEnumerable<IParseTree> Children {
             get {
                 yield return this.target;
 
@@ -28,7 +28,7 @@ namespace Helix.Features.Arrays
 
         public bool IsPure { get; }
 
-        public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target, ISyntaxTree offset) {
+        public ArrayToPointerAdapter(ArrayType arrayType, IParseTree target, IParseTree offset) {
             this.arrayType = arrayType;
             this.target = target;
             this.offset = offset;
@@ -36,59 +36,9 @@ namespace Helix.Features.Arrays
             this.IsPure = target.IsPure && offset.IsPure;
         }
 
-        public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target)
+        public ArrayToPointerAdapter(ArrayType arrayType, IParseTree target)
             : this(arrayType, target, new WordLiteral(target.Location, 0)) { }
 
-        ISyntaxTree ISyntaxTree.ToRValue(TypeFrame types) => this;
-
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (this.IsTypeChecked(types)) {
-                return this;
-            }
-
-            SyntaxTagBuilder.AtFrame(types)
-                .WithChildren(this.target, this.offset)
-                .WithReturnType(new PointerType(this.arrayType.InnerType))
-                .BuildFor(this);
-
-            return this;
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            var target = this.target.GenerateCode(types, writer);
-
-            ICSyntax newData = new CMemberAccess() {
-                Target = target,
-                MemberName = "data"
-            };
-
-            if (this.offset != null) {
-                newData = new CBinaryExpression() {
-                    Left = newData,
-                    Right = this.offset.GenerateCode(types, writer),
-                    Operation = BinaryOperationKind.Add
-                };
-            }
-
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.Location.Line}: Array to pointer conversion");
-
-            var ptrType = writer.ConvertType(new PointerType(this.arrayType.InnerType), types);
-            var ptrValue = new CCompoundExpression() {
-                Arguments = new[] {
-                    newData,
-                    new CMemberAccess() {
-                        Target = target,
-                        MemberName = "region"
-                    }
-                },
-                Type = ptrType
-            };
-
-            var result = writer.WriteImpureExpression(ptrType, ptrValue);
-            writer.WriteEmptyLine();
-
-            return result;
-        }
+        IParseTree IParseTree.ToRValue(TypeFrame types) => this;
     }
 }

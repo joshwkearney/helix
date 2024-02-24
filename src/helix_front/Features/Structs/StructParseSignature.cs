@@ -2,9 +2,9 @@
 using Helix.Syntax;
 using Helix.Parsing;
 using Helix.Analysis.Types;
+using Helix.Analysis;
 
-namespace Helix.Features.Aggregates
-{
+namespace Helix.Features.Aggregates {
     public record StructParseSignature {
         public string Name { get; }
 
@@ -36,11 +36,11 @@ namespace Helix.Features.Aggregates
     public record ParseStructMember {
         public string MemberName { get; }
 
-        public ISyntaxTree MemberType { get; }
+        public IParseTree MemberType { get; }
 
         public TokenLocation Location { get; }
 
-        public ParseStructMember(TokenLocation loc, string name, ISyntaxTree type) {
+        public ParseStructMember(TokenLocation loc, string name, IParseTree type) {
             this.Location = loc;
             this.MemberName = name;
             this.MemberType = type;

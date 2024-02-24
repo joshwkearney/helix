@@ -5,7 +5,7 @@ using Helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree ForStatement() {
+        private IParseTree ForStatement() {
             var startTok = this.Advance(TokenKind.ForKeyword);
             var id = this.Advance(TokenKind.Identifier);
 
@@ -20,22 +20,22 @@ namespace Helix.Parsing {
 
             var endIndex = this.TopExpression();
 
-            startIndex = new AsParseTree(
+            startIndex = new AsParseSyntax(
                 startIndex.Location,
                 startIndex,
                 new VariableAccessParseSyntax(startIndex.Location, "word"));
 
-            endIndex = new AsParseTree(
+            endIndex = new AsParseSyntax(
                 endIndex.Location,
                 endIndex,
                 new VariableAccessParseSyntax(endIndex.Location, "word"));
 
             var counterName = id.Value;
 
-            var counterDecl = new VarParseStatement(
+            var counterDecl = new VariableParseStatement(
                 startTok.Location, 
                 new[] { counterName }, 
-                new Option<ISyntaxTree>[] { Option.None }, 
+                new Option<IParseTree>[] { Option.None }, 
                 startIndex);
 
             var counterAccess = new VariableAccessParseSyntax(startTok.Location, counterName);
@@ -49,8 +49,6 @@ namespace Helix.Parsing {
                     new WordLiteral(startTok.Location, 1),
                     BinaryOperationKind.Add));
 
-            var totalBlock = new List<ISyntaxTree> { counterDecl };
-            var loopBlock = new List<ISyntaxTree>();
             var loc = startTok.Location.Span(endIndex.Location);
 
             var test = new IfSyntax(
@@ -64,8 +62,6 @@ namespace Helix.Parsing {
                         : BinaryOperationKind.GreaterThanOrEqualTo),
                 new BreakContinueSyntax(loc, true));
 
-            loopBlock.Add(test);
-
             if (!this.Peek(TokenKind.OpenBrace)) {
                 this.Advance(TokenKind.Yields);
             }
@@ -73,13 +69,12 @@ namespace Helix.Parsing {
             var body = this.TopExpression();
             loc = loc.Span(body.Location);
 
-            loopBlock.Add(body);
-            loopBlock.Add(counterInc);
+            var loopBlock = new BlockSyntax(test, new BlockSyntax(body, counterInc));
 
-            var loop = new LoopStatement(loc, new BlockSyntax(loc, loopBlock));
-            totalBlock.Add(loop);
+            var loop = new LoopStatement(loc, loopBlock);
+            var totalBlock = new BlockSyntax(counterDecl, loop);
 
-            return new BlockSyntax(loc, totalBlock);
+            return totalBlock;
         }
     }
 }

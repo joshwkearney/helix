@@ -1,10 +1,10 @@
-﻿using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Collections;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Analysis.Predicates
-{
+namespace Helix.Analysis.Predicates {
     public class PredicatePolynomial : ISyntaxPredicate {
         public ValueSet<ISyntaxPredicate> Operands { get; }
 
@@ -17,7 +17,10 @@ namespace Helix.Analysis.Predicates
         }
 
         public override ISyntaxPredicate And(ISyntaxPredicate other) {
-            if (other is PredicateTerm term) {
+            if (other == Empty) {
+                return this;
+            }
+            else if (other is PredicateTerm term) {
                 return term.And(this);
             }
             else {
@@ -26,7 +29,10 @@ namespace Helix.Analysis.Predicates
         }
 
         public override ISyntaxPredicate Or(ISyntaxPredicate other) {
-            if (other is PredicatePolynomial poly) {
+            if (other == Empty) {
+                return this;
+            }
+            else if (other is PredicatePolynomial poly) {
                 return poly.Operands.Aggregate((ISyntaxPredicate)this, (x, y) => x.Or(y));
             }
             else if (other is PredicateTerm term) {
@@ -58,12 +64,12 @@ namespace Helix.Analysis.Predicates
             return new PredicateTerm(ops);
         }
 
-        public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
+        public override IParseTree Apply(IParseTree syntax, TypeFrame types) {
             if (this.Operands.Count == 1) {
-                return this.Operands.First().ApplyToTypes(loc, types);
+                return this.Operands.First().Apply(syntax, types);
             }
 
-            return Array.Empty<ISyntaxTree>();
+            return syntax;
         }
 
         public override bool Equals(ISyntaxPredicate other) {
@@ -87,6 +93,10 @@ namespace Helix.Analysis.Predicates
 
         public override string ToString() {
             return "(" + string.Join(" or ", this.Operands) + ")";
+        }
+
+        public override bool Test(ISyntaxPredicate other) {
+            return this.Operands.All(x => x.Test(other));
         }
     }
 }

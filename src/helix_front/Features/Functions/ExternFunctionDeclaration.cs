@@ -5,12 +5,12 @@ using Helix.Features.Functions;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Syntax;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
 using Helix.Analysis;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
         private IDeclaration ExternFunctionDeclaration() {
             var start = this.Advance(TokenKind.ExternKeyword);
@@ -23,8 +23,7 @@ namespace Helix.Parsing
     }
 }
 
-namespace Helix.Features.Functions
-{
+namespace Helix.Features.Functions {
     public record ExternFunctionParseDeclaration : IDeclaration {
         public TokenLocation Location { get; }
 
@@ -49,20 +48,11 @@ namespace Helix.Features.Functions
             var named = new NominalType(path, NominalTypeKind.Function);
 
             // Replace the temporary wrapper object with a full declaration
-            types.Locals = types.Locals.SetItem(path, named);
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
 
             // Declare this function
-            types.NominalSignatures.Add(path, sig);
+            types.Locals = types.Locals.Add(path, new LocalInfo(sig));
         }
-
-        public IDeclaration CheckTypes(TypeFrame types) {
-            var path = types.Scope.Append(this.Signature.Name);
-            var sig = new NominalType(path, NominalTypeKind.Function).AsFunction(types).GetValue();
-
-            return new ExternFunctionDeclaration(this.Location, sig, path);
-        }
-
-        public void GenerateCode(TypeFrame types, ICWriter writer) => throw new InvalidOperationException();
     }
 
     public record ExternFunctionDeclaration : IDeclaration {
@@ -84,36 +74,6 @@ namespace Helix.Features.Functions
 
         public void DeclareTypes(TypeFrame types) {
             throw new InvalidOperationException();
-        }
-
-        public IDeclaration CheckTypes(TypeFrame types) => this;
-
-        public void GenerateCode(TypeFrame types, ICWriter writer) {
-            var returnType = this.Signature.ReturnType == PrimitiveType.Void
-                ? new CNamedType("void")
-                : writer.ConvertType(this.Signature.ReturnType, types);
-
-            var pars = this.Signature
-                .Parameters
-                .Select((x, i) => new CParameter() {
-                    Type = writer.ConvertType(x.Type, types),
-                    Name = writer.GetVariableName(this.Path.Append(x.Name))
-                })
-                .Prepend(new CParameter() {
-                    Name = "_region",
-                    Type = new CNamedType("int")
-                })
-                .ToArray();
-
-            var funcName = writer.GetVariableName(this.Path);
-
-            var forwardDecl = new CFunctionDeclaration() {
-                ReturnType = returnType,
-                Name = funcName,
-                Parameters = pars
-            };
-
-            writer.WriteDeclaration2(forwardDecl);
         }
     }
 }

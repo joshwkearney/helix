@@ -1,5 +1,9 @@
 ﻿using Helix;
+using Helix.Analysis.Flow;
 using Helix.Analysis.Predicates;
+using Helix.Analysis.TypeChecking;
+using Helix.Parsing;
+using Helix.Syntax;
 
 var header = File.ReadAllText("../../../../../Resources/Helix.h");
 var contents = File.ReadAllText("../../../../../Resources/Program.helix");
@@ -22,42 +26,3 @@ catch (HelixException ex) {
 }
 
 Console.Read();
-
-
-public class DummyTerm : ISyntaxPredicate {
-    public string Name { get; init; }
-
-    public bool IsNegated { get; init; }
-
-    public DummyTerm(string name) {
-        this.Name = name;
-    }
-
-    public override ISyntaxPredicate Negate() {
-        return new DummyTerm(this.Name) {
-            IsNegated = !this.IsNegated
-        };
-    }
-
-    public override bool Equals(ISyntaxPredicate other) {
-        if (other is DummyTerm dummy) {
-            return dummy.Name == this.Name && dummy.IsNegated == this.IsNegated;
-        }
-
-        return false;
-    }
-
-    public override bool Equals(object other) {
-        if (other is DummyTerm dummy) {
-            return dummy.Name == this.Name && dummy.IsNegated == this.IsNegated;
-        }
-
-        return false;
-    }
-
-    public override int GetHashCode() => this.Name.GetHashCode() * 11 * this.IsNegated.GetHashCode();
-
-    public override string ToString() {
-        return (this.IsNegated ? "!" : "") + this.Name;
-    }
-}

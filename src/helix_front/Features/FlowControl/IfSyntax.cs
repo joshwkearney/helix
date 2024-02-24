@@ -5,14 +5,19 @@ using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
+using System.Reflection;
+using Helix.Features.Variables;
+using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Collections;
 using Helix.Analysis.Predicates;
 using Helix.HelixMinusMinus;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
-        private ISyntaxTree IfExpression() {
+        private IParseTree IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
             var cond = this.TopExpression();
 
@@ -34,211 +39,78 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.FlowControl {
-    public record IfSyntax : ISyntaxTree {
+namespace Helix.Features.FlowControl
+{
+    public record IfSyntax : IParseTree {
         private static int ifTempCounter = 0;
 
-        private readonly ISyntaxTree cond, iftrue, iffalse;
+        private readonly IParseTree cond, iftrue, iffalse;
         private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
+        public IEnumerable<IParseTree> Children => new[] { this.cond, this.iftrue, this.iffalse };
 
         public bool IsPure { get; }
 
+        public bool IsStatement => true;
+
         public IfSyntax(
             TokenLocation location,
-            ISyntaxTree cond,
-            ISyntaxTree iftrue) {
+            IParseTree cond,
+            IParseTree iftrue) {
 
             this.Location = location;
             this.cond = cond;
 
-            this.iftrue = new BlockSyntax(iftrue.Location, new ISyntaxTree[] {
-                iftrue, new VoidLiteral(iftrue.Location)
-            });
+            this.iftrue = new BlockSyntax(
+                iftrue, 
+                new VoidLiteral(iftrue.Location)
+            );
 
             this.iffalse = new VoidLiteral(location);
             this.IsPure = cond.IsPure && iftrue.IsPure;
             this.path = new IdentifierPath("$if" + ifTempCounter++);
         }
 
-        public IfSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue,
-                        ISyntaxTree iffalse) 
+        public IfSyntax(TokenLocation location, IParseTree cond, IParseTree iftrue,
+                        IParseTree iffalse) 
             : this(location, cond, iftrue, iffalse, new IdentifierPath("$if" + ifTempCounter++)) {}
 
-        public IfSyntax(TokenLocation location, ISyntaxTree cond, ISyntaxTree iftrue,
-                        ISyntaxTree iffalse, IdentifierPath path) 
+        public IfSyntax(TokenLocation location, IParseTree cond, IParseTree iftrue,
+                        IParseTree iffalse, IdentifierPath path) 
             : this(location, cond, iftrue) {
 
             this.Location = location;
             this.cond = cond;
+
             this.iftrue = iftrue;
             this.iffalse = iffalse;
+            
             this.path = path;
             this.IsPure = cond.IsPure && iftrue.IsPure && iffalse.IsPure;
         }
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (this.IsTypeChecked(types)) {
-                return this;
-            }
+        public ImperativeExpression ToImperativeSyntax(ImperativeSyntaxWriter writer) {
+            var ifTrueWriter = new ImperativeSyntaxWriter(writer);
+            var ifFalseWriter = new ImperativeSyntaxWriter(writer);
 
-            var cond = this.cond.CheckTypes(types).ToRValue(types);
-            var condPredicate = ISyntaxPredicate.Empty;
-
-            if (cond.GetReturnType(types) is PredicateBool predBool) {
-                condPredicate = predBool.Predicate;
-            }
-
-            cond = cond.UnifyTo(PrimitiveType.Bool, types);
-
-            var name = this.path.Segments.Last();
-            var iftrueTypes = new TypeFrame(types, name + "T");
-            var iffalseTypes = new TypeFrame(types, name + "F");
-
-            var ifTruePrepend = condPredicate.ApplyToTypes(this.cond.Location, iftrueTypes);
-            var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.cond.Location, iffalseTypes);
-
-            ISyntaxTree iftrue = new BlockSyntax(this.iftrue.Location, ifTruePrepend.Append(this.iftrue).ToArray());
-            ISyntaxTree iffalse = new BlockSyntax(this.iffalse.Location, ifFalsePrepend.Append(this.iffalse).ToArray());
-
-            iftrue = iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
-            iffalse = iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
-
-            iftrue = iftrue.UnifyFrom(iffalse, types);
-            iffalse = iffalse.UnifyFrom(iftrue, types);
-
-            var resultType = iftrue.GetReturnType(types);
-
-            var result = new IfSyntax(
-                this.Location,
-                cond,
-                iftrue,
-                iffalse,
-                types.Scope.Append(name));
-
-            SyntaxTagBuilder.AtFrame(types)
-                .WithChildren(cond, iftrue, iffalse)
-                .WithReturnType(resultType)
-                .BuildFor(result);
-
-            return result;
-        }
-
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            if (!this.IsTypeChecked(types)) {
-                throw new InvalidOperationException();
-            }
-
-            return this;
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            var affirmList = new List<ICStatement>();
-            var negList = new List<ICStatement>();
-
-            var affirmWriter = new CStatementWriter(writer, affirmList);
-            var negWriter = new CStatementWriter(writer, negList);
-
-            var affirm = this.iftrue.GenerateCode(types, affirmWriter);
-            var neg = this.iffalse.GenerateCode(types, negWriter);
-
-            var tempName = writer.GetVariableName();
-            var returnType = this.GetReturnType(types);
-
-            if (returnType != PrimitiveType.Void) {
-                affirmWriter.WriteStatement(new CAssignment() {
-                    Left = new CVariableLiteral(tempName),
-                    Right = affirm
-                });
-
-                negWriter.WriteStatement(new CAssignment() {
-                    Left = new CVariableLiteral(tempName),
-                    Right = neg
-                });
-            }
-
-            var tempStat = new CVariableDeclaration() {
-                Type = writer.ConvertType(returnType, types),
-                Name = tempName
-            };
-
-            if (affirmList.Any() && affirmList.Last().IsEmpty) {
-                affirmList.RemoveAt(affirmList.Count - 1);
-            }
-
-            if (negList.Any() && negList.Last().IsEmpty) {
-                negList.RemoveAt(negList.Count - 1);
-            }
-
-            var expr = new CIf() {
-                Condition = this.cond.GenerateCode(types, writer),
-                IfTrue = affirmList,
-                IfFalse = negList
-            };
-
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.cond.Location.Line}: If statement");
-
-            // Don't bother writing the temp variable if we are returning void
-            if (returnType != PrimitiveType.Void) {
-                writer.WriteStatement(tempStat);
-            }
-
-            writer.WriteStatement(expr);
-            writer.WriteEmptyLine();
-
-            if (returnType != PrimitiveType.Void) {
-                return new CVariableLiteral(tempName);
-            }
-            else {
-                return new CIntLiteral(0);
-            }
-        }
-
-        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
-            var ifTrueWriter = new HmmWriter(writer);
-            var ifFalseWriter = new HmmWriter(writer);
-
-            var variable = writer.GetTempVariable(this.GetReturnType(types));
-            var cond = this.iftrue.GenerateHelixMinusMinus(types, writer);
-            var ifTrue = this.iftrue.GenerateHelixMinusMinus(types, ifTrueWriter);
-            var ifFalse = this.iffalse.GenerateHelixMinusMinus(types, ifTrueWriter);
-
-            if (variable.Type != PrimitiveType.Void) {
-                ifTrueWriter.AddStatement(new HmmAssignment() {
-                    Location = this.Location,
-                    Variable = variable,
-                    Value = ifTrue
-                });
-
-                ifFalseWriter.AddStatement(new HmmAssignment() {
-                    Location = this.Location,
-                    Variable = variable,
-                    Value = ifFalse
-                });
-
-                writer.AddStatement(new HmmVariableStatement() {
-                    Location = this.Location,
-                    Variable = variable
-                });
-            }
+            var variable = writer.GetTempVariable();
+            var cond = this.cond.ToImperativeSyntax(writer);
+            var ifTrue = this.iftrue.ToImperativeSyntax(ifTrueWriter);
+            var ifFalse = this.iffalse.ToImperativeSyntax(ifFalseWriter);
 
             writer.AddStatement(new HmmIfStatement() {
                 Location = this.Location,
                 Condition = cond,
                 TrueStatements = ifTrueWriter.Statements,
-                FalseStatements = ifFalseWriter.Statements
+                FalseStatements = ifFalseWriter.Statements,
+                ResultVariable = variable,
+                TrueValue = ifTrue,
+                FalseValue = ifFalse
             });
 
-            if (variable.Type == PrimitiveType.Void) {
-                return HmmValue.Void;
-            }
-            else {
-                return variable;
-            }
+            return variable;
         }
     }
 }

@@ -2,32 +2,32 @@
 using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Parsing;
+using Helix.Analysis;
 
-namespace Helix.Features.Arrays
-{
-    public record ArrayTypeSyntax : ISyntaxTree {
-        private readonly ISyntaxTree inner;
+namespace Helix.Features.Arrays {
+    public record ArrayTypeSyntax : IParseTree {
+        private readonly IParseTree inner;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children {
+        public IEnumerable<IParseTree> Children {
             get => new[] { this.inner };
         }
 
         public bool IsPure => this.inner.IsPure;
 
-        public ArrayTypeSyntax(TokenLocation loc, ISyntaxTree inner) {
+        public ArrayTypeSyntax(TokenLocation loc, IParseTree inner) {
             this.Location = loc;
             this.inner = inner;
         }
 
-        Option<HelixType> ISyntaxTree.AsType(TypeFrame types) {
+        Option<HelixType> IParseTree.AsType(TypeFrame types) {
             return this.inner
                 .AsType(types)
                 .Select(x => new ArrayType(x))
                 .Select(x => (HelixType)x);
         }
 
-        public ISyntaxTree CheckTypes(TypeFrame types) => this;
+        public IParseTree CheckTypes(TypeFrame types) => this;
     }
 }

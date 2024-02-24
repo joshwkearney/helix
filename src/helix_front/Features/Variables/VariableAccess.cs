@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
@@ -8,11 +9,12 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Features.Functions;
+using System.IO;
+using Helix.HelixMinusMinus;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree VariableAccess() {
+        private IParseTree VariableAccess() {
             var tok = this.Advance(TokenKind.Identifier);
 
             return new VariableAccessParseSyntax(tok.Location, tok.Value);
@@ -20,144 +22,32 @@ namespace Helix.Parsing
     }
 }
 
-namespace Helix.Features.Variables
-{
-    public record VariableAccessParseSyntax : ISyntaxTree {
-        public string Name { get; }
-
-        public TokenLocation Location { get; }
-
-        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
-
-        public bool IsPure => true;
-
-        public VariableAccessParseSyntax(TokenLocation location, string name) {
-            this.Location = location;
-            this.Name = name;
-        }
-
+namespace Helix.Features.Variables {
+    public record VariableAccessParseSyntax(TokenLocation Location, string VariableName) : IParseTree {
         public Option<HelixType> AsType(TypeFrame types) {
             // If we're pointing at a type then return it
-            if (types.TryResolveName(types.Scope, this.Name, out var type)) {
-                return type;
+            if (types.Locals.TryGetValue(this.VariableName, out var info)) {
+                return info.Type;
             }
 
             return Option.None;
         }
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            // Make sure this name exists
-            if (!types.TryResolvePath(types.Scope, this.Name, out var path)) {
-                throw TypeException.VariableUndefined(this.Location, this.Name);
-            }
+        public ImperativeExpression ToImperativeSyntax(ImperativeSyntaxWriter writer) {
+            var stat = new VariableAccessStatement(this.Location, this.VariableName);
 
-            if (path == new IdentifierPath("void")) {
-                return new VoidLiteral(this.Location).CheckTypes(types);
-            }
-
-            // See if we are accessing a variable
-            if (types.TryGetVariable(path, out var type)) {
-                return new VariableAccessSyntax(this.Location, path, type).CheckTypes(types);
-            }
-
-            // See if we are accessing a function
-            if (types.TryGetFunction(path, out var _)) {
-                return new FunctionAccessSyntax(this.Location, path).CheckTypes(types);
-            }
-
-            throw TypeException.VariableUndefined(this.Location, this.Name);
+            writer.AddStatement(stat);
+            return ImperativeExpression.Variable(this.VariableName);
         }
     }
 
-    public record VariableAccessSyntax : ISyntaxTree {
-        private readonly bool isLValue;
-
-        public PointerType VariableSignature { get; }
-
-        public IdentifierPath VariablePath { get; }
-
-        public TokenLocation Location { get; }
-
-        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
-
-        public bool IsPure => true;
-
-        public VariableAccessSyntax(TokenLocation loc, IdentifierPath path, PointerType sig, bool isLValue = false) {
-            this.Location = loc;
-            this.VariableSignature = sig;
-            this.VariablePath = path;
-            this.isLValue = isLValue;
-        }
-
-        public virtual ISyntaxTree CheckTypes(TypeFrame types) {
-            if (this.IsTypeChecked(types)) {
-                return this;
+    public record VariableAccessStatement(TokenLocation Location, string VariableName) : IImperativeStatement {
+        public void CheckTypes(TypeFrame types, ImperativeSyntaxWriter writer) {
+            if (!types.TryGetVariable(this.VariableName, out _)) {
+                throw TypeException.VariableUndefined(this.Location, this.VariableName);
             }
-
-            var cap = new VariableCapture(
-                this.VariablePath,
-                VariableCaptureKind.ValueCapture,
-                this.VariableSignature);
-
-            SyntaxTagBuilder.AtFrame(types)
-                .WithReturnType(this.VariableSignature.InnerType)
-                .WithCapturedVariables(cap)
-                .BuildFor(this);
-
-            return this;
         }
 
-        public virtual ISyntaxTree ToLValue(TypeFrame types) {
-            ISyntaxTree result = new VariableAccessSyntax(
-                this.Location,
-                this.VariablePath,
-                this.VariableSignature,
-                true);
-            
-            result = result.CheckTypes(types);
-
-            var captured = new VariableCapture(
-                this.VariablePath,
-                VariableCaptureKind.LocationCapture,
-                this.VariableSignature);
-
-            SyntaxTagBuilder.AtFrame(types, result)
-                .WithReturnType(new NominalType(this.VariablePath, NominalTypeKind.Variable))
-                .WithCapturedVariables(captured)
-                .BuildFor(result);
-
-            return result;
-        }
-
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            var hasSingularValue = types.Locals[this.VariablePath]
-                .AsVariable(types)
-                .SelectMany(x => x.InnerType.ToSyntax(this.Location, types))
-                .TryGetValue(out var singularSyntax);
-
-            if (hasSingularValue) {
-                return singularSyntax.CheckTypes(types);
-            }
-
-            return this;
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            ICSyntax result = new CVariableLiteral(writer.GetVariableName(this.VariablePath));
-
-            if (writer.VariableKinds[this.VariablePath] == CVariableKind.Allocated) {
-                result = new CPointerDereference() {
-                    Target = result
-                };
-            }
-
-            if (this.isLValue) {
-                result = new CAddressOf() {
-                    Target = result
-                };
-            }
-
-            return result;
-        }
+        public string[] Write() { return Array.Empty<string>(); }
     }
 }

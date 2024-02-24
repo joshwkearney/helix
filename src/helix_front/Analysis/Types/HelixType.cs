@@ -1,9 +1,11 @@
-﻿using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
+using Helix.Generation;
+using Helix.Generation.Syntax;
 using Helix.Parsing;
 
-namespace Helix.Analysis.Types
-{
+namespace Helix.Analysis.Types {
     public enum UnificationKind {
         None,
         Pun,
@@ -12,7 +14,9 @@ namespace Helix.Analysis.Types
     }
 
     public enum PassingSemantics {
-        ValueType, ContainsReferenceType, ReferenceType
+        ValueType, 
+        ContainsReferenceType, 
+        ReferenceType
     }
 
     public static partial class TypeExtensions {
@@ -42,11 +46,11 @@ namespace Helix.Analysis.Types
     public abstract record HelixType { 
         public abstract PassingSemantics GetSemantics(TypeFrame types);
 
-        public abstract HelixType GetMutationSupertype(TypeFrame types);
+        public abstract HelixType GetMutationSupertype(TypeFrame types); 
 
-        public abstract HelixType GetSignatureSupertype(TypeFrame types);
+        public abstract HelixType GetSignature(TypeFrame types);
 
-        public virtual Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+        public virtual Option<IParseTree> ToSyntax(TokenLocation loc, TypeFrame types) {
             return Option.None;
         }
 

@@ -1,8 +1,8 @@
-﻿using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 
-namespace Helix.Features.Types
-{
+namespace Helix.Features.Types {
     public record FunctionType : HelixType {
         public HelixType ReturnType { get; }
 
@@ -19,7 +19,7 @@ namespace Helix.Features.Types
 
         public override HelixType GetMutationSupertype(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
+        public override HelixType GetSignature(TypeFrame types) => this;
     }
 
     public record FunctionParameter {

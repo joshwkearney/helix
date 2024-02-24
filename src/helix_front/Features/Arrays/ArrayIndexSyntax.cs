@@ -8,7 +8,7 @@ using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        public ISyntaxTree ArrayExpression(ISyntaxTree start) {
+        public IParseTree ArrayExpression(IParseTree start) {
             this.Advance(TokenKind.OpenBracket);
 
             if (this.Peek(TokenKind.CloseBracket)) {
@@ -29,52 +29,22 @@ namespace Helix.Parsing {
 }
 
 namespace Helix.Features.Arrays {
-    public record ArrayIndexSyntax : ISyntaxTree {
-        private readonly ISyntaxTree target;
-        private readonly ISyntaxTree index;
+    public record ArrayIndexSyntax : IParseTree {
+        private readonly IParseTree target;
+        private readonly IParseTree index;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.target, this.index };
+        public IEnumerable<IParseTree> Children => new[] { this.target, this.index };
 
         public bool IsPure { get; }
 
-        public ArrayIndexSyntax(TokenLocation loc, ISyntaxTree target, ISyntaxTree index) {
+        public ArrayIndexSyntax(TokenLocation loc, IParseTree target, IParseTree index) {
             this.Location = loc;
             this.target = target;
             this.index = index;
 
             this.IsPure = this.target.IsPure && this.index.IsPure;
-        }
-
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (this.IsTypeChecked(types)) {
-                return this;
-            }
-
-            var target = this.target
-                .CheckTypes(types)
-                .ToRValue(types);
-
-            var index = this.index
-                .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(PrimitiveType.Word, types);
-
-            // Make sure we have an array
-            if (target.GetReturnType(types) is not ArrayType arrayType) {
-                throw TypeException.ExpectedArrayType(
-                    this.target.Location, 
-                    target.GetReturnType(types));
-            }
-
-            var adapter = new ArrayToPointerAdapter(arrayType, target, index);
-
-            var deref = new DereferenceParseSyntax(
-                this.Location,
-                adapter);
-
-            return deref.CheckTypes(types);
         }
     }
 }

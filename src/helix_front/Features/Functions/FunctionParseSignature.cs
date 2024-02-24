@@ -2,11 +2,11 @@
 using Helix.Syntax;
 using Helix.Parsing;
 using Helix.Features.Types;
+using Helix.Analysis;
 
-namespace Helix.Features.Functions
-{
+namespace Helix.Features.Functions {
     public record FunctionParseSignature {
-        public ISyntaxTree ReturnType { get; }
+        public IParseTree ReturnType { get; }
 
         public string Name { get; }
 
@@ -14,7 +14,7 @@ namespace Helix.Features.Functions
 
         public TokenLocation Location { get; }
 
-        public FunctionParseSignature(TokenLocation loc, string name, ISyntaxTree returnType, IReadOnlyList<ParseFunctionParameter> pars) {
+        public FunctionParseSignature(TokenLocation loc, string name, IParseTree returnType, IReadOnlyList<ParseFunctionParameter> pars) {
             this.Location = loc;
             this.ReturnType = returnType;
             this.Name = name;
@@ -43,11 +43,11 @@ namespace Helix.Features.Functions
     public record ParseFunctionParameter {
         public string Name { get; }
 
-        public ISyntaxTree Type { get; }
+        public IParseTree Type { get; }
 
         public TokenLocation Location { get; }
 
-        public ParseFunctionParameter(TokenLocation loc, string name, ISyntaxTree type) {
+        public ParseFunctionParameter(TokenLocation loc, string name, IParseTree type) {
             this.Location = loc;
             this.Name = name;
             this.Type = type;

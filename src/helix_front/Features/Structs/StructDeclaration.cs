@@ -5,11 +5,11 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Types;
 using Helix.Syntax;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
         private IDeclaration StructDeclaration() {
             var start = this.Advance(TokenKind.StructKeyword);
@@ -60,33 +60,14 @@ namespace Helix.Features.Aggregates {
             var path = types.Scope.Append(this.signature.Name);
             var named = new NominalType(path, NominalTypeKind.Struct);
 
-            types.Locals = types.Locals.SetItem(path, named);
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
         }
 
         public void DeclareTypes(TypeFrame types) {
             var path = types.Scope.Append(this.signature.Name);
             var sig = this.signature.ResolveNames(types);
 
-            types.NominalSignatures.Add(path, sig);
-        }
-
-        public IDeclaration CheckTypes(TypeFrame types) {
-            var path = types.Scope.Append(this.signature.Name);
-            var named = new NominalType(path, NominalTypeKind.Struct);
-            var sig = named.AsStruct(types).GetValue();
-
-            var isRecursive = sig.Members
-                .Select(x => x.Type)
-                .Where(x => x.IsValueType(types))
-                .SelectMany(x => x.GetAccessibleTypes(types))
-                .Contains(named);
-
-            // Make sure this is not a recursive struct or union
-            if (isRecursive) {
-                throw TypeException.CircularValueObject(this.Location, named);
-            }
-
-            return new StructDeclaration(this.Location, sig, path);
+            types.Locals = types.Locals.Add(path, new LocalInfo(sig));
         }
     }
 
@@ -105,34 +86,5 @@ namespace Helix.Features.Aggregates {
         public void DeclareNames(TypeFrame types) { }
 
         public void DeclareTypes(TypeFrame types) { }
-
-        public IDeclaration CheckTypes(TypeFrame types) => this;
-
-        public void GenerateCode(TypeFrame types, ICWriter writer) {
-            var name = writer.GetVariableName(this.path);
-
-            var mems = this.signature.Members
-                .Select(x => new CParameter() {
-                    Type = writer.ConvertType(x.Type, types),
-                    Name = x.Name
-                })
-                .ToArray();
-
-            var prototype = new CAggregateDeclaration() {
-                Name = name
-            };
-
-            var fullDeclaration = new CAggregateDeclaration() {
-                Name = name,
-                Members = mems
-            };
-
-            // Write forward declaration
-            writer.WriteDeclaration1(prototype);
-
-            // Write full struct
-            writer.WriteDeclaration3(fullDeclaration);
-            writer.WriteDeclaration3(new CEmptyLine());
-        }
     }
 }

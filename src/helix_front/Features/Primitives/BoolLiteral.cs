@@ -3,13 +3,15 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.HelixMinusMinus;
+using Helix.Analysis;
 
-namespace Helix.Parsing {
+namespace Helix.Parsing
+{
     public partial class Parser {
-        private ISyntaxTree BoolLiteral() {
+        private IParseTree BoolLiteral() {
             var start = this.Advance(TokenKind.BoolLiteral);
             var value = bool.Parse(start.Value);
 
@@ -18,13 +20,14 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Primitives {
-    public record BoolLiteral : ISyntaxTree {
+namespace Helix.Features.Primitives
+{
+    public record BoolLiteral : IParseTree {
         public TokenLocation Location { get; }
 
         public bool Value { get; }
 
-        public IEnumerable<ISyntaxTree> Children => Enumerable.Empty<ISyntaxTree>();
+        public IEnumerable<IParseTree> Children => Enumerable.Empty<IParseTree>();
 
         public bool IsPure => true;
 
@@ -37,22 +40,10 @@ namespace Helix.Features.Primitives {
             return new SingularBoolType(this.Value);
         }
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            SyntaxTagBuilder.AtFrame(types)
-                .WithReturnType(new SingularBoolType(this.Value))
-                .BuildFor(this);
+        public IParseTree ToRValue(TypeFrame types) => this;
 
-            return this;
-        }
-
-        public ISyntaxTree ToRValue(TypeFrame types) => this;
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            return new CIntLiteral(this.Value ? 1 : 0);
-        }
-
-        public HmmValue GenerateHelixMinusMinus(TypeFrame types, HmmWriter writer) {
-            return HmmValue.Bool(this.Value);
+        public ImperativeExpression ToImperativeSyntax(ImperativeSyntaxWriter writer) {
+            return ImperativeExpression.Bool(this.Value);
         }
     }
 }

@@ -1,8 +1,12 @@
 ﻿using Helix.Analysis;
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Helix.Collections
-{
+namespace Helix.Collections {
     public static class CollectionExtensions {
         public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
             this IDictionary<TKey, TValue> dict, 
@@ -20,6 +24,18 @@ namespace Helix.Collections
             }
             else {
                 return new ValueSet<T>(sequence);
+            }
+        }
+
+        public static ValueList<T> ToValueList<T>(this IEnumerable<T> sequence) {
+            if (sequence is ValueList<T> list) {
+                return list;
+            }
+            else if (sequence is IImmutableSet<T> immList) {
+                return new ValueList<T>(immList);
+            }
+            else {
+                return new ValueList<T>(sequence);
             }
         }
     }

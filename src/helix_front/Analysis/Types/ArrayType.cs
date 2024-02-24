@@ -1,7 +1,7 @@
 ﻿using Helix.Analysis.TypeChecking;
+using Helix.Syntax;
 
-namespace Helix.Analysis.Types
-{
+namespace Helix.Analysis.Types {
     public record ArrayType : HelixType {
         public HelixType InnerType { get; }
 
@@ -24,6 +24,6 @@ namespace Helix.Analysis.Types
 
         public override HelixType GetMutationSupertype(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
+        public override HelixType GetSignature(TypeFrame types) => this;
     }
 }

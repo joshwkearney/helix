@@ -1,5 +1,9 @@
-﻿namespace Helix.Analysis.Predicates
-{
+﻿using Helix.Analysis.Flow;
+using Helix.Analysis.TypeChecking;
+using Helix.Parsing;
+using Helix.Syntax;
+
+namespace Helix.Analysis.Predicates {
     public class EmptyPredicate : ISyntaxPredicate {
         public override ISyntaxPredicate And(ISyntaxPredicate other) => other;
 
@@ -16,5 +20,11 @@
         public override ISyntaxPredicate Negate() => this;
 
         public override ISyntaxPredicate Or(ISyntaxPredicate other) => other;
+
+        public override bool Test(ISyntaxPredicate other) => false;
+
+        public override string ToString() {
+            return "empty";
+        }
     }
 }

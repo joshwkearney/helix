@@ -1,16 +1,19 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
+using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Features.Variables;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Collections;
+using System.IO;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree AssignmentStatement() {
+        private IParseTree AssignmentStatement() {
             var start = this.TopExpression();
 
             if (this.TryAdvance(TokenKind.Assignment)) {
@@ -53,87 +56,24 @@ namespace Helix.Parsing
     }
 }
 
-namespace Helix.Features.Variables
-{
-    public record AssignmentStatement : ISyntaxTree {
-        private readonly ISyntaxTree target, assign;
+namespace Helix.Features.Variables {
+    public record AssignmentStatement : IParseTree {
+        private readonly IParseTree target, assign;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => new[] { this.target, this.assign };
+        public IEnumerable<IParseTree> Children => new[] { this.target, this.assign };
 
         public bool IsPure => false;
 
         public AssignmentStatement(
             TokenLocation loc,
-            ISyntaxTree target,
-            ISyntaxTree assign) {
+            IParseTree target,
+            IParseTree assign) {
 
             this.Location = loc;
             this.target = target;
             this.assign = assign;
-        }
-
-        public ISyntaxTree CheckTypes(TypeFrame types) {
-            if (this.IsTypeChecked(types)) {
-                return this;
-            }
-
-            var target = this.target.CheckTypes(types).ToLValue(types);
-
-            var varSig = target.GetReturnType(types)
-                .AsVariable(types)
-                .GetValue()
-                .InnerType
-                .GetMutationSupertype(types);
-
-            var assign = this.assign
-                .CheckTypes(types)
-                .ToRValue(types);
-
-            var assignType = assign.GetReturnType(types);
-
-            assign = assign.UnifyTo(varSig, types);
-
-            var result = new AssignmentStatement(
-                this.Location,
-                target,
-                assign);
-
-            SyntaxTagBuilder.AtFrame(types)
-                .WithChildren(target, assign)
-                .BuildFor(result);
-
-            return result;
-        }
-
-        public ISyntaxTree ToRValue(TypeFrame types) {
-            // We need to be type checked to be an r-value
-            if (!this.IsTypeChecked(types)) {
-                throw TypeException.RValueRequired(this.Location);
-            }
-
-            return this;
-        }
-
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            var target = new CPointerDereference() {
-                Target = this.target.GenerateCode(types, writer)
-            };
-
-            var assign = this.assign.GenerateCode(types, writer);
-
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.Location.Line}: Assignment statement");
-
-            writer.WriteStatement(new CAssignment() {
-                Left = target,
-                Right = assign
-            });
-
-            writer.WriteEmptyLine();
-
-            return new CIntLiteral(0);
         }
     }
 }

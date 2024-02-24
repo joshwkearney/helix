@@ -1,10 +1,10 @@
 ﻿using Helix.Parsing;
 using Helix.Generation;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.HelixMinusMinus;
 
-namespace Helix
-{
+namespace Helix {
     public class HelixCompiler {
         private readonly string header;
         private readonly string input;
@@ -35,7 +35,6 @@ namespace Helix
                     stat.DeclareTypes(types);
                 }
 
-                var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
 
                 // We need to declare the flow frame down here after types is done being
                 // modified, because it uses immutable dictionaries
@@ -45,10 +44,11 @@ namespace Helix
                 //    stat.GenerateCode(types, writer);
                 //}
 
+
                 var writer = new HmmWriter();
 
-                foreach (var stat in stats) {
-                    stat.GenerateHelixMinusMinus(types, writer);
+                foreach (var stat in parseStats) {
+                    stat.GenerateHelixMinusMinus(writer);
                 }
 
                 return writer.ToString();

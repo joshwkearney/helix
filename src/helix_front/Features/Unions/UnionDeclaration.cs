@@ -5,11 +5,11 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Types;
 using Helix.Syntax;
+using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis;
 
-namespace Helix.Parsing
-{
+namespace Helix.Parsing {
     public partial class Parser {
         private IDeclaration UnionDeclaration() {
             var start = this.Advance(TokenKind.UnionKeyword);
@@ -40,8 +40,7 @@ namespace Helix.Parsing
     }
 }
 
-namespace Helix.Features.Aggregates
-{
+namespace Helix.Features.Aggregates {
     public record UnionParseDeclaration : IDeclaration {
         private readonly StructParseSignature signature;
 
@@ -61,7 +60,7 @@ namespace Helix.Features.Aggregates
             var path = types.Scope.Append(this.signature.Name);
             var named = new NominalType(path, NominalTypeKind.Union);
 
-            types.Locals = types.Locals.SetItem(path, named);
+            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
         }
 
         public void DeclareTypes(TypeFrame types) {
@@ -69,27 +68,7 @@ namespace Helix.Features.Aggregates
             var structSig = this.signature.ResolveNames(types);
             var unionSig = new UnionType(structSig.Members);
 
-            types.NominalSignatures.Add(path, unionSig);
-        }
-
-        public IDeclaration CheckTypes(TypeFrame types) {
-            var path = types.Scope.Append(this.signature.Name);
-            var sig = this.signature.ResolveNames(types);
-            var unionSig = new UnionType(sig.Members);
-            var structType = new NominalType(path, NominalTypeKind.Union);
-
-            var isRecursive = sig.Members
-                .Select(x => x.Type)
-                .Where(x => x.IsValueType(types))
-                .SelectMany(x => x.GetAccessibleTypes(types))
-                .Contains(structType);
-
-            // Make sure this is not a recursive struct or union
-            if (isRecursive) {
-                throw TypeException.CircularValueObject(this.Location, structType);
-            }
-
-            return new UnionDeclaration(this.Location, unionSig, path);
+            types.Locals = types.Locals.Add(path, new LocalInfo(unionSig));
         }
     }
 
@@ -108,57 +87,5 @@ namespace Helix.Features.Aggregates
         public void DeclareNames(TypeFrame types) { }
 
         public void DeclareTypes(TypeFrame types) { }
-
-        public IDeclaration CheckTypes(TypeFrame types) => this;
-
-        public void GenerateCode(TypeFrame types, ICWriter writer) { 
-            var structName = writer.GetVariableName(this.path);
-            var unionName = writer.GetVariableName(this.path) + "_$Union";
-
-            var unionPrototype = new CAggregateDeclaration() {
-                Name = unionName,
-                IsUnion = true
-            };
-
-            var unionDeclaration = new CAggregateDeclaration() {
-                Name = unionName,
-                IsUnion = true,
-                Members = this.signature.Members
-                    .Select(x => new CParameter() {
-                        Type = writer.ConvertType(x.Type, types),
-                        Name = x.Name
-                    })
-                    .ToArray(),
-            };
-
-            var structPrototype = new CAggregateDeclaration() {
-                Name = structName
-            };
-
-            var structDeclaration = new CAggregateDeclaration() {
-                Name = structName,
-                Members = new[] {
-                    new CParameter() {
-                        Name = "tag",
-                        Type = new CNamedType("int")
-                    },
-                    new CParameter() {
-                        Name = "data",
-                        Type = new CNamedType(unionName)
-                    }
-                }
-            };
-
-            // Write forward declaration
-            writer.WriteDeclaration1(unionPrototype);
-            writer.WriteDeclaration1(structPrototype);
-
-            // Write full struct
-            writer.WriteDeclaration3(unionDeclaration);
-            writer.WriteDeclaration3(new CEmptyLine());
-
-            writer.WriteDeclaration3(structDeclaration);
-            writer.WriteDeclaration3(new CEmptyLine());
-        }
     }
 }

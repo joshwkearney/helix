@@ -1,0 +1,29 @@
+ARCHITECTURE PLAN FOR HELIX
+Incorporating the lessons learned from flow typing and region inference
+
+The helix to C compiler will be structured according to three phases,
+descriped below:
+
+1. FRONT END
+	a) Name resolution
+	b) Generating forward declarations
+	c) Checking for circular structs and unions
+	d) Syntax lowering and desugaring
+	e) Generating imperative Hmm (helix minus minus)*
+
+2. MIDDLE END
+	a) Creating a control-flow graph
+	b) Type checking
+	c) Flow typing
+	d) Type unification (code generation for implicit conversions)
+	e) Statement reordering
+	f) Compile time code execution / Generics
+	g) Generating a typed Hmm
+
+3. BACK END
+	a) Region inference for memory allocations
+	b) Generating final C code
+
+* Hmm - Helix minus minus - Hmm is an imperative intermediate code
+	similar to LLVM's IR. It is SSA (static single assignment) and
+	can be typed or untyped.
