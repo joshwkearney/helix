@@ -7,6 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resources", "resources", "{
 		resources\Helix.h = resources\Helix.h
 		resources\helix.tmLanguage = resources\helix.tmLanguage
 		resources\LineCounter.ps1 = resources\LineCounter.ps1
+		resources\MASTER PLAN.txt = resources\MASTER PLAN.txt
 		resources\Program.helix = resources\Program.helix
 		resources\Scratch.txt = resources\Scratch.txt
 		resources\Syntax.iro = resources\Syntax.iro
@@ -18,6 +19,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix", "src\helix\helix.csproj", "{B6AEF241-4749-47A2-947E-FF354F59601C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix_front", "src\helix_front\helix_front.csproj", "{A5104170-0401-432D-A928-811E3B236F34}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix.common", "src\helix.common\helix.common.csproj", "{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix.front", "src\helix.front\helix.front.csproj", "{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "helix+new", "src\helix+new\helix+new.csproj", "{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,6 +72,42 @@ Global
 		{A5104170-0401-432D-A928-811E3B236F34}.Release|x64.Build.0 = Release|Any CPU
 		{A5104170-0401-432D-A928-811E3B236F34}.Release|x86.ActiveCfg = Release|Any CPU
 		{A5104170-0401-432D-A928-811E3B236F34}.Release|x86.Build.0 = Release|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Debug|x64.Build.0 = Debug|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Debug|x86.Build.0 = Debug|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Release|x64.ActiveCfg = Release|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Release|x64.Build.0 = Release|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Release|x86.ActiveCfg = Release|Any CPU
+		{FCC6F434-6864-46AB-B1B8-28C1B60B51E7}.Release|x86.Build.0 = Release|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Debug|x64.Build.0 = Debug|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Debug|x86.Build.0 = Debug|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Release|x64.ActiveCfg = Release|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Release|x64.Build.0 = Release|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Release|x86.ActiveCfg = Release|Any CPU
+		{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}.Release|x86.Build.0 = Release|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Debug|x64.Build.0 = Debug|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Debug|x86.Build.0 = Debug|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Release|x64.ActiveCfg = Release|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Release|x64.Build.0 = Release|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Release|x86.ActiveCfg = Release|Any CPU
+		{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

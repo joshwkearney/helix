@@ -12,7 +12,7 @@
 //	return 45;
 //};
 
-//func test3(var opt as Option) as word {
+//func test3(var opt as word) as word {
 //	return if (opt is first) or (opt is second)
 //		then 10
 //		else opt;
@@ -26,6 +26,10 @@
 
 func test(var b as bool) as word {
 	var x = !b;
+
+	for i = 0 to 10 {
+		x += 1;
+	};
 
 	return 
 		if b then 1 

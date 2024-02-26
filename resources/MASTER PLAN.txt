@@ -10,6 +10,7 @@ descriped below:
 	c) Checking for circular structs and unions
 	d) Syntax lowering and desugaring
 	e) Generating imperative Hmm (helix minus minus)*
+	f) Deconflicting names
 
 2. MIDDLE END
 	a) Creating a control-flow graph
