@@ -1,5 +1,5 @@
-﻿namespace helix_frontend.ParseTree {
-    public interface IParseTreeVisitor<T> {
+﻿namespace Helix.Frontend.ParseTree {
+    internal interface IParseTreeVisitor<T> {
         public T VisitAssignment(AssignmentStatement syntax);
 
         public T VisitVariableAccess(VariableAccess syntax);

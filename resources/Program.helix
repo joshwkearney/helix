@@ -1,8 +1,8 @@
-//union Option {
-//	var first as void;
-//	var second as void;
-//	var third as word;
-//};
+union Option {
+	var first as void;
+	var second as void;
+	var third as word;
+};
 
 //func test2(var opt as Option) as word {
 //	if opt is third then {
@@ -12,11 +12,11 @@
 //	return 45;
 //};
 
-//func test3(var opt as word) as word {
-//	return if (opt is first) or (opt is second)
-//		then 10
-//		else opt;
-//};
+func test3(var opt as word) as word {
+	return if (opt is first) or (opt is second)
+		then 10
+		else opt;
+};
 
 //func test4(var opt as Option) {
 //	while opt is third {
@@ -24,15 +24,10 @@
 //	};
 //};
 
-func test(var b as bool) as word {
-	var x = !b;
-
+func test(var x as word) as word {
 	for i = 0 to 10 {
-		x += 1;
+		x += i;
 	};
 
-	return 
-		if b then 1 
-		else if x then 2 
-		else 3;
+	return x;
 };

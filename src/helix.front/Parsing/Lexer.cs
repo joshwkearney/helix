@@ -1,7 +1,6 @@
-﻿using Helix.Analysis;
-using Helix.Parsing;
+﻿using Helix.Parsing;
 
-namespace helix.front.Parsing {
+namespace Helix.Frontend.ParseTree {
     /// <summary>
     /// Represents a lexer that tokenizes the Helix language source code.
     /// </summary>

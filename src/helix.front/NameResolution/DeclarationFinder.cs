@@ -1,11 +1,7 @@
 ﻿using helix.common;
-using Helix.Analysis;
-using Helix.Analysis.Types;
-using helix_frontend.ParseTree;
-using System.Collections.ObjectModel;
-using System.Data.Common;
+using Helix.Frontend.ParseTree;
 
-namespace helix.front.NameResolution {
+namespace Helix.Frontend.NameResolution {
     internal class DeclarationFinder : IParseTreeVisitor<Unit> {
         private readonly Stack<string> scopes = new();
 

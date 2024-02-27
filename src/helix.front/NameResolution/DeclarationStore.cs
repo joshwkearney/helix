@@ -1,10 +1,8 @@
-﻿using Helix;
-using Helix.Analysis.Types;
-using System.Collections.Immutable;
+﻿using Helix.Analysis.Types;
 using System.Diagnostics.CodeAnalysis;
 
-namespace helix.front.NameResolution {
-    public class DeclarationStore {
+namespace Helix.Frontend.NameResolution {
+    internal class DeclarationStore {
         private readonly HashSet<IdentifierPath> names = [];
         private readonly Dictionary<IdentifierPath, IHelixType> types = [];
 

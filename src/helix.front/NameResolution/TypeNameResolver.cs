@@ -1,11 +1,6 @@
 ﻿using Helix.Analysis.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace helix.front.NameResolution {
+namespace Helix.Frontend.NameResolution {
     internal class TypeNameResolver : ITypeVisitor<IHelixType> {
         private readonly IdentifierPath scope;
         private readonly DeclarationStore declarations;
@@ -30,7 +25,7 @@ namespace helix.front.NameResolution {
 
             var pars = type.Parameters
                 .Select(x => new FunctionParameter() {
-                    Name = x.Name,
+                    Name = this.mangler.GetMangledName(this.scope, x.Name),
                     Type = x.Type.Accept(this),
                     IsMutable = x.IsMutable
                 })
@@ -48,7 +43,8 @@ namespace helix.front.NameResolution {
             }
 
             return new NominalType() {
-                Name = this.mangler.GetMangledName(path)
+                Name = this.mangler.GetMangledName(path),
+                DisplayName = type.DisplayName
             };
         }
 

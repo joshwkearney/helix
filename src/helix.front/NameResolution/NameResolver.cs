@@ -1,15 +1,9 @@
 ﻿using helix.common;
-using Helix;
 using Helix.Analysis.Types;
+using Helix.Frontend.ParseTree;
 using Helix.HelixMinusMinus;
-using helix_frontend.ParseTree;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace helix.front.NameResolution {
+namespace Helix.Frontend.NameResolution {
     internal class NameResolver : IParseTreeVisitor<string> {
         private readonly Stack<List<IHmmSyntax>> lines = new();
         private readonly Stack<IdentifierPath> scopes = new();
@@ -34,8 +28,8 @@ namespace helix.front.NameResolution {
         }
 
         public string VisitArrayLiteral(ArrayLiteral syntax) {
-            var result = this.mangler.MangleTempName(this.Scope);
             var items = syntax.Args.Select(x => x.Accept(this)).ToArray();
+            var result = this.mangler.MangleTempName(this.Scope);
 
             this.Lines.Add(new HmmArrayLiteral() {
                 Location = syntax.Location,
@@ -107,9 +101,9 @@ namespace helix.front.NameResolution {
                 return newSyntax.Accept(this);
             }
 
-            var result = this.mangler.MangleTempName(this.Scope);
             var left = syntax.Left.Accept(this);
             var right = syntax.Right.Accept(this);
+            var result = this.mangler.MangleTempName(this.Scope);
 
             this.Lines.Add(new HmmBinaryOperator() {
                 Location = syntax.Location,
@@ -129,25 +123,13 @@ namespace helix.front.NameResolution {
             // Just push a scope here but not a new set of lines, since we're flattening blocks
 
             this.scopes.Push(scopePath);
-
             var stats = syntax.Statements.Select(x => x.Accept(this)).ToArray();
-
             this.scopes.Pop();
 
             return stats.LastOrDefault() ?? "void";
         }
 
-        public string VisitBoolLiteral(BoolLiteral syntax) {
-            var resultName = this.mangler.MangleTempName(this.Scope);
-
-            this.Lines.Add(new HmmBoolLiteral() {
-                Location = syntax.Location,
-                Value = syntax.Value,
-                Result = resultName
-            });
-
-            return resultName;
-        }
+        public string VisitBoolLiteral(BoolLiteral syntax) => syntax.Value.ToString().ToLower();
 
         public string VisitBreak(BreakSyntax syntax) {
             this.Lines.Add(new HmmBreakSyntax() { Location = syntax.Location });
@@ -231,10 +213,7 @@ namespace helix.front.NameResolution {
         public string VisitFunctionDeclaration(FunctionDeclaration syntax) {
             var funcPath = this.Scope.Append(syntax.Name);
             var bodyLines = new List<IHmmSyntax>();
-            var funcType = (FunctionType)syntax.Signature.Accept(this.TypeResolver);
 
-            // Declare the function again in case we're not at the top level
-            this.declarations.SetDeclaration(funcPath, funcType);
             this.mangler.MangleGlobalName(funcPath);
 
             this.scopes.Push(funcPath);
@@ -246,6 +225,10 @@ namespace helix.front.NameResolution {
                 this.declarations.SetDeclaration(parPath);
                 this.mangler.MangleLocalName(parPath);
             }
+
+            // Declare the function again in case we're not at the top level
+            var funcType = (FunctionType)syntax.Signature.Accept(this.TypeResolver);
+            this.declarations.SetDeclaration(funcPath, funcType);
 
             syntax.Body.Accept(this);
 
@@ -261,12 +244,12 @@ namespace helix.front.NameResolution {
             this.forwardDeclarations.Add(new HmmFunctionForwardDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
-                Signature = syntax.Signature
+                Signature = funcType
             });
 
             this.Lines.Add(new HmmFunctionDeclaration() {
                 Location = syntax.Location,
-                Function = funcType,
+                Signature = funcType,
                 Name = syntax.Name,
                 Body = bodyLines
             });
@@ -275,7 +258,6 @@ namespace helix.front.NameResolution {
         }
 
         public string VisitIf(IfSyntax syntax) {
-            var result = this.mangler.MangleTempName(this.Scope);
             var cond = syntax.Condition.Accept(this);
 
             var affirmName = this.mangler.MangleLocalName(this.Scope, "if_true");
@@ -303,6 +285,8 @@ namespace helix.front.NameResolution {
                 this.lines.Pop();
                 this.scopes.Pop();
 
+                var result = this.mangler.MangleTempName(this.Scope);
+
                 this.Lines.Add(new HmmIfExpression() {
                     Location = syntax.Location,
                     Condition = cond,
@@ -316,6 +300,8 @@ namespace helix.front.NameResolution {
                 return result;
             }
             else {
+                var result = this.mangler.MangleTempName(this.Scope);
+
                 this.Lines.Add(new HmmIfExpression() {
                     Condition = cond,
                     Affirmative = "void",
@@ -441,7 +427,7 @@ namespace helix.front.NameResolution {
         }
 
         public string VisitUnionDeclaration(UnionDeclaration syntax) {
-            var unionType = (StructType)syntax.Signature.Accept(this.TypeResolver);
+            var unionType = (UnionType)syntax.Signature.Accept(this.TypeResolver);
 
             this.declarations.SetDeclaration(this.Scope, syntax.Name, unionType);
             this.mangler.MangleGlobalName(this.Scope, syntax.Name);
@@ -515,17 +501,7 @@ namespace helix.front.NameResolution {
             return loop.Accept(this);
         }
 
-        public string VisitWordLiteral(WordLiteral syntax) {
-            var resultName = this.mangler.MangleTempName(this.Scope);
-
-            this.Lines.Add(new HmmWordLiteral() {
-                Location = syntax.Location,
-                Value = syntax.Value,
-                Result = resultName
-            });
-
-            return resultName;
-        }
+        public string VisitWordLiteral(WordLiteral syntax) => syntax.Value.ToString();
 
         public string VisitLoop(LoopSyntax syntax) {
             var loopName = this.mangler.MangleLocalName(this.Scope, "loop");

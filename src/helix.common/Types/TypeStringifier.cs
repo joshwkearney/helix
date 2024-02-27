@@ -1,8 +1,8 @@
 ﻿using Helix.Analysis.Types;
 
 namespace helix.common.Types {
-    internal class TypeToStringVisitor : ITypeVisitor<string> {
-        public static TypeToStringVisitor Instance { get; } = new();
+    internal class TypeStringifier : ITypeVisitor<string> {
+        public static TypeStringifier Instance { get; } = new();
 
         public string VisitArrayType(ArrayType type) {
             return type.InnerType + "[]";

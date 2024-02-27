@@ -1,7 +1,6 @@
-﻿using Helix;
-using Helix.Parsing;
+﻿using Helix.Parsing;
 
-namespace helix.front.Parsing {
+namespace Helix.Frontend.ParseTree {
     internal class ParseException : HelixException {
         public ParseException(TokenLocation location, string title, string message) : base(location, title, message) { }
 

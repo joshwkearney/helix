@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 
-namespace helix.front.NameResolution {
-    public class IdentifierPath : IEquatable<IdentifierPath> {
+namespace Helix.Frontend.NameResolution {
+    internal class IdentifierPath : IEquatable<IdentifierPath> {
         private readonly int hashCode;
         private readonly ImmutableList<string> segments;
 

@@ -1,12 +1,9 @@
 ﻿using helix.common;
-using Helix;
 using Helix.Analysis.Types;
-using Helix.HelixMinusMinus;
 using Helix.Parsing;
-using helix_frontend.ParseTree;
 using System.Collections.Immutable;
 
-namespace helix.front.Parsing {
+namespace Helix.Frontend.ParseTree {
     internal class Parser {
         private readonly Lexer lexer;
         private readonly Stack<bool> isInLoop = new();
@@ -88,7 +85,7 @@ namespace helix.front.Parsing {
             else if (this.Peek(TokenKind.Identifier)) {
                 var name = this.Advance(TokenKind.Identifier).Value;
 
-                return new NominalType() { Name = name };
+                return new NominalType() { Name = name, DisplayName = name };
             }
             else {
                 throw ParseException.UnexpectedToken(this.Advance());

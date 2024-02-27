@@ -1,10 +1,9 @@
-﻿
-
-using helix.front;
+﻿using Helix.Frontend;
 
 var contents = File.ReadAllText("../../../../../Resources/Program.helix");
-var frontend = new HelixFrontEnd();
+var frontend = new HelixFrontend();
 
-var result = frontend.Compile(contents);
+var result = frontend.CompileToString(contents);
 
-var x = 4;
+Console.WriteLine(result);
+Console.Read();

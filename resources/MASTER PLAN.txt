@@ -5,12 +5,12 @@ The helix to C compiler will be structured according to three phases,
 descriped below:
 
 1. FRONT END
-	a) Name resolution
-	b) Generating forward declarations
+	a) DONE - Name resolution
+	b) DONE - Generating forward declarations
 	c) Checking for circular structs and unions
-	d) Syntax lowering and desugaring
-	e) Generating imperative Hmm (helix minus minus)*
-	f) Deconflicting names
+	d) DONE - Syntax lowering and desugaring
+	e) DONE - Generating imperative Hmm (helix minus minus)*
+	f) DONE - Deconflicting names
 
 2. MIDDLE END
 	a) Creating a control-flow graph

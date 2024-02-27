@@ -1,14 +1,10 @@
-﻿using helix.front.NameResolution;
-using helix.front.Parsing;
+﻿using helix.common.Hmm;
+using Helix.Frontend.NameResolution;
+using Helix.Frontend.ParseTree;
 using Helix.HelixMinusMinus;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace helix.front {
-    public class HelixFrontEnd {
+namespace Helix.Frontend {
+    public class HelixFrontend {
         public IReadOnlyList<IHmmSyntax> Compile(string text) {
             var parser = new Parser(text);
             var parseTree = parser.Parse();
@@ -27,6 +23,18 @@ namespace helix.front {
             }
 
             return nameResolver.Result;
+        }
+
+        public string CompileToString(string text) {
+            var hmm = this.Compile(text);
+            var stringifier = new HmmStringifier();
+            var result = "";
+
+            foreach (var line in hmm) {
+                result += line.Accept(stringifier);
+            }
+
+            return result;
         }
     }
 }

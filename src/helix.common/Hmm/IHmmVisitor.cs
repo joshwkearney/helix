@@ -1,51 +1,43 @@
 ﻿namespace Helix.HelixMinusMinus {
-    public interface IHmmVisitor {
-        public void VisitWordLiteral(HmmWordLiteral syntax);
+    public interface IHmmVisitor<T> {
+        public T VisitUnaryOperator(HmmUnaryOperator syntax);
 
-        public void VisitBoolLiteral(HmmBoolLiteral syntax);
+        public T VisitBinaryOperator(HmmBinaryOperator syntax);
 
-        public void VisitVoidLiteral(HmmVoidLiteral syntax);
+        public T VisitNew(HmmNewSyntax syntax);
 
-        public void VisitUnaryOperator(HmmUnaryOperator syntax);
+        public T VisitAsSyntax(HmmAsSyntax syntax);
 
-        public void VisitBinaryOperator(HmmBinaryOperator syntax);
+        public T VisitVariableStatement(HmmVariableStatement syntax);
 
-        public void VisitNew(HmmNewSyntax syntax);
+        public T VisitAssignment(HmmAssignment syntax);
 
-        public void VisitAsSyntax(HmmAsSyntax syntax);
+        public T VisitIs(HmmIsSyntax syntax);
 
-        public void VisitVariableStatement(HmmVariableStatement syntax);
+        public T VisitMemberAccess(HmmMemberAccess syntax);
 
-        public void VisitVariableAccess(HmmVariableAccess syntax);
+        public T VisitFunctionDeclaration(HmmFunctionDeclaration syntax);
 
-        public void VisitAssignment(HmmAssignment syntax);
+        public T VisitInvoke(HmmInvokeSyntax syntax);
 
-        public void VisitIs(HmmIsSyntax syntax);
+        public T VisitReturn(HmmReturnSyntax syntax);
 
-        public void VisitMemberAccess(HmmMemberAccess syntax);
+        public T VisitBreak(HmmBreakSyntax syntax);
 
-        public void VisitFunctionDeclaration(HmmFunctionDeclaration syntax);
+        public T VisitContinue(HmmContinueSyntax syntax);
 
-        public void VisitInvoke(HmmInvokeSyntax syntax);
+        public T VisitIfExpression(HmmIfExpression syntax);
 
-        public void VisitReturn(HmmReturnSyntax syntax);
+        public T VisitLoop(HmmLoopSyntax syntax);
 
-        public void VisitBreak(HmmBreakSyntax syntax);
+        public T VisitArrayLiteral(HmmArrayLiteral syntax);
 
-        public void VisitContinue(HmmContinueSyntax syntax);
+        public T VisitStructDeclaration(HmmStructDeclaration syntax);
 
-        public void VisitIfExpression(HmmIfExpression syntax);
+        public T VisitUnionDeclaration(HmmUnionDeclaration syntax);
 
-        public void VisitLoop(HmmLoopSyntax syntax);
+        public T VisitTypeDeclaration(HmmTypeDeclaration syntax);
 
-        public void VisitArrayLiteral(HmmArrayLiteral syntax);
-
-        public void VisitStructDeclaration(HmmStructDeclaration syntax);
-
-        public void VisitUnionDeclaration(HmmUnionDeclaration syntax);
-
-        public void VisitTypeDeclaration(HmmTypeDeclaration syntax);
-
-        public void VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax);
+        public T VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax);
     }
 }

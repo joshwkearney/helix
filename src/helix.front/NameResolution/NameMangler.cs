@@ -1,12 +1,4 @@
-﻿using Helix;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace helix.front.NameResolution {
+﻿namespace Helix.Frontend.NameResolution {
     internal class NameMangler {
         private int counter = 0;
         private readonly Dictionary<IdentifierPath, string> mangledNames = [];

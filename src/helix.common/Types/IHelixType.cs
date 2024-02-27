@@ -4,7 +4,7 @@ namespace Helix.Analysis.Types {
     public abstract record IHelixType {
         public abstract T Accept<T>(ITypeVisitor<T> visitor);
 
-        public override string ToString() => this.Accept(TypeToStringVisitor.Instance);
+        public sealed override string ToString() => this.Accept(TypeStringifier.Instance);
     }
 
     public record ArrayType : IHelixType {
@@ -37,10 +37,16 @@ namespace Helix.Analysis.Types {
         public required IHelixType Type { get; init; }
 
         public required bool IsMutable { get; init; }
+
+        public override string ToString() {
+            return (this.IsMutable ? "var" : "let") + " " + this.Name + " as " + this.Type.ToString();
+        }
     }
 
     public record NominalType : IHelixType {
         public required string Name { get; init; }
+
+        public required string DisplayName { get; init; }
 
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitNominalType(this);
     }
