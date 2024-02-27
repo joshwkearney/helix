@@ -63,7 +63,7 @@ namespace helix.common.Hmm {
             }
 
             this.indent--;
-            line += this.GetIndent() + "};\n";
+            line += this.GetIndent() + "}\n";
 
             return line;
         }
@@ -92,7 +92,7 @@ namespace helix.common.Hmm {
                     }
                     this.indent--;
 
-                    result += this.GetIndent() + "};\n";
+                    result += this.GetIndent() + "}\n";
                     return result;
                 }
                 else {
@@ -104,7 +104,7 @@ namespace helix.common.Hmm {
                     }
                     this.indent--;
 
-                    result += this.GetIndent() + "};\n";
+                    result += this.GetIndent() + "}\n";
                     return result;
                 }
             }
@@ -129,7 +129,7 @@ namespace helix.common.Hmm {
                 result += this.GetIndent() + syntax.Result + " = " + syntax.Negative + ";\n";
                 this.indent--;
 
-                result += this.GetIndent() + "};\n";
+                result += this.GetIndent() + "}\n";
                 return result;
             }
         }
@@ -151,7 +151,7 @@ namespace helix.common.Hmm {
             }
             this.indent--;
 
-            result += this.GetIndent() + "};\n";
+            result += this.GetIndent() + "}\n";
 
             return result;
         }
@@ -197,7 +197,7 @@ namespace helix.common.Hmm {
             }
             this.indent--;
 
-            result += this.GetIndent() + "};\n";
+            result += this.GetIndent() + "}\n";
             return result;
         }
 
@@ -241,7 +241,7 @@ namespace helix.common.Hmm {
             }
             this.indent--;
 
-            result += this.GetIndent() + "};\n";
+            result += this.GetIndent() + "}\n";
             return result;
         }
 

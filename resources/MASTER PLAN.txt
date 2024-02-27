@@ -7,7 +7,6 @@ descriped below:
 1. FRONT END
 	a) DONE - Name resolution
 	b) DONE - Generating forward declarations
-	c) Checking for circular structs and unions
 	d) DONE - Syntax lowering and desugaring
 	e) DONE - Generating imperative Hmm (helix minus minus)*
 	f) DONE - Deconflicting names
@@ -20,6 +19,7 @@ descriped below:
 	e) Statement reordering
 	f) Compile time code execution / Generics
 	g) Generating a typed Hmm
+	h) Checking for circular structs and unions
 
 3. BACK END
 	a) Region inference for memory allocations

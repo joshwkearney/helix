@@ -1,15 +1,19 @@
 ﻿using Helix.Analysis.Types;
+using Helix.Collections;
+using Helix.Parsing;
 
 namespace Helix.Frontend.NameResolution {
     internal class TypeNameResolver : ITypeVisitor<IHelixType> {
         private readonly IdentifierPath scope;
         private readonly DeclarationStore declarations;
         private readonly NameMangler mangler;
+        private readonly TokenLocation location;
 
-        public TypeNameResolver(IdentifierPath scope, DeclarationStore declarations, NameMangler mangler) {
+        public TypeNameResolver(IdentifierPath scope, DeclarationStore declarations, NameMangler mangler, TokenLocation location) {
             this.scope = scope;
             this.declarations = declarations;
             this.mangler = mangler;
+            this.location = location;
         }
 
         public IHelixType VisitArrayType(ArrayType type) {
@@ -39,7 +43,7 @@ namespace Helix.Frontend.NameResolution {
 
         public IHelixType VisitNominalType(NominalType type) {
             if (!this.declarations.ResolveDeclaration(this.scope, type.Name).TryGetValue(out var path)) {
-                throw new InvalidOperationException();
+                throw NameResolutionException.IdentifierUndefined(this.location, type.Name);
             }
 
             return new NominalType() {
@@ -65,7 +69,7 @@ namespace Helix.Frontend.NameResolution {
                     Type = x.Type.Accept(this),
                     IsMutable = x.IsMutable
                 })
-                .ToArray();
+                .ToValueList();
 
             return new StructType() { Members = mems };
         }
@@ -77,7 +81,7 @@ namespace Helix.Frontend.NameResolution {
                     Type = x.Type.Accept(this),
                     IsMutable = x.IsMutable
                 })
-                .ToArray();
+                .ToValueList();
 
             return new UnionType() { Members = mems };
         }

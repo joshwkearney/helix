@@ -2,32 +2,38 @@ union Option {
 	var first as void;
 	var second as void;
 	var third as word;
-};
+}
 
 //func test2(var opt as Option) as word {
 //	if opt is third then {
 //		return opt + 10;
-//	};
+//	}
 
 //	return 45;
-//};
+//}
 
 func test3(var opt as word) as word {
-	return if (opt is first) or (opt is second)
+	return if (opt1 is first) or (opt is second)
 		then 10
 		else opt;
-};
+}
 
 //func test4(var opt as Option) {
 //	while opt is third {
 //		var x = opt + 10;
-//	};
-//};
+//	}
+//}
 
 func test(var x as word) as word {
-	for i = 0 to 10 {
-		x += i;
+	var result = {
+		var sum = 0;
+
+		for i = 0 to 10 {
+			sum += i;
+		}
+
+		sum;
 	};
 
-	return x;
-};
+	return result;
+}

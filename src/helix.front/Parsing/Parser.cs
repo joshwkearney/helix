@@ -1,5 +1,6 @@
 ﻿using helix.common;
 using Helix.Analysis.Types;
+using Helix.Collections;
 using Helix.Parsing;
 using System.Collections.Immutable;
 
@@ -144,12 +145,16 @@ namespace Helix.Frontend.ParseTree {
         private IParseTree FunctionDeclaration() {
             var (sig, name, loc) = this.FunctionSignature();
 
-            if (!this.Peek(TokenKind.OpenBrace)) {
+            var hasBraces = this.Peek(TokenKind.OpenBrace);
+            if (!hasBraces) {
                 this.Advance(TokenKind.Yields);
             }
 
             var body = this.TopExpression();
-            this.Advance(TokenKind.Semicolon);
+
+            if (!hasBraces) {
+                this.Advance(TokenKind.Semicolon);
+            }
 
             return new FunctionDeclaration() {
                 Location = loc.Span(body.Location),
@@ -182,16 +187,14 @@ namespace Helix.Frontend.ParseTree {
                 });
             }
 
-            this.Advance(TokenKind.CloseBrace);
-
-            var last = this.Advance(TokenKind.Semicolon);
+            var last = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(last.Location);
 
             return new StructDeclaration() {
                 Location = loc,
                 Name = name,
                 Signature = new StructType() {
-                    Members = mems
+                    Members = mems.ToValueList()
                 }
             };
         }
@@ -219,16 +222,14 @@ namespace Helix.Frontend.ParseTree {
                 });
             }
 
-            this.Advance(TokenKind.CloseBrace);
-
-            var last = this.Advance(TokenKind.Semicolon);
+            var last = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(last.Location);
 
             return new UnionDeclaration() {
                 Location = loc,
                 Name = name,
                 Signature = new UnionType() {
-                    Members = mems
+                    Members = mems.ToValueList()
                 }
             };
         }
@@ -620,15 +621,22 @@ namespace Helix.Frontend.ParseTree {
             return result;
         }
 
-        private IParseTree IfExpression() {
+        private IParseTree IfExpression(bool isStatement = false) {
             var start = this.Advance(TokenKind.IfKeyword);
             var cond = this.TopExpression();
 
             this.Advance(TokenKind.ThenKeyword);
+            var endsBrace = this.Peek(TokenKind.OpenBrace);
             var affirm = this.TopExpression();
 
             if (this.TryAdvance(TokenKind.ElseKeyword)) {
+                endsBrace = this.Peek(TokenKind.OpenBrace);
                 var neg = this.TopExpression();
+
+                if (!endsBrace && isStatement) {
+                    this.Advance(TokenKind.Semicolon);
+                }
+
                 var loc = start.Location.Span(neg.Location);
 
                 return new IfSyntax() {
@@ -639,6 +647,10 @@ namespace Helix.Frontend.ParseTree {
                 };
             }
             else {
+                if (!endsBrace && isStatement) {
+                    this.Advance(TokenKind.Semicolon);
+                }
+
                 var loc = start.Location.Span(affirm.Location);
 
                 return new IfSyntax() {
@@ -676,7 +688,6 @@ namespace Helix.Frontend.ParseTree {
 
             while (!this.Peek(TokenKind.CloseBrace)) {
                 stats.Add(this.Statement());
-                this.Advance(TokenKind.Semicolon);
             }
 
             var end = this.Advance(TokenKind.CloseBrace);
@@ -761,6 +772,9 @@ namespace Helix.Frontend.ParseTree {
             else if (Peek(TokenKind.ForKeyword)) {
                 result = this.ForStatement();
             }
+            else if (Peek(TokenKind.IfKeyword)) {
+                result = this.IfExpression(true);
+            }
             else if (Peek(TokenKind.OpenBrace)) {
                 result = this.Block();
             }
@@ -774,7 +788,12 @@ namespace Helix.Frontend.ParseTree {
                 result = this.ReturnStatement();
             }
             else {
+                var hasBraces = this.Peek(TokenKind.OpenBrace);
                 result = this.AssignmentStatement();
+
+                if (!hasBraces) {
+                    this.Advance(TokenKind.Semicolon);
+                }
             }
 
             return result;
@@ -838,7 +857,7 @@ namespace Helix.Frontend.ParseTree {
             var cond = this.TopExpression();
 
             if (!this.Peek(TokenKind.OpenBrace)) {
-                this.Advance(TokenKind.Yields);
+                this.Advance(TokenKind.OpenBrace);
             }
 
             this.isInLoop.Push(true);
@@ -869,7 +888,7 @@ namespace Helix.Frontend.ParseTree {
             var loc = startTok.Location.Span(endIndex.Location);
 
             if (!this.Peek(TokenKind.OpenBrace)) {
-                this.Advance(TokenKind.Yields);
+                this.Advance(TokenKind.OpenBrace);
             }
 
             var body = this.TopExpression();
@@ -888,16 +907,19 @@ namespace Helix.Frontend.ParseTree {
         public IParseTree ReturnStatement() {
             var start = this.Advance(TokenKind.ReturnKeyword);
 
-            if (this.Peek(TokenKind.Semicolon)) {
+            if (this.TryAdvance(TokenKind.Semicolon)) {
                 return new ReturnSyntax() { 
                     Location = start.Location, 
                     Payload = new VoidLiteral() { Location = start.Location } 
                 };
             }
             else {
+                var operand = this.TopExpression();
+                this.Advance(TokenKind.Semicolon);
+
                 return new ReturnSyntax() { 
                     Location = start.Location, 
-                    Payload = this.TopExpression() 
+                    Payload = operand
                 };
             }
         }

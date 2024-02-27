@@ -129,7 +129,7 @@ namespace Helix.HelixMinusMinus {
 
         public required string Name { get; init; }
 
-        public required List<IHmmSyntax> Body { get; init; }
+        public required IReadOnlyList<IHmmSyntax> Body { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitFunctionDeclaration(this);
     }

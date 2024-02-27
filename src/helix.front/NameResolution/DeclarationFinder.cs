@@ -16,7 +16,7 @@ namespace Helix.Frontend.NameResolution {
             var path = new IdentifierPath(scopes.Peek(), syntax.Name);
 
             if (frame.ContainsDeclaration(path)) {
-                throw new InvalidOperationException("Duplciate identifier");
+                throw NameResolutionException.IdentifierDefined(syntax.Location, syntax.Name);
             }
 
             frame.SetDeclaration(path);
@@ -28,7 +28,7 @@ namespace Helix.Frontend.NameResolution {
             var path = new IdentifierPath(scopes.Peek(), syntax.Name);
 
             if (frame.ContainsDeclaration(path)) {
-                throw new InvalidOperationException("Duplciate identifier");
+                throw NameResolutionException.IdentifierDefined(syntax.Location, syntax.Name);
             }
 
             frame.SetDeclaration(path);
@@ -40,7 +40,7 @@ namespace Helix.Frontend.NameResolution {
             var path = new IdentifierPath(scopes.Peek(), syntax.Name);
 
             if (frame.ContainsDeclaration(path)) {
-                throw new InvalidOperationException("Duplciate identifier");
+                throw NameResolutionException.IdentifierDefined(syntax.Location, syntax.Name);
             }
 
             frame.SetDeclaration(path);

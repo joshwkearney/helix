@@ -58,7 +58,7 @@ namespace Helix.Analysis.Types {
     }
 
     public record StructType : IHelixType {
-        public IReadOnlyList<StructMember> Members { get; init; } = [];
+        public ValueList<StructMember> Members { get; init; } = [];
 
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitStructType(this);
     }
@@ -72,7 +72,7 @@ namespace Helix.Analysis.Types {
     }
 
     public record UnionType : IHelixType {
-        public IReadOnlyList<UnionMember> Members { get; init; } = [];
+        public ValueList<UnionMember> Members { get; init; } = [];
 
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitUnionType(this);
     }
