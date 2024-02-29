@@ -1,7 +1,6 @@
-﻿using helix.common.Hmm;
-using Helix;
+﻿using Helix.Common;
+using Helix.Common.Hmm;
 using Helix.Frontend;
-using Helix.HelixMinusMinus;
 using Helix.MiddleEnd;
 
 var contents = File.ReadAllText("../../../../../Resources/Program.helix");

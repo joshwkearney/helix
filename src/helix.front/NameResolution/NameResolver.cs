@@ -1,9 +1,8 @@
-﻿using helix.common;
-using helix.common.Hmm;
-using Helix.Analysis.Types;
+﻿using Helix.Common;
+using Helix.Common.Hmm;
+using Helix.Common.Tokens;
+using Helix.Common.Types;
 using Helix.Frontend.ParseTree;
-using Helix.HelixMinusMinus;
-using Helix.Parsing;
 
 namespace Helix.Frontend.NameResolution {
     internal class NameResolver : IParseTreeVisitor<string> {

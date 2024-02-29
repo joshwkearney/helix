@@ -1,13 +1,7 @@
-﻿using helix.common.Hmm;
-using Helix.MiddleEnd.TypeChecking;
+﻿using Helix.Common.Hmm;
 using Helix.MiddleEnd.Unification;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Helix.MiddleEnd {
+namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeCheckingContext {
         public required HmmWriter Writer { get; init; }
 
@@ -20,8 +14,8 @@ namespace Helix.MiddleEnd {
         public TypeUnifier Unifier { get; }
 
         public TypeCheckingContext() {
-            this.TypeChecker = new TypeChecker(this);
-            this.Unifier = new TypeUnifier(this);
+            TypeChecker = new TypeChecker(this);
+            Unifier = new TypeUnifier(this);
         }
     }
 }

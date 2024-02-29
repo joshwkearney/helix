@@ -1,9 +1,7 @@
-﻿using helix.common;
-using helix.common.Hmm;
-using Helix.Analysis.Types;
-using Helix.Parsing;
+﻿using Helix.Common.Tokens;
+using Helix.Common.Types;
 
-namespace Helix.HelixMinusMinus {
+namespace Helix.Common.Hmm {
     public interface IHmmSyntax {
         public TokenLocation Location { get; }
 

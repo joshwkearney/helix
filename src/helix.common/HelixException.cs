@@ -1,6 +1,6 @@
-﻿using Helix.Parsing;
+﻿using Helix.Common.Tokens;
 
-namespace Helix {
+namespace Helix.Common {
     public class HelixException : Exception {
         public string Title { get; }
 

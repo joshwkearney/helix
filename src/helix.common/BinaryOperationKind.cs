@@ -1,4 +1,4 @@
-﻿namespace helix.common {
+﻿namespace Helix.Common {
     public enum BinaryOperationKind {
         Add, Subtract, Multiply, Modulo, FloorDivide,
         And, Or, Xor,

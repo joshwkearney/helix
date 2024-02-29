@@ -1,4 +1,5 @@
-﻿using Helix.Analysis.Types;
+﻿using Helix.Common;
+using Helix.Common.Types;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Helix.Frontend.NameResolution {

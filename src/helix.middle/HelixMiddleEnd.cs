@@ -1,11 +1,5 @@
-﻿using helix.common.Hmm;
-using Helix.HelixMinusMinus;
+﻿using Helix.Common.Hmm;
 using Helix.MiddleEnd.TypeChecking;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Helix.MiddleEnd {
     public class HelixMiddleEnd {

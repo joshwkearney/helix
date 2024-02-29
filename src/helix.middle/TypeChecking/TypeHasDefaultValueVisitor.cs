@@ -1,12 +1,7 @@
-﻿using Helix.Analysis.Types;
-using Helix.MiddleEnd;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Helix.Common;
+using Helix.Common.Types;
 
-namespace helix.common.Types {
+namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeHasDefaultValueVisitor : ITypeVisitor<bool> {
         private readonly TypeCheckingContext context;
 

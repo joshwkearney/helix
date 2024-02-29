@@ -1,13 +1,8 @@
-﻿using helix.common;
-using helix.common.Hmm;
-using Helix.Analysis.Types;
-using Helix.HelixMinusMinus;
+﻿using Helix.Common;
+using Helix.Common.Hmm;
+using Helix.Common.Types;
 using Helix.MiddleEnd.Unification;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeChecker : IHmmVisitor<string> {
@@ -211,7 +206,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             var cond = this.Unifier.Convert(syntax.Condition, BoolType.Instance, syntax.Location);
 
             // Write affirmative block
-            this.Writer.PushBlock();            
+            this.Writer.PushBlock();
             foreach (var line in syntax.AffirmativeBody) {
                 line.Accept(this);
             }
@@ -227,7 +222,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             // Unify types
             var affirmType = this.Types[syntax.Affirmative];
             var negType = this.Types[syntax.Negative];
-            
+
             if (!this.Unifier.UnifyWithConvert(affirmType, negType).TryGetValue(out var totalType)) {
                 throw new InvalidOperationException();
             }
@@ -378,7 +373,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 .Select(x => new HmmNewFieldAssignment() { Field = x.Second.Name, Value = x.First.Value })
                 .ToArray();
 
-            var allFields = namedMems.Concat(inferredFields).ToArray();        
+            var allFields = namedMems.Concat(inferredFields).ToArray();
 
             foreach (var field in allFields) {
                 Assert.IsTrue(field.Field.HasValue);

@@ -1,9 +1,8 @@
-﻿using helix.common;
-using helix.common.Hmm;
-using Helix.Analysis.Types;
-using Helix.HelixMinusMinus;
+﻿using Helix.Common;
+using Helix.Common.Hmm;
+using Helix.Common.Tokens;
+using Helix.Common.Types;
 using Helix.MiddleEnd.TypeChecking;
-using Helix.Parsing;
 
 namespace Helix.MiddleEnd.Unification {
     internal enum UnificationKind {

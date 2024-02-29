@@ -1,9 +1,4 @@
-﻿using Helix.Analysis.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Helix.Common.Types;
 
 namespace Helix.MiddleEnd.Unification {
     internal class SupertypeFetcher : ITypeVisitor<IHelixType> {

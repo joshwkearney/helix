@@ -1,4 +1,4 @@
-﻿namespace Helix.Parsing {
+﻿namespace Helix.Common.Tokens {
     public enum TokenKind {
         OpenParenthesis, CloseParenthesis,
         OpenBrace, CloseBrace,

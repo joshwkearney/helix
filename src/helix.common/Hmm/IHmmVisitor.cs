@@ -1,4 +1,4 @@
-﻿namespace Helix.HelixMinusMinus {
+﻿namespace Helix.Common.Hmm {
     public interface IHmmVisitor<T> {
         public T VisitUnaryOperator(HmmUnaryOperator syntax);
 

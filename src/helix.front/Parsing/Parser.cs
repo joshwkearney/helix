@@ -1,7 +1,6 @@
-﻿using helix.common;
-using Helix.Analysis.Types;
-using Helix.Collections;
-using Helix.Parsing;
+﻿using Helix.Common;
+using Helix.Common.Tokens;
+using Helix.Common.Types;
 using System.Collections.Immutable;
 
 namespace Helix.Frontend.ParseTree {

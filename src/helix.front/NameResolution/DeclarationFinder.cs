@@ -1,4 +1,4 @@
-﻿using helix.common;
+﻿using Helix.Common;
 using Helix.Frontend.ParseTree;
 
 namespace Helix.Frontend.NameResolution {

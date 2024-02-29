@@ -1,7 +1,6 @@
-﻿using Helix.Analysis;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Helix.Parsing {
+namespace Helix.Common.Tokens {
     public readonly record struct TokenLocation {
         public required int StartIndex { get; init; }
 

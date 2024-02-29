@@ -1,5 +1,5 @@
-﻿using Helix.Analysis.Types;
-using Helix.Parsing;
+﻿using Helix.Common;
+using Helix.Common.Tokens;
 
 namespace Helix.Frontend.NameResolution {
     internal class NameResolutionException : HelixException {

@@ -1,4 +1,4 @@
-﻿namespace Helix {
+﻿namespace Helix.Common {
     public record struct Option<T> {
         private readonly T value;
 

@@ -1,17 +1,8 @@
-﻿using helix.common;
-using helix.common.Types;
-using Helix.Analysis.Types;
-using Helix.Frontend.CircularTypeChecker;
+﻿using Helix.Common;
+using Helix.Common.Types;
 using Helix.MiddleEnd.Unification;
-using Helix.MiddleEnd.Unification;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Helix.MiddleEnd
-{
+namespace Helix.MiddleEnd.TypeChecking {
     internal static class TypeCheckingExtensions {
         public static IHelixType GetSupertype(this IHelixType type) {
             return type.Accept(SupertypeFetcher.Instance);

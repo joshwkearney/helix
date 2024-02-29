@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace helix.common {
+﻿namespace Helix.Common {
     public sealed class Assert {
         public static void IsTrue(bool value) {
             if (!value) {

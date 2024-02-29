@@ -1,6 +1,6 @@
-﻿using helix.common;
-using Helix.Analysis.Types;
-using Helix.Parsing;
+﻿using Helix.Common;
+using Helix.Common.Tokens;
+using Helix.Common.Types;
 
 namespace Helix.Frontend.ParseTree {
     internal interface IParseTree {

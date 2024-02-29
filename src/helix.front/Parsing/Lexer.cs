@@ -1,4 +1,4 @@
-﻿using Helix.Parsing;
+﻿using Helix.Common.Tokens;
 
 namespace Helix.Frontend.ParseTree {
     /// <summary>

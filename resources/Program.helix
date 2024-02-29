@@ -18,6 +18,8 @@ func test3(var opt as Option) as Option {
 		else opt;
 }
 
+
+
 //func test4(var opt as Option) {
 //	while opt is third {
 //		var x = opt + 10;

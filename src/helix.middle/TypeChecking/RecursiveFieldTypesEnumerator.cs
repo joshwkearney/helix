@@ -1,13 +1,7 @@
-﻿using helix.common;
-using Helix.Analysis.Types;
-using Helix.MiddleEnd;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Helix.Common;
+using Helix.Common.Types;
 
-namespace Helix.Frontend.CircularTypeChecker {
+namespace Helix.MiddleEnd.TypeChecking {
     internal class RecursiveFieldTypesEnumerator : ITypeVisitor<IEnumerable<IHelixType>> {
         private readonly HashSet<IHelixType> visitedStructs = [];
         private readonly TypeCheckingContext context;

@@ -1,6 +1,4 @@
-﻿using Helix.Analysis.Types;
-
-namespace helix.common.Types {
+﻿namespace Helix.Common.Types {
     internal class TypeStringifier : ITypeVisitor<string> {
         public static TypeStringifier Instance { get; } = new();
 

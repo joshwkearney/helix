@@ -1,11 +1,4 @@
-﻿using Helix.HelixMinusMinus;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace helix.common.Hmm {
+﻿namespace Helix.Common.Hmm {
     public class HmmStringifier : IHmmVisitor<string> {
         private int indent = 0;
 

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Helix.Parsing {
+namespace Helix.Common.Tokens {
     public readonly record struct Token {
         public required TokenLocation Location { get; init; }
 

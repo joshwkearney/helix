@@ -1,6 +1,6 @@
-﻿using Helix.Analysis.Types;
-using Helix.Collections;
-using Helix.Parsing;
+﻿using Helix.Common;
+using Helix.Common.Tokens;
+using Helix.Common.Types;
 
 namespace Helix.Frontend.NameResolution {
     internal class TypeNameResolver : ITypeVisitor<IHelixType> {

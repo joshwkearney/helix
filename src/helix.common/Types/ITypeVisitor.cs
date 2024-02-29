@@ -1,4 +1,4 @@
-﻿namespace Helix.Analysis.Types {
+﻿namespace Helix.Common.Types {
     public interface ITypeVisitor<T> {
         public T VisitVoidType(VoidType type);
 

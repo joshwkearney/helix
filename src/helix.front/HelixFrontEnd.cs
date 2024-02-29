@@ -1,7 +1,6 @@
-﻿using helix.common.Hmm;
+﻿using Helix.Common.Hmm;
 using Helix.Frontend.NameResolution;
 using Helix.Frontend.ParseTree;
-using Helix.HelixMinusMinus;
 
 namespace Helix.Frontend {
     public class HelixFrontend {
