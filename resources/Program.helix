@@ -1,7 +1,13 @@
 union Option {
-	var first as void;
+	var first as word;
 	var second as void;
 	var third as word;
+}
+
+// TODO: Fix new Point
+struct Point {
+	var x as word;
+	var y as word;
 }
 
 //func test2(var opt as Option) as word {
@@ -13,6 +19,8 @@ union Option {
 //}
 
 func test3(var opt as Option) as Option {
+	var p = new Option;
+
 	return if (opt is first) or (opt is second)
 		then new Option
 		else opt;

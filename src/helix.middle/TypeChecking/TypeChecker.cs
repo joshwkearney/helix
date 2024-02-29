@@ -58,7 +58,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             for (int i = 1; i < syntax.Args.Count; i++) {
                 var argType = this.Types[syntax.Args[i]];
 
-                if (!this.Unifier.UnifyWithConvert(argType, totalType).TryGetValue(out totalType)) {
+                if (!this.Unifier.TryUnifyWithConvert(argType, totalType).TryGetValue(out totalType)) {
                     throw new NotImplementedException();
                     //throw TypeException.UnexpectedType(args[i].Location, totalType, argType);
                 }
@@ -112,7 +112,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             if (this.Unifier.CanConvert(type1, BoolType.Instance) && this.Unifier.CanConvert(type2, BoolType.Instance)) {
                 if (!boolOperations.TryGetValue(syntax.Operator, out returnType)) {
-                    throw new InvalidOperationException();
+                    throw TypeCheckException.InvalidBinaryOperator(syntax.Location, type1, type2, syntax.Operator);
                 }
 
                 left = this.Unifier.Convert(left, BoolType.Instance, syntax.Location);
@@ -122,14 +122,14 @@ namespace Helix.MiddleEnd.TypeChecking {
             }
             else if (this.Unifier.CanConvert(type1, WordType.Instance) && this.Unifier.CanConvert(type2, WordType.Instance)) {
                 if (!intOperations.TryGetValue(syntax.Operator, out returnType)) {
-                    throw new InvalidOperationException();
+                    throw TypeCheckException.InvalidBinaryOperator(syntax.Location, type1, type2, syntax.Operator);
                 }
 
                 left = this.Unifier.Convert(left, WordType.Instance, syntax.Location);
                 right = this.Unifier.Convert(right, WordType.Instance, syntax.Location);
             }
             else {
-                throw new InvalidOperationException();
+                throw TypeCheckException.InvalidBinaryOperator(syntax.Location, type1, type2, syntax.Operator);
             }
 
             this.Writer.AddLine(new HmmBinaryOperator() {
@@ -146,7 +146,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         public string VisitBreak(HmmBreakSyntax syntax) {
             if (!this.IsInLoop) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.NotInLoop(syntax.Location);
             }
 
             this.Writer.AddLine(new HmmBreakSyntax() {
@@ -158,7 +158,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         public string VisitContinue(HmmContinueSyntax syntax) {
             if (!this.IsInLoop) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.NotInLoop(syntax.Location);
             }
 
             this.Writer.AddLine(new HmmContinueSyntax() {
@@ -222,10 +222,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             // Unify types
             var affirmType = this.Types[syntax.Affirmative];
             var negType = this.Types[syntax.Negative];
-
-            if (!this.Unifier.UnifyWithConvert(affirmType, negType).TryGetValue(out var totalType)) {
-                throw new InvalidOperationException();
-            }
+            var totalType = this.Unifier.UnifyWithConvert(affirmType, negType, syntax.Location); 
 
             // Unify the true branch in its scope
             this.Writer.PushBlock(affirmBody);
@@ -252,12 +249,12 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public string VisitInvoke(HmmInvokeSyntax syntax) {
-            if (!this.Types[syntax.Target].GetFunctionSignature(this.context).TryGetValue(out var sig)) {
-                throw new InvalidOperationException();
+            if (!this.Types[syntax.Target].TryGetFunctionSignature(this.context).TryGetValue(out var sig)) {
+                throw TypeCheckException.ExpectedFunctionType(syntax.Location, this.Types[syntax.Target]);
             }
 
             if (syntax.Arguments.Count != sig.Parameters.Count) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.ParameterCountMismatch(syntax.Location, sig.Parameters.Count, syntax.Arguments.Count);
             }
 
             var newArgs = new List<string>();
@@ -282,11 +279,11 @@ namespace Helix.MiddleEnd.TypeChecking {
             var type = this.Types[syntax.Operand];
 
             if (!type.GetUnionSignature(this.context).TryGetValue(out var unionType)) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.ExpectedUnionType(syntax.Location);
             }
 
             if (!unionType.Members.Any(x => x.Name == syntax.Field)) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.MemberUndefined(syntax.Location, type, syntax.Field);
             }
 
             this.Writer.AddLine(new HmmIsSyntax() {
@@ -348,7 +345,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 return this.TypeCheckNewUnion(syntax, unionType);
             }
 
-            throw new InvalidOperationException();
+            throw TypeCheckException.UnexpectedType(syntax.Location, syntax.Type);
         }
 
         private string TypeCheckNewStruct(HmmNewSyntax syntax, StructType sig) {
@@ -365,7 +362,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 .ToArray();
 
             if (anonMems.Length > unusedFields.Length) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.NewObjectHasExtraneousFields(syntax.Location, syntax.Type);
             }
 
             var inferredFields = anonMems
@@ -380,19 +377,14 @@ namespace Helix.MiddleEnd.TypeChecking {
             }
 
             var dups = allFields
-                .GroupBy(x => x.Field)
+                .GroupBy(x => x.Field.GetValue())
                 .Where(x => x.Count() > 1)
                 .Select(x => x.Key)
                 .ToArray();
 
             // Make sure there are no duplicate names
             if (dups.Length > 0) {
-                throw new InvalidOperationException();
-
-                //throw new TypeException(
-                //    this.Location,
-                //    "Invalid Struct Initialization",
-                //    $"This initializer contains the duplicate member '{dups.First()}'");
+                throw TypeCheckException.NewObjectHasExtraneousFields(syntax.Location, syntax.Type, dups);
             }
 
             var undefinedFields = allFields
@@ -402,13 +394,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             // Make sure that all members are defined in the struct
             if (undefinedFields.Any()) {
-                throw new InvalidOperationException();
-
-                //throw new TypeException(
-                //    this.Location,
-                //    "Invalid Struct Initialization",
-                //    $"The member '{undefinedFields.First()}' does not exist in the "
-                //        + $"struct type '{this.structType}'");
+                throw TypeCheckException.MemberUndefined(syntax.Location, syntax.Type, undefinedFields[0]);
             }
 
             var absentFields = sig.Members
@@ -419,17 +405,11 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             var requiredAbsentFields = absentFields
                 .Where(x => !x.Type.HasVoidValue(this.context))
-                .Select(x => x.Name)
                 .ToArray();
 
             // Make sure that all the missing members have a default value
             if (requiredAbsentFields.Any()) {
-                throw new InvalidOperationException();
-                //throw new TypeException(
-                //    this.Location,
-                //    "Invalid Struct Initialization",
-                //    $"The unspecified struct member '{requiredAbsentFields.First()}' does not have a default "
-                //        + "value and must be provided in the struct initializer");
+                throw TypeCheckException.TypeWithoutVoidValue(syntax.Location, requiredAbsentFields[0].Type);
             }
 
             var fieldsDict = allFields.ToDictionary(x => x.Field.GetValue(), x => x.Value);
@@ -462,12 +442,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         private string TypeCheckNewUnion(HmmNewSyntax syntax, UnionType sig) {
             if (syntax.Assignments.Count > 1) {
-                throw new InvalidOperationException();
-                //    throw new TypeException(
-                //        this.Location,
-                //        "Invalid Union Initialization",
-                //        "Union initializers must have at most one argument.");
-                //    
+                throw TypeCheckException.NewUnionMultipleMembers(syntax.Location);
             }
 
             // TODO (?): Will fail if union doens't have any members
@@ -479,30 +454,19 @@ namespace Helix.MiddleEnd.TypeChecking {
                 name = sig.Members[0].Name;
 
                 if (!sig.Members[0].Type.HasVoidValue(this.context)) {
-                    throw new InvalidOperationException();
-                    //throw new TypeException(
-                    //this.Location,
-                    //"Invalid Union Initialization",
-                    //$"The union member '{name}' does not have a default value. "
-                    //+ "Please supply an explicit value or initialize the union "
-                    //+ "with a different member.");
+                    throw TypeCheckException.TypeWithoutVoidValue(syntax.Location, syntax.Type);
                 }
 
                 value = this.Unifier.Convert("void", sig.Members[0].Type, syntax.Location);
             }
             else {
-                name = syntax.Assignments[0].Field.GetValue();
+                name = syntax.Assignments[0].Field.OrElse(() => sig.Members[0].Name);
                 value = syntax.Assignments[0].Value;
             }
 
             var mem = sig.Members.FirstOrDefault(x => x.Name == name);
             if (mem == null) {
-                throw new InvalidOperationException();
-                //throw new TypeException(
-                //    this.Location,
-                //    "Invalid Union Initialization",
-                //    $"The member '{name}' does not exist in the "
-                //        + $"union type '{this.unionType}'");
+                throw TypeCheckException.MemberUndefined(syntax.Location, syntax.Type, name);
             }
 
             value = this.Unifier.Convert(value, mem.Type, syntax.Location);
@@ -542,7 +506,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             // Make sure this struct isn't circular
             if (syntax.Type.GetRecursiveFieldTypes(this.context).Contains(syntax.Type)) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.CircularValueObject(syntax.Location, syntax.Type);
             }
 
             return "void";
@@ -584,7 +548,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             // Make sure this struct isn't circular
             if (syntax.Type.GetRecursiveFieldTypes(this.context).Contains(syntax.Type)) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.CircularValueObject(syntax.Location, syntax.Type);
             }
 
             return "void";

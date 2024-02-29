@@ -27,22 +27,6 @@ namespace Helix.MiddleEnd.Unification {
             else if (toType == BoolType.Instance) {
                 return Option.Some<Unifier>((_, _) => "false");
             }
-            else if (toType.GetUnionSignature(context).TryGetValue(out var unionType)) {
-                if (unionType.Members[0].Type.HasVoidValue(context)) {
-                    return Option.Some<Unifier>((value, loc) => {
-                        var name = context.Names.GetConvertName();
-
-                        var syntax = new HmmNewSyntax() {
-                            Location = loc,
-                            Assignments = [],
-                            Type = toType,
-                            Result = name
-                        };
-
-                        return syntax.Accept(context.TypeChecker);
-                    });
-                }
-            }
 
             return Option.None;
         }
@@ -53,8 +37,7 @@ namespace Helix.MiddleEnd.Unification {
 
         public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, TypeCheckingContext context) {
             if (fromType is not SingularWordType sing) {
-                Assert.IsTrue(fromType is SingularWordType);
-                throw new InvalidOperationException();
+                throw Assert.Fail();
             }
 
             if (toType == WordType.Instance) {
@@ -71,12 +54,11 @@ namespace Helix.MiddleEnd.Unification {
         }
     }
     internal class SingularBoolUnificationFactory : IUnificationFactory {
-        public static SingularWordUnificationFactory Instance { get; } = new();
+        public static SingularBoolUnificationFactory Instance { get; } = new();
 
         public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, TypeCheckingContext context) {
             if (fromType is not SingularBoolType sing) {
-                Assert.IsTrue(fromType is SingularBoolType);
-                throw new InvalidOperationException();
+                throw Assert.Fail();
             }
 
             if (toType == BoolType.Instance) {
@@ -87,6 +69,38 @@ namespace Helix.MiddleEnd.Unification {
             }
             else if (!sing.Value) {
                 return VoidUnificationFactory.Instance.CreateUnifier(VoidType.Instance, toType, kind, context);
+            }
+
+            return Option.None;
+        }
+    }
+
+    internal class ToUnionUnificationFactory : IUnificationFactory {
+        public static ToUnionUnificationFactory Instance { get; } = new();
+
+        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, TypeCheckingContext context) {
+            if (!toType.GetUnionSignature(context).TryGetValue(out var unionType)) {
+                throw Assert.Fail();
+            }
+
+            if (context.Unifier.CanUnify(fromType, unionType.Members[0].Type, kind)) {
+                return Option.Some<Unifier>((value, loc) => {
+                    var name = context.Names.GetConvertName();
+
+                    var syntax = new HmmNewSyntax() {
+                        Location = loc,
+                        Assignments = [
+                            new HmmNewFieldAssignment() {
+                                Field = unionType.Members[0].Name,
+                                Value = value
+                            }
+                        ],
+                        Type = toType,
+                        Result = name
+                    };
+
+                    return syntax.Accept(context.TypeChecker);
+                });
             }
 
             return Option.None;

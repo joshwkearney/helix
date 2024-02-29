@@ -171,7 +171,8 @@
             }
             this.indent--;
 
-            result = result.Trim(',');
+            result = result.Trim(',', '\n');
+            result += "\n";
             result += this.GetIndent() + "};\n";
 
             return result;
@@ -243,7 +244,7 @@
                 return this.GetIndent() + $"var {syntax.Variable} = {syntax.Value};\n";
             }
             else {
-                return this.GetIndent() + $"let {syntax.Variable} = {syntax.Value};";
+                return this.GetIndent() + $"let {syntax.Variable} = {syntax.Value};\n";
             }
         }
 

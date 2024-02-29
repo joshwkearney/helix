@@ -17,6 +17,8 @@ namespace Helix.MiddleEnd.Unification {
 
         public bool CanPun(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Pun).HasValue;
 
+        public bool CanUnify(IHelixType fromType, IHelixType toType, UnificationKind kind) => GetUnifier(fromType, toType, kind).HasValue;
+
         public string Cast(string value, IHelixType toType, TokenLocation loc) {
             Assert.IsTrue(context.Types.ContainsType(value));
 
@@ -32,8 +34,9 @@ namespace Helix.MiddleEnd.Unification {
             Assert.IsTrue(context.Types.ContainsType(value));
 
             var fromType = context.Types[value];
+
             if (!GetUnifier(fromType, toType, UnificationKind.Convert).TryGetValue(out var unifier)) {
-                throw new InvalidOperationException();
+                throw TypeCheckException.TypeConversionFailed(loc, fromType, toType);
             }
 
             return unifier.Invoke(value, loc);
@@ -50,11 +53,35 @@ namespace Helix.MiddleEnd.Unification {
             return unifier.Invoke(value, loc);
         }
 
-        public Option<IHelixType> UnifyWithCast(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Cast);
+        public Option<IHelixType> TryUnifyWithCast(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Cast);
 
-        public Option<IHelixType> UnifyWithConvert(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Convert);
+        public Option<IHelixType> TryUnifyWithConvert(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Convert);
 
-        public Option<IHelixType> UnifyWithPun(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Pun);
+        public Option<IHelixType> TryUnifyWithPun(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Pun);
+
+        public IHelixType UnifyWithCast(IHelixType type1, IHelixType type2, TokenLocation loc) {
+            if (!this.TryUnifyWithCast(type1, type2).TryGetValue(out var type)) {
+                throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
+            }
+
+            return type;
+        }
+
+        public IHelixType UnifyWithConvert(IHelixType type1, IHelixType type2, TokenLocation loc) {
+            if (!this.TryUnifyWithConvert(type1, type2).TryGetValue(out var type)) {
+                throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
+            }
+
+            return type;
+        }
+
+        public IHelixType UnifyWithPun(IHelixType type1, IHelixType type2, TokenLocation loc) {
+            if (!this.TryUnifyWithPun(type1, type2).TryGetValue(out var type)) {
+                throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
+            }
+
+            return type;
+        }
 
         private Option<IHelixType> GetUnifyingType(IHelixType type1, IHelixType type2, UnificationKind kind) {
             if (GetUnifier(type1, type2, kind).TryGetValue(out var u)) {
@@ -105,6 +132,10 @@ namespace Helix.MiddleEnd.Unification {
             }
             else if (fromType is SingularBoolType) {
                 yield return SingularBoolUnificationFactory.Instance;
+            }
+
+            if (toType.GetUnionSignature(this.context).HasValue) {
+                yield return ToUnionUnificationFactory.Instance;
             }
         }
     }

@@ -8,14 +8,14 @@ namespace Helix.MiddleEnd.TypeChecking {
             return type.Accept(SupertypeFetcher.Instance);
         }
 
-        public static Option<FunctionType> GetFunctionSignature(this IHelixType type, TypeCheckingContext context) {
+        public static Option<FunctionType> TryGetFunctionSignature(this IHelixType type, TypeCheckingContext context) {
             if (type is FunctionType f) {
                 return f;
             }
             else if (type is NominalType nom) {
                 Assert.IsTrue(context.Types.ContainsType(nom.Name));
 
-                return context.Types[nom.Name].GetFunctionSignature(context);
+                return context.Types[nom.Name].TryGetFunctionSignature(context);
             }
             else {
                 return Option.None;
