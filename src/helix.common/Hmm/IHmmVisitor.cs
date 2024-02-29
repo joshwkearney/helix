@@ -2,7 +2,7 @@
     public interface IHmmVisitor<T> {
         public T VisitUnaryOperator(HmmUnaryOperator syntax);
 
-        public T VisitBinaryOperator(HmmBinaryOperator syntax);
+        public T VisitBinarySyntax(HmmBinaryOperator syntax);
 
         public T VisitNew(HmmNewSyntax syntax);
 

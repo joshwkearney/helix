@@ -21,7 +21,7 @@ namespace helix.common.Hmm {
             return this.GetIndent() + $"let {syntax.Result} = {syntax.Operand} as {syntax.Type};\n";
         }
 
-        public string VisitBinaryOperator(HmmBinaryOperator syntax) {
+        public string VisitBinarySyntax(HmmBinaryOperator syntax) {
             var op = syntax.Operator switch {
                 BinaryOperationKind.Add => "+",
                 BinaryOperationKind.Subtract => "-",
@@ -179,7 +179,7 @@ namespace helix.common.Hmm {
             this.indent--;
 
             result = result.Trim(',');
-            result += this.GetIndent() + "};";
+            result += this.GetIndent() + "};\n";
 
             return result;
         }

@@ -47,6 +47,8 @@ namespace Helix.HelixMinusMinus {
     public record HmmStructDeclaration : IHmmSyntax {
         public required TokenLocation Location { get; init; }
 
+        public required NominalType Type { get; init; }
+
         public required StructType Signature { get; init; }
 
         public required string Name { get; init; }
@@ -56,6 +58,8 @@ namespace Helix.HelixMinusMinus {
 
     public record HmmUnionDeclaration : IHmmSyntax {
         public required TokenLocation Location { get; init; }
+
+        public required NominalType Type { get; init; }
 
         public required UnionType Signature { get; init; }
 
@@ -107,7 +111,7 @@ namespace Helix.HelixMinusMinus {
 
         public required string Right { get; init; }
 
-        public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitBinaryOperator(this);
+        public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitBinarySyntax(this);
     }
 
     public record HmmBreakSyntax : IHmmSyntax {

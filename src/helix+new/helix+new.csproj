@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\helix.common\helix.common.csproj" />
     <ProjectReference Include="..\helix.front\helix.front.csproj" />
+    <ProjectReference Include="..\helix.middle\helix.middle.csproj" />
   </ItemGroup>
 
 </Project>

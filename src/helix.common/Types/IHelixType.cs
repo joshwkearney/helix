@@ -2,6 +2,14 @@
 
 namespace Helix.Analysis.Types {
     public abstract record IHelixType {
+        public bool IsVoid => this is VoidType;
+
+        public bool IsWord => this is WordType;
+
+        public bool IsBool => this is BoolType;
+
+        public Option<UnionType> AsUnion() => (this is UnionType type) ? type : Option.None;
+
         public abstract T Accept<T>(ITypeVisitor<T> visitor);
 
         public sealed override string ToString() => this.Accept(TypeStringifier.Instance);
@@ -14,6 +22,8 @@ namespace Helix.Analysis.Types {
     }
 
     public record BoolType : IHelixType {
+        public static BoolType Instance { get; } = new BoolType();
+
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitBoolType(this);
     }
 
@@ -86,10 +96,14 @@ namespace Helix.Analysis.Types {
     }
 
     public record VoidType : IHelixType {
+        public static VoidType Instance { get; } = new VoidType();
+
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitVoidType(this);
     }
 
     public record WordType : IHelixType {
+        public static WordType Instance { get; } = new WordType();
+
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitWordType(this);
     }
 

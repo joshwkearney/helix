@@ -391,7 +391,9 @@ namespace Helix.Frontend.NameResolution {
             var structType = (StructType)syntax.Signature.Accept(this.GetTypeNameResolver(syntax.Location));
 
             this.declarations.SetDeclaration(this.Scope, syntax.Name, structType);
-            this.mangler.MangleGlobalName(this.Scope, syntax.Name);
+
+            var mangled = this.mangler.MangleGlobalName(this.Scope, syntax.Name);
+            var nominalType = new NominalType() { Name = mangled, DisplayName = syntax.Name };
 
             this.writer.AddTypeDeclaration(new HmmTypeDeclaration() {
                 Location = syntax.Location,
@@ -402,13 +404,33 @@ namespace Helix.Frontend.NameResolution {
             this.writer.AddLine(new HmmStructDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
-                Signature = structType
+                Signature = structType,
+                Type = nominalType
             });
 
             return "void";
         }
 
         public string VisitUnarySyntax(UnarySyntax syntax) {
+            // Lower plus and minus unary operators to a binary operator
+            if (syntax.Operator == UnaryOperatorKind.Plus || syntax.Operator == UnaryOperatorKind.Minus) {
+                var op = syntax.Operator == UnaryOperatorKind.Plus
+                    ? BinaryOperationKind.Add
+                    : BinaryOperationKind.Subtract;
+
+                var newSyntax = new BinarySyntax() {
+                    Location = syntax.Location,
+                    Left = new WordLiteral() {
+                        Location = syntax.Location,
+                        Value = 0
+                    },
+                    Right = syntax.Operand,
+                    Operator = op
+                };
+
+                return newSyntax.Accept(this);
+            }
+
             var arg = syntax.Operand.Accept(this);
             var result = this.mangler.MangleTempName(this.Scope);
 
@@ -426,7 +448,9 @@ namespace Helix.Frontend.NameResolution {
             var unionType = (UnionType)syntax.Signature.Accept(this.GetTypeNameResolver(syntax.Location));
 
             this.declarations.SetDeclaration(this.Scope, syntax.Name, unionType);
-            this.mangler.MangleGlobalName(this.Scope, syntax.Name);
+
+            var mangled = this.mangler.MangleGlobalName(this.Scope, syntax.Name);
+            var nominalType = new NominalType() { Name = mangled, DisplayName = syntax.Name };
 
             this.writer.AddTypeDeclaration(new HmmTypeDeclaration() {
                 Location = syntax.Location,
@@ -437,7 +461,8 @@ namespace Helix.Frontend.NameResolution {
             this.writer.AddLine(new HmmUnionDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
-                Signature = unionType
+                Signature = unionType,
+                Type = nominalType
             });
 
             return "void";

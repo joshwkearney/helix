@@ -43,7 +43,11 @@ namespace helix.common.Hmm {
             this.lines.Push([]);
         }
 
-        public IReadOnlyList<IHmmSyntax> PopBlock() {
+        public void PushBlock(List<IHmmSyntax> lines) {
+            this.lines.Push(lines);
+        }
+
+        public List<IHmmSyntax> PopBlock() {
             if (this.lines.Count <= 1) {
                 return [];
             }
