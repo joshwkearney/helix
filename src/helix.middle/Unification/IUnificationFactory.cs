@@ -28,6 +28,20 @@ namespace Helix.MiddleEnd.Unification {
                 return Option.Some<Unifier>((_, _) => "false");
             }
 
+            if (toType.GetArraySignature(context).TryGetValue(out var arraySig)) {
+                return Option.Some<Unifier>((value, loc) => {
+                    var name = context.Names.GetConvertName();
+
+                    var line = new HmmNewSyntax() {
+                        Location = loc,
+                        Result = name,
+                        Type = toType
+                    };
+
+                    return line.Accept(context.TypeChecker);
+                });
+            }
+
             return Option.None;
         }
     }

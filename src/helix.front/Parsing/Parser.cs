@@ -58,7 +58,28 @@ namespace Helix.Frontend.ParseTree {
 
         /** Type Parsing **/
         private IHelixType ParseType() {
-            return this.TypeAtom();
+            return this.TypePrefixExprssion();
+        }
+
+        private IHelixType TypePrefixExprssion() {
+            if (this.TryAdvance(TokenKind.Star)) {
+                return new PointerType() { InnerType = this.TypeSuffixExpression() };
+            }
+            else {
+                return this.TypeSuffixExpression();
+            }
+        }
+
+        private IHelixType TypeSuffixExpression() {
+            var first = this.TypeAtom();
+
+            if (this.TryAdvance(TokenKind.OpenBracket)) {
+                this.Advance(TokenKind.CloseBracket);
+
+                return new ArrayType() { InnerType = first };
+            }
+
+            return first;
         }
 
         private IHelixType TypeAtom() {
@@ -86,6 +107,12 @@ namespace Helix.Frontend.ParseTree {
                 var name = this.Advance(TokenKind.Identifier).Value;
 
                 return new NominalType() { Name = name, DisplayName = name };
+            }
+            else if (this.TryAdvance(TokenKind.OpenParenthesis)) {
+                var result = this.ParseType();
+
+                this.Advance(TokenKind.CloseParenthesis);
+                return result;
             }
             else {
                 throw ParseException.UnexpectedToken(this.Advance());

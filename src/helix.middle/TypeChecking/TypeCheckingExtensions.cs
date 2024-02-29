@@ -50,6 +50,15 @@ namespace Helix.MiddleEnd.TypeChecking {
             }
         }
 
+        public static Option<ArrayType> GetArraySignature(this IHelixType type, TypeCheckingContext context) {
+            if (type is ArrayType arrayType) {
+                return arrayType;
+            }
+            else {
+                return Option.None;
+            }
+        }
+
         public static IEnumerable<IHelixType> GetRecursiveFieldTypes(this IHelixType type, TypeCheckingContext context) {
             return type.Accept(new RecursiveFieldTypesEnumerator(context));
         }

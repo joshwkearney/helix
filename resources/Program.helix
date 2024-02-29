@@ -19,14 +19,16 @@ struct Point {
 //}
 
 func test3(var opt as Option) as Option {
-	var p = new Option;
+	var x = void as Point[];
+
+	//x.x = 7;
+
+	//x = 89;
 
 	return if (opt is first) or (opt is second)
-		then new Option
-		else opt;
+		then void
+		else x.count;
 }
-
-
 
 //func test4(var opt as Option) {
 //	while opt is third {

@@ -14,7 +14,7 @@
             return this.GetIndent() + $"let {syntax.Result} = {syntax.Operand} as {syntax.Type};\n";
         }
 
-        public string VisitBinarySyntax(HmmBinaryOperator syntax) {
+        public string VisitBinarySyntax(HmmBinarySyntax syntax) {
             var op = syntax.Operator switch {
                 BinaryOperationKind.Add => "+",
                 BinaryOperationKind.Subtract => "-",
@@ -150,7 +150,7 @@
         }
 
         public string VisitMemberAccess(HmmMemberAccess syntax) {
-            return this.GetIndent() + $"let {syntax.Result} = {syntax.Operand}.{syntax.FieldName};\n";
+            return this.GetIndent() + $"let {syntax.Result} = {syntax.Operand}.{syntax.Member};\n";
         }
 
         public string VisitNew(HmmNewSyntax syntax) {
@@ -163,17 +163,24 @@
                 }
             });
 
-            var result = this.GetIndent() + $"let {syntax.Result} = new {syntax.Type} {{\n";
+            var result = this.GetIndent() + $"let {syntax.Result} = new {syntax.Type}";
 
-            this.indent++;
-            foreach (var thing in assignments) {
-                result += this.GetIndent() + thing + ",\n";
+            if (syntax.Assignments.Count > 0) {
+                result += " {\n";
+
+                this.indent++;
+                foreach (var thing in assignments) {
+                    result += this.GetIndent() + thing + ",\n";
+                }
+                this.indent--;
+
+                result = result.Trim(',', '\n');
+                result += "\n";
+                result += this.GetIndent() + "};\n";
             }
-            this.indent--;
-
-            result = result.Trim(',', '\n');
-            result += "\n";
-            result += this.GetIndent() + "};\n";
+            else {
+                result += ";\n";
+            }
 
             return result;
         }

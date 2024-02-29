@@ -17,7 +17,7 @@
         }
 
         public string VisitNominalType(NominalType type) {
-            return type.Name;
+            return type.DisplayName;
         }
 
         public string VisitPointerType(PointerType type) {
@@ -33,15 +33,15 @@
         }
 
         public string VisitStructType(StructType type) {
-            var members = type.Members.Select(x => (x.IsMutable ? "var" : "let") + " " + x.Name + " as " + x.Type);
+            var members = type.Members.Select(x => (x.IsMutable ? "var" : "let") + " " + x.Name + " as " + x.Type + "; ");
 
-            return "struct { " + string.Join("; ", members) + "}";
+            return "struct { " + string.Join("", members) + "}";
         }
 
         public string VisitUnionType(UnionType type) {
-            var members = type.Members.Select(x => (x.IsMutable ? "var" : "let") + " " + x.Name + " as " + x.Type);
+            var members = type.Members.Select(x => (x.IsMutable ? "var" : "let") + " " + x.Name + " as " + x.Type + "; ");
 
-            return "union { " + string.Join("; ", members) + "}";
+            return "union { " + string.Join("", members) + "}";
         }
 
         public string VisitVoidType(VoidType type) {

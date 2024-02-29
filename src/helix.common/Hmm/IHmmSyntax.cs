@@ -18,6 +18,8 @@ namespace Helix.Common.Hmm {
         public string Result { get; }
     }
 
+    //public record Hmm
+
     public record HmmTypeDeclaration : IHmmSyntax {
         public required TokenLocation Location { get; init; }
 
@@ -98,7 +100,7 @@ namespace Helix.Common.Hmm {
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitAsSyntax(this);
     }
 
-    public record HmmBinaryOperator : IHmmExpression {
+    public record HmmBinarySyntax : IHmmExpression {
         public required TokenLocation Location { get; init; }
 
         public required string Result { get; init; }
@@ -193,7 +195,7 @@ namespace Helix.Common.Hmm {
 
         public required string Operand { get; init; }
 
-        public required string FieldName { get; init; }
+        public required string Member { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitMemberAccess(this);
     }

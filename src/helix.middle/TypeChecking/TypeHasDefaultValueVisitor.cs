@@ -9,7 +9,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.context = context;
         }
 
-        public bool VisitArrayType(ArrayType type) => type.Accept(this);
+        public bool VisitArrayType(ArrayType type) => true;
 
         public bool VisitBoolType(BoolType type) => true;
 

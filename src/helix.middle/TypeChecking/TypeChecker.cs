@@ -59,8 +59,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 var argType = this.Types[syntax.Args[i]];
 
                 if (!this.Unifier.TryUnifyWithConvert(argType, totalType).TryGetValue(out totalType)) {
-                    throw new NotImplementedException();
-                    //throw TypeException.UnexpectedType(args[i].Location, totalType, argType);
+                    throw TypeCheckException.TypeConversionFailed(syntax.Location, totalType, argType);
                 }
             }
 
@@ -94,12 +93,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             return syntax.Result;
         }
 
-        public string VisitBinarySyntax(HmmBinaryOperator syntax) {
+        public string VisitBinarySyntax(HmmBinarySyntax syntax) {
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.BranchingAnd);
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.BranchingOr);
 
             if (syntax.Operator == BinaryOperationKind.Index) {
-                throw new NotImplementedException();
+                return this.TypeCheckIndex(syntax);
             }
 
             var type1 = this.Types[syntax.Left];
@@ -132,7 +131,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.InvalidBinaryOperator(syntax.Location, type1, type2, syntax.Operator);
             }
 
-            this.Writer.AddLine(new HmmBinaryOperator() {
+            this.Writer.AddLine(new HmmBinarySyntax() {
                 Location = syntax.Location,
                 Left = left,
                 Right = right,
@@ -141,6 +140,27 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = returnType;
+            return syntax.Result;
+        }
+
+        private string TypeCheckIndex(HmmBinarySyntax syntax) {
+            Assert.IsTrue(syntax.Operator == BinaryOperationKind.Index);
+
+            if (this.Types[syntax.Left].GetArraySignature(this.context).TryGetValue(out var arrayType)) {
+                throw TypeCheckException.ExpectedArrayType(syntax.Location, this.Types[syntax.Left]);
+            }
+
+            var index = this.Unifier.Convert(syntax.Right, WordType.Instance, syntax.Location);
+
+            this.Writer.AddLine(new HmmBinarySyntax() {
+                Location = syntax.Location,
+                Left = syntax.Left,
+                Right = index,
+                Operator = BinaryOperationKind.Index,
+                Result = syntax.Result
+            });
+
+            this.Types[syntax.Result] = arrayType.InnerType;
             return syntax.Result;
         }
 
@@ -317,7 +337,42 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public string VisitMemberAccess(HmmMemberAccess syntax) {
-            throw new NotImplementedException();
+            var targetType = this.Types[syntax.Operand];
+
+            if (targetType.GetArraySignature(this.context).TryGetValue(out _)) {
+                if (syntax.Member != "count") {
+                    throw TypeCheckException.MemberUndefined(syntax.Location, targetType, syntax.Member);
+                }
+
+                this.Writer.AddLine(new HmmMemberAccess() {
+                    Location = syntax.Location,
+                    Member = syntax.Member,
+                    Operand = syntax.Operand,
+                    Result = syntax.Result
+                });
+
+                this.Types[syntax.Result] = WordType.Instance;
+                return syntax.Result;
+            }
+            else if (targetType.GetStructSignature(this.context).TryGetValue(out var structType)) {
+                var mem = structType.Members.FirstOrDefault(x => x.Name == syntax.Member);
+                if (mem == null) {
+                    throw TypeCheckException.MemberUndefined(syntax.Location, targetType, syntax.Member);
+                }
+
+                this.Writer.AddLine(new HmmMemberAccess() {
+                    Location = syntax.Location,
+                    Member = syntax.Member,
+                    Operand = syntax.Operand,
+                    Result = syntax.Result
+                });
+
+                this.Types[syntax.Result] = mem.Type;
+                return syntax.Result;
+            }
+            else {
+                throw TypeCheckException.UnexpectedType(syntax.Location, targetType);
+            }
         }
 
         public string VisitNew(HmmNewSyntax syntax) {
@@ -335,8 +390,8 @@ namespace Helix.MiddleEnd.TypeChecking {
                 this.Types[syntax.Result] = syntax.Type;
                 return syntax.Result;
             }
-            else if (syntax.Type is ArrayType) {
-                throw new NotImplementedException();
+            else if (syntax.Type is ArrayType arraySig) {
+                return this.TypeCheckNewArray(syntax, arraySig);
             }
             else if (syntax.Type.GetStructSignature(this.context).TryGetValue(out var structType)) {
                 return this.TypeCheckNewStruct(syntax, structType);
@@ -346,6 +401,21 @@ namespace Helix.MiddleEnd.TypeChecking {
             }
 
             throw TypeCheckException.UnexpectedType(syntax.Location, syntax.Type);
+        }
+
+        private string TypeCheckNewArray(HmmNewSyntax syntax, ArrayType sig) {
+            if (syntax.Assignments.Count > 0) {
+                throw TypeCheckException.NewObjectHasExtraneousFields(syntax.Location, syntax.Type);
+            }
+
+            this.Writer.AddLine(new HmmNewSyntax() {
+                Location = syntax.Location,
+                Result = syntax.Result,
+                Type = syntax.Type
+            });
+
+            this.Types[syntax.Result] = syntax.Type;
+            return syntax.Result;
         }
 
         private string TypeCheckNewStruct(HmmNewSyntax syntax, StructType sig) {

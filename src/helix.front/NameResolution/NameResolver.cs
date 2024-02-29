@@ -103,7 +103,7 @@ namespace Helix.Frontend.NameResolution {
             var right = syntax.Right.Accept(this);
             var result = this.mangler.MangleTempName(this.Scope);
 
-            this.writer.AddLine(new HmmBinaryOperator() {
+            this.writer.AddLine(new HmmBinarySyntax() {
                 Location = syntax.Location,
                 Left = left,
                 Right = right,
@@ -347,7 +347,7 @@ namespace Helix.Frontend.NameResolution {
             this.writer.AddLine(new HmmMemberAccess() {
                 Location = syntax.Location,
                 Operand = arg,
-                FieldName = syntax.Field,
+                Member = syntax.Field,
                 Result = result
             });
 
