@@ -432,7 +432,21 @@ namespace Helix.Frontend.ParseTree {
             return first;
         }
 
-        private IParseTree PrefixExpression() => this.AsExpression();
+        private IParseTree PrefixExpression() {
+            if (this.Peek(TokenKind.Star)) {
+                var start = this.Advance(TokenKind.Star);
+                var target = this.AsExpression();
+                var loc = start.Location.Span(target.Location);
+
+                return new UnarySyntax() {
+                    Location = loc,
+                    Operand = target,
+                    Operator = UnaryOperatorKind.Dereference
+                };
+            }
+
+            return this.AsExpression();
+        }
 
         private IParseTree AsExpression() {
             var first = this.UnaryExpression();
@@ -506,8 +520,7 @@ namespace Helix.Frontend.ParseTree {
 
             while (Peek(TokenKind.OpenParenthesis)
                 || Peek(TokenKind.Dot)
-                || Peek(TokenKind.OpenBracket)
-                || Peek(TokenKind.Star)) {
+                || Peek(TokenKind.OpenBracket)) {
 
                 if (Peek(TokenKind.OpenParenthesis)) {
                     first = this.InvokeExpression(first);
@@ -517,9 +530,6 @@ namespace Helix.Frontend.ParseTree {
                 }
                 else if (Peek(TokenKind.OpenBracket)) {
                     first = this.IndexExpression(first);
-                }
-                else if (Peek(TokenKind.Star)) {
-                    first = this.DereferenceExpression(first);
                 }
                 else {
                     throw new Exception("Unexpected suffix token");
@@ -577,17 +587,6 @@ namespace Helix.Frontend.ParseTree {
                 Left = start,
                 Right = index,
                 Operator = BinaryOperationKind.Index
-            };
-        }
-
-        public IParseTree DereferenceExpression(IParseTree first) {
-            var op = this.Advance(TokenKind.Star);
-            var loc = first.Location.Span(op.Location);
-
-            return new UnarySyntax() {
-                Location = loc,
-                Operand = first,
-                Operator = UnaryOperatorKind.Dereference
             };
         }
 

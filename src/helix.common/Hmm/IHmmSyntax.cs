@@ -1,5 +1,6 @@
 ﻿using Helix.Common.Tokens;
 using Helix.Common.Types;
+using System.Reflection.Emit;
 
 namespace Helix.Common.Hmm {
     public interface IHmmSyntax {
@@ -18,7 +19,41 @@ namespace Helix.Common.Hmm {
         public string Result { get; }
     }
 
-    //public record Hmm
+    public record HmmDereference : IHmmExpression {
+        public required string Result { get; init; }
+
+        public required string Operand { get; init; }
+
+        public required TokenLocation Location { get; init; }
+
+        public required bool IsLValue { get; init; } = false;
+
+        public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitDereference(this);
+    }
+
+    public record HmmIndex : IHmmExpression {
+        public required string Result { get; init; }
+
+        public required string Operand { get; init; }
+
+        public required string Index { get; init; }
+
+        public required TokenLocation Location { get; init; }
+
+        public required bool IsLValue { get; init; } = false;
+
+        public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitIndex(this);
+    }
+
+    public record HmmAddressOf : IHmmExpression {
+        public required string Result { get; init; }
+
+        public required string Operand { get; init; }
+
+        public required TokenLocation Location { get; init; }
+
+        public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitAddressOf(this);
+    }
 
     public record HmmTypeDeclaration : IHmmSyntax {
         public required TokenLocation Location { get; init; }
@@ -196,6 +231,8 @@ namespace Helix.Common.Hmm {
         public required string Operand { get; init; }
 
         public required string Member { get; init; }
+
+        public required bool IsLValue { get; init; } = false;
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitMemberAccess(this);
     }

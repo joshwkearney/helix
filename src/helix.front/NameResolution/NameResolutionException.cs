@@ -18,5 +18,19 @@ namespace Helix.Frontend.NameResolution {
                 "Analysis Exception: Identifier Already Defined",
                 $"The identifier '{name}' is already defined in the current scope");
         }
+
+        public static NameResolutionException ExpectedRValue(TokenLocation location) {
+            return new NameResolutionException(
+                location,
+                "Analysis Exception: RValue Required",
+                $"An rvalue is required in this context. Are you trying to store a type in a variable?");
+        }
+
+        public static NameResolutionException ExpectedLValue(TokenLocation location) {
+            return new NameResolutionException(
+                location,
+                "Analysis Exception: LValue Required",
+                $"An lvalue is required in this context. Are you trying to assign to a read-only variable?");
+        }
     }
 }

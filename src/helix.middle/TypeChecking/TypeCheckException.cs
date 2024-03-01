@@ -6,6 +6,20 @@ namespace Helix.MiddleEnd.TypeChecking {
     public class TypeCheckException : HelixException {
         public TypeCheckException(TokenLocation location, string title, string message) : base(location, title, message) { }
 
+        public static TypeCheckException ExpectedRValue(TokenLocation location) {
+            return new TypeCheckException(
+                location,
+                "Analysis Exception: RValue Required",
+                $"An rvalue is required in this context. Are you trying to store a type in a variable?");
+        }
+
+        public static TypeCheckException ExpectedLValue(TokenLocation location) {
+            return new TypeCheckException(
+                location,
+                "Analysis Exception: LValue Required",
+                $"An lvalue is required in this context. Are you trying to assign to a read-only variable?");
+        }
+
         public static TypeCheckException NewUnionMultipleMembers(TokenLocation location) {
             return new TypeCheckException(
                 location,
@@ -17,7 +31,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             return new TypeCheckException(
                 location,
                 "Analysis Exception: Failed type conversion",
-                $"Unable to convert type '{fromType}' to '{toType}'");
+                $"Unable to convert type '{fromType}' to type '{toType}'");
         }
 
         public static TypeCheckException TypeUnificationFailed(TokenLocation location, IHelixType type1, IHelixType type2) {
@@ -55,6 +69,13 @@ namespace Helix.MiddleEnd.TypeChecking {
                 $"The operator '{op}' is not valid on the types '{type1}' and '{type2}'");
         }
 
+        public static TypeCheckException InvalidUnaryOperator(TokenLocation loc, IHelixType type, UnaryOperatorKind op) {
+            return new TypeCheckException(
+                loc,
+                "Analysis Exception: Invalid unary operator",
+                $"The operator '{op}' is not valid on the type '{type}'");
+        }
+
         public static TypeCheckException NotInLoop(TokenLocation loc) {
             return new TypeCheckException(
                 loc,
@@ -69,21 +90,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 location,
                 "Analysis Exception: Invalid function body",
                 $"This function does not return a value on all code paths.");
-        }
-
-        public static TypeCheckException RValueRequired(TokenLocation location) {
-            return new TypeCheckException(
-                location,
-                "Analysis Exception: RValue Required",
-                $"An rvalue is required in this context. Are you trying to store a type in a variable?");
-        }
-
-        public static TypeCheckException LValueRequired(TokenLocation location) {
-            return new TypeCheckException(
-                location,
-                "Analysis Exception: LValue Required",
-                $"An lvalue is required in this context. Are you trying to assign to a read-only variable?");
-        }
+        }        
 
         public static TypeCheckException ExpectedTypeExpression(TokenLocation location) {
             return new TypeCheckException(
@@ -127,11 +134,11 @@ namespace Helix.MiddleEnd.TypeChecking {
                 $"The identifier '{name}' is already defined in the current scope");
         }
 
-        public static TypeCheckException ExpectedVariableType(TokenLocation location, IHelixType actual) {
+        public static TypeCheckException ExpectedPointerType(TokenLocation location, IHelixType actual) {
             return new TypeCheckException(
                 location,
-                "Analysis Exception: Expected Variable Type",
-                $"Expected a variable type, but recieved '{actual}'");
+                "Analysis Exception: Expected Pointer Type",
+                $"Expected a pointer type, but recieved '{actual}'");
         }
 
         public static TypeCheckException ExpectedFunctionType(TokenLocation location, IHelixType actual) {

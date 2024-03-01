@@ -1,5 +1,11 @@
 ﻿namespace Helix.Common.Hmm {
     public interface IHmmVisitor<T> {
+        public T VisitDereference(HmmDereference syntax);
+
+        public T VisitIndex(HmmIndex syntax);
+
+        public T VisitAddressOf(HmmAddressOf syntax);
+
         public T VisitUnaryOperator(HmmUnaryOperator syntax);
 
         public T VisitBinarySyntax(HmmBinarySyntax syntax);

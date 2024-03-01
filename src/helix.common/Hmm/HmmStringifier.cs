@@ -2,6 +2,10 @@
     public class HmmStringifier : IHmmVisitor<string> {
         private int indent = 0;
 
+        public string VisitAddressOf(HmmAddressOf syntax) {
+            return this.GetIndent() + $"let {syntax.Result} = &{syntax.Operand};\n";
+        }
+
         public string VisitArrayLiteral(HmmArrayLiteral syntax) {
             return this.GetIndent() + $"let {syntax.Result} = [{string.Join(", ", syntax.Args)}];\n";
         }
@@ -44,6 +48,12 @@
 
         public string VisitContinue(HmmContinueSyntax syntax) {
             return this.GetIndent() + "continue;\n";
+        }
+
+        public string VisitDereference(HmmDereference syntax) {
+            var var = syntax.IsLValue ? "ref" : "let";
+
+            return this.GetIndent() + $"{var} {syntax.Result} = *{syntax.Operand};\n";
         }
 
         public string VisitFunctionDeclaration(HmmFunctionDeclaration syntax) {
@@ -127,6 +137,12 @@
             }
         }
 
+        public string VisitIndex(HmmIndex syntax) {
+            var var = syntax.IsLValue ? "ref" : "let";
+
+            return this.GetIndent() + $"{var} {syntax.Result} = {syntax.Operand}[{syntax.Index}];\n";
+        }
+
         public string VisitInvoke(HmmInvokeSyntax syntax) {
             return this.GetIndent() + $"let {syntax.Result} = {syntax.Target}({string.Join(", ", syntax.Arguments)});\n";
         }
@@ -150,7 +166,9 @@
         }
 
         public string VisitMemberAccess(HmmMemberAccess syntax) {
-            return this.GetIndent() + $"let {syntax.Result} = {syntax.Operand}.{syntax.Member};\n";
+            var var = syntax.IsLValue ? "ref" : "let";
+
+            return this.GetIndent() + $"{var} {syntax.Result} = {syntax.Operand}.{syntax.Member};\n";
         }
 
         public string VisitNew(HmmNewSyntax syntax) {

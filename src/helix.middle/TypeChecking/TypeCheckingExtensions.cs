@@ -59,6 +59,15 @@ namespace Helix.MiddleEnd.TypeChecking {
             }
         }
 
+        public static Option<PointerType> GetPointerSignature(this IHelixType type, TypeCheckingContext context) {
+            if (type is PointerType ptrType) {
+                return ptrType;
+            }
+            else {
+                return Option.None;
+            }
+        }
+
         public static IEnumerable<IHelixType> GetRecursiveFieldTypes(this IHelixType type, TypeCheckingContext context) {
             return type.Accept(new RecursiveFieldTypesEnumerator(context));
         }

@@ -18,16 +18,10 @@ struct Point {
 //	return 45;
 //}
 
-func test3(var opt as Option) as Option {
-	var x = void as Point[];
+func test3(var p as Point[]) {
+	var x = 45;
 
-	//x.x = 7;
-
-	//x = 89;
-
-	return if (opt is first) or (opt is second)
-		then void
-		else x.count;
+	p[0].y = 4 + 7;
 }
 
 //func test4(var opt as Option) {

@@ -3,11 +3,13 @@ using Helix.Common.Hmm;
 using Helix.Common.Tokens;
 using Helix.Common.Types;
 using Helix.Frontend.ParseTree;
+using System.Linq.Expressions;
 
 namespace Helix.Frontend.NameResolution {
     internal class NameResolver : IParseTreeVisitor<string> {
         private readonly HmmWriter writer = new();
-        private readonly Stack<IdentifierPath> scopes = new();
+        private readonly Stack<IdentifierPath> scopes = [];
+        private readonly Stack<bool> expectedLValue = [];
         private readonly NameMangler mangler = new();
         private readonly DeclarationStore declarations;
 
@@ -15,10 +17,13 @@ namespace Helix.Frontend.NameResolution {
 
         public IReadOnlyList<IHmmSyntax> Result => this.writer.Lines;
 
+        public bool ExpectedLValue => this.expectedLValue.Peek();
+
         public NameResolver(DeclarationStore declarations) {
             this.declarations = declarations;
 
             this.scopes.Push(new IdentifierPath());
+            this.expectedLValue.Push(false);
         }
 
         private TypeNameResolver GetTypeNameResolver(TokenLocation location) {
@@ -26,6 +31,10 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitArrayLiteral(ArrayLiteral syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var items = syntax.Args.Select(x => x.Accept(this)).ToArray();
             var result = this.mangler.MangleTempName(this.Scope);
 
@@ -39,6 +48,10 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitAs(AsSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var resolvedType = syntax.Type.Accept(this.GetTypeNameResolver(syntax.Location));
             var target = syntax.Operand.Accept(this);
             var result = this.mangler.MangleTempName(this.Scope);
@@ -54,7 +67,14 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitAssignment(AssignmentStatement syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
+            this.expectedLValue.Push(true);
             var target = syntax.Target.Accept(this);
+            this.expectedLValue.Pop();
+
             var assign = syntax.Assign.Accept(this);
 
             this.writer.AddLine(new HmmAssignment() {
@@ -67,6 +87,14 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitBinarySyntax(BinarySyntax syntax) {
+            if (syntax.Operator == BinaryOperationKind.Index) {
+                return this.ResolveIndex(syntax);
+            }
+
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             // Translate branching boolean instructions to proper if statements
             if (syntax.Operator == BinaryOperationKind.BranchingAnd) {
                 var newSyntax = new IfSyntax() {
@@ -114,7 +142,33 @@ namespace Helix.Frontend.NameResolution {
             return result;
         }
 
+        private string ResolveIndex(BinarySyntax syntax) {
+            Assert.IsTrue(syntax.Operator == BinaryOperationKind.Index);
+
+            this.expectedLValue.Push(false);
+
+            var arg = syntax.Left.Accept(this);
+            var index = syntax.Right.Accept(this);
+            var result = this.mangler.MangleTempName(this.Scope);
+
+            this.expectedLValue.Pop();
+
+            this.writer.AddLine(new HmmIndex() {
+                Location = syntax.Location,
+                IsLValue = this.ExpectedLValue,
+                Operand = arg,
+                Index = index,
+                Result = result
+            });
+
+            return result;
+        }
+
         public string VisitBlock(BlockSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var scopeName = this.mangler.MangleTempName(this.Scope, "scope");
             var scopePath = this.Scope.Append(scopeName);
 
@@ -127,21 +181,39 @@ namespace Helix.Frontend.NameResolution {
             return stats.LastOrDefault() ?? "void";
         }
 
-        public string VisitBoolLiteral(BoolLiteral syntax) => syntax.Value.ToString().ToLower();
+        public string VisitBoolLiteral(BoolLiteral syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
+            return syntax.Value.ToString().ToLower();
+        }
 
         public string VisitBreak(BreakSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             this.writer.AddLine(new HmmBreakSyntax() { Location = syntax.Location });
 
             return "void";
         }
 
         public string VisitContinue(ContinueSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             this.writer.AddLine(new HmmContinueSyntax() { Location = syntax.Location });
 
             return "void";
         }
 
         public string VisitFor(ForSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var endIndex = new AsSyntax() {
                 Location = syntax.FinalValue.Location,
                 Operand = syntax.FinalValue,
@@ -209,6 +281,10 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitFunctionDeclaration(FunctionDeclaration syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var funcPath = this.Scope.Append(syntax.Name);
 
             this.mangler.MangleGlobalName(funcPath);
@@ -255,6 +331,10 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitIf(IfSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var cond = syntax.Condition.Accept(this);
 
             var affirmName = this.mangler.MangleLocalName(this.Scope, "if_true");
@@ -312,6 +392,10 @@ namespace Helix.Frontend.NameResolution {
         } 
 
         public string VisitInvoke(InvokeSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var target = syntax.Target.Accept(this);
             var args = syntax.Args.Select(x => x.Accept(this)).ToArray();
             var result = this.mangler.MangleTempName(this.Scope);
@@ -327,6 +411,10 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitIs(IsSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var arg = syntax.Operand.Accept(this);
             var result = this.mangler.MangleTempName(this.Scope);
 
@@ -348,13 +436,18 @@ namespace Helix.Frontend.NameResolution {
                 Location = syntax.Location,
                 Operand = arg,
                 Member = syntax.Field,
-                Result = result
+                Result = result,
+                IsLValue = this.ExpectedLValue
             });
 
             return result;
         }
 
         public string VisitNew(NewSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var type = syntax.Type.Accept(this.GetTypeNameResolver(syntax.Location));
             var result = this.mangler.MangleTempName(this.Scope);
 
@@ -376,6 +469,10 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitReturn(ReturnSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var target = syntax.Payload.Accept(this);
 
             this.writer.AddLine(new HmmReturnSyntax() {
@@ -387,6 +484,10 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitStructDeclaration(StructDeclaration syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var structType = (StructType)syntax.Signature.Accept(this.GetTypeNameResolver(syntax.Location));
 
             this.declarations.SetDeclaration(this.Scope, syntax.Name, structType);
@@ -411,6 +512,17 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitUnarySyntax(UnarySyntax syntax) {
+            if (syntax.Operator == UnaryOperatorKind.AddressOf) {
+                return this.ResolveAddressOf(syntax);
+            }
+            else if (syntax.Operator == UnaryOperatorKind.Dereference) {
+                return this.ResolveDereference(syntax);
+            }
+
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             // Lower plus and minus unary operators to a binary operator
             if (syntax.Operator == UnaryOperatorKind.Plus || syntax.Operator == UnaryOperatorKind.Minus) {
                 var op = syntax.Operator == UnaryOperatorKind.Plus
@@ -443,7 +555,54 @@ namespace Helix.Frontend.NameResolution {
             return result;
         }
 
+        private string ResolveAddressOf(UnarySyntax syntax) {
+            Assert.IsTrue(syntax.Operator == UnaryOperatorKind.AddressOf);
+
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
+            this.expectedLValue.Push(true);
+
+            var arg = syntax.Operand.Accept(this);
+            var result = this.mangler.MangleTempName(this.Scope);
+
+            this.expectedLValue.Pop();
+
+            this.writer.AddLine(new HmmAddressOf() {
+                Location = syntax.Location,
+                Operand = arg,
+                Result = result
+            });
+
+            return result;
+        }
+
+        private string ResolveDereference(UnarySyntax syntax) {
+            Assert.IsTrue(syntax.Operator == UnaryOperatorKind.Dereference);
+
+            this.expectedLValue.Push(false);
+
+            var arg = syntax.Operand.Accept(this);
+            var result = this.mangler.MangleTempName(this.Scope);
+
+            this.expectedLValue.Pop();
+
+            this.writer.AddLine(new HmmDereference() {
+                Location = syntax.Location,
+                IsLValue = this.ExpectedLValue,
+                Operand = arg,
+                Result = result
+            });
+
+            return result;
+        }
+
         public string VisitUnionDeclaration(UnionDeclaration syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var unionType = (UnionType)syntax.Signature.Accept(this.GetTypeNameResolver(syntax.Location));
 
             this.declarations.SetDeclaration(this.Scope, syntax.Name, unionType);
@@ -476,6 +635,10 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitVariableStatement(VariableStatement syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             this.declarations.SetDeclaration(this.Scope, syntax.VariableName);
 
             var mangled = this.mangler.MangleLocalName(this.Scope, syntax.VariableName);
@@ -492,10 +655,18 @@ namespace Helix.Frontend.NameResolution {
         }
 
         public string VisitVoidLiteral(VoidLiteral syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             return "void";
         }
 
         public string VisitWhile(WhileSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var test = new IfSyntax() {
                 Location = syntax.Condition.Location,
                 Condition = new UnarySyntax() {
@@ -521,9 +692,19 @@ namespace Helix.Frontend.NameResolution {
             return loop.Accept(this);
         }
 
-        public string VisitWordLiteral(WordLiteral syntax) => syntax.Value.ToString();
+        public string VisitWordLiteral(WordLiteral syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
+            return syntax.Value.ToString();
+        }
 
         public string VisitLoop(LoopSyntax syntax) {
+            if (this.ExpectedLValue) {
+                throw NameResolutionException.ExpectedLValue(syntax.Location);
+            }
+
             var loopName = this.mangler.MangleLocalName(this.Scope, "loop");
             var loopPath = this.Scope.Append(loopName);
 

@@ -76,7 +76,16 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public string VisitAssignment(HmmAssignment syntax) {
-            throw new NotImplementedException();
+            var type = this.Types[syntax.Variable];
+            var assign = this.Unifier.Convert(syntax.Value, type, syntax.Location);
+
+            this.Writer.AddLine(new HmmAssignment() {
+                Location = syntax.Location,
+                Variable = syntax.Variable,
+                Value = assign
+            });
+
+            return "void";
         }
 
         public string VisitAsSyntax(HmmAsSyntax syntax) {
@@ -96,10 +105,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         public string VisitBinarySyntax(HmmBinarySyntax syntax) {
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.BranchingAnd);
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.BranchingOr);
-
-            if (syntax.Operator == BinaryOperationKind.Index) {
-                return this.TypeCheckIndex(syntax);
-            }
+            Assert.IsFalse(syntax.Operator == BinaryOperationKind.Index);
 
             var type1 = this.Types[syntax.Left];
             var type2 = this.Types[syntax.Right];
@@ -140,27 +146,6 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = returnType;
-            return syntax.Result;
-        }
-
-        private string TypeCheckIndex(HmmBinarySyntax syntax) {
-            Assert.IsTrue(syntax.Operator == BinaryOperationKind.Index);
-
-            if (this.Types[syntax.Left].GetArraySignature(this.context).TryGetValue(out var arrayType)) {
-                throw TypeCheckException.ExpectedArrayType(syntax.Location, this.Types[syntax.Left]);
-            }
-
-            var index = this.Unifier.Convert(syntax.Right, WordType.Instance, syntax.Location);
-
-            this.Writer.AddLine(new HmmBinarySyntax() {
-                Location = syntax.Location,
-                Left = syntax.Left,
-                Right = index,
-                Operator = BinaryOperationKind.Index,
-                Result = syntax.Result
-            });
-
-            this.Types[syntax.Result] = arrayType.InnerType;
             return syntax.Result;
         }
 
@@ -344,11 +329,16 @@ namespace Helix.MiddleEnd.TypeChecking {
                     throw TypeCheckException.MemberUndefined(syntax.Location, targetType, syntax.Member);
                 }
 
+                if (syntax.IsLValue) {
+                    throw TypeCheckException.ExpectedRValue(syntax.Location);
+                }
+
                 this.Writer.AddLine(new HmmMemberAccess() {
                     Location = syntax.Location,
                     Member = syntax.Member,
                     Operand = syntax.Operand,
-                    Result = syntax.Result
+                    Result = syntax.Result,
+                    IsLValue = false
                 });
 
                 this.Types[syntax.Result] = WordType.Instance;
@@ -364,7 +354,8 @@ namespace Helix.MiddleEnd.TypeChecking {
                     Location = syntax.Location,
                     Member = syntax.Member,
                     Operand = syntax.Operand,
-                    Result = syntax.Result
+                    Result = syntax.Result,
+                    IsLValue = syntax.IsLValue
                 });
 
                 this.Types[syntax.Result] = mem.Type;
@@ -591,8 +582,8 @@ namespace Helix.MiddleEnd.TypeChecking {
         public string VisitUnaryOperator(HmmUnaryOperator syntax) {
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Plus);
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Minus);
-
-            // TODO: AddressOf and Dereference
+            Assert.IsFalse(syntax.Operator == UnaryOperatorKind.AddressOf);
+            Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Dereference);
 
             if (syntax.Operator == UnaryOperatorKind.Not) {
                 var arg = this.Unifier.Convert(syntax.Operand, BoolType.Instance, syntax.Location);
@@ -607,9 +598,8 @@ namespace Helix.MiddleEnd.TypeChecking {
                 this.Types[syntax.Result] = BoolType.Instance;
                 return syntax.Result;
             }
-            else {
-                throw new NotImplementedException();
-            }
+
+            throw TypeCheckException.InvalidUnaryOperator(syntax.Location, this.Types[syntax.Operand], syntax.Operator);
         }
 
         public string VisitUnionDeclaration(HmmUnionDeclaration syntax) {
@@ -625,16 +615,70 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public string VisitVariableStatement(HmmVariableStatement syntax) {
-            this.Types.TransferType(syntax.Value, syntax.Variable);
+            var type = this.Types[syntax.Value].GetSupertype();
+            var assign = this.Unifier.Convert(syntax.Value, type, syntax.Location);
 
             this.Writer.AddLine(new HmmVariableStatement() {
                 Location = syntax.Location,
                 IsMutable = syntax.IsMutable,
-                Value = syntax.Value,
+                Value = assign,
                 Variable = syntax.Variable
             });
 
+            this.Types[syntax.Variable] = type;
             return syntax.Variable;
+        }
+
+        public string VisitDereference(HmmDereference syntax) {
+            var operandType = this.Types[syntax.Operand];
+
+            if (!operandType.GetPointerSignature(this.context).TryGetValue(out var sig)) {
+                throw TypeCheckException.ExpectedPointerType(syntax.Location, operandType);
+            }
+
+            this.Writer.AddLine(new HmmDereference() {
+                Location = syntax.Location,
+                IsLValue = syntax.IsLValue,
+                Operand = syntax.Operand,
+                Result = syntax.Result
+            });
+
+            this.Types[syntax.Result] = sig.InnerType;
+            return syntax.Result;
+        }
+
+        public string VisitIndex(HmmIndex syntax) {
+            if (!this.Types[syntax.Operand].GetArraySignature(this.context).TryGetValue(out var arrayType)) {
+                throw TypeCheckException.ExpectedArrayType(syntax.Location, this.Types[syntax.Operand]);
+            }
+
+            var index = this.Unifier.Convert(syntax.Index, WordType.Instance, syntax.Location);
+
+            this.Writer.AddLine(new HmmIndex() {
+                Location = syntax.Location,
+                Operand = syntax.Operand,
+                Index = index,
+                Result = syntax.Result,
+                IsLValue = syntax.IsLValue
+            });
+
+            this.Types[syntax.Result] = arrayType.InnerType;
+            return syntax.Result;
+        }
+
+        public string VisitAddressOf(HmmAddressOf syntax) {
+            var operandType = this.Types[syntax.Operand];
+
+            // The name resolver has already confirmed that our operand is a real lvalue, so no need to check that
+
+            this.Writer.AddLine(new HmmAddressOf() {
+                Location = syntax.Location,
+                Operand = syntax.Operand,
+                Result = syntax.Result
+            });
+
+            this.Types[syntax.Result] = new PointerType() { InnerType = operandType };
+            return syntax.Result;
         }
     }
 }
