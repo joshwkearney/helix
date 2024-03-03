@@ -1,4 +1,7 @@
-﻿namespace Helix.Frontend.NameResolution {
+﻿using Helix.Common;
+using System.IO;
+
+namespace Helix.Frontend.NameResolution {
     internal class NameMangler {
         private int counter = 0;
         private readonly Dictionary<IdentifierPath, string> mangledNames = [];
@@ -11,8 +14,9 @@
         }
 
         public string MangleLocalName(IdentifierPath path) {
-            mangledNames[path] = path.Segments.Last() + "_" + counter++;
+            Assert.IsFalse(mangledNames.ContainsKey(path));
 
+            mangledNames[path] = path.Segments.Last() + "_" + counter++;
             return mangledNames[path];
         }
 
@@ -21,13 +25,17 @@
         }
 
         public string MangleGlobalName(IdentifierPath path) {
-            mangledNames[path] = string.Join("_", path.Segments);
+            Assert.IsFalse(mangledNames.ContainsKey(path));
 
+            mangledNames[path] = string.Join("_", path.Segments);
             return mangledNames[path];
         }
 
-        public string MangleTempName(IdentifierPath scope, string name = "temp") {
-            return this.MangleLocalName(scope, name);
+        public string CreateMangledTempName(IdentifierPath scope, string name = "temp") {
+            var path = scope.Append(name + "_" + this.counter++);
+
+            mangledNames[path] = path.Segments.Last();
+            return mangledNames[path];
         }
 
         public string GetMangledName(IdentifierPath path) {

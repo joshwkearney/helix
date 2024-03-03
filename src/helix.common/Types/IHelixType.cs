@@ -1,4 +1,6 @@
-﻿namespace Helix.Common.Types {
+﻿using Helix.Common.Collections;
+
+namespace Helix.Common.Types {
     public abstract record IHelixType {
         public bool IsVoid => this is VoidType;
 

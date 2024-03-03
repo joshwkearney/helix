@@ -1,5 +1,6 @@
 ﻿using Helix.Common;
 using Helix.Common.Types;
+using Helix.MiddleEnd.Interpreting;
 using Helix.MiddleEnd.Unification;
 
 namespace Helix.MiddleEnd.TypeChecking {
@@ -74,6 +75,10 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         public static bool HasVoidValue(this IHelixType type, TypeCheckingContext context) {
             return type.Accept(new TypeHasDefaultValueVisitor(context));
+        }
+
+        public static bool DoesAliasLValues(this IHelixType type) {
+            return type.Accept(TypeDoesAliasLValueVisitor.Instance);
         }
     }
 }

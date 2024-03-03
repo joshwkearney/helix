@@ -1,11 +1,27 @@
 ﻿using Helix.Common;
 using Helix.Common.Hmm;
 using Helix.Common.Types;
+using Helix.MiddleEnd.FlowAnalysis;
+using Helix.MiddleEnd.Interpreting;
 using Helix.MiddleEnd.Unification;
 using System.Text;
 
 namespace Helix.MiddleEnd.TypeChecking {
-    internal class TypeChecker : IHmmVisitor<string> {
+    public enum StatementControlFlow {
+        Normal, FunctionReturn, LoopReturn
+    }
+
+    public record struct TypeCheckResult(string ResultName, StatementControlFlow ControlFlow) {
+        public static TypeCheckResult VoidResult { get; } = new TypeCheckResult("void", StatementControlFlow.Normal);
+
+        public static TypeCheckResult LoopReturn { get; } = new TypeCheckResult("void", StatementControlFlow.LoopReturn);
+
+        public static TypeCheckResult FunctionReturn { get; } = new TypeCheckResult("void", StatementControlFlow.FunctionReturn);
+
+        public static TypeCheckResult NormalFlow(string resultName) => new TypeCheckResult(resultName, StatementControlFlow.Normal);
+    }
+
+    internal class TypeChecker : IHmmVisitor<TypeCheckResult> {
         private static readonly Dictionary<BinaryOperationKind, IHelixType> intOperations = new() {
             { BinaryOperationKind.Add,                  WordType.Instance },
             { BinaryOperationKind.Subtract,             WordType.Instance },
@@ -32,10 +48,8 @@ namespace Helix.MiddleEnd.TypeChecking {
         };
 
         private readonly TypeCheckingContext context;
-        private readonly Stack<IHelixType> functionReturnTypes = [];
-        private readonly Stack<bool> isInLoops = [];
-
-        private bool IsInLoop => this.isInLoops.Peek();
+        private readonly Stack<ControlFlowFrame> controlFlow = [];
+        private readonly Stack<AliasingTracker> aliases = [];
 
         private HmmWriter Writer => this.context.Writer;
 
@@ -43,14 +57,16 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         private TypeUnifier Unifier => this.context.Unifier;
 
+        private AliasingTracker Aliases => this.aliases.Peek();
+
         public TypeChecker(TypeCheckingContext context) {
             this.context = context;
-            this.isInLoops.Push(false);
+            this.aliases.Push(new AliasingTracker(context));
         }
 
-        public string VisitArrayLiteral(HmmArrayLiteral syntax) {
+        public TypeCheckResult VisitArrayLiteral(HmmArrayLiteral syntax) {
             if (syntax.Args.Count == 0) {
-                return "void";
+                return TypeCheckResult.VoidResult;
             }
 
             var totalType = this.Types[syntax.Args[0]];
@@ -65,6 +81,8 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             var args = syntax.Args.Select(x => this.Unifier.Convert(x, totalType, syntax.Location)).ToArray();
 
+            this.Aliases.RegisterArrayLiteral(syntax.Result, args.Length, totalType);
+
             this.Writer.AddLine(new HmmArrayLiteral() {
                 Location = syntax.Location,
                 Args = args,
@@ -72,10 +90,10 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = new ArrayType() { InnerType = totalType };
-            return syntax.Result;
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        public string VisitAssignment(HmmAssignment syntax) {
+        public TypeCheckResult VisitAssignment(HmmAssignment syntax) {
             var type = this.Types[syntax.Variable];
             var assign = this.Unifier.Convert(syntax.Value, type, syntax.Location);
 
@@ -85,10 +103,12 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Value = assign
             });
 
-            return "void";
+            this.Aliases.RegisterAssignment(syntax.Variable, syntax.Value, type);
+
+            return TypeCheckResult.VoidResult;
         }
 
-        public string VisitAsSyntax(HmmAsSyntax syntax) {
+        public TypeCheckResult VisitAsSyntax(HmmAsSyntax syntax) {
             var result = this.Unifier.Convert(syntax.Operand, syntax.Type, syntax.Location);
 
             this.Writer.AddLine(new HmmVariableStatement() {
@@ -99,10 +119,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = syntax.Type;
-            return syntax.Result;
+            this.Aliases.RegisterLocal(syntax.Result, syntax.Type, result);
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        public string VisitBinarySyntax(HmmBinarySyntax syntax) {
+        public TypeCheckResult VisitBinarySyntax(HmmBinarySyntax syntax) {
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.BranchingAnd);
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.BranchingOr);
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.Index);
@@ -146,23 +168,31 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = returnType;
-            return syntax.Result;
+            this.Aliases.RegisterLocalWithoutAliasing(syntax.Result, returnType);
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        public string VisitBreak(HmmBreakSyntax syntax) {
-            if (!this.IsInLoop) {
+        public TypeCheckResult VisitBreak(HmmBreakSyntax syntax) {
+            Assert.IsTrue(this.controlFlow.Any());
+
+            if (!this.controlFlow.Peek().IsInsideLoop) {
                 throw TypeCheckException.NotInLoop(syntax.Location);
             }
+
+            this.controlFlow.Peek().AddLoopAppendix(this.aliases.Peek());
 
             this.Writer.AddLine(new HmmBreakSyntax() {
                 Location = syntax.Location
             });
 
-            return "void";
+            return TypeCheckResult.LoopReturn;
         }
 
-        public string VisitContinue(HmmContinueSyntax syntax) {
-            if (!this.IsInLoop) {
+        public TypeCheckResult VisitContinue(HmmContinueSyntax syntax) {
+            Assert.IsTrue(this.controlFlow.Any());
+
+            if (!this.controlFlow.Peek().IsInsideLoop) {
                 throw TypeCheckException.NotInLoop(syntax.Location);
             }
 
@@ -170,90 +200,131 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Location = syntax.Location
             });
 
-            return "void";
+            return TypeCheckResult.LoopReturn;
         }
 
-        public string VisitFunctionDeclaration(HmmFunctionDeclaration syntax) {
-            this.functionReturnTypes.Push(syntax.Signature.ReturnType);
-            this.Writer.PushBlock();
+        public TypeCheckResult VisitFunctionDeclaration(HmmFunctionDeclaration syntax) {
+            var frame = new ControlFlowFrame();
+            frame.SetReturnType(syntax.Signature.ReturnType);
+
+            this.controlFlow.Push(frame);
+            this.context.WriterStack.Push(this.Writer.CreateScope());
 
             foreach (var par in syntax.Signature.Parameters) {
                 this.Types[par.Name] = par.Type;
+                this.Aliases.RegisterFunctionParameter(par.Name, par.Type);
             }
 
-            foreach (var stat in syntax.Body) {
-                stat.Accept(this);
+            // Check the body
+            var (_, bodyFlow) = this.CheckBody(syntax.Body);
+
+            // Add a void function return if we need it
+            if (syntax.Signature.ReturnType == VoidType.Instance && bodyFlow != StatementControlFlow.FunctionReturn) {
+                var line = new HmmReturnSyntax() { Location = syntax.Location, Operand = "void" };
+
+                line.Accept(this);
+                bodyFlow = StatementControlFlow.FunctionReturn;
             }
 
-            var body = this.Writer.PopBlock();
-            this.functionReturnTypes.Pop();
+            // Make sure we return
+            if (bodyFlow != StatementControlFlow.FunctionReturn) {
+                throw TypeCheckException.NoReturn(syntax.Location);
+            }
 
-            // TODO: Make sure function always returns
+            var writtenBody = this.context.WriterStack.Pop().ScopedLines;
+            this.controlFlow.Pop();
 
             this.Writer.AddLine(new HmmFunctionDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
                 Signature = syntax.Signature,
-                Body = body
+                Body = writtenBody
             });
 
-            return "void";
+            return TypeCheckResult.VoidResult;
         }
 
-        public string VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax) {
+        public TypeCheckResult VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax) {
             this.Types[syntax.Name] = syntax.Signature;
             this.Writer.AddFowardDeclaration(syntax);
 
-            return "void";
+            return TypeCheckResult.VoidResult;
         }
 
-        public string VisitIfExpression(HmmIfExpression syntax) {
+        public TypeCheckResult VisitIfExpression(HmmIfExpression syntax) {
             var cond = this.Unifier.Convert(syntax.Condition, BoolType.Instance, syntax.Location);
 
             // Write affirmative block
-            this.Writer.PushBlock();
-            foreach (var line in syntax.AffirmativeBody) {
-                line.Accept(this);
-            }
-            var affirmBody = this.Writer.PopBlock();
+            this.context.WriterStack.Push(this.Writer.CreateScope());
+            this.aliases.Push(this.Aliases.CreateScope());
+
+            var (_, affirmFlow) = this.CheckBody(syntax.AffirmativeBody);
+
+            var affirmAliases = this.aliases.Pop();
+            var affirmBody = this.context.WriterStack.Pop();
 
             // Write negative block
-            this.Writer.PushBlock();
-            foreach (var line in syntax.NegativeBody) {
-                line.Accept(this);
-            }
-            var negBody = this.Writer.PopBlock();
+            this.context.WriterStack.Push(this.Writer.CreateScope());
+            this.aliases.Push(this.Aliases.CreateScope());
+
+            var (_, negFlow) = this.CheckBody(syntax.NegativeBody);          
+
+            var negAliases = this.aliases.Pop();
+            var negBody = this.context.WriterStack.Pop();
 
             // Unify types
             var affirmType = this.Types[syntax.Affirmative];
             var negType = this.Types[syntax.Negative];
-            var totalType = this.Unifier.UnifyWithConvert(affirmType, negType, syntax.Location); 
+            var totalType = this.Unifier.UnifyWithConvert(affirmType, negType, syntax.Location);
 
             // Unify the true branch in its scope
-            this.Writer.PushBlock(affirmBody);
-            var affirm = this.Unifier.Convert(syntax.Affirmative, totalType, syntax.Location);
-            this.Writer.PopBlock();
+            this.context.WriterStack.Push(affirmBody);
+            this.aliases.Push(affirmAliases);
 
-            // unify the false branch in its scope
-            this.Writer.PushBlock(negBody);
+            var affirm = this.Unifier.Convert(syntax.Affirmative, totalType, syntax.Location);
+
+            this.aliases.Pop();
+            this.context.WriterStack.Pop();
+
+            // Unify the false branch in its scope
+            this.context.WriterStack.Push(negBody);
+            this.aliases.Push(negAliases);
+
             var neg = this.Unifier.Convert(syntax.Negative, totalType, syntax.Location);
-            this.Writer.PopBlock();
+
+            this.aliases.Pop();
+            this.context.WriterStack.Pop();
 
             this.Writer.AddLine(new HmmIfExpression() {
                 Location = syntax.Location,
                 Affirmative = affirm,
                 Negative = neg,
-                AffirmativeBody = affirmBody,
-                NegativeBody = negBody,
+                AffirmativeBody = affirmBody.ScopedLines,
+                NegativeBody = negBody.ScopedLines,
                 Condition = cond,
                 Result = syntax.Result
             });
 
             this.Types[syntax.Result] = totalType;
-            return syntax.Result;
+
+            // Combine the branch aliases and replace the current ones
+            var combined = affirmAliases.MergeWith(negAliases);
+
+            this.aliases.Pop();
+            this.aliases.Push(combined);
+
+            if (affirmFlow == StatementControlFlow.FunctionReturn && negFlow == StatementControlFlow.FunctionReturn) {
+                return TypeCheckResult.FunctionReturn;
+            }
+            else if (affirmFlow == StatementControlFlow.LoopReturn && negFlow == StatementControlFlow.LoopReturn) {
+                return TypeCheckResult.LoopReturn;
+            }
+            else {
+                return TypeCheckResult.NormalFlow(syntax.Result);
+            }
         }
 
-        public string VisitInvoke(HmmInvokeSyntax syntax) {
+        public TypeCheckResult VisitInvoke(HmmInvokeSyntax syntax) {
             if (!this.Types[syntax.Target].TryGetFunctionSignature(this.context).TryGetValue(out var sig)) {
                 throw TypeCheckException.ExpectedFunctionType(syntax.Location, this.Types[syntax.Target]);
             }
@@ -277,10 +348,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = sig.ReturnType;
-            return syntax.Result;
+            this.Aliases.RegisterInvoke(newArgs, sig.Parameters.Select(x => x.Type).ToArray());
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        public string VisitIs(HmmIsSyntax syntax) {
+        public TypeCheckResult VisitIs(HmmIsSyntax syntax) {
             var type = this.Types[syntax.Operand];
 
             if (!type.GetUnionSignature(this.context).TryGetValue(out var unionType)) {
@@ -299,29 +372,59 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = BoolType.Instance;
-            return syntax.Result;
+            this.Aliases.RegisterLocal(syntax.Result, BoolType.Instance, syntax.Result);
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        public string VisitLoop(HmmLoopSyntax syntax) {
-            this.Writer.PushBlock();
-            this.isInLoops.Push(true);
+        public TypeCheckResult VisitLoop(HmmLoopSyntax syntax) {
+            Assert.IsTrue(this.controlFlow.Any());
 
-            foreach (var stat in syntax.Body) {
-                stat.Accept(this);
+            var returnFlow = TypeCheckResult.NormalFlow("void");
+            var outerAliases = this.aliases.Pop();
+
+            while (true) {
+                this.controlFlow.Push(this.controlFlow.Peek().CreateLoopFrame());
+                this.context.WriterStack.Push(this.Writer.CreateScope());
+                this.aliases.Push(outerAliases.CreateScope());
+
+                var (_, bodyFlow) = this.CheckBody(syntax.Body);
+
+                var loopAliases = this.aliases.Pop();
+                var body = this.context.WriterStack.Pop();
+                var loopControlFlow = this.controlFlow.Peek();
+
+                // If the loop modified anything the outer scope, we need to type check this again
+                // because types from previous iterations could affect later iterations
+
+                if (!outerAliases.WasModifiedBy(loopAliases)) {
+                    this.Writer.AddLine(new HmmLoopSyntax() {
+                        Location = syntax.Location,
+                        Body = body.ScopedLines
+                    });
+
+                    // Get all the aliases that existed at the time of a break statement, which are
+                    // going to be the state of the world after the loop finishes since break statements
+                    // are the only way for a loop to terminate
+                    outerAliases = loopControlFlow.LoopAppendixAliases.Aggregate((x, y) => x.MergeWith(y));
+
+                    if (bodyFlow == StatementControlFlow.FunctionReturn) {
+                        returnFlow = TypeCheckResult.FunctionReturn;
+                    }
+
+                    break;
+                }
+                else {
+                    outerAliases = outerAliases.MergeWith(loopAliases);
+                }
             }
 
-            this.isInLoops.Pop();
-            var body = this.Writer.PopBlock();
+            this.aliases.Push(outerAliases);
 
-            this.Writer.AddLine(new HmmLoopSyntax() {
-                Location = syntax.Location,
-                Body = body
-            });
-
-            return "void";
+            return returnFlow;
         }
 
-        public string VisitMemberAccess(HmmMemberAccess syntax) {
+        public TypeCheckResult VisitMemberAccess(HmmMemberAccess syntax) {
             var targetType = this.Types[syntax.Operand];
 
             if (targetType.GetArraySignature(this.context).TryGetValue(out _)) {
@@ -342,12 +445,19 @@ namespace Helix.MiddleEnd.TypeChecking {
                 });
 
                 this.Types[syntax.Result] = WordType.Instance;
-                return syntax.Result;
+                return TypeCheckResult.NormalFlow(syntax.Result);
             }
             else if (targetType.GetStructSignature(this.context).TryGetValue(out var structType)) {
                 var mem = structType.Members.FirstOrDefault(x => x.Name == syntax.Member);
                 if (mem == null) {
                     throw TypeCheckException.MemberUndefined(syntax.Location, targetType, syntax.Member);
+                }
+
+                if (syntax.IsLValue) {
+                    this.Aliases.RegisterMemberAccessReference(syntax.Result, syntax.Operand, mem.Name, mem.Type);
+                }
+                else {
+                    this.Aliases.RegisterMemberAccess(syntax.Result, syntax.Operand, mem.Name, mem.Type);
                 }
 
                 this.Writer.AddLine(new HmmMemberAccess() {
@@ -359,14 +469,14 @@ namespace Helix.MiddleEnd.TypeChecking {
                 });
 
                 this.Types[syntax.Result] = mem.Type;
-                return syntax.Result;
+                return TypeCheckResult.NormalFlow(syntax.Result);
             }
             else {
                 throw TypeCheckException.UnexpectedType(syntax.Location, targetType);
             }
         }
 
-        public string VisitNew(HmmNewSyntax syntax) {
+        public TypeCheckResult VisitNew(HmmNewSyntax syntax) {
             // For simple stuff let the unifier deal with it
             if (syntax.Type == VoidType.Instance || syntax.Type == WordType.Instance || syntax.Type == BoolType.Instance) {
                 var result = this.Unifier.Convert("void", syntax.Type, syntax.Location);
@@ -379,7 +489,9 @@ namespace Helix.MiddleEnd.TypeChecking {
                 });
 
                 this.Types[syntax.Result] = syntax.Type;
-                return syntax.Result;
+                this.Aliases.RegisterLocal(syntax.Result, syntax.Type, syntax.Result);
+
+                return TypeCheckResult.NormalFlow(syntax.Result);
             }
             else if (syntax.Type is ArrayType arraySig) {
                 return this.TypeCheckNewArray(syntax, arraySig);
@@ -394,7 +506,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             throw TypeCheckException.UnexpectedType(syntax.Location, syntax.Type);
         }
 
-        private string TypeCheckNewArray(HmmNewSyntax syntax, ArrayType sig) {
+        private TypeCheckResult TypeCheckNewArray(HmmNewSyntax syntax, ArrayType sig) {
             if (syntax.Assignments.Count > 0) {
                 throw TypeCheckException.NewObjectHasExtraneousFields(syntax.Location, syntax.Type);
             }
@@ -406,10 +518,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = syntax.Type;
-            return syntax.Result;
+            this.Aliases.RegisterLocal(syntax.Result, syntax.Type, syntax.Result);
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        private string TypeCheckNewStruct(HmmNewSyntax syntax, StructType sig) {
+        private TypeCheckResult TypeCheckNewStruct(HmmNewSyntax syntax, StructType sig) {
             var namedMems = syntax.Assignments
                 .Where(x => x.Field.HasValue)
                 .ToArray();
@@ -498,10 +612,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = syntax.Type;
-            return syntax.Result;
+            this.Aliases.RegisterNewStruct(syntax.Result, syntax.Type, newAssignments);
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        private string TypeCheckNewUnion(HmmNewSyntax syntax, UnionType sig) {
+        private TypeCheckResult TypeCheckNewUnion(HmmNewSyntax syntax, UnionType sig) {
             if (syntax.Assignments.Count > 1) {
                 throw TypeCheckException.NewUnionMultipleMembers(syntax.Location);
             }
@@ -532,36 +648,41 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             value = this.Unifier.Convert(value, mem.Type, syntax.Location);
 
+            var assignments = new[] {
+                new HmmNewFieldAssignment() {
+                    Field = name,
+                    Value = value
+                }
+            };
+
             this.Writer.AddLine(new HmmNewSyntax() {
                 Location = syntax.Location,
                 Type = syntax.Type,
-                Assignments = [
-                    new HmmNewFieldAssignment() {
-                        Field = name,
-                        Value = value
-                    }
-                ],
+                Assignments = assignments,
                 Result = syntax.Result
             });
 
             this.Types[syntax.Result] = syntax.Type;
-            return syntax.Result;
+            this.Aliases.RegisterNewUnion(syntax.Result, syntax.Type, value);
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        public string VisitReturn(HmmReturnSyntax syntax) {
-            Assert.IsTrue(this.functionReturnTypes.Count > 0);
+        public TypeCheckResult VisitReturn(HmmReturnSyntax syntax) {
+            Assert.IsTrue(this.controlFlow.Any());
 
-            var operand = this.Unifier.Convert(syntax.Operand, this.functionReturnTypes.Peek(), syntax.Location);
+            var returnType = this.controlFlow.Peek().FunctionReturnType;
+            var operand = this.Unifier.Convert(syntax.Operand, returnType, syntax.Location);
 
             this.Writer.AddLine(new HmmReturnSyntax() {
                 Location = syntax.Location,
                 Operand = operand
             });
 
-            return "void";
+            return TypeCheckResult.FunctionReturn;
         }
 
-        public string VisitStructDeclaration(HmmStructDeclaration syntax) {
+        public TypeCheckResult VisitStructDeclaration(HmmStructDeclaration syntax) {
             this.Types[syntax.Name] = syntax.Signature;
             this.Writer.AddLine(syntax);
 
@@ -570,16 +691,16 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.CircularValueObject(syntax.Location, syntax.Type);
             }
 
-            return "void";
+            return TypeCheckResult.VoidResult;
         }
 
-        public string VisitTypeDeclaration(HmmTypeDeclaration syntax) {
+        public TypeCheckResult VisitTypeDeclaration(HmmTypeDeclaration syntax) {
             this.Writer.AddLine(syntax);
 
-            return "void";
+            return TypeCheckResult.VoidResult;
         }
 
-        public string VisitUnaryOperator(HmmUnaryOperator syntax) {
+        public TypeCheckResult VisitUnaryOperator(HmmUnaryOperator syntax) {
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Plus);
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Minus);
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.AddressOf);
@@ -596,13 +717,16 @@ namespace Helix.MiddleEnd.TypeChecking {
                 });
 
                 this.Types[syntax.Result] = BoolType.Instance;
-                return syntax.Result;
+                this.Aliases.RegisterLocalWithoutAliasing(syntax.Result, BoolType.Instance);
+
+
+                return TypeCheckResult.NormalFlow(syntax.Result);
             }
 
             throw TypeCheckException.InvalidUnaryOperator(syntax.Location, this.Types[syntax.Operand], syntax.Operator);
         }
 
-        public string VisitUnionDeclaration(HmmUnionDeclaration syntax) {
+        public TypeCheckResult VisitUnionDeclaration(HmmUnionDeclaration syntax) {
             this.Types[syntax.Name] = syntax.Signature;
             this.Writer.AddLine(syntax);
 
@@ -611,10 +735,10 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.CircularValueObject(syntax.Location, syntax.Type);
             }
 
-            return "void";
+            return TypeCheckResult.VoidResult;
         }
 
-        public string VisitVariableStatement(HmmVariableStatement syntax) {
+        public TypeCheckResult VisitVariableStatement(HmmVariableStatement syntax) {
             var type = this.Types[syntax.Value].GetSupertype();
             var assign = this.Unifier.Convert(syntax.Value, type, syntax.Location);
 
@@ -626,10 +750,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Variable] = type;
-            return syntax.Variable;
+            this.Aliases.RegisterLocal(syntax.Variable, type, syntax.Value);
+
+            return TypeCheckResult.VoidResult;
         }
 
-        public string VisitDereference(HmmDereference syntax) {
+        public TypeCheckResult VisitDereference(HmmDereference syntax) {
             var operandType = this.Types[syntax.Operand];
 
             if (!operandType.GetPointerSignature(this.context).TryGetValue(out var sig)) {
@@ -644,10 +770,18 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = sig.InnerType;
-            return syntax.Result;
+
+            if (syntax.IsLValue) {
+                this.Aliases.RegisterDereferencedPointerReference(syntax.Result, sig.InnerType, syntax.Operand, operandType);
+            }
+            else {
+                this.Aliases.RegisterDereferencedPointer(syntax.Result, sig.InnerType, syntax.Operand, operandType);
+            }
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        public string VisitIndex(HmmIndex syntax) {
+        public TypeCheckResult VisitIndex(HmmIndex syntax) {
             if (!this.Types[syntax.Operand].GetArraySignature(this.context).TryGetValue(out var arrayType)) {
                 throw TypeCheckException.ExpectedArrayType(syntax.Location, this.Types[syntax.Operand]);
             }
@@ -663,10 +797,18 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.Types[syntax.Result] = arrayType.InnerType;
-            return syntax.Result;
+
+            if (syntax.IsLValue) {
+                this.Aliases.RegisterArrayIndexReference(syntax.Result, syntax.Operand, index, arrayType.InnerType);
+            }
+            else {
+                this.Aliases.RegisterArrayIndex(syntax.Result, syntax.Operand, index, arrayType.InnerType);
+            }
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        public string VisitAddressOf(HmmAddressOf syntax) {
+        public TypeCheckResult VisitAddressOf(HmmAddressOf syntax) {
             var operandType = this.Types[syntax.Operand];
 
             // The name resolver has already confirmed that our operand is a real lvalue, so no need to check that
@@ -677,8 +819,27 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.Types[syntax.Result] = new PointerType() { InnerType = operandType };
-            return syntax.Result;
+            var returnType = new PointerType() { InnerType = operandType };
+
+            this.Types[syntax.Result] = returnType;
+            this.Aliases.RegisterAddressOf(syntax.Result, syntax.Operand, returnType);
+
+            return TypeCheckResult.NormalFlow(syntax.Result);
+        }
+
+        private TypeCheckResult CheckBody(IReadOnlyList<IHmmSyntax> stats) {
+            foreach (var stat in stats) {
+                var result = stat.Accept(this);
+
+                if (result.ControlFlow == StatementControlFlow.LoopReturn) {
+                    return TypeCheckResult.LoopReturn;
+                }
+                else if (result.ControlFlow == StatementControlFlow.FunctionReturn) {
+                    return TypeCheckResult.FunctionReturn;
+                }
+            }
+
+            return TypeCheckResult.VoidResult;
         }
     }
 }

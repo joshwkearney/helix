@@ -21,7 +21,7 @@
         }
 
         public string VisitPointerType(PointerType type) {
-            return type.InnerType.ToString() + "*";
+            return "*" + type.InnerType.ToString();
         }
 
         public string VisitSingularBoolType(SingularBoolType type) {

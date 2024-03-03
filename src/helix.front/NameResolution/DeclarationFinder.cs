@@ -3,47 +3,59 @@ using Helix.Frontend.ParseTree;
 
 namespace Helix.Frontend.NameResolution {
     internal class DeclarationFinder : IParseTreeVisitor<Unit> {
-        private readonly Stack<string> scopes = new();
-
+        private readonly Stack<IdentifierPath> scopes = new();
         private readonly DeclarationStore frame;
+        private readonly NameMangler mangler;
 
-        public DeclarationFinder(DeclarationStore frame) {
+        public DeclarationFinder(DeclarationStore frame, NameMangler mangler) {
             this.frame = frame;
-            scopes.Push(string.Empty);
+            this.mangler = mangler;
+        }
+
+        private IdentifierPath GetPath(string name) {
+            if (!this.scopes.Any()) {
+                return new IdentifierPath(name);
+            }
+            else {
+                return this.scopes.Peek().Append(name);
+            }
         }
 
         public Unit VisitFunctionDeclaration(FunctionDeclaration syntax) {
-            var path = new IdentifierPath(scopes.Peek(), syntax.Name);
+            var path = this.GetPath(syntax.Name);
 
             if (frame.ContainsDeclaration(path)) {
                 throw NameResolutionException.IdentifierDefined(syntax.Location, syntax.Name);
             }
 
-            frame.SetDeclaration(path);
+            this.mangler.MangleGlobalName(path);
+            this.frame.SetDeclaration(path);
 
             return Unit.Instance;
         }
 
         public Unit VisitStructDeclaration(StructDeclaration syntax) {
-            var path = new IdentifierPath(scopes.Peek(), syntax.Name);
+            var path = this.GetPath(syntax.Name);
 
             if (frame.ContainsDeclaration(path)) {
                 throw NameResolutionException.IdentifierDefined(syntax.Location, syntax.Name);
             }
 
-            frame.SetDeclaration(path);
+            this.mangler.MangleGlobalName(path);
+            this.frame.SetDeclaration(path);
 
             return Unit.Instance;
         }
 
         public Unit VisitUnionDeclaration(UnionDeclaration syntax) {
-            var path = new IdentifierPath(scopes.Peek(), syntax.Name);
+            var path = this.GetPath(syntax.Name);
 
             if (frame.ContainsDeclaration(path)) {
                 throw NameResolutionException.IdentifierDefined(syntax.Location, syntax.Name);
             }
 
-            frame.SetDeclaration(path);
+            this.mangler.MangleGlobalName(path);
+            this.frame.SetDeclaration(path);
 
             return Unit.Instance;
         }

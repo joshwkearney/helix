@@ -12,14 +12,15 @@ descriped below:
 	f) DONE - Deconflicting names
 
 2. MIDDLE END
-	a) Creating a control-flow graph
-	b) Type checking
+	a) NOT NEEDED - Creating a control-flow graph
+	b) DONE - Type checking
 	c) Flow typing
-	d) Type unification (code generation for implicit conversions)
+	d) DONE - Type unification (code generation for implicit conversions)
 	e) Statement reordering
 	f) Compile time code execution / Generics
 	g) Generating a typed Hmm
-	h) Checking for circular structs and unions
+	h) DONE - Checking for circular structs and unions
+	i) DONE - Pointer aliasing calculations
 
 3. BACK END
 	a) Region inference for memory allocations

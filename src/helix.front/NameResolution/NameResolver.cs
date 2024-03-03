@@ -7,22 +7,26 @@ using System.Linq.Expressions;
 
 namespace Helix.Frontend.NameResolution {
     internal class NameResolver : IParseTreeVisitor<string> {
-        private readonly HmmWriter writer = new();
         private readonly Stack<IdentifierPath> scopes = [];
+        private readonly Stack<HmmWriter> writers = [];
         private readonly Stack<bool> expectedLValue = [];
-        private readonly NameMangler mangler = new();
+        private readonly NameMangler mangler;
         private readonly DeclarationStore declarations;
 
         private IdentifierPath Scope => this.scopes.Peek();
 
-        public IReadOnlyList<IHmmSyntax> Result => this.writer.Lines;
+        private HmmWriter Writer => this.writers.Peek();
+
+        public IReadOnlyList<IHmmSyntax> Result => this.Writer.AllLines;
 
         public bool ExpectedLValue => this.expectedLValue.Peek();
 
-        public NameResolver(DeclarationStore declarations) {
+        public NameResolver(DeclarationStore declarations, NameMangler mangler) {
             this.declarations = declarations;
+            this.mangler = mangler;
 
             this.scopes.Push(new IdentifierPath());
+            this.writers.Push(new HmmWriter());
             this.expectedLValue.Push(false);
         }
 
@@ -36,9 +40,9 @@ namespace Helix.Frontend.NameResolution {
             }
 
             var items = syntax.Args.Select(x => x.Accept(this)).ToArray();
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
-            this.writer.AddLine(new HmmArrayLiteral() {
+            this.Writer.AddLine(new HmmArrayLiteral() {
                 Location = syntax.Location,
                 Args = items,
                 Result = result
@@ -54,9 +58,9 @@ namespace Helix.Frontend.NameResolution {
 
             var resolvedType = syntax.Type.Accept(this.GetTypeNameResolver(syntax.Location));
             var target = syntax.Operand.Accept(this);
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
-            this.writer.AddLine(new HmmAsSyntax() {
+            this.Writer.AddLine(new HmmAsSyntax() {
                 Location = syntax.Location,
                 Operand = target,
                 Result = result,
@@ -77,7 +81,7 @@ namespace Helix.Frontend.NameResolution {
 
             var assign = syntax.Assign.Accept(this);
 
-            this.writer.AddLine(new HmmAssignment() {
+            this.Writer.AddLine(new HmmAssignment() {
                 Location = syntax.Location,
                 Variable = target,
                 Value = assign
@@ -129,9 +133,9 @@ namespace Helix.Frontend.NameResolution {
 
             var left = syntax.Left.Accept(this);
             var right = syntax.Right.Accept(this);
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
-            this.writer.AddLine(new HmmBinarySyntax() {
+            this.Writer.AddLine(new HmmBinarySyntax() {
                 Location = syntax.Location,
                 Left = left,
                 Right = right,
@@ -149,11 +153,11 @@ namespace Helix.Frontend.NameResolution {
 
             var arg = syntax.Left.Accept(this);
             var index = syntax.Right.Accept(this);
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
             this.expectedLValue.Pop();
 
-            this.writer.AddLine(new HmmIndex() {
+            this.Writer.AddLine(new HmmIndex() {
                 Location = syntax.Location,
                 IsLValue = this.ExpectedLValue,
                 Operand = arg,
@@ -169,7 +173,7 @@ namespace Helix.Frontend.NameResolution {
                 throw NameResolutionException.ExpectedLValue(syntax.Location);
             }
 
-            var scopeName = this.mangler.MangleTempName(this.Scope, "scope");
+            var scopeName = this.mangler.CreateMangledTempName(this.Scope, "scope");
             var scopePath = this.Scope.Append(scopeName);
 
             // Just push a scope here but not a new set of lines, since we're flattening blocks
@@ -194,7 +198,7 @@ namespace Helix.Frontend.NameResolution {
                 throw NameResolutionException.ExpectedLValue(syntax.Location);
             }
 
-            this.writer.AddLine(new HmmBreakSyntax() { Location = syntax.Location });
+            this.Writer.AddLine(new HmmBreakSyntax() { Location = syntax.Location });
 
             return "void";
         }
@@ -204,7 +208,7 @@ namespace Helix.Frontend.NameResolution {
                 throw NameResolutionException.ExpectedLValue(syntax.Location);
             }
 
-            this.writer.AddLine(new HmmContinueSyntax() { Location = syntax.Location });
+            this.Writer.AddLine(new HmmContinueSyntax() { Location = syntax.Location });
 
             return "void";
         }
@@ -287,10 +291,8 @@ namespace Helix.Frontend.NameResolution {
 
             var funcPath = this.Scope.Append(syntax.Name);
 
-            this.mangler.MangleGlobalName(funcPath);
-
             this.scopes.Push(funcPath);
-            this.writer.PushBlock();
+            this.writers.Push(this.Writer.CreateScope());
 
             foreach (var par in syntax.Signature.Parameters) {
                 var parPath = this.Scope.Append(par.Name);
@@ -305,22 +307,22 @@ namespace Helix.Frontend.NameResolution {
 
             syntax.Body.Accept(this);
 
-            var bodyLines = this.writer.PopBlock();
+            var bodyLines = this.writers.Pop().ScopedLines;
             this.scopes.Pop();
 
-            this.writer.AddTypeDeclaration(new HmmTypeDeclaration() {
+            this.Writer.AddTypeDeclaration(new HmmTypeDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
                 Kind = TypeDeclarationKind.Function
             });
 
-            this.writer.AddFowardDeclaration(new HmmFunctionForwardDeclaration() {
+            this.Writer.AddFowardDeclaration(new HmmFunctionForwardDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
                 Signature = funcType
             });
 
-            this.writer.AddLine(new HmmFunctionDeclaration() {
+            this.Writer.AddLine(new HmmFunctionDeclaration() {
                 Location = syntax.Location,
                 Signature = funcType,
                 Name = syntax.Name,
@@ -341,11 +343,11 @@ namespace Helix.Frontend.NameResolution {
             var affirmPath = this.Scope.Append(affirmName);
 
             this.scopes.Push(affirmPath);
-            this.writer.PushBlock();
+            this.writers.Push(this.Writer.CreateScope());
 
             var affirm = syntax.Affirmative.Accept(this);
 
-            var affirmLines = this.writer.PopBlock();
+            var affirmLines = this.writers.Pop().ScopedLines;
             this.scopes.Pop();
 
             if (syntax.Negative.TryGetValue(out var negTree)) {
@@ -353,16 +355,16 @@ namespace Helix.Frontend.NameResolution {
                 var negPath = this.Scope.Append(negName);
 
                 this.scopes.Push(negPath);
-                this.writer.PushBlock();
+                this.writers.Push(this.Writer.CreateScope());
 
                 var negative = negTree.Accept(this);
 
-                var negLines = this.writer.PopBlock();
+                var negLines = this.writers.Pop().ScopedLines;
                 this.scopes.Pop();
 
-                var result = this.mangler.MangleTempName(this.Scope);
+                var result = this.mangler.CreateMangledTempName(this.Scope);
 
-                this.writer.AddLine(new HmmIfExpression() {
+                this.Writer.AddLine(new HmmIfExpression() {
                     Location = syntax.Location,
                     Condition = cond,
                     Affirmative = affirm,
@@ -375,9 +377,9 @@ namespace Helix.Frontend.NameResolution {
                 return result;
             }
             else {
-                var result = this.mangler.MangleTempName(this.Scope);
+                var result = this.mangler.CreateMangledTempName(this.Scope);
 
-                this.writer.AddLine(new HmmIfExpression() {
+                this.Writer.AddLine(new HmmIfExpression() {
                     Condition = cond,
                     Affirmative = "void",
                     AffirmativeBody = affirmLines,
@@ -398,9 +400,9 @@ namespace Helix.Frontend.NameResolution {
 
             var target = syntax.Target.Accept(this);
             var args = syntax.Args.Select(x => x.Accept(this)).ToArray();
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
-            this.writer.AddLine(new HmmInvokeSyntax() {
+            this.Writer.AddLine(new HmmInvokeSyntax() {
                 Location = syntax.Location,
                 Target = target,
                 Arguments = args,
@@ -416,9 +418,9 @@ namespace Helix.Frontend.NameResolution {
             }
 
             var arg = syntax.Operand.Accept(this);
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
-            this.writer.AddLine(new HmmIsSyntax() {
+            this.Writer.AddLine(new HmmIsSyntax() {
                 Operand = arg,
                 Field = syntax.Field,
                 Location = syntax.Location,
@@ -430,9 +432,9 @@ namespace Helix.Frontend.NameResolution {
 
         public string VisitMemberAccess(MemberAccessSyntax syntax) {
             var arg = syntax.Target.Accept(this);
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
-            this.writer.AddLine(new HmmMemberAccess() {
+            this.Writer.AddLine(new HmmMemberAccess() {
                 Location = syntax.Location,
                 Operand = arg,
                 Member = syntax.Field,
@@ -449,7 +451,7 @@ namespace Helix.Frontend.NameResolution {
             }
 
             var type = syntax.Type.Accept(this.GetTypeNameResolver(syntax.Location));
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
             var fields = syntax.Assignments
                 .Select(x => new HmmNewFieldAssignment() {
@@ -458,7 +460,7 @@ namespace Helix.Frontend.NameResolution {
                 })
                 .ToArray();
 
-            this.writer.AddLine(new HmmNewSyntax() {
+            this.Writer.AddLine(new HmmNewSyntax() {
                 Location = syntax.Location,
                 Assignments = fields,
                 Result = result,
@@ -475,7 +477,7 @@ namespace Helix.Frontend.NameResolution {
 
             var target = syntax.Payload.Accept(this);
 
-            this.writer.AddLine(new HmmReturnSyntax() {
+            this.Writer.AddLine(new HmmReturnSyntax() {
                 Location = syntax.Location,
                 Operand = target
             });
@@ -492,16 +494,16 @@ namespace Helix.Frontend.NameResolution {
 
             this.declarations.SetDeclaration(this.Scope, syntax.Name, structType);
 
-            var mangled = this.mangler.MangleGlobalName(this.Scope, syntax.Name);
+            var mangled = this.mangler.GetMangledName(this.Scope, syntax.Name);
             var nominalType = new NominalType() { Name = mangled, DisplayName = syntax.Name };
 
-            this.writer.AddTypeDeclaration(new HmmTypeDeclaration() {
+            this.Writer.AddTypeDeclaration(new HmmTypeDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
                 Kind = TypeDeclarationKind.Struct
             });
 
-            this.writer.AddLine(new HmmStructDeclaration() {
+            this.Writer.AddLine(new HmmStructDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
                 Signature = structType,
@@ -543,9 +545,9 @@ namespace Helix.Frontend.NameResolution {
             }
 
             var arg = syntax.Operand.Accept(this);
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
-            this.writer.AddLine(new HmmUnaryOperator() {
+            this.Writer.AddLine(new HmmUnaryOperator() {
                 Location = syntax.Location,
                 Operand = arg,
                 Operator = syntax.Operator,
@@ -565,11 +567,11 @@ namespace Helix.Frontend.NameResolution {
             this.expectedLValue.Push(true);
 
             var arg = syntax.Operand.Accept(this);
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
             this.expectedLValue.Pop();
 
-            this.writer.AddLine(new HmmAddressOf() {
+            this.Writer.AddLine(new HmmAddressOf() {
                 Location = syntax.Location,
                 Operand = arg,
                 Result = result
@@ -584,11 +586,11 @@ namespace Helix.Frontend.NameResolution {
             this.expectedLValue.Push(false);
 
             var arg = syntax.Operand.Accept(this);
-            var result = this.mangler.MangleTempName(this.Scope);
+            var result = this.mangler.CreateMangledTempName(this.Scope);
 
             this.expectedLValue.Pop();
 
-            this.writer.AddLine(new HmmDereference() {
+            this.Writer.AddLine(new HmmDereference() {
                 Location = syntax.Location,
                 IsLValue = this.ExpectedLValue,
                 Operand = arg,
@@ -607,16 +609,16 @@ namespace Helix.Frontend.NameResolution {
 
             this.declarations.SetDeclaration(this.Scope, syntax.Name, unionType);
 
-            var mangled = this.mangler.MangleGlobalName(this.Scope, syntax.Name);
+            var mangled = this.mangler.GetMangledName(this.Scope, syntax.Name);
             var nominalType = new NominalType() { Name = mangled, DisplayName = syntax.Name };
 
-            this.writer.AddTypeDeclaration(new HmmTypeDeclaration() {
+            this.Writer.AddTypeDeclaration(new HmmTypeDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
                 Kind = TypeDeclarationKind.Union
             });
 
-            this.writer.AddLine(new HmmUnionDeclaration() {
+            this.Writer.AddLine(new HmmUnionDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
                 Signature = unionType,
@@ -644,7 +646,7 @@ namespace Helix.Frontend.NameResolution {
             var mangled = this.mangler.MangleLocalName(this.Scope, syntax.VariableName);
             var value = syntax.Value.Accept(this);
 
-            this.writer.AddLine(new HmmVariableStatement() {
+            this.Writer.AddLine(new HmmVariableStatement() {
                 Location = syntax.Location,
                 IsMutable = true,
                 Value = value,
@@ -709,14 +711,14 @@ namespace Helix.Frontend.NameResolution {
             var loopPath = this.Scope.Append(loopName);
 
             this.scopes.Push(loopPath);
-            this.writer.PushBlock();
+            this.writers.Push(this.Writer.CreateScope());
 
             syntax.Body.Accept(this);
 
-            var loopLines = this.writer.PopBlock();
+            var loopLines = this.writers.Pop().ScopedLines;
             this.scopes.Pop();
 
-            this.writer.AddLine(new HmmLoopSyntax() {
+            this.Writer.AddLine(new HmmLoopSyntax() {
                 Location = syntax.Location,
                 Body = loopLines
             });

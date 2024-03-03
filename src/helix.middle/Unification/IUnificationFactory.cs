@@ -38,7 +38,7 @@ namespace Helix.MiddleEnd.Unification {
                         Type = toType
                     };
 
-                    return line.Accept(context.TypeChecker);
+                    return line.Accept(context.TypeChecker).ResultName;
                 });
             }
 
@@ -113,7 +113,7 @@ namespace Helix.MiddleEnd.Unification {
                         Result = name
                     };
 
-                    return syntax.Accept(context.TypeChecker);
+                    return syntax.Accept(context.TypeChecker).ResultName;
                 });
             }
 

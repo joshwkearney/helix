@@ -1,27 +1,26 @@
-﻿namespace Helix.Common.Hmm {
+﻿using System.Collections.Immutable;
+
+namespace Helix.Common.Hmm {
     public class HmmWriter {
-        private readonly Stack<List<IHmmSyntax>> lines = new();
-        private readonly List<IHmmSyntax> typeDeclarations = [];
-        private readonly List<IHmmSyntax> forwardDeclarations = [];
+        private List<IHmmSyntax> lines = [];
+        private List<IHmmSyntax> typeDeclarations = [];
+        private List<IHmmSyntax> forwardDeclarations = [];
 
-        public IReadOnlyList<IHmmSyntax> Lines {
-            get {
-                if (this.lines.Count == 1) {
-                    return [..this.typeDeclarations, ..this.forwardDeclarations, ..this.lines.Peek()];
-                }
-                else {
-                    return this.lines.Peek();
-                }
-            }
+        public IReadOnlyList<IHmmSyntax> ScopedLines => this.lines;
+
+        public IReadOnlyList<IHmmSyntax> AllLines {
+            get => [.. this.typeDeclarations, .. this.forwardDeclarations, .. this.lines];
         }
 
-
-        public HmmWriter() {
-            this.lines.Push([]);
+        private HmmWriter(List<IHmmSyntax> typeDeclarations, List<IHmmSyntax> forwardDeclarations) {
+            this.typeDeclarations = typeDeclarations;
+            this.forwardDeclarations = forwardDeclarations;
         }
+
+        public HmmWriter() { }
 
         public void AddLine(IHmmSyntax line) {
-            this.lines.Peek().Add(line);
+            this.lines.Add(line);
         }
 
         public void AddTypeDeclaration(IHmmSyntax syntax) {
@@ -32,20 +31,6 @@
             this.forwardDeclarations.Add(syntax);
         }
 
-        public void PushBlock() {
-            this.lines.Push([]);
-        }
-
-        public void PushBlock(List<IHmmSyntax> lines) {
-            this.lines.Push(lines);
-        }
-
-        public List<IHmmSyntax> PopBlock() {
-            if (this.lines.Count <= 1) {
-                return [];
-            }
-
-            return this.lines.Pop();
-        }
+        public HmmWriter CreateScope() => new HmmWriter(this.typeDeclarations, this.forwardDeclarations);
     }
 }

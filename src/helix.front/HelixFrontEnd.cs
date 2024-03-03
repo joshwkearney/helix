@@ -9,13 +9,14 @@ namespace Helix.Frontend {
             var parseTree = parser.Parse();
 
             var declarations = new DeclarationStore();
-            var declarationFinder = new DeclarationFinder(declarations);
+            var mangler = new NameMangler();
+            var declarationFinder = new DeclarationFinder(declarations, mangler);
             
             foreach (var tree in parseTree) {
                 tree.Accept(declarationFinder);
             }
 
-            var nameResolver = new NameResolver(declarations);
+            var nameResolver = new NameResolver(declarations, mangler);
 
             foreach (var tree in parseTree) {
                 tree.Accept(nameResolver);

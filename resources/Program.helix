@@ -1,14 +1,14 @@
-union Option {
-	var first as word;
-	var second as void;
-	var third as word;
-}
+//union Option {
+//	var first as word;
+//	var second as void;
+//	var third as word;
+//}
 
 // TODO: Fix new Point
-struct Point {
-	var x as word;
-	var y as word;
-}
+//struct Point {
+//	var x as word;
+//	var y as word;
+//}
 
 //func test2(var opt as Option) as word {
 //	if opt is third then {
@@ -18,11 +18,35 @@ struct Point {
 //	return 45;
 //}
 
-func test3(var p as Point[]) {
-	var x = 45;
+//struct Thing {
+//	func sum() as word => 0;
+//}
 
-	p[0].y = 4 + 7;
+
+
+struct Test {
+	var p as **word;
 }
+
+func test3(var test as bool) {
+	var first = 10;
+	var second = 20;
+	
+	return;
+
+	var x = &first;
+
+	for i = 0 to 10 {
+		//if test then {
+		//	x = &second;
+		//	break
+		//};
+	}
+
+
+}
+
+func doNOTHING(var foo as *word) -> void;
 
 //func test4(var opt as Option) {
 //	while opt is third {

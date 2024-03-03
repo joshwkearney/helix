@@ -1,21 +1,28 @@
 ﻿using Helix.Common.Hmm;
+using Helix.MiddleEnd.Interpreting;
 using Helix.MiddleEnd.Unification;
 
 namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeCheckingContext {
-        public required HmmWriter Writer { get; init; }
+        public Stack<HmmWriter> WriterStack { get; } = [];
 
-        public required TypeStore Types { get; init; }
+        public HmmWriter Writer => this.WriterStack.Peek();
 
-        public required TypeCheckingNamesStore Names { get; init; }
+        public TypeStore Types { get; }
+
+        public TypeCheckingNamesStore Names { get; }
 
         public TypeChecker TypeChecker { get; }
 
         public TypeUnifier Unifier { get; }
 
         public TypeCheckingContext() {
-            TypeChecker = new TypeChecker(this);
-            Unifier = new TypeUnifier(this);
+            this.Types = new TypeStore();
+            this.Names = new TypeCheckingNamesStore();
+            this.TypeChecker = new TypeChecker(this);
+            this.Unifier = new TypeUnifier(this);
+
+            this.WriterStack.Push(new HmmWriter());
         }
     }
 }
