@@ -19,7 +19,7 @@ namespace Helix.MiddleEnd.Interpreting {
         }
 
         public bool TryEvaluateIfExpression(HmmIfExpression syntax, string cond, out TypeCheckResult result) {
-            var condType = this.context.Types.GetLocalType(cond);
+            var condType = this.context.Types.GetType(cond);
 
             if (condType is not SingularBoolType boolType) {
                 result = default;
@@ -51,8 +51,8 @@ namespace Helix.MiddleEnd.Interpreting {
         }
 
         public bool TryEvaluateVisitBinarySyntax(HmmBinarySyntax syntax, out TypeCheckResult resultName) {
-            var leftType = this.context.Types.GetLocalType(syntax.Left);
-            var rightType = this.context.Types.GetLocalType(syntax.Right);
+            var leftType = this.context.Types.GetType(syntax.Left);
+            var rightType = this.context.Types.GetType(syntax.Right);
 
             if (leftType is SingularWordType wordLeft && rightType is SingularWordType wordRight) {
                 IHelixType? result = syntax.Operator switch {
@@ -127,7 +127,7 @@ namespace Helix.MiddleEnd.Interpreting {
                 Member = access.Member
             };
 
-            var type = this.context.Types.GetLocalType(loc);
+            var type = this.context.Types.GetType(loc);
 
             if (type.Accept(TypeExpressionVisitor.Instance).TryGetValue(out var expr)) {
                 var stat = new HmmVariableStatement() {

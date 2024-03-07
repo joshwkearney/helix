@@ -2,9 +2,9 @@
 using Helix.Common.Tokens;
 using Helix.Common.Types;
 using Helix.MiddleEnd.TypeChecking;
+using System;
 
-namespace Helix.MiddleEnd.Unification
-{
+namespace Helix.MiddleEnd.Unification {
     internal class TypeUnifier {
         private readonly TypeCheckingContext context;
 
@@ -12,73 +12,90 @@ namespace Helix.MiddleEnd.Unification
             this.context = context;
         }
 
-        public bool CanCast(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Cast).HasValue;
+        //public bool CanCast(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Cast).HasValue;
 
         public bool CanConvert(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Convert).HasValue;
 
-        public bool CanPun(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Pun).HasValue;
+        //public bool CanPun(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Pun).HasValue;
 
         public bool CanUnify(IHelixType fromType, IHelixType toType, UnificationKind kind) => GetUnifier(fromType, toType, kind).HasValue;
 
-        public string Cast(string value, IHelixType toType, TokenLocation loc) {
-            var fromType = context.Types.GetLocalType(value);
+        //public string Cast(string value, IHelixType toType, TokenLocation loc) {
+        //    var fromType = context.Types.GetLocalType(value);
 
-            if (!GetUnifier(fromType, toType, UnificationKind.Cast).TryGetValue(out var unifier)) {
-                throw new InvalidOperationException();
-            }
+        //    if (!GetUnifier(fromType, toType, UnificationKind.Cast).TryGetValue(out var unifier)) {
+        //        throw new InvalidOperationException();
+        //    }
 
-            return unifier.Invoke(value, loc);
-        }
+        //    return unifier.Invoke(value, loc);
+        //}
 
         public string Convert(string value, IHelixType toType, TokenLocation loc) {
-            var fromType = context.Types.GetLocalType(value);
+            var fromType = context.Types.GetType(value);
 
             if (!GetUnifier(fromType, toType, UnificationKind.Convert).TryGetValue(out var unifier)) {
                 throw TypeCheckException.TypeConversionFailed(loc, fromType, toType);
             }
 
-            return unifier.Invoke(value, loc);
+            var result = unifier.Invoke(value, loc);
+            var resultType = this.context.Types.GetType(result);
+
+            Assert.IsTrue(resultType.GetSupertype() == toType);
+
+            return result;
         }
 
-        public string Pun(string value, IHelixType toType, TokenLocation loc) {
-            var fromType = context.Types.GetLocalType(value);
+        //public string Pun(string value, IHelixType toType, TokenLocation loc) {
+        //    var fromType = context.Types.GetLocalType(value);
 
-            if (!GetUnifier(fromType, toType, UnificationKind.Pun).TryGetValue(out var unifier)) {
-                throw new InvalidOperationException();
+        //    if (!GetUnifier(fromType, toType, UnificationKind.Pun).TryGetValue(out var unifier)) {
+        //        throw new InvalidOperationException();
+        //    }
+
+        //    return unifier.Invoke(value, loc);
+        //}
+
+        //public Option<IHelixType> TryUnifyWithCast(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Cast);
+
+        public Option<IHelixType> TryUnifyWithConvert(IHelixType fromType, IHelixType toType) {
+            var result = GetUnifyingType(fromType, toType, UnificationKind.Convert);
+
+            if (result.TryGetValue(out var type)) {
+                Assert.IsTrue(fromType == type || fromType.GetSupertype() == type);
+                Assert.IsTrue(toType == type || toType.GetSupertype() == type);
             }
 
-            return unifier.Invoke(value, loc);
+            return result;
         }
 
-        public Option<IHelixType> TryUnifyWithCast(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Cast);
+        //public Option<IHelixType> TryUnifyWithPun(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Pun);
 
-        public Option<IHelixType> TryUnifyWithConvert(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Convert);
+        //public IHelixType UnifyWithCast(IHelixType type1, IHelixType type2, TokenLocation loc) {
+        //    if (!this.TryUnifyWithCast(type1, type2).TryGetValue(out var type)) {
+        //        throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
+        //    }
 
-        public Option<IHelixType> TryUnifyWithPun(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Pun);
-
-        public IHelixType UnifyWithCast(IHelixType type1, IHelixType type2, TokenLocation loc) {
-            if (!this.TryUnifyWithCast(type1, type2).TryGetValue(out var type)) {
-                throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
-            }
-
-            return type;
-        }
+        //    return type;
+        //}
 
         public IHelixType UnifyWithConvert(IHelixType type1, IHelixType type2, TokenLocation loc) {
             if (!this.TryUnifyWithConvert(type1, type2).TryGetValue(out var type)) {
                 throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
             }
 
-            return type;
-        }
-
-        public IHelixType UnifyWithPun(IHelixType type1, IHelixType type2, TokenLocation loc) {
-            if (!this.TryUnifyWithPun(type1, type2).TryGetValue(out var type)) {
-                throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
-            }
+            Assert.IsTrue(type1 == type || type1.GetSupertype() == type);
+            Assert.IsTrue(type2 == type || type2.GetSupertype() == type);
 
             return type;
         }
+
+        //public IHelixType UnifyWithPun(IHelixType type1, IHelixType type2, TokenLocation loc) {
+        //    if (!this.TryUnifyWithPun(type1, type2).TryGetValue(out var type)) {
+        //        throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
+        //    }
+
+        //    return type;
+        //}
 
         private Option<IHelixType> GetUnifyingType(IHelixType type1, IHelixType type2, UnificationKind kind) {
             if (GetUnifier(type1, type2, kind).TryGetValue(out var u)) {

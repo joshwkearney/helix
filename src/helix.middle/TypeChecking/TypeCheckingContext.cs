@@ -28,7 +28,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.Unifier = new TypeUnifier(this);
 
             this.WriterStack.Push(new HmmWriter());
-            this.TypesStack.Push(new TypeStore());
+            this.TypesStack.Push(new TypeStore(this));
             this.AliasesStack.Push(new AliasingTracker(this));
         }
     }

@@ -10,86 +10,66 @@ using System.Threading.Tasks;
 
 namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeStore {
-        private ImmutableDictionary<IValueLocation, IHelixType> signatures 
-            = ImmutableDictionary<IValueLocation, IHelixType>.Empty;
-
         private ImmutableDictionary<IValueLocation, IHelixType> values 
             = ImmutableDictionary<IValueLocation, IHelixType>.Empty;
 
+        private readonly TypeCheckingContext context;
+
         private TypeStore(
-            ImmutableDictionary<IValueLocation, IHelixType> signatures, 
+            TypeCheckingContext context,
             ImmutableDictionary<IValueLocation, IHelixType> currentTypes) {
 
-            this.signatures = signatures;
+            this.context = context;
             this.values = currentTypes;
         }
 
-        public TypeStore() { }
+        public TypeStore(TypeCheckingContext context) {
+            this.context = context;
+        }
 
         public TypeStore CreateScope() {
-            return new TypeStore(this.signatures, this.values);
+            return new TypeStore(this.context, this.values);
         }
 
         public TypeStore MergeWith(TypeStore other) {
-            var resultValues = this.values;
-            var resultSigs = this.signatures;
+            var resultValues = new Dictionary<IValueLocation, IHelixType>();
+            var keys = this.values.Keys.Union(other.values.Keys);
 
-            foreach (var key in this.signatures.Keys.Intersect(other.signatures.Keys)) {
-                Assert.IsTrue(this.signatures[key] == other.signatures[key]);
-            }
-
-            foreach (var (key, value) in other.signatures) {
-                if (!resultSigs.ContainsKey(key)) {
-                    resultSigs = resultSigs.Remove(key);
+            foreach (var key in keys) {
+                if (this.values.ContainsKey(key) && other.values.ContainsKey(key)) {
+                    // TODO: Fix not having a location here
+                    resultValues[key] = this.context.Unifier.UnifyWithConvert(this.values[key], other.values[key], default);
+                }
+                else if (this.values.ContainsKey(key)) {
+                    resultValues[key] = this.values[key];
+                }
+                else {
+                    resultValues[key] = other.values[key];
                 }
             }
 
-            foreach (var (key, value) in other.values) {
-                if (this.values.TryGetValue(key, out var myValue)) {
-                    if (value != myValue) {
-                        resultValues = resultValues.Remove(key);
-                    }
-                }
-            }
-
-            return new TypeStore(resultSigs, resultValues);
+            return new TypeStore(this.context, resultValues.ToImmutableDictionary());
         }
 
-        public IHelixType GetSignature(IValueLocation location) {
-            if (location is NamedLocation named && this.GetSingularTypes(named.Name).TryGetValue(out var type)) {
-                return type;
-            }
-            else {
-                Assert.IsTrue(this.signatures.ContainsKey(location));
-                return this.signatures[location];
-            }            
-        }
-
-        public IHelixType GetSignature(string name) {
-            return this.GetSignature(new NamedLocation(name));
-        }
-
-        public void SetSignature(IValueLocation location, IHelixType type) {
-            Assert.IsFalse(this.signatures.ContainsKey(location));
-            this.signatures = this.signatures.SetItem(location, type);
-        }        
-
-        public void SetLocal(IValueLocation location, IHelixType valueType) {
-            Assert.IsTrue(this.signatures.ContainsKey(location));
+        public void GetType(IValueLocation location, IHelixType valueType) {
             this.values = this.values.SetItem(location, valueType);
         }
 
-        public IHelixType GetLocalType(IValueLocation location) {
-            return this.values.GetValueOrNone(location).OrElse(() => this.GetSignature(location));
+        public IHelixType GetType(IValueLocation location) {
+            if (location is NamedLocation named) {
+                if (this.GetSingularTypes(named.Name).TryGetValue(out var type)) {
+                    return type;
+                }
+            }
+
+            Assert.IsTrue(this.values.ContainsKey(location));
+            return this.values[location];
         }
 
-        public IHelixType GetLocalType(string name) {
-            return this.GetSingularTypes(name).OrElse(() => this.GetLocalType(new NamedLocation(name)));
-        }
+        public IHelixType GetType(string name) => this.GetType(new NamedLocation(name));
 
-        public void ClearLocal(IValueLocation location) {
-            this.values = this.values.Remove(location);
-            //this.currentValues.Remove(location);
+        public void ClearType(IValueLocation location) {
+            this.values = this.values.SetItem(location, this.values[location].GetSupertype());
         }
 
         private Option<IHelixType> GetSingularTypes(string name) {

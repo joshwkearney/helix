@@ -70,10 +70,10 @@ namespace Helix.MiddleEnd.TypeChecking
                 return TypeCheckResult.VoidResult;
             }
 
-            var totalType = this.Types.GetLocalType(syntax.Args[0]);
+            var totalType = this.Types.GetType(syntax.Args[0]);
 
             for (int i = 1; i < syntax.Args.Count; i++) {
-                var argType = this.Types.GetLocalType(syntax.Args[i]);
+                var argType = this.Types.GetType(syntax.Args[i]);
 
                 if (!this.Unifier.TryUnifyWithConvert(argType, totalType).TryGetValue(out totalType)) {
                     throw TypeCheckException.TypeConversionFailed(syntax.Location, totalType, argType);
@@ -94,7 +94,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitAssignment(HmmAssignment syntax) {
-            var sigType = this.Types.GetSignature(syntax.Variable);
+            var sigType = this.Types.GetType(syntax.Variable).GetSupertype();
             var assign = this.Unifier.Convert(syntax.Value, sigType, syntax.Location);
 
             this.Writer.AddLine(new HmmAssignment() {
@@ -133,8 +133,8 @@ namespace Helix.MiddleEnd.TypeChecking
                 return evalResult;
             }
 
-            var type1 = this.Types.GetSignature(syntax.Left);
-            var type2 = this.Types.GetSignature(syntax.Right);
+            var type1 = this.Types.GetType(syntax.Left);
+            var type2 = this.Types.GetType(syntax.Right);
 
             var left = syntax.Left;
             var right = syntax.Right;
@@ -245,7 +245,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax) {
-            this.Types.SetSignature(new NamedLocation(syntax.Name), syntax.Signature);
+            this.Types.GetType(new NamedLocation(syntax.Name), syntax.Signature);
             this.Writer.AddFowardDeclaration(syntax);
 
             return TypeCheckResult.VoidResult;
@@ -281,8 +281,8 @@ namespace Helix.MiddleEnd.TypeChecking
             var negTypes = this.context.TypesStack.Pop();
 
             // Unify types
-            var affirmType = this.Types.GetLocalType(syntax.Affirmative);
-            var negType = this.Types.GetLocalType(syntax.Negative);
+            var affirmType = this.Types.GetType(syntax.Affirmative);
+            var negType = this.Types.GetType(syntax.Negative);
             var totalType = this.Unifier.UnifyWithConvert(affirmType, negType, syntax.Location);
 
             // Unify the true branch in its scope
@@ -338,7 +338,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitInvoke(HmmInvokeSyntax syntax) {
-            var targetType = this.Types.GetLocalType(syntax.Target);
+            var targetType = this.Types.GetType(syntax.Target);
 
             if (!targetType.TryGetFunctionSignature(this.context).TryGetValue(out var sig)) {
                 throw TypeCheckException.ExpectedFunctionType(syntax.Location, targetType);
@@ -368,7 +368,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitIs(HmmIsSyntax syntax) {
-            var type = this.Types.GetLocalType(syntax.Operand);
+            var type = this.Types.GetType(syntax.Operand);
 
             if (!type.GetUnionSignature(this.context).TryGetValue(out var unionType)) {
                 throw TypeCheckException.ExpectedUnionType(syntax.Location);
@@ -438,7 +438,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitMemberAccess(HmmMemberAccess syntax) {
-            var targetType = this.Types.GetLocalType(syntax.Operand);
+            var targetType = this.Types.GetType(syntax.Operand);
 
             if (targetType.GetArraySignature(this.context).TryGetValue(out _)) {
                 if (syntax.Member != "count") {
@@ -695,7 +695,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitStructDeclaration(HmmStructDeclaration syntax) {
-            this.Types.SetSignature(new NamedLocation(syntax.Name), syntax.Signature);
+            this.Types.GetType(new NamedLocation(syntax.Name), syntax.Signature);
             this.Writer.AddLine(syntax);
 
             // Make sure this struct isn't circular
@@ -733,11 +733,11 @@ namespace Helix.MiddleEnd.TypeChecking
                 return TypeCheckResult.NormalFlow(syntax.Result);
             }
 
-            throw TypeCheckException.InvalidUnaryOperator(syntax.Location, this.Types.GetLocalType(syntax.Operand), syntax.Operator);
+            throw TypeCheckException.InvalidUnaryOperator(syntax.Location, this.Types.GetType(syntax.Operand), syntax.Operator);
         }
 
         public TypeCheckResult VisitUnionDeclaration(HmmUnionDeclaration syntax) {
-            this.Types.SetSignature(new NamedLocation(syntax.Name), syntax.Signature);
+            this.Types.GetType(new NamedLocation(syntax.Name), syntax.Signature);
             this.Writer.AddLine(syntax);
 
             // Make sure this struct isn't circular
@@ -749,7 +749,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitVariableStatement(HmmVariableStatement syntax) {
-            var assignType = this.Types.GetLocalType(syntax.Value);
+            var assignType = this.Types.GetType(syntax.Value);
             var sigType = assignType.GetSupertype();
             var assign = this.Unifier.Convert(syntax.Value, sigType, syntax.Location);
 
@@ -766,7 +766,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitDereference(HmmDereference syntax) {
-            var operandType = this.Types.GetLocalType(syntax.Operand);
+            var operandType = this.Types.GetType(syntax.Operand);
 
             if (!operandType.GetPointerSignature(this.context).TryGetValue(out var sig)) {
                 throw TypeCheckException.ExpectedPointerType(syntax.Location, operandType);
@@ -790,7 +790,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitIndex(HmmIndex syntax) {
-            var opType = this.Types.GetLocalType(syntax.Operand);
+            var opType = this.Types.GetType(syntax.Operand);
 
             if (!opType.GetArraySignature(this.context).TryGetValue(out var arrayType)) {
                 throw TypeCheckException.ExpectedArrayType(syntax.Location, opType);
@@ -817,7 +817,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitAddressOf(HmmAddressOf syntax) {
-            var operandType = this.Types.GetLocalType(syntax.Operand);
+            var operandType = this.Types.GetType(syntax.Operand);
 
             // The name resolver has already confirmed that our operand is a real lvalue, so no need to check that
 

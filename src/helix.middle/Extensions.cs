@@ -15,7 +15,7 @@ namespace Helix.MiddleEnd {
                 return f;
             }
             else if (type is NominalType nom) {
-                return context.Types.GetSignature(nom.Name).TryGetFunctionSignature(context);
+                return context.Types.GetType(nom.Name).TryGetFunctionSignature(context);
             }
             else {
                 return Option.None;
@@ -27,7 +27,7 @@ namespace Helix.MiddleEnd {
                 return structType;
             }
             else if (type is NominalType nom) {
-                return context.Types.GetSignature(nom.Name).GetStructSignature(context);
+                return context.Types.GetType(nom.Name).GetStructSignature(context);
             }
             else {
                 return Option.None;
@@ -39,7 +39,7 @@ namespace Helix.MiddleEnd {
                 return unionType;
             }
             else if (type is NominalType nom) {
-                return context.Types.GetSignature(nom.Name).GetUnionSignature(context);
+                return context.Types.GetType(nom.Name).GetUnionSignature(context);
             }
             else {
                 return Option.None;

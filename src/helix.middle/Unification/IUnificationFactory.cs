@@ -4,8 +4,7 @@ using Helix.Common.Tokens;
 using Helix.Common.Types;
 using Helix.MiddleEnd.TypeChecking;
 
-namespace Helix.MiddleEnd.Unification
-{
+namespace Helix.MiddleEnd.Unification {
     internal enum UnificationKind {
         Pun, Convert, Cast
     }
@@ -56,13 +55,13 @@ namespace Helix.MiddleEnd.Unification
             }
 
             if (toType == WordType.Instance) {
-                return Option.Some<Unifier>((_, _) => sing.Value.ToString());
+                return Option.Some<Unifier>((_, _) => sing.ToString());
             }
             else if (toType == BoolType.Instance && sing.Value == 1) {
                 return Option.Some<Unifier>((_, _) => "true");
             }
-            else if (sing.Value == 0) {
-                return VoidUnificationFactory.Instance.CreateUnifier(VoidType.Instance, toType, kind, context);
+            else if (toType == BoolType.Instance && sing.Value == 0) {
+                return Option.Some<Unifier>((_, _) => "false");
             }
 
             return Option.None;
@@ -77,13 +76,10 @@ namespace Helix.MiddleEnd.Unification
             }
 
             if (toType == BoolType.Instance) {
-                return Option.Some<Unifier>((_, _) => sing.Value.ToString());
+                return Option.Some<Unifier>((_, _) => sing.ToString());
             }
             else if (toType == WordType.Instance) {
                 return Option.Some<Unifier>((_, _) => sing.Value ? "1" : "0");
-            }
-            else if (!sing.Value) {
-                return VoidUnificationFactory.Instance.CreateUnifier(VoidType.Instance, toType, kind, context);
             }
 
             return Option.None;
