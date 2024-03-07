@@ -3,7 +3,8 @@ using Helix.Common.Tokens;
 using Helix.Common.Types;
 using Helix.MiddleEnd.TypeChecking;
 
-namespace Helix.MiddleEnd.Unification {
+namespace Helix.MiddleEnd.Unification
+{
     internal class TypeUnifier {
         private readonly TypeCheckingContext context;
 
@@ -20,9 +21,8 @@ namespace Helix.MiddleEnd.Unification {
         public bool CanUnify(IHelixType fromType, IHelixType toType, UnificationKind kind) => GetUnifier(fromType, toType, kind).HasValue;
 
         public string Cast(string value, IHelixType toType, TokenLocation loc) {
-            Assert.IsTrue(context.Types.ContainsType(value));
+            var fromType = context.Types.GetLocalType(value);
 
-            var fromType = context.Types[value];
             if (!GetUnifier(fromType, toType, UnificationKind.Cast).TryGetValue(out var unifier)) {
                 throw new InvalidOperationException();
             }
@@ -31,9 +31,7 @@ namespace Helix.MiddleEnd.Unification {
         }
 
         public string Convert(string value, IHelixType toType, TokenLocation loc) {
-            Assert.IsTrue(context.Types.ContainsType(value));
-
-            var fromType = context.Types[value];
+            var fromType = context.Types.GetLocalType(value);
 
             if (!GetUnifier(fromType, toType, UnificationKind.Convert).TryGetValue(out var unifier)) {
                 throw TypeCheckException.TypeConversionFailed(loc, fromType, toType);
@@ -43,9 +41,8 @@ namespace Helix.MiddleEnd.Unification {
         }
 
         public string Pun(string value, IHelixType toType, TokenLocation loc) {
-            Assert.IsTrue(context.Types.ContainsType(value));
+            var fromType = context.Types.GetLocalType(value);
 
-            var fromType = context.Types[value];
             if (!GetUnifier(fromType, toType, UnificationKind.Pun).TryGetValue(out var unifier)) {
                 throw new InvalidOperationException();
             }

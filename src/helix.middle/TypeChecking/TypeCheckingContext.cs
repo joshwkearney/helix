@@ -6,9 +6,15 @@ namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeCheckingContext {
         public Stack<HmmWriter> WriterStack { get; } = [];
 
+        public Stack<TypeStore> TypesStack { get; } = [];
+
+        public Stack<AliasingTracker> AliasesStack { get; } = [];
+
         public HmmWriter Writer => this.WriterStack.Peek();
 
-        public TypeStore Types { get; }
+        public TypeStore Types => this.TypesStack.Peek();
+
+        public AliasingTracker Aliases => this.AliasesStack.Peek();
 
         public TypeCheckingNamesStore Names { get; }
 
@@ -17,12 +23,13 @@ namespace Helix.MiddleEnd.TypeChecking {
         public TypeUnifier Unifier { get; }
 
         public TypeCheckingContext() {
-            this.Types = new TypeStore();
             this.Names = new TypeCheckingNamesStore();
             this.TypeChecker = new TypeChecker(this);
             this.Unifier = new TypeUnifier(this);
 
             this.WriterStack.Push(new HmmWriter());
+            this.TypesStack.Push(new TypeStore());
+            this.AliasesStack.Push(new AliasingTracker(this));
         }
     }
 }

@@ -18,9 +18,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public bool VisitNominalType(NominalType type) {
-            Assert.IsTrue(this.context.Types.ContainsType(type.Name));
-
-            return this.context.Types[type.Name].Accept(this);
+            return this.context.Types.GetSignature(type.Name).Accept(this);
         }
 
         public bool VisitPointerType(PointerType type) => false;

@@ -6,7 +6,8 @@ using Helix.MiddleEnd.Interpreting;
 using Helix.MiddleEnd.Unification;
 using System.Text;
 
-namespace Helix.MiddleEnd.TypeChecking {
+namespace Helix.MiddleEnd.TypeChecking
+{
     public enum StatementControlFlow {
         Normal, FunctionReturn, LoopReturn
     }
@@ -48,8 +49,8 @@ namespace Helix.MiddleEnd.TypeChecking {
         };
 
         private readonly TypeCheckingContext context;
+        private readonly Evaluator eval;
         private readonly Stack<ControlFlowFrame> controlFlow = [];
-        private readonly Stack<AliasingTracker> aliases = [];
 
         private HmmWriter Writer => this.context.Writer;
 
@@ -57,11 +58,11 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         private TypeUnifier Unifier => this.context.Unifier;
 
-        private AliasingTracker Aliases => this.aliases.Peek();
+        private AliasingTracker Aliases => this.context.Aliases;
 
         public TypeChecker(TypeCheckingContext context) {
             this.context = context;
-            this.aliases.Push(new AliasingTracker(context));
+            this.eval = new Evaluator(context);
         }
 
         public TypeCheckResult VisitArrayLiteral(HmmArrayLiteral syntax) {
@@ -69,10 +70,10 @@ namespace Helix.MiddleEnd.TypeChecking {
                 return TypeCheckResult.VoidResult;
             }
 
-            var totalType = this.Types[syntax.Args[0]];
+            var totalType = this.Types.GetLocalType(syntax.Args[0]);
 
             for (int i = 1; i < syntax.Args.Count; i++) {
-                var argType = this.Types[syntax.Args[i]];
+                var argType = this.Types.GetLocalType(syntax.Args[i]);
 
                 if (!this.Unifier.TryUnifyWithConvert(argType, totalType).TryGetValue(out totalType)) {
                     throw TypeCheckException.TypeConversionFailed(syntax.Location, totalType, argType);
@@ -89,13 +90,12 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.Types[syntax.Result] = new ArrayType() { InnerType = totalType };
             return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
         public TypeCheckResult VisitAssignment(HmmAssignment syntax) {
-            var type = this.Types[syntax.Variable];
-            var assign = this.Unifier.Convert(syntax.Value, type, syntax.Location);
+            var sigType = this.Types.GetSignature(syntax.Variable);
+            var assign = this.Unifier.Convert(syntax.Value, sigType, syntax.Location);
 
             this.Writer.AddLine(new HmmAssignment() {
                 Location = syntax.Location,
@@ -103,7 +103,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Value = assign
             });
 
-            this.Aliases.RegisterAssignment(syntax.Variable, syntax.Value, type);
+            this.Aliases.RegisterAssignment(syntax.Variable, syntax.Value);
 
             return TypeCheckResult.VoidResult;
         }
@@ -118,7 +118,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Variable = syntax.Result
             });
 
-            this.Types[syntax.Result] = syntax.Type;
             this.Aliases.RegisterLocal(syntax.Result, syntax.Type, result);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
@@ -129,8 +128,13 @@ namespace Helix.MiddleEnd.TypeChecking {
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.BranchingOr);
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.Index);
 
-            var type1 = this.Types[syntax.Left];
-            var type2 = this.Types[syntax.Right];
+            // Try to evaluate this at compile time
+            if (this.eval.TryEvaluateVisitBinarySyntax(syntax, out var evalResult)) {
+                return evalResult;
+            }
+
+            var type1 = this.Types.GetSignature(syntax.Left);
+            var type2 = this.Types.GetSignature(syntax.Right);
 
             var left = syntax.Left;
             var right = syntax.Right;
@@ -144,8 +148,6 @@ namespace Helix.MiddleEnd.TypeChecking {
 
                 left = this.Unifier.Convert(left, BoolType.Instance, syntax.Location);
                 right = this.Unifier.Convert(right, BoolType.Instance, syntax.Location);
-
-                this.Types[syntax.Result] = boolOperations[syntax.Operator];
             }
             else if (this.Unifier.CanConvert(type1, WordType.Instance) && this.Unifier.CanConvert(type2, WordType.Instance)) {
                 if (!intOperations.TryGetValue(syntax.Operator, out returnType)) {
@@ -167,8 +169,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.Types[syntax.Result] = returnType;
-            this.Aliases.RegisterLocalWithoutAliasing(syntax.Result, returnType);
+            this.Aliases.RegisterLocal(syntax.Result, returnType);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
         }
@@ -180,7 +181,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.NotInLoop(syntax.Location);
             }
 
-            this.controlFlow.Peek().AddLoopAppendix(this.aliases.Peek());
+            this.controlFlow.Peek().AddLoopAppendix(this.Aliases);
 
             this.Writer.AddLine(new HmmBreakSyntax() {
                 Location = syntax.Location
@@ -211,7 +212,6 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.context.WriterStack.Push(this.Writer.CreateScope());
 
             foreach (var par in syntax.Signature.Parameters) {
-                this.Types[par.Name] = par.Type;
                 this.Aliases.RegisterFunctionParameter(par.Name, par.Type);
             }
 
@@ -245,7 +245,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax) {
-            this.Types[syntax.Name] = syntax.Signature;
+            this.Types.SetSignature(new NamedLocation(syntax.Name), syntax.Signature);
             this.Writer.AddFowardDeclaration(syntax);
 
             return TypeCheckResult.VoidResult;
@@ -254,46 +254,58 @@ namespace Helix.MiddleEnd.TypeChecking {
         public TypeCheckResult VisitIfExpression(HmmIfExpression syntax) {
             var cond = this.Unifier.Convert(syntax.Condition, BoolType.Instance, syntax.Location);
 
+            if (this.eval.TryEvaluateIfExpression(syntax, cond, out var result)) {
+                return result;
+            }
+
             // Write affirmative block
+            this.context.TypesStack.Push(this.Types.CreateScope());
             this.context.WriterStack.Push(this.Writer.CreateScope());
-            this.aliases.Push(this.Aliases.CreateScope());
+            this.context.AliasesStack.Push(this.Aliases.CreateScope());
 
             var (_, affirmFlow) = this.CheckBody(syntax.AffirmativeBody);
 
-            var affirmAliases = this.aliases.Pop();
+            var affirmAliases = this.context.AliasesStack.Pop();
             var affirmBody = this.context.WriterStack.Pop();
+            var affirmTypes = this.context.TypesStack.Pop();
 
             // Write negative block
+            this.context.TypesStack.Push(this.Types.CreateScope());
             this.context.WriterStack.Push(this.Writer.CreateScope());
-            this.aliases.Push(this.Aliases.CreateScope());
+            this.context.AliasesStack.Push(this.Aliases.CreateScope());
 
             var (_, negFlow) = this.CheckBody(syntax.NegativeBody);          
 
-            var negAliases = this.aliases.Pop();
+            var negAliases = this.context.AliasesStack.Pop();
             var negBody = this.context.WriterStack.Pop();
+            var negTypes = this.context.TypesStack.Pop();
 
             // Unify types
-            var affirmType = this.Types[syntax.Affirmative];
-            var negType = this.Types[syntax.Negative];
+            var affirmType = this.Types.GetLocalType(syntax.Affirmative);
+            var negType = this.Types.GetLocalType(syntax.Negative);
             var totalType = this.Unifier.UnifyWithConvert(affirmType, negType, syntax.Location);
 
             // Unify the true branch in its scope
+            this.context.TypesStack.Push(affirmTypes);
             this.context.WriterStack.Push(affirmBody);
-            this.aliases.Push(affirmAliases);
+            this.context.AliasesStack.Push(affirmAliases);
 
             var affirm = this.Unifier.Convert(syntax.Affirmative, totalType, syntax.Location);
 
-            this.aliases.Pop();
+            this.context.AliasesStack.Pop();
             this.context.WriterStack.Pop();
+            this.context.TypesStack.Pop();
 
             // Unify the false branch in its scope
+            this.context.TypesStack.Push(negTypes);
             this.context.WriterStack.Push(negBody);
-            this.aliases.Push(negAliases);
+            this.context.AliasesStack.Push(negAliases);
 
             var neg = this.Unifier.Convert(syntax.Negative, totalType, syntax.Location);
 
-            this.aliases.Pop();
+            this.context.AliasesStack.Pop();
             this.context.WriterStack.Pop();
+            this.context.TypesStack.Pop();
 
             this.Writer.AddLine(new HmmIfExpression() {
                 Location = syntax.Location,
@@ -305,13 +317,14 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.Types[syntax.Result] = totalType;
-
             // Combine the branch aliases and replace the current ones
-            var combined = affirmAliases.MergeWith(negAliases);
+            this.context.AliasesStack.Pop();
+            this.context.AliasesStack.Push(affirmAliases.MergeWith(negAliases));
 
-            this.aliases.Pop();
-            this.aliases.Push(combined);
+            this.context.TypesStack.Pop();
+            this.context.TypesStack.Push(affirmTypes.MergeWith(negTypes));
+
+            this.Aliases.RegisterIf(syntax.Result, totalType, affirm, neg);
 
             if (affirmFlow == StatementControlFlow.FunctionReturn && negFlow == StatementControlFlow.FunctionReturn) {
                 return TypeCheckResult.FunctionReturn;
@@ -325,8 +338,10 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitInvoke(HmmInvokeSyntax syntax) {
-            if (!this.Types[syntax.Target].TryGetFunctionSignature(this.context).TryGetValue(out var sig)) {
-                throw TypeCheckException.ExpectedFunctionType(syntax.Location, this.Types[syntax.Target]);
+            var targetType = this.Types.GetLocalType(syntax.Target);
+
+            if (!targetType.TryGetFunctionSignature(this.context).TryGetValue(out var sig)) {
+                throw TypeCheckException.ExpectedFunctionType(syntax.Location, targetType);
             }
 
             if (syntax.Arguments.Count != sig.Parameters.Count) {
@@ -347,14 +362,13 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.Types[syntax.Result] = sig.ReturnType;
-            this.Aliases.RegisterInvoke(newArgs, sig.Parameters.Select(x => x.Type).ToArray());
+            this.Aliases.RegisterInvoke(syntax.Result, sig.ReturnType, newArgs, sig.Parameters.Select(x => x.Type).ToArray());
 
             return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
         public TypeCheckResult VisitIs(HmmIsSyntax syntax) {
-            var type = this.Types[syntax.Operand];
+            var type = this.Types.GetLocalType(syntax.Operand);
 
             if (!type.GetUnionSignature(this.context).TryGetValue(out var unionType)) {
                 throw TypeCheckException.ExpectedUnionType(syntax.Location);
@@ -371,7 +385,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.Types[syntax.Result] = BoolType.Instance;
             this.Aliases.RegisterLocal(syntax.Result, BoolType.Instance, syntax.Result);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
@@ -381,16 +394,16 @@ namespace Helix.MiddleEnd.TypeChecking {
             Assert.IsTrue(this.controlFlow.Any());
 
             var returnFlow = TypeCheckResult.NormalFlow("void");
-            var outerAliases = this.aliases.Pop();
+            var outerAliases = this.context.AliasesStack.Pop();
 
             while (true) {
                 this.controlFlow.Push(this.controlFlow.Peek().CreateLoopFrame());
                 this.context.WriterStack.Push(this.Writer.CreateScope());
-                this.aliases.Push(outerAliases.CreateScope());
+                this.context.AliasesStack.Push(outerAliases.CreateScope());
 
                 var (_, bodyFlow) = this.CheckBody(syntax.Body);
 
-                var loopAliases = this.aliases.Pop();
+                var loopAliases = this.context.AliasesStack.Pop();
                 var body = this.context.WriterStack.Pop();
                 var loopControlFlow = this.controlFlow.Peek();
 
@@ -419,13 +432,13 @@ namespace Helix.MiddleEnd.TypeChecking {
                 }
             }
 
-            this.aliases.Push(outerAliases);
+            this.context.AliasesStack.Push(outerAliases);
 
             return returnFlow;
         }
 
         public TypeCheckResult VisitMemberAccess(HmmMemberAccess syntax) {
-            var targetType = this.Types[syntax.Operand];
+            var targetType = this.Types.GetLocalType(syntax.Operand);
 
             if (targetType.GetArraySignature(this.context).TryGetValue(out _)) {
                 if (syntax.Member != "count") {
@@ -444,7 +457,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                     IsLValue = false
                 });
 
-                this.Types[syntax.Result] = WordType.Instance;
                 return TypeCheckResult.NormalFlow(syntax.Result);
             }
             else if (targetType.GetStructSignature(this.context).TryGetValue(out var structType)) {
@@ -454,10 +466,15 @@ namespace Helix.MiddleEnd.TypeChecking {
                 }
 
                 if (syntax.IsLValue) {
-                    this.Aliases.RegisterMemberAccessReference(syntax.Result, syntax.Operand, mem.Name, mem.Type);
+                    this.Aliases.RegisterMemberAccessReference(syntax.Result, syntax.Operand, mem.Name);
                 }
                 else {
-                    this.Aliases.RegisterMemberAccess(syntax.Result, syntax.Operand, mem.Name, mem.Type);
+                    if (this.eval.TryEvaluateRValueStructMemberAccess(syntax, structType, out var result)) {
+                        return result;
+                    }
+                    else {
+                        this.Aliases.RegisterMemberAccess(syntax.Result, syntax.Operand, mem.Name);
+                    }
                 }
 
                 this.Writer.AddLine(new HmmMemberAccess() {
@@ -468,7 +485,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                     IsLValue = syntax.IsLValue
                 });
 
-                this.Types[syntax.Result] = mem.Type;
                 return TypeCheckResult.NormalFlow(syntax.Result);
             }
             else {
@@ -488,7 +504,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                     Variable = syntax.Result
                 });
 
-                this.Types[syntax.Result] = syntax.Type;
                 this.Aliases.RegisterLocal(syntax.Result, syntax.Type, syntax.Result);
 
                 return TypeCheckResult.NormalFlow(syntax.Result);
@@ -517,7 +532,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Type = syntax.Type
             });
 
-            this.Types[syntax.Result] = syntax.Type;
             this.Aliases.RegisterLocal(syntax.Result, syntax.Type, syntax.Result);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
@@ -611,7 +625,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Type = syntax.Type
             });
 
-            this.Types[syntax.Result] = syntax.Type;
             this.Aliases.RegisterNewStruct(syntax.Result, syntax.Type, newAssignments);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
@@ -662,7 +675,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.Types[syntax.Result] = syntax.Type;
             this.Aliases.RegisterNewUnion(syntax.Result, syntax.Type, value);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
@@ -683,7 +695,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitStructDeclaration(HmmStructDeclaration syntax) {
-            this.Types[syntax.Name] = syntax.Signature;
+            this.Types.SetSignature(new NamedLocation(syntax.Name), syntax.Signature);
             this.Writer.AddLine(syntax);
 
             // Make sure this struct isn't circular
@@ -716,18 +728,16 @@ namespace Helix.MiddleEnd.TypeChecking {
                     Result = syntax.Result
                 });
 
-                this.Types[syntax.Result] = BoolType.Instance;
-                this.Aliases.RegisterLocalWithoutAliasing(syntax.Result, BoolType.Instance);
-
+                this.Aliases.RegisterLocal(syntax.Result, BoolType.Instance);
 
                 return TypeCheckResult.NormalFlow(syntax.Result);
             }
 
-            throw TypeCheckException.InvalidUnaryOperator(syntax.Location, this.Types[syntax.Operand], syntax.Operator);
+            throw TypeCheckException.InvalidUnaryOperator(syntax.Location, this.Types.GetLocalType(syntax.Operand), syntax.Operator);
         }
 
         public TypeCheckResult VisitUnionDeclaration(HmmUnionDeclaration syntax) {
-            this.Types[syntax.Name] = syntax.Signature;
+            this.Types.SetSignature(new NamedLocation(syntax.Name), syntax.Signature);
             this.Writer.AddLine(syntax);
 
             // Make sure this struct isn't circular
@@ -739,8 +749,9 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitVariableStatement(HmmVariableStatement syntax) {
-            var type = this.Types[syntax.Value].GetSupertype();
-            var assign = this.Unifier.Convert(syntax.Value, type, syntax.Location);
+            var assignType = this.Types.GetLocalType(syntax.Value);
+            var sigType = assignType.GetSupertype();
+            var assign = this.Unifier.Convert(syntax.Value, sigType, syntax.Location);
 
             this.Writer.AddLine(new HmmVariableStatement() {
                 Location = syntax.Location,
@@ -749,14 +760,13 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Variable = syntax.Variable
             });
 
-            this.Types[syntax.Variable] = type;
-            this.Aliases.RegisterLocal(syntax.Variable, type, syntax.Value);
+            this.Aliases.RegisterLocal(syntax.Variable, sigType, syntax.Value);
 
             return TypeCheckResult.VoidResult;
         }
 
         public TypeCheckResult VisitDereference(HmmDereference syntax) {
-            var operandType = this.Types[syntax.Operand];
+            var operandType = this.Types.GetLocalType(syntax.Operand);
 
             if (!operandType.GetPointerSignature(this.context).TryGetValue(out var sig)) {
                 throw TypeCheckException.ExpectedPointerType(syntax.Location, operandType);
@@ -769,21 +779,21 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.Types[syntax.Result] = sig.InnerType;
-
             if (syntax.IsLValue) {
-                this.Aliases.RegisterDereferencedPointerReference(syntax.Result, sig.InnerType, syntax.Operand, operandType);
+                this.Aliases.RegisterDereferencedPointerReference(syntax.Result, sig.InnerType, syntax.Operand);
             }
             else {
-                this.Aliases.RegisterDereferencedPointer(syntax.Result, sig.InnerType, syntax.Operand, operandType);
+                this.Aliases.RegisterDereferencedPointer(syntax.Result, sig.InnerType, syntax.Operand);
             }
 
             return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
         public TypeCheckResult VisitIndex(HmmIndex syntax) {
-            if (!this.Types[syntax.Operand].GetArraySignature(this.context).TryGetValue(out var arrayType)) {
-                throw TypeCheckException.ExpectedArrayType(syntax.Location, this.Types[syntax.Operand]);
+            var opType = this.Types.GetLocalType(syntax.Operand);
+
+            if (!opType.GetArraySignature(this.context).TryGetValue(out var arrayType)) {
+                throw TypeCheckException.ExpectedArrayType(syntax.Location, opType);
             }
 
             var index = this.Unifier.Convert(syntax.Index, WordType.Instance, syntax.Location);
@@ -796,8 +806,6 @@ namespace Helix.MiddleEnd.TypeChecking {
                 IsLValue = syntax.IsLValue
             });
 
-            this.Types[syntax.Result] = arrayType.InnerType;
-
             if (syntax.IsLValue) {
                 this.Aliases.RegisterArrayIndexReference(syntax.Result, syntax.Operand, index, arrayType.InnerType);
             }
@@ -809,7 +817,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitAddressOf(HmmAddressOf syntax) {
-            var operandType = this.Types[syntax.Operand];
+            var operandType = this.Types.GetLocalType(syntax.Operand);
 
             // The name resolver has already confirmed that our operand is a real lvalue, so no need to check that
 
@@ -821,13 +829,12 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             var returnType = new PointerType() { InnerType = operandType };
 
-            this.Types[syntax.Result] = returnType;
-            this.Aliases.RegisterAddressOf(syntax.Result, syntax.Operand, returnType);
+            this.Aliases.RegisterAddressOf(syntax.Result, syntax.Operand);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        private TypeCheckResult CheckBody(IReadOnlyList<IHmmSyntax> stats) {
+        public TypeCheckResult CheckBody(IReadOnlyList<IHmmSyntax> stats) {
             foreach (var stat in stats) {
                 var result = stat.Accept(this);
 

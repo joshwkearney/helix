@@ -17,9 +17,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         public IEnumerable<IHelixType> VisitFunctionType(FunctionType type) => [];
 
         public IEnumerable<IHelixType> VisitNominalType(NominalType type) {
-            Assert.IsTrue(this.context.Types.ContainsType(type.Name));
-
-            return this.context.Types[type.Name].Accept(this);
+            return this.context.Types.GetSignature(type.Name).Accept(this);
         }
 
         public IEnumerable<IHelixType> VisitPointerType(PointerType type) => [];

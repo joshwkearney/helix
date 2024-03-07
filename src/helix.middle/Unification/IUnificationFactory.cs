@@ -4,7 +4,8 @@ using Helix.Common.Tokens;
 using Helix.Common.Types;
 using Helix.MiddleEnd.TypeChecking;
 
-namespace Helix.MiddleEnd.Unification {
+namespace Helix.MiddleEnd.Unification
+{
     internal enum UnificationKind {
         Pun, Convert, Cast
     }

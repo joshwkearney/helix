@@ -86,13 +86,13 @@ namespace Helix.Frontend.ParseTree {
             if (this.Peek(TokenKind.WordLiteral)) {
                 var value = long.Parse(this.Advance(TokenKind.WordLiteral).Value);
 
-                return new SingularWordType() { Value = value };
+                return new SingularWordType(value);
             }
             else if (this.TryAdvance(TokenKind.TrueKeyword)) {
-                return new SingularBoolType() { Value = true };
+                return new SingularBoolType(true);
             }
             else if (this.TryAdvance(TokenKind.FalseKeyword)) {
-                return new SingularBoolType() { Value = false };
+                return new SingularBoolType(false);
             }
             else if (this.TryAdvance(TokenKind.VoidKeyword)) {
                 return new VoidType();

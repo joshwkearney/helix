@@ -1,10 +1,11 @@
 ﻿using Helix.Common;
 using Helix.Common.Types;
 using Helix.MiddleEnd.Interpreting;
+using Helix.MiddleEnd.TypeChecking;
 using Helix.MiddleEnd.Unification;
 
-namespace Helix.MiddleEnd.TypeChecking {
-    internal static class TypeCheckingExtensions {
+namespace Helix.MiddleEnd {
+    internal static class Extensions {
         public static IHelixType GetSupertype(this IHelixType type) {
             return type.Accept(SupertypeFetcher.Instance);
         }
@@ -14,9 +15,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 return f;
             }
             else if (type is NominalType nom) {
-                Assert.IsTrue(context.Types.ContainsType(nom.Name));
-
-                return context.Types[nom.Name].TryGetFunctionSignature(context);
+                return context.Types.GetSignature(nom.Name).TryGetFunctionSignature(context);
             }
             else {
                 return Option.None;
@@ -28,9 +27,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 return structType;
             }
             else if (type is NominalType nom) {
-                Assert.IsTrue(context.Types.ContainsType(nom.Name));
-
-                return context.Types[nom.Name].GetStructSignature(context);
+                return context.Types.GetSignature(nom.Name).GetStructSignature(context);
             }
             else {
                 return Option.None;
@@ -42,9 +39,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 return unionType;
             }
             else if (type is NominalType nom) {
-                Assert.IsTrue(context.Types.ContainsType(nom.Name));
-
-                return context.Types[nom.Name].GetUnionSignature(context);
+                return context.Types.GetSignature(nom.Name).GetUnionSignature(context);
             }
             else {
                 return Option.None;
@@ -79,6 +74,22 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         public static bool DoesAliasLValues(this IHelixType type) {
             return type.Accept(TypeDoesAliasLValueVisitor.Instance);
+        }
+
+        public static IEnumerable<TypeMemberView> GetMembers(this IHelixType type, TypeCheckingContext context) => GetMembersHelper([], type, context);
+
+        public static IEnumerable<TypeMemberView> GetMembersHelper(IReadOnlyList<string> previous, IHelixType type, TypeCheckingContext context) {
+            yield return new TypeMemberView(type, previous);
+
+            if (type.GetStructSignature(context).TryGetValue(out var structType)) {
+                foreach (var mem in structType.Members) {
+                    var segments = previous.Append(mem.Name).ToArray();
+
+                    foreach (var results in GetMembersHelper(segments, mem.Type, context)) {
+                        yield return results;
+                    }
+                }
+            }
         }
     }
 }

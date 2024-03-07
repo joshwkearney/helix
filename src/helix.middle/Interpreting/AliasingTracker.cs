@@ -4,8 +4,10 @@ using Helix.Common.Hmm;
 using Helix.Common.Types;
 using Helix.MiddleEnd.TypeChecking;
 using System.Collections.Immutable;
+using System.ComponentModel.Design;
 
-namespace Helix.MiddleEnd.Interpreting {
+namespace Helix.MiddleEnd.Interpreting
+{
     internal class AliasingTracker {
         // Definitions:
 
@@ -104,24 +106,36 @@ namespace Helix.MiddleEnd.Interpreting {
             return false;
         }
 
-        public void RegisterInvoke(IReadOnlyList<string> args, IReadOnlyList<IHelixType> argTypes) {
+        public void RegisterInvoke(string result, IHelixType resultType, IReadOnlyList<string> args, IReadOnlyList<IHelixType> argTypes) {
             Assert.IsTrue(args.Count == argTypes.Count);
 
             foreach (var (arg, type) in args.Zip(argTypes)) {
-                foreach (var mem in this.GetMembers(type)) {
+                foreach (var mem in type.GetMembers(this.context)) {
                     var memLocation = mem.CreateLocation(arg);
                     var roots = this.GetBoxedRoots(memLocation, mem.Type);
 
+                    // TODO: Don't reset read-only pointers
+
+                    // For the locations that can be passed to the function, set their location to unknown
+                    // and clear it because the function might change it
                     foreach (var root in roots) {
                         this.SetBoxedRoots(root, mem.Type, [UnknownLocation.Instance]);
+                        this.context.Types.ClearLocal(root);
                     }
                 }
             }
+
+            // TODO: Can we be more specific here than unknown? Maybe set the root to a combination of the 
+            // input roots?
+            this.RegisterLocal(result, resultType);
         }
 
-        public void RegisterAssignment(string targetLValue, string assignRValue, IHelixType assignType) {
-            foreach (var mem in this.GetMembers(assignType)) {
-                var targets = this.GetReferencedRoots(mem.CreateLocation(targetLValue));
+        public void RegisterAssignment(string targetLValue, string assignRValue) {
+            var assignType = this.context.Types.GetLocalType(assignRValue);
+
+            foreach (var mem in assignType.GetMembers(this.context)) {
+                var lValueLocation = mem.CreateLocation(targetLValue);
+                var targets = this.GetReferencedRoots(lValueLocation);
                 var assignedRoots = this.GetBoxedRoots(mem.CreateLocation(assignRValue), mem.Type);
 
                 if (targets.Count == 1 && !targets.First().IsUnknown) {
@@ -130,6 +144,7 @@ namespace Helix.MiddleEnd.Interpreting {
                     // stored in it) and only alias the value we're assigning
 
                     this.SetBoxedRoots(targets.First(), mem.Type, assignedRoots);
+                    this.context.Types.SetLocal(targets.First(), mem.Type);
                 }
                 else {
                     // Here the target could be multiple roots or unknown, so in this case we have
@@ -143,22 +158,25 @@ namespace Helix.MiddleEnd.Interpreting {
                             .ToArray();
 
                         this.SetBoxedRoots(target, mem.Type, allRoots);
+                        this.context.Types.ClearLocal(lValueLocation);
                     }
-                }
+                }                
             }
         }
 
         public void RegisterFunctionParameter(string parameterName, IHelixType parameterType) {
-            foreach (var mem in this.GetMembers(parameterType)) {
+            foreach (var mem in parameterType.GetMembers(this.context)) {
                 var parLocation = mem.CreateLocation(parameterName);
 
                 this.SetReferencedRoots(parLocation, [parLocation]);
                 this.SetBoxedRoots(parLocation, mem.Type, [UnknownLocation.Instance]);
+
+                this.context.Types.SetSignature(parLocation, mem.Type);
             }
         }
 
-        public void RegisterLocal(string variableName, IHelixType variableType, string assignValue) {
-            foreach (var mem in this.GetMembers(variableType)) {
+        public void RegisterLocal(string variableName, IHelixType signature, string assignValue) {
+            foreach (var mem in signature.GetMembers(this.context)) {
                 var variableLocation = mem.CreateLocation(variableName);
 
                 this.SetReferencedRoots(variableLocation, [variableLocation]);
@@ -167,16 +185,56 @@ namespace Helix.MiddleEnd.Interpreting {
                 var assignRValue = mem.CreateLocation(assignValue);
                 var aliases = this.GetBoxedRoots(assignRValue, mem.Type);
 
-                this.SetBoxedRoots(variableLocation, mem.Type, aliases);
+                this.SetBoxedRoots(variableLocation, signature, aliases);
+
+                this.context.Types.SetSignature(variableLocation, mem.Type);
+            }
+
+            var assignType = this.context.Types.GetLocalType(assignValue);
+
+            foreach (var mem in assignType.GetMembers(this.context)) {
+                var variableLocation = mem.CreateLocation(variableName);
+
+                // TODO: Fix
+                var thing = this.context.Types.GetLocalType(mem.CreateLocation(assignValue));
+
+                this.context.Types.SetLocal(variableLocation, thing);
             }
         }
 
-        public void RegisterLocalWithoutAliasing(string variableName, IHelixType variableType) {
-            foreach (var mem in this.GetMembers(variableType)) {
+        public void RegisterLocal(string variableName, IHelixType signature) {
+            foreach (var mem in signature.GetMembers(this.context)) {
                 var variableLocation = mem.CreateLocation(variableName);
 
                 this.SetReferencedRoots(variableLocation, [variableLocation]);
                 this.SetBoxedRoots(variableLocation, mem.Type, []);
+
+                this.context.Types.SetSignature(variableLocation, mem.Type);
+            }
+        }
+
+        public void RegisterIf(string variableName, IHelixType signature, string affirmValue, string negativeValue) {
+            foreach (var mem in signature.GetMembers(this.context)) {
+                var variableLocation = mem.CreateLocation(variableName);
+
+                this.SetReferencedRoots(variableLocation, [variableLocation]);
+
+                // Box anything the parameter value is boxing
+                var assign1 = mem.CreateLocation(affirmValue);
+                var assign2 = mem.CreateLocation(negativeValue);
+
+                var aliases1 = this.GetBoxedRoots(assign1, mem.Type);
+                var aliases2 = this.GetBoxedRoots(assign2, mem.Type);
+
+                this.SetBoxedRoots(variableLocation, mem.Type, aliases1.Concat(aliases2));
+                this.context.Types.SetSignature(variableLocation, mem.Type);
+
+                var affirmType = this.context.Types.GetLocalType(assign1);
+                var negType = this.context.Types.GetLocalType(assign2);
+
+                if (affirmType == negType) {
+                    this.context.Types.SetLocal(variableLocation, affirmType);
+                }
             }
         }
 
@@ -185,27 +243,32 @@ namespace Helix.MiddleEnd.Interpreting {
                 Assert.IsTrue(assign.Field.HasValue);
             }
 
-            foreach (var mem in this.GetMembers(variableType)) {
+            foreach (var mem in variableType.GetMembers(this.context)) {
                 var variableLocation = mem.CreateLocation(resultName);
 
                 this.SetReferencedRoots(variableLocation, [variableLocation]);
             }
 
+            this.context.Types.SetSignature(new NamedLocation(resultName), variableType);
+
             foreach (var assign in assignments) {
-                var assignType = this.context.Types[assign.Value];
-                var assignValue = new NamedLocation(assign.Value);
+                var assignType = this.context.Types.GetLocalType(assign.Value);
+                var assignLocation = new NamedLocation(assign.Value);
 
                 var baseTargetLocation = new MemberAccessLocation() {
                     Parent = new NamedLocation(resultName),
                     Member = assign.Field.GetValue()
                 };
 
-                foreach (var mem in this.GetMembers(assignType)) {
-                    var assignValueLocation = mem.CreateLocation(assignValue);
+                foreach (var mem in assignType.GetMembers(this.context)) {
+                    var assignValueLocation = mem.CreateLocation(assignLocation);
                     var boxedRoots = this.GetBoxedRoots(assignValueLocation, mem.Type);
                     var targetLocation = mem.CreateLocation(baseTargetLocation);
 
                     this.SetBoxedRoots(targetLocation, mem.Type, boxedRoots);
+                    this.context.Types.SetSignature(targetLocation, assignType);
+
+                    // TODO: How to get the type this is supposed to be for the signature?
                 }
             }
         }
@@ -214,13 +277,15 @@ namespace Helix.MiddleEnd.Interpreting {
             this.RegisterLocal(resultName, resultType, assignValue);
         }
 
-        public void RegisterMemberAccessReference(string resultName, string accessTarget, string memberName, IHelixType memberType) {
-            foreach (var mem in this.GetMembers(memberType)) {
-                var memberLocation = new MemberAccessLocation() {
-                    Member = memberName,
-                    Parent = new NamedLocation(accessTarget)
-                };
+        public void RegisterMemberAccessReference(string resultName, string accessTarget, string memberName) {
+            var memberLocation = new MemberAccessLocation() {
+                Member = memberName,
+                Parent = new NamedLocation(accessTarget)
+            };
 
+            var memberType = this.context.Types.GetSignature(memberLocation);
+
+            foreach (var mem in memberType.GetMembers(this.context)) {
                 var roots = this
                     .GetReferencedRoots(memberLocation)
                     .Select(mem.CreateLocation)
@@ -229,16 +294,19 @@ namespace Helix.MiddleEnd.Interpreting {
                 var resultMemberLocation = mem.CreateLocation(resultName);
 
                 this.SetReferencedRoots(resultMemberLocation, roots);
+                this.context.Types.SetSignature(resultMemberLocation, mem.Type);
             }
         }
 
-        public void RegisterMemberAccess(string resultName, string accessTarget, string memberName, IHelixType memberType) {
-            foreach (var mem in this.GetMembers(memberType)) {
-                var memberLocation = new MemberAccessLocation() {
-                    Member = memberName,
-                    Parent = new NamedLocation(accessTarget)
-                };
+        public void RegisterMemberAccess(string resultName, string accessTarget, string memberName) {
+            var memberLocation = new MemberAccessLocation() {
+                Member = memberName,
+                Parent = new NamedLocation(accessTarget)
+            };
 
+            var memberType = this.context.Types.GetLocalType(memberLocation);
+
+            foreach (var mem in memberType.GetMembers(this.context)) {
                 var boxedRoots = this
                     .GetBoxedRoots(memberLocation, mem.Type)
                     .Select(mem.CreateLocation)
@@ -247,13 +315,14 @@ namespace Helix.MiddleEnd.Interpreting {
                 var resultMemberLocation = mem.CreateLocation(resultName);
 
                 this.SetBoxedRoots(resultMemberLocation, mem.Type, boxedRoots);
+                this.context.Types.SetSignature(resultMemberLocation, mem.Type);
             }
         }
 
         public void RegisterArrayIndexReference(string resultName, string accessTarget, string index, IHelixType elementType) {
             // TODO pending fixed length array types
 
-            foreach (var mem in this.GetMembers(elementType)) {
+            foreach (var mem in elementType.GetMembers(this.context)) {
                 //var memberLocation = new MemberAccessLocation() {
                 //    Member = index.ToString(),
                 //    Parent = new NamedLocation(accessTarget)
@@ -273,7 +342,7 @@ namespace Helix.MiddleEnd.Interpreting {
         public void RegisterArrayIndex(string resultName, string accessTarget, string index, IHelixType elementType) {
             // TODO pending fixed length array types
 
-            foreach (var mem in this.GetMembers(elementType)) {
+            foreach (var mem in elementType.GetMembers(this.context)) {
                 //var memberLocation = new MemberAccessLocation() {
                 //    Member = memberName,
                 //    Parent = new NamedLocation(accessTarget)
@@ -292,41 +361,49 @@ namespace Helix.MiddleEnd.Interpreting {
 
         public void RegisterArrayLiteral(string resultName, long length, IHelixType elementType) {
             // TODO pending fixed length array types
+            this.context.Types.SetSignature(new NamedLocation(resultName), new ArrayType() { InnerType = elementType });
         }
 
-        public void RegisterDereferencedPointerReference(string resultName, IHelixType resultType, string dereferenceTarget, IHelixType dereferenceType) {
+        public void RegisterDereferencedPointerReference(string resultName, IHelixType resultType, string dereferenceTarget) {
+            var dereferenceType = this.context.Types.GetLocalType(dereferenceTarget);
             var derefLocation = new NamedLocation(dereferenceTarget);
             var roots = this.GetBoxedRoots(derefLocation, dereferenceType);
 
-            foreach (var mem in this.GetMembers(resultType)) {
+            foreach (var mem in resultType.GetMembers(this.context)) {
                 var memRoots = roots.Select(mem.CreateLocation);
                 var memLocation = mem.CreateLocation(resultName);
 
                 this.SetReferencedRoots(memLocation, memRoots);
+                this.context.Types.SetSignature(memLocation, mem.Type);
             }
         }
 
-        public void RegisterDereferencedPointer(string resultName, IHelixType resultType, string dereferenceTarget, IHelixType dereferenceType) {
+        public void RegisterDereferencedPointer(string resultName, IHelixType resultType, string dereferenceTarget) {
+            var dereferenceType = this.context.Types.GetLocalType(dereferenceTarget);
             var derefLocation = new NamedLocation(dereferenceTarget);
             var roots = this.GetBoxedRoots(derefLocation, dereferenceType);
 
-            foreach (var mem in this.GetMembers(resultType)) {
+            foreach (var mem in resultType.GetMembers(this.context)) {
                 var memRoots = roots.Select(mem.CreateLocation);
                 var memLocation = mem.CreateLocation(resultName);
 
                 this.SetBoxedRoots(memLocation, mem.Type, memRoots);
+                this.context.Types.SetSignature(memLocation, mem.Type);
             }
         }
 
-        public void RegisterAddressOf(string resultName, string addressOfTarget, IHelixType addressOfType) {
+        public void RegisterAddressOf(string resultName, string addressOfTarget) {
             // Note: We don't have to assign members because this will always return a pointer,
             // which doesn't have any members
 
+            var addressOfType = this.context.Types.GetLocalType(addressOfTarget);
             var derefTargetLocation = new NamedLocation(addressOfTarget);
             var resultLocation = new NamedLocation(resultName);
             var roots = this.GetReferencedRoots(derefTargetLocation);
 
             this.SetBoxedRoots(resultLocation, addressOfType, roots);
+
+            this.context.Types.SetSignature(resultLocation, addressOfType);
         }
 
         private void SetReferencedRoots(IValueLocation referenceName, IEnumerable<IValueLocation> lvalues) {
@@ -374,46 +451,6 @@ namespace Helix.MiddleEnd.Interpreting {
 
             Assert.IsTrue(this.boxedRoots.ContainsKey(rValueName));
             return this.boxedRoots[rValueName];
-        }
-
-        private IEnumerable<MemberFactory> GetMembers(IHelixType type) => this.GetMembersHelper([], type);
-
-        private IEnumerable<MemberFactory> GetMembersHelper(IReadOnlyList<string> previous, IHelixType type) {
-            yield return new MemberFactory(type, previous);
-
-            if (type.GetStructSignature(this.context).TryGetValue(out var structType)) {
-                foreach (var mem in structType.Members) {
-                    var segments = previous.Append(mem.Name).ToArray();
-
-                    foreach (var results in this.GetMembersHelper(segments, mem.Type)) {
-                        yield return results;
-                    }
-                }
-            }
-        }
-
-        private class MemberFactory {
-            public IHelixType Type { get; }
-
-            public IReadOnlyList<string> MemberChain { get; }
-
-            public MemberFactory(IHelixType type, IReadOnlyList<string> mems) {
-                this.MemberChain = mems;
-                this.Type = type;
-            }
-
-            public IValueLocation CreateLocation(IValueLocation parent) {
-                foreach (var mem in this.MemberChain) {
-                    parent = new MemberAccessLocation() {
-                        Parent = parent,
-                        Member = mem
-                    };
-                }
-
-                return parent;
-            }
-
-            public IValueLocation CreateLocation(string name) => this.CreateLocation(new NamedLocation(name));
-        }
+        }        
     }
 }

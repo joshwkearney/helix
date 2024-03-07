@@ -1,8 +1,8 @@
-//union Option {
-//	var first as word;
-//	var second as void;
-//	var third as word;
-//}
+union Option {
+	var first as word;
+	var second as void;
+	var third as word;
+}
 
 // TODO: Fix new Point
 //struct Point {
@@ -24,24 +24,21 @@
 
 
 
-struct Test {
-	var p as **word;
+struct Point {
+	var x as word;
+	var y as word;
 }
 
-func test3(var test as bool) {
-	var first = 10;
-	var second = 20;
-	
-	return;
+func test3(var test as bool) as word {
+	var p = new Point { 10, 15 };
 
-	var x = &first;
+	if test then {
+		p.x = 4;
+	};
 
-	for i = 0 to 10 {
-		//if test then {
-		//	x = &second;
-		//	break
-		//};
-	}
+	return p.x + p.y;
+
+
 
 
 }

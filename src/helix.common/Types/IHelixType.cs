@@ -27,9 +27,7 @@ namespace Helix.Common.Types {
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitBoolType(this);
     }
 
-    public record SingularBoolType : IHelixType {
-        public required bool Value { get; init; }
-
+    public record SingularBoolType(bool Value) : IHelixType {
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitSingularBoolType(this);
     }
 
@@ -107,9 +105,7 @@ namespace Helix.Common.Types {
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitWordType(this);
     }
 
-    public record SingularWordType : IHelixType {
-        public required long Value { get; init; }
-
+    public record SingularWordType(long Value) : IHelixType {
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitSingularWordType(this);
     }
 }

@@ -67,6 +67,15 @@
             }
         }
 
+        public Option<T> OrElse(Func<Option<T>> supplier) {
+            if (this.HasValue) {
+                return this.value;
+            }
+            else {
+                return supplier();
+            }
+        }
+
         public static implicit operator Option<T>(T value) => new(value);
 
         public static implicit operator Option<T>(Option _) => new();
