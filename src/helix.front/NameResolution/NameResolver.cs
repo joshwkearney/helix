@@ -339,7 +339,7 @@ namespace Helix.Frontend.NameResolution {
 
             var cond = syntax.Condition.Accept(this);
 
-            var affirmName = this.mangler.MangleLocalName(this.Scope, "if_true");
+            var affirmName = this.mangler.CreateMangledTempName(this.Scope, "if_true");
             var affirmPath = this.Scope.Append(affirmName);
 
             this.scopes.Push(affirmPath);
@@ -351,7 +351,7 @@ namespace Helix.Frontend.NameResolution {
             this.scopes.Pop();
 
             if (syntax.Negative.TryGetValue(out var negTree)) {
-                var negName = this.mangler.MangleLocalName(this.Scope, "if_false");
+                var negName = this.mangler.CreateMangledTempName(this.Scope, "if_false");
                 var negPath = this.Scope.Append(negName);
 
                 this.scopes.Push(negPath);

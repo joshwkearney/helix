@@ -31,14 +31,14 @@ namespace Helix.MiddleEnd.Unification {
         //}
 
         public string Convert(string value, IHelixType toType, TokenLocation loc) {
-            var fromType = context.Types.GetType(value);
+            var fromType = context.Types[value];
 
             if (!GetUnifier(fromType, toType, UnificationKind.Convert).TryGetValue(out var unifier)) {
                 throw TypeCheckException.TypeConversionFailed(loc, fromType, toType);
             }
 
             var result = unifier.Invoke(value, loc);
-            var resultType = this.context.Types.GetType(result);
+            var resultType = this.context.Types[result];
 
             Assert.IsTrue(resultType.GetSupertype() == toType);
 

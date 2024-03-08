@@ -19,7 +19,7 @@ namespace Helix.MiddleEnd.Interpreting {
         }
 
         public bool TryEvaluateIfExpression(HmmIfExpression syntax, string cond, out TypeCheckResult result) {
-            var condType = this.context.Types.GetType(cond);
+            var condType = this.context.Types[cond];
 
             if (condType is not SingularBoolType boolType) {
                 result = default;
@@ -31,28 +31,42 @@ namespace Helix.MiddleEnd.Interpreting {
 
                 if (affirmFlow.ControlFlow != StatementControlFlow.Normal) {
                     result = affirmFlow;
+                    return true;
                 }
-                else {
-                    result = TypeCheckResult.NormalFlow(syntax.Affirmative);
-                }
+
+                var assign = new HmmVariableStatement() {
+                    Location = syntax.Location,
+                    IsMutable = false,
+                    Variable = syntax.Result,
+                    Value = syntax.Affirmative
+                };
+
+                result = assign.Accept(this.context.TypeChecker);
+                return true;
             }
             else {
                 var affirmFlow = this.context.TypeChecker.CheckBody(syntax.NegativeBody);
 
                 if (affirmFlow.ControlFlow != StatementControlFlow.Normal) {
                     result = affirmFlow;
+                    return true;
                 }
-                else {
-                    result = TypeCheckResult.NormalFlow(syntax.Negative);
-                }
-            }
 
-            return true;
+                var assign = new HmmVariableStatement() {
+                    Location = syntax.Location,
+                    IsMutable = false,
+                    Variable = syntax.Result,
+                    Value = syntax.Negative
+                };
+
+                result = assign.Accept(this.context.TypeChecker);
+                return true;
+            }
         }
 
         public bool TryEvaluateVisitBinarySyntax(HmmBinarySyntax syntax, out TypeCheckResult resultName) {
-            var leftType = this.context.Types.GetType(syntax.Left);
-            var rightType = this.context.Types.GetType(syntax.Right);
+            var leftType = this.context.Types[syntax.Left];
+            var rightType = this.context.Types[syntax.Right];
 
             if (leftType is SingularWordType wordLeft && rightType is SingularWordType wordRight) {
                 IHelixType? result = syntax.Operator switch {
@@ -119,22 +133,22 @@ namespace Helix.MiddleEnd.Interpreting {
             return false;
         }
 
-        public bool TryEvaluateRValueStructMemberAccess(HmmMemberAccess access, StructType structType, out TypeCheckResult result) {
-            Assert.IsTrue(structType.Members.Any(x => x.Name == access.Member));
+        public bool TryEvaluateRValueStructMemberAccess(HmmMemberAccess syntax, StructType structType, out TypeCheckResult result) {
+            Assert.IsTrue(structType.Members.Any(x => x.Name == syntax.Member));
 
             var loc = new MemberAccessLocation() {
-                Parent = new NamedLocation(access.Operand),
-                Member = access.Member
+                Parent = new NamedLocation(syntax.Operand),
+                Member = syntax.Member
             };
 
-            var type = this.context.Types.GetType(loc);
+            var type = this.context.Types[loc];
 
             if (type.Accept(TypeExpressionVisitor.Instance).TryGetValue(out var expr)) {
                 var stat = new HmmVariableStatement() {
                     IsMutable = false,
-                    Location = access.Location,
+                    Location = syntax.Location,
                     Value = expr,
-                    Variable = access.Result
+                    Variable = syntax.Result
                 };
 
                 result = stat.Accept(this.context.TypeChecker);
@@ -143,6 +157,33 @@ namespace Helix.MiddleEnd.Interpreting {
 
             result = default;
             return false;
+        }
+
+        public bool TryEvaluateRValueDereference(HmmDereference syntax, out TypeCheckResult result) {
+            var pointerType = this.context.Types[syntax.Operand];
+            var lvalues = this.context.Aliases.GetBoxedRoots(new NamedLocation(syntax.Operand), pointerType);
+
+            if (lvalues.Count != 1 || lvalues.First().IsUnknown) {
+                result = default;
+                return false;
+            }
+
+            var type = this.context.Types[lvalues.First()];
+
+            if (!type.Accept(TypeExpressionVisitor.Instance).TryGetValue(out var expr)) {
+                result = default;
+                return false;
+            }
+
+            var stat = new HmmVariableStatement() {
+                IsMutable = false,
+                Location = syntax.Location,
+                Value = expr,
+                Variable = syntax.Result
+            };
+
+            result = stat.Accept(this.context.TypeChecker);
+            return true;
         }
 
         //public void EvaluateAssignment(HmmAssignment syntax, IReadOnlyDictionary<IValueLocation, ValueSet<IValueLocation>> allTargets) {

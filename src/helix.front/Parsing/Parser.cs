@@ -658,17 +658,23 @@ namespace Helix.Frontend.ParseTree {
             var cond = this.TopExpression();
 
             this.Advance(TokenKind.ThenKeyword);
-            var endsBrace = this.Peek(TokenKind.OpenBrace);
-            var affirm = this.TopExpression();
+
+            IParseTree affirm;
+            if (this.Peek(TokenKind.OpenBrace)) {
+                affirm = this.Block();
+            }
+            else {
+                affirm = this.TopExpression();
+            }
 
             if (this.TryAdvance(TokenKind.ElseKeyword)) {
-                endsBrace = this.Peek(TokenKind.OpenBrace);
-                var neg = this.TopExpression();
-
-                // TODO: decide on this
-                //if (!endsBrace && isStatement) {
-                    this.Advance(TokenKind.Semicolon);
-                //}
+                IParseTree neg;
+                if (this.Peek(TokenKind.OpenBrace)) {
+                    neg = this.Block();
+                }
+                else {
+                    neg = this.TopExpression();
+                }
 
                 var loc = start.Location.Span(neg.Location);
 
@@ -680,11 +686,6 @@ namespace Helix.Frontend.ParseTree {
                 };
             }
             else {
-                // TODO: decide on this
-                //if (!endsBrace && isStatement) {
-                this.Advance(TokenKind.Semicolon);
-                //}
-
                 var loc = start.Location.Span(affirm.Location);
 
                 return new IfSyntax() {
@@ -718,15 +719,16 @@ namespace Helix.Frontend.ParseTree {
 
         private IParseTree Block() {
             var start = this.Advance(TokenKind.OpenBrace);
+
             var stats = new List<IParseTree>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
                 stats.Add(this.Statement());
-            }
+            }            
 
             var end = this.Advance(TokenKind.CloseBrace);
 
-            return new BlockSyntax() { 
+            return new BlockSyntax() {
                 Location = start.Location.Span(end.Location),
                 Statements = stats
             };

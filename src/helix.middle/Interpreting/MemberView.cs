@@ -1,12 +1,12 @@
 ﻿using Helix.Common.Types;
 
 namespace Helix.MiddleEnd.Interpreting {
-    internal class TypeMemberView {
+    internal class MemberView {
         public IHelixType Type { get; }
 
         public IReadOnlyList<string> MemberChain { get; }
 
-        public TypeMemberView(IHelixType type, IReadOnlyList<string> mems) {
+        public MemberView(IHelixType type, IReadOnlyList<string> mems) {
             this.MemberChain = mems;
             this.Type = type;
         }

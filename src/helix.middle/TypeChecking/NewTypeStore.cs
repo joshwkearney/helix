@@ -23,6 +23,13 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.values = currentTypes;
         }
 
+        public IHelixType this[IValueLocation index] {
+            get => this.GetType(index);
+            set => this.SetType(index, value);
+        }
+
+        public IHelixType this[string name] => this.GetType(name);
+
         public TypeStore(TypeCheckingContext context) {
             this.context = context;
         }
@@ -51,11 +58,11 @@ namespace Helix.MiddleEnd.TypeChecking {
             return new TypeStore(this.context, resultValues.ToImmutableDictionary());
         }
 
-        public void GetType(IValueLocation location, IHelixType valueType) {
+        private void SetType(IValueLocation location, IHelixType valueType) {
             this.values = this.values.SetItem(location, valueType);
         }
 
-        public IHelixType GetType(IValueLocation location) {
+        private IHelixType GetType(IValueLocation location) {
             if (location is NamedLocation named) {
                 if (this.GetSingularTypes(named.Name).TryGetValue(out var type)) {
                     return type;
@@ -66,7 +73,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             return this.values[location];
         }
 
-        public IHelixType GetType(string name) => this.GetType(new NamedLocation(name));
+        private IHelixType GetType(string name) => this.GetType(new NamedLocation(name));
 
         public void ClearType(IValueLocation location) {
             this.values = this.values.SetItem(location, this.values[location].GetSupertype());

@@ -15,7 +15,7 @@ namespace Helix.MiddleEnd {
                 return f;
             }
             else if (type is NominalType nom) {
-                return context.Types.GetType(nom.Name).TryGetFunctionSignature(context);
+                return context.Types[nom.Name].TryGetFunctionSignature(context);
             }
             else {
                 return Option.None;
@@ -27,7 +27,7 @@ namespace Helix.MiddleEnd {
                 return structType;
             }
             else if (type is NominalType nom) {
-                return context.Types.GetType(nom.Name).GetStructSignature(context);
+                return context.Types[nom.Name].GetStructSignature(context);
             }
             else {
                 return Option.None;
@@ -39,7 +39,7 @@ namespace Helix.MiddleEnd {
                 return unionType;
             }
             else if (type is NominalType nom) {
-                return context.Types.GetType(nom.Name).GetUnionSignature(context);
+                return context.Types[nom.Name].GetUnionSignature(context);
             }
             else {
                 return Option.None;
@@ -76,10 +76,10 @@ namespace Helix.MiddleEnd {
             return type.Accept(TypeDoesAliasLValueVisitor.Instance);
         }
 
-        public static IEnumerable<TypeMemberView> GetMembers(this IHelixType type, TypeCheckingContext context) => GetMembersHelper([], type, context);
+        public static IEnumerable<MemberView> GetMembers(this IHelixType type, TypeCheckingContext context) => GetMembersHelper([], type, context);
 
-        public static IEnumerable<TypeMemberView> GetMembersHelper(IReadOnlyList<string> previous, IHelixType type, TypeCheckingContext context) {
-            yield return new TypeMemberView(type, previous);
+        public static IEnumerable<MemberView> GetMembersHelper(IReadOnlyList<string> previous, IHelixType type, TypeCheckingContext context) {
+            yield return new MemberView(type, previous);
 
             if (type.GetStructSignature(context).TryGetValue(out var structType)) {
                 foreach (var mem in structType.Members) {

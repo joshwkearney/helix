@@ -31,28 +31,15 @@ struct Point {
 
 func test3(var test as bool) as word {
 	var first = 10;
-	var second = 20;
+	var firstb = 15;
 
-	if false then {
-		first = 7;
-	}
-	else {
-		first = 8;
-	};
-
-	return first + second;
-
-	//var p = new Point { 10, 15 };
+	var second = &first;
 
 	//if test then {
-	//	p.x = 4;
-	//};
+		second = &firstb;
+	//}
 
-	//return p.x + p.y;
-
-
-
-
+	return *second;
 }
 
 func doNOTHING(var foo as *word) -> void;
