@@ -1,8 +1,8 @@
 ﻿using Helix.Common.Types;
 
-namespace Helix.MiddleEnd.Unification {
-    internal class SupertypeFetcher : ITypeVisitor<IHelixType> {
-        public static SupertypeFetcher Instance { get; } = new();
+namespace Helix.MiddleEnd.TypeVisitors {
+    internal class SupertypeVisitor : ITypeVisitor<IHelixType> {
+        public static SupertypeVisitor Instance { get; } = new();
 
         public IHelixType VisitArrayType(ArrayType type) => type;
 

@@ -2,12 +2,9 @@
 using Helix.Common.Collections;
 using Helix.Common.Hmm;
 using Helix.Common.Types;
-using Helix.MiddleEnd.TypeChecking;
 using System.Collections.Immutable;
-using System.ComponentModel.Design;
 
-namespace Helix.MiddleEnd.Interpreting
-{
+namespace Helix.MiddleEnd.Interpreting {
     internal class AliasingTracker {
         // Definitions:
 
@@ -31,22 +28,22 @@ namespace Helix.MiddleEnd.Interpreting
 
         // Stores the roots that have been re-labeled by references. These references are essentially
         // new names for the same roots, which is lvalue semantics
-        private ImmutableDictionary<IValueLocation, ValueSet<IValueLocation>> referencedRoots 
+        private ImmutableDictionary<IValueLocation, ValueSet<IValueLocation>> referencedRoots
             = ImmutableDictionary<IValueLocation, ValueSet<IValueLocation>>.Empty;
 
         // Stores which roots are pointed to by which values. This dictionary is used for things like
         // pointers or arrays that have an address stored to a root
-        private ImmutableDictionary<IValueLocation, ValueSet<IValueLocation>> boxedRoots 
+        private ImmutableDictionary<IValueLocation, ValueSet<IValueLocation>> boxedRoots
             = ImmutableDictionary<IValueLocation, ValueSet<IValueLocation>>.Empty;
 
-        private readonly TypeCheckingContext context;
+        private readonly AnalysisContext context;
 
-        public AliasingTracker(TypeCheckingContext context) {
+        public AliasingTracker(AnalysisContext context) {
             this.context = context;
         }
 
         private AliasingTracker(
-            TypeCheckingContext context,
+            AnalysisContext context,
             ImmutableDictionary<IValueLocation, ValueSet<IValueLocation>> referencedRoots,
             ImmutableDictionary<IValueLocation, ValueSet<IValueLocation>> boxedRoots) {
 
@@ -160,7 +157,7 @@ namespace Helix.MiddleEnd.Interpreting
                         this.SetBoxedRoots(target, mem.Type, allRoots);
                         this.context.Types.ClearType(lValueLocation);
                     }
-                }                
+                }
             }
         }
 
@@ -432,7 +429,7 @@ namespace Helix.MiddleEnd.Interpreting
             }
             else {
                 this.boxedRoots = this.boxedRoots.SetItem(rValueName, []);
-            }            
+            }
         }
 
         public ValueSet<IValueLocation> GetBoxedRoots(IValueLocation rValueName, IHelixType rValueType) {
@@ -446,6 +443,6 @@ namespace Helix.MiddleEnd.Interpreting
 
             Assert.IsTrue(this.boxedRoots.ContainsKey(rValueName));
             return this.boxedRoots[rValueName];
-        }        
+        }
     }
 }

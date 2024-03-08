@@ -1,11 +1,10 @@
-﻿using Helix.Common;
-using Helix.Common.Types;
+﻿using Helix.Common.Types;
 
-namespace Helix.MiddleEnd.TypeChecking {
-    internal class TypeHasDefaultValueVisitor : ITypeVisitor<bool> {
-        private readonly TypeCheckingContext context;
+namespace Helix.MiddleEnd.TypeVisitors {
+    internal class HasDefaultValueVisitor : ITypeVisitor<bool> {
+        private readonly AnalysisContext context;
 
-        public TypeHasDefaultValueVisitor(TypeCheckingContext context) {
+        public HasDefaultValueVisitor(AnalysisContext context) {
             this.context = context;
         }
 
@@ -18,7 +17,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public bool VisitNominalType(NominalType type) {
-            return this.context.Types[type.Name].Accept(this);
+            return context.Types[type.Name].Accept(this);
         }
 
         public bool VisitPointerType(PointerType type) => false;

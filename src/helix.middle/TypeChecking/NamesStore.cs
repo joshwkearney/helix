@@ -1,5 +1,5 @@
 ﻿namespace Helix.MiddleEnd.TypeChecking {
-    internal class TypeCheckingNamesStore {
+    internal class NamesStore {
         private int counter = 0;
 
         public string GetConvertName() {

@@ -1,14 +1,8 @@
 ﻿using Helix.Common.Types;
-using Helix.MiddleEnd.TypeChecking;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Helix.MiddleEnd.Interpreting {
-    internal class TypeDoesAliasLValueVisitor : ITypeVisitor<bool> {
-        public static TypeDoesAliasLValueVisitor Instance { get; } = new();
+namespace Helix.MiddleEnd.TypeVisitors {
+    internal class DoesAliasLValueVisitor : ITypeVisitor<bool> {
+        public static DoesAliasLValueVisitor Instance { get; } = new();
 
         public bool VisitArrayType(ArrayType type) => true;
 

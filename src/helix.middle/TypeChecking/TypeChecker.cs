@@ -1,13 +1,9 @@
 ﻿using Helix.Common;
 using Helix.Common.Hmm;
 using Helix.Common.Types;
-using Helix.MiddleEnd.FlowAnalysis;
 using Helix.MiddleEnd.Interpreting;
-using Helix.MiddleEnd.Unification;
-using System.Text;
 
-namespace Helix.MiddleEnd.TypeChecking
-{
+namespace Helix.MiddleEnd.TypeChecking {
     public enum StatementControlFlow {
         Normal, FunctionReturn, LoopReturn
     }
@@ -48,7 +44,7 @@ namespace Helix.MiddleEnd.TypeChecking
             { BinaryOperationKind.NotEqualTo,           BoolType.Instance },
         };
 
-        private readonly TypeCheckingContext context;
+        private readonly AnalysisContext context;
         private readonly Evaluator eval;
         private readonly Stack<ControlFlowFrame> controlFlow = [];
 
@@ -60,7 +56,7 @@ namespace Helix.MiddleEnd.TypeChecking
 
         private AliasingTracker Aliases => this.context.Aliases;
 
-        public TypeChecker(TypeCheckingContext context) {
+        public TypeChecker(AnalysisContext context) {
             this.context = context;
             this.eval = new Evaluator(context);
         }
@@ -245,7 +241,7 @@ namespace Helix.MiddleEnd.TypeChecking
         }
 
         public TypeCheckResult VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax) {
-            this.Types[new NamedLocation(syntax.Name)] =syntax.Signature;
+            this.Types[new NamedLocation(syntax.Name)] = syntax.Signature;
             this.Writer.AddFowardDeclaration(syntax);
 
             return TypeCheckResult.VoidResult;
@@ -274,7 +270,7 @@ namespace Helix.MiddleEnd.TypeChecking
             this.context.WriterStack.Push(this.Writer.CreateScope());
             this.context.AliasesStack.Push(this.Aliases.CreateScope());
 
-            var (_, negFlow) = this.CheckBody(syntax.NegativeBody);          
+            var (_, negFlow) = this.CheckBody(syntax.NegativeBody);
 
             var negAliases = this.context.AliasesStack.Pop();
             var negBody = this.context.WriterStack.Pop();

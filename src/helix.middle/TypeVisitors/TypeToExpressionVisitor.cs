@@ -1,14 +1,9 @@
 ﻿using Helix.Common;
 using Helix.Common.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Helix.MiddleEnd.Interpreting {
-    internal class TypeExpressionVisitor : ITypeVisitor<Option<string>> {
-        public static TypeExpressionVisitor Instance { get; } = new();
+namespace Helix.MiddleEnd.TypeVisitors {
+    internal class TypeToExpressionVisitor : ITypeVisitor<Option<string>> {
+        public static TypeToExpressionVisitor Instance { get; } = new();
 
         public Option<string> VisitArrayType(ArrayType type) => Option.None;
 

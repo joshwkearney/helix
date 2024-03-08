@@ -1,16 +1,15 @@
 ﻿using Helix.Common;
 using Helix.Common.Types;
 using Helix.MiddleEnd.Interpreting;
-using Helix.MiddleEnd.TypeChecking;
-using Helix.MiddleEnd.Unification;
+using Helix.MiddleEnd.TypeVisitors;
 
 namespace Helix.MiddleEnd {
     internal static class Extensions {
         public static IHelixType GetSupertype(this IHelixType type) {
-            return type.Accept(SupertypeFetcher.Instance);
+            return type.Accept(SupertypeVisitor.Instance);
         }
 
-        public static Option<FunctionType> TryGetFunctionSignature(this IHelixType type, TypeCheckingContext context) {
+        public static Option<FunctionType> TryGetFunctionSignature(this IHelixType type, AnalysisContext context) {
             if (type is FunctionType f) {
                 return f;
             }
@@ -22,7 +21,7 @@ namespace Helix.MiddleEnd {
             }
         }
 
-        public static Option<StructType> GetStructSignature(this IHelixType type, TypeCheckingContext context) {
+        public static Option<StructType> GetStructSignature(this IHelixType type, AnalysisContext context) {
             if (type is StructType structType) {
                 return structType;
             }
@@ -34,7 +33,7 @@ namespace Helix.MiddleEnd {
             }
         }
 
-        public static Option<UnionType> GetUnionSignature(this IHelixType type, TypeCheckingContext context) {
+        public static Option<UnionType> GetUnionSignature(this IHelixType type, AnalysisContext context) {
             if (type is UnionType unionType) {
                 return unionType;
             }
@@ -46,7 +45,7 @@ namespace Helix.MiddleEnd {
             }
         }
 
-        public static Option<ArrayType> GetArraySignature(this IHelixType type, TypeCheckingContext context) {
+        public static Option<ArrayType> GetArraySignature(this IHelixType type, AnalysisContext context) {
             if (type is ArrayType arrayType) {
                 return arrayType;
             }
@@ -55,7 +54,7 @@ namespace Helix.MiddleEnd {
             }
         }
 
-        public static Option<PointerType> GetPointerSignature(this IHelixType type, TypeCheckingContext context) {
+        public static Option<PointerType> GetPointerSignature(this IHelixType type, AnalysisContext context) {
             if (type is PointerType ptrType) {
                 return ptrType;
             }
@@ -64,21 +63,21 @@ namespace Helix.MiddleEnd {
             }
         }
 
-        public static IEnumerable<IHelixType> GetRecursiveFieldTypes(this IHelixType type, TypeCheckingContext context) {
-            return type.Accept(new RecursiveFieldTypesEnumerator(context));
+        public static IEnumerable<IHelixType> GetRecursiveFieldTypes(this IHelixType type, AnalysisContext context) {
+            return type.Accept(new RecursiveFieldEnumerator(context));
         }
 
-        public static bool HasVoidValue(this IHelixType type, TypeCheckingContext context) {
-            return type.Accept(new TypeHasDefaultValueVisitor(context));
+        public static bool HasVoidValue(this IHelixType type, AnalysisContext context) {
+            return type.Accept(new HasDefaultValueVisitor(context));
         }
 
         public static bool DoesAliasLValues(this IHelixType type) {
-            return type.Accept(TypeDoesAliasLValueVisitor.Instance);
+            return type.Accept(DoesAliasLValueVisitor.Instance);
         }
 
-        public static IEnumerable<MemberView> GetMembers(this IHelixType type, TypeCheckingContext context) => GetMembersHelper([], type, context);
+        public static IEnumerable<MemberView> GetMembers(this IHelixType type, AnalysisContext context) => GetMembersHelper([], type, context);
 
-        public static IEnumerable<MemberView> GetMembersHelper(IReadOnlyList<string> previous, IHelixType type, TypeCheckingContext context) {
+        public static IEnumerable<MemberView> GetMembersHelper(IReadOnlyList<string> previous, IHelixType type, AnalysisContext context) {
             yield return new MemberView(type, previous);
 
             if (type.GetStructSignature(context).TryGetValue(out var structType)) {

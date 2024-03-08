@@ -1,15 +1,9 @@
 ﻿using Helix.Common;
-using Helix.Common.Collections;
 using Helix.Common.Types;
 using Helix.MiddleEnd.Interpreting;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Helix.MiddleEnd.FlowAnalysis {
+namespace Helix.MiddleEnd.TypeChecking {
     internal class ControlFlowFrame {
         public IHelixType FunctionReturnType { get; private set; }
 
@@ -22,19 +16,19 @@ namespace Helix.MiddleEnd.FlowAnalysis {
         public ImmutableHashSet<AliasingTracker> LoopAppendixAliases { get; private set; }
 
         public ControlFlowFrame() {
-            this.IsInsideLoop = false;
-            this.FunctionReturnType = VoidType.Instance;
-            this.LoopAppendixAliases = [];
+            IsInsideLoop = false;
+            FunctionReturnType = VoidType.Instance;
+            LoopAppendixAliases = [];
         }
 
         private ControlFlowFrame(IHelixType returnType) {
-            this.IsInsideLoop = true;
-            this.FunctionReturnType = returnType;
-            this.LoopAppendixAliases = [];
+            IsInsideLoop = true;
+            FunctionReturnType = returnType;
+            LoopAppendixAliases = [];
         }
 
         public ControlFlowFrame CreateLoopFrame() {
-            return new ControlFlowFrame(this.FunctionReturnType);
+            return new ControlFlowFrame(FunctionReturnType);
         }
 
         public ControlFlowFrame CreateFunctionFrame(IHelixType returnType) {
@@ -42,13 +36,13 @@ namespace Helix.MiddleEnd.FlowAnalysis {
         }
 
         public void AddLoopAppendix(AliasingTracker aliases) {
-            Assert.IsTrue(this.IsInsideLoop);
+            Assert.IsTrue(IsInsideLoop);
 
-            this.LoopAppendixAliases = this.LoopAppendixAliases.Add(aliases);
+            LoopAppendixAliases = LoopAppendixAliases.Add(aliases);
         }
 
         public void SetReturnType(IHelixType returnType) {
-            this.FunctionReturnType = returnType;
+            FunctionReturnType = returnType;
         }
     }
 }

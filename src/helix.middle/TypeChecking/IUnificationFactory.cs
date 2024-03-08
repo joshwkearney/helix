@@ -2,9 +2,8 @@
 using Helix.Common.Hmm;
 using Helix.Common.Tokens;
 using Helix.Common.Types;
-using Helix.MiddleEnd.TypeChecking;
 
-namespace Helix.MiddleEnd.Unification {
+namespace Helix.MiddleEnd.TypeChecking {
     internal enum UnificationKind {
         Pun, Convert, Cast
     }
@@ -12,13 +11,13 @@ namespace Helix.MiddleEnd.Unification {
     internal delegate string Unifier(string name, TokenLocation location);
 
     internal interface IUnificationFactory {
-        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, TypeCheckingContext context);
+        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, AnalysisContext context);
     }
 
     internal class VoidUnificationFactory : IUnificationFactory {
         public static VoidUnificationFactory Instance { get; } = new();
 
-        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, TypeCheckingContext context) {
+        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, AnalysisContext context) {
             Assert.IsTrue(fromType == VoidType.Instance);
 
             if (toType == WordType.Instance) {
@@ -49,7 +48,7 @@ namespace Helix.MiddleEnd.Unification {
     internal class SingularWordUnificationFactory : IUnificationFactory {
         public static SingularWordUnificationFactory Instance { get; } = new();
 
-        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, TypeCheckingContext context) {
+        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, AnalysisContext context) {
             if (fromType is not SingularWordType sing) {
                 throw Assert.Fail();
             }
@@ -70,7 +69,7 @@ namespace Helix.MiddleEnd.Unification {
     internal class SingularBoolUnificationFactory : IUnificationFactory {
         public static SingularBoolUnificationFactory Instance { get; } = new();
 
-        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, TypeCheckingContext context) {
+        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, AnalysisContext context) {
             if (fromType is not SingularBoolType sing) {
                 throw Assert.Fail();
             }
@@ -89,7 +88,7 @@ namespace Helix.MiddleEnd.Unification {
     internal class ToUnionUnificationFactory : IUnificationFactory {
         public static ToUnionUnificationFactory Instance { get; } = new();
 
-        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, TypeCheckingContext context) {
+        public Option<Unifier> CreateUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind, AnalysisContext context) {
             if (!toType.GetUnionSignature(context).TryGetValue(out var unionType)) {
                 throw Assert.Fail();
             }

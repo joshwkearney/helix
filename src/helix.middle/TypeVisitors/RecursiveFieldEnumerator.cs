@@ -1,12 +1,11 @@
-﻿using Helix.Common;
-using Helix.Common.Types;
+﻿using Helix.Common.Types;
 
-namespace Helix.MiddleEnd.TypeChecking {
-    internal class RecursiveFieldTypesEnumerator : ITypeVisitor<IEnumerable<IHelixType>> {
+namespace Helix.MiddleEnd.TypeVisitors {
+    internal class RecursiveFieldEnumerator : ITypeVisitor<IEnumerable<IHelixType>> {
         private readonly HashSet<IHelixType> visitedStructs = [];
-        private readonly TypeCheckingContext context;
+        private readonly AnalysisContext context;
 
-        public RecursiveFieldTypesEnumerator(TypeCheckingContext context) {
+        public RecursiveFieldEnumerator(AnalysisContext context) {
             this.context = context;
         }
 
@@ -17,7 +16,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         public IEnumerable<IHelixType> VisitFunctionType(FunctionType type) => [];
 
         public IEnumerable<IHelixType> VisitNominalType(NominalType type) {
-            return this.context.Types[type.Name].Accept(this);
+            return context.Types[type.Name].Accept(this);
         }
 
         public IEnumerable<IHelixType> VisitPointerType(PointerType type) => [];
@@ -29,11 +28,11 @@ namespace Helix.MiddleEnd.TypeChecking {
         public IEnumerable<IHelixType> VisitStructType(StructType type) {
             foreach (var mem in type.Members) {
                 foreach (var sub in mem.Type.Accept(this)) {
-                    if (this.visitedStructs.Contains(sub)) {
+                    if (visitedStructs.Contains(sub)) {
                         continue;
                     }
 
-                    this.visitedStructs.Add(sub);
+                    visitedStructs.Add(sub);
                     yield return sub;
                 }
             }
@@ -42,11 +41,11 @@ namespace Helix.MiddleEnd.TypeChecking {
         public IEnumerable<IHelixType> VisitUnionType(UnionType type) {
             foreach (var mem in type.Members) {
                 foreach (var sub in mem.Type.Accept(this)) {
-                    if (this.visitedStructs.Contains(sub)) {
+                    if (visitedStructs.Contains(sub)) {
                         continue;
                     }
 
-                    this.visitedStructs.Add(sub);
+                    visitedStructs.Add(sub);
                     yield return sub;
                 }
             }

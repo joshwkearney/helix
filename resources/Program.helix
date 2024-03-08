@@ -25,7 +25,7 @@ union Option {
 
 
 struct Point {
-	var x as word;
+0	var x as word;
 	var y as word;
 }
 
@@ -35,14 +35,26 @@ func test3(var test as bool) as word {
 
 	var second = &first;
 
-	//if test then {
+	if test then {
 		second = &firstb;
-	//}
+	}
+	else {
+		second = &firstb;
+	}
 
 	return *second;
 }
 
 func doNOTHING(var foo as *word) -> void;
+
+func map(var x as T[], var f as func(T)=>E) => E[] over T, E {
+	
+}
+
+struct Point(var T as ) over T {
+	var x as T;
+	var y as T;
+}
 
 //func test4(var opt as Option) {
 //	while opt is third {

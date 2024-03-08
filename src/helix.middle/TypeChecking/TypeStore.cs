@@ -1,67 +1,92 @@
-﻿//using Helix.Common;
-//using Helix.Common.Types;
+﻿using Helix.Common;
+using Helix.Common.Types;
+using Helix.MiddleEnd.Interpreting;
+using System.Collections.Immutable;
 
-//namespace Helix.MiddleEnd.TypeChecking {
-//    internal class TypeStore {
-//        private readonly Dictionary<string, IHelixType> types = new();
+namespace Helix.MiddleEnd.TypeChecking {
+    internal class TypeStore {
+        private ImmutableDictionary<IValueLocation, IHelixType> values
+            = ImmutableDictionary<IValueLocation, IHelixType>.Empty;
 
-//        public IHelixType this[string name] {
-//            get => GetType(name);
-//            set => SetType(name, value);
-//        }
+        private readonly AnalysisContext context;
 
-//        public void SetType(string name, IHelixType type) {
-//            SetTypeMemberHelper("", name, type);
-//        }
+        private TypeStore(
+            AnalysisContext context,
+            ImmutableDictionary<IValueLocation, IHelixType> currentTypes) {
 
-//        public void TransferType(string previous, string next) {
-//            SetType(next, GetType(previous));
-//        }
+            this.context = context;
+            this.values = currentTypes;
+        }
 
-//        public bool ContainsType(string name) => GetTypeHelper(name).HasValue;
+        public IHelixType this[IValueLocation index] {
+            get => this.GetType(index);
+            set => this.SetType(index, value);
+        }
 
-//        public IHelixType GetType(string name) => GetTypeHelper(name).GetValue();
+        public IHelixType this[string name] => this.GetType(name);
 
-//        public Option<IHelixType> GetTypeHelper(string name) {
-//            if (name == "word") {
-//                return new WordType();
-//            }
-//            else if (name == "bool") {
-//                return new BoolType();
-//            }
-//            else if (name == "void") {
-//                return new VoidType();
-//            }
-//            else if (long.TryParse(name, out var w)) {
-//                return new SingularWordType(w);
-//            }
-//            else if (bool.TryParse(name, out var b)) {
-//                return new SingularBoolType(b);
-//            }
-//            else {
-//                return types.GetValueOrNone(name);
-//            }
-//        }
+        public TypeStore(AnalysisContext context) {
+            this.context = context;
+        }
 
-//        private void SetTypeMemberHelper(string baseName, string name, IHelixType type) {
-//            if (baseName == string.Empty) {
-//                types[name] = type;
-//            }
-//            else {
-//                types[baseName + "." + name] = type;
-//            }
+        public TypeStore CreateScope() {
+            return new TypeStore(this.context, this.values);
+        }
 
-//            if (type is StructType structType) {
-//                foreach (var mem in structType.Members) {
-//                    SetTypeMemberHelper(baseName + "." + name, mem.Name, mem.Type);
-//                }
-//            }
+        public TypeStore MergeWith(TypeStore other) {
+            var resultValues = new Dictionary<IValueLocation, IHelixType>();
+            var keys = this.values.Keys.Union(other.values.Keys);
 
-//            if (type is StructType unionType) {
-//                foreach (var mem in unionType.Members) {
-//                    SetTypeMemberHelper(baseName + "." + name, mem.Name, mem.Type);
-//                }
-//            }
-//        }
-//    }
-//}
+            foreach (var key in keys) {
+                if (this.values.ContainsKey(key) && other.values.ContainsKey(key)) {
+                    // TODO: Fix not having a location here
+                    resultValues[key] = this.context.Unifier.UnifyWithConvert(this.values[key], other.values[key], default);
+                }
+                else if (this.values.ContainsKey(key)) {
+                    resultValues[key] = this.values[key];
+                }
+                else {
+                    resultValues[key] = other.values[key];
+                }
+            }
+
+            return new TypeStore(this.context, resultValues.ToImmutableDictionary());
+        }
+
+        public void ClearType(IValueLocation location) {
+            this.values = this.values.SetItem(location, this.values[location].GetSupertype());
+        }
+
+        private void SetType(IValueLocation location, IHelixType valueType) {
+            this.values = this.values.SetItem(location, valueType);
+        }
+
+        private IHelixType GetType(IValueLocation location) {
+            if (location is NamedLocation named) {
+                if (this.GetSingularTypes(named.Name).TryGetValue(out var type)) {
+                    return type;
+                }
+            }
+
+            Assert.IsTrue(this.values.ContainsKey(location));
+            return this.values[location];
+        }
+
+        private IHelixType GetType(string name) => this.GetType(new NamedLocation(name));
+
+        private Option<IHelixType> GetSingularTypes(string name) {
+            if (long.TryParse(name, out var longValue)) {
+                return new SingularWordType(longValue);
+            }
+            else if (bool.TryParse(name, out var boolValue)) {
+                return new SingularBoolType(boolValue);
+            }
+            else if (name == "void") {
+                return new VoidType();
+            }
+            else {
+                return Option.None;
+            }
+        }
+    }
+}

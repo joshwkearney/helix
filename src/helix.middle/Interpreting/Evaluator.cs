@@ -1,20 +1,14 @@
 ﻿using Helix.Common;
-using Helix.Common.Collections;
 using Helix.Common.Hmm;
-using Helix.Common.Tokens;
 using Helix.Common.Types;
 using Helix.MiddleEnd.TypeChecking;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Helix.MiddleEnd.TypeVisitors;
 
 namespace Helix.MiddleEnd.Interpreting {
     internal class Evaluator {
-        public readonly TypeCheckingContext context;
+        public readonly AnalysisContext context;
 
-        public Evaluator(TypeCheckingContext context) {
+        public Evaluator(AnalysisContext context) {
             this.context = context;
         }
 
@@ -143,7 +137,7 @@ namespace Helix.MiddleEnd.Interpreting {
 
             var type = this.context.Types[loc];
 
-            if (type.Accept(TypeExpressionVisitor.Instance).TryGetValue(out var expr)) {
+            if (type.Accept(TypeToExpressionVisitor.Instance).TryGetValue(out var expr)) {
                 var stat = new HmmVariableStatement() {
                     IsMutable = false,
                     Location = syntax.Location,
@@ -170,7 +164,7 @@ namespace Helix.MiddleEnd.Interpreting {
 
             var type = this.context.Types[lvalues.First()];
 
-            if (!type.Accept(TypeExpressionVisitor.Instance).TryGetValue(out var expr)) {
+            if (!type.Accept(TypeToExpressionVisitor.Instance).TryGetValue(out var expr)) {
                 result = default;
                 return false;
             }

@@ -1,14 +1,12 @@
 ﻿using Helix.Common;
 using Helix.Common.Tokens;
 using Helix.Common.Types;
-using Helix.MiddleEnd.TypeChecking;
-using System;
 
-namespace Helix.MiddleEnd.Unification {
+namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeUnifier {
-        private readonly TypeCheckingContext context;
+        private readonly AnalysisContext context;
 
-        public TypeUnifier(TypeCheckingContext context) {
+        public TypeUnifier(AnalysisContext context) {
             this.context = context;
         }
 
@@ -38,7 +36,7 @@ namespace Helix.MiddleEnd.Unification {
             }
 
             var result = unifier.Invoke(value, loc);
-            var resultType = this.context.Types[result];
+            var resultType = context.Types[result];
 
             Assert.IsTrue(resultType.GetSupertype() == toType);
 
@@ -79,7 +77,7 @@ namespace Helix.MiddleEnd.Unification {
         //}
 
         public IHelixType UnifyWithConvert(IHelixType type1, IHelixType type2, TokenLocation loc) {
-            if (!this.TryUnifyWithConvert(type1, type2).TryGetValue(out var type)) {
+            if (!TryUnifyWithConvert(type1, type2).TryGetValue(out var type)) {
                 throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
             }
 
@@ -148,7 +146,7 @@ namespace Helix.MiddleEnd.Unification {
                 yield return SingularBoolUnificationFactory.Instance;
             }
 
-            if (toType.GetUnionSignature(this.context).HasValue) {
+            if (toType.GetUnionSignature(context).HasValue) {
                 yield return ToUnionUnificationFactory.Instance;
             }
         }
