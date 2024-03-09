@@ -33,6 +33,18 @@ namespace Helix.MiddleEnd.TypeChecking {
             return new TypeStore(this.context, this.values);
         }
 
+        public bool WasModifiedBy(TypeStore other) {
+            var keys = this.values.Keys.Intersect(other.values.Keys);
+
+            foreach (var key in keys) {
+                if (this.values[key] != other.values[key]) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public TypeStore MergeWith(TypeStore other) {
             var resultValues = new Dictionary<IValueLocation, IHelixType>();
             var keys = this.values.Keys.Union(other.values.Keys);

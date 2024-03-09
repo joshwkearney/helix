@@ -116,5 +116,13 @@
                 return Option.None;
             }
         }
+
+        public static IEnumerable<T> SelectMany<T>(this IEnumerable<T> seq, Func<T, Option<T>> selector) {
+            foreach (var item in seq) {
+                if (selector(item).TryGetValue(out var thing)) {
+                    yield return thing;
+                }
+            }
+        }
     }
 }

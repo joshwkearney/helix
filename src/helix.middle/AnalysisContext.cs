@@ -10,6 +10,8 @@ namespace Helix.MiddleEnd {
 
         public Stack<AliasingTracker> AliasesStack { get; } = [];
 
+        public Stack<ControlFlowFrame> ControlFlow { get; } = [];
+
         public HmmWriter Writer => WriterStack.Peek();
 
         public TypeStore Types => TypesStack.Peek();

@@ -707,7 +707,7 @@ namespace Helix.Frontend.NameResolution {
                 throw NameResolutionException.ExpectedLValue(syntax.Location);
             }
 
-            var loopName = this.mangler.MangleLocalName(this.Scope, "loop");
+            var loopName = this.mangler.CreateMangledTempName(this.Scope, "loop");
             var loopPath = this.Scope.Append(loopName);
 
             this.scopes.Push(loopPath);

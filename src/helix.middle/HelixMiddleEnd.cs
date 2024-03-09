@@ -1,4 +1,6 @@
-﻿using Helix.Common.Hmm;
+﻿using Helix.Common;
+using Helix.Common.Hmm;
+using Helix.MiddleEnd.Optimizations;
 
 namespace Helix.MiddleEnd {
     public class HelixMiddleEnd {
@@ -9,7 +11,13 @@ namespace Helix.MiddleEnd {
                 line.Accept(context.TypeChecker);
             }
 
-            return context.Writer.AllLines;
+            var writtenLines = context.Writer.AllLines;
+
+            //return writtenLines;
+
+            var deadCodeEliminator = new HmmDeadCodeEliminator();
+
+            return writtenLines.SelectMany(x => x.Accept(deadCodeEliminator)).ToArray();
         }
     }
 }

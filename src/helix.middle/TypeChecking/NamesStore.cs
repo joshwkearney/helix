@@ -5,5 +5,9 @@
         public string GetConvertName() {
             return "__convert_" + this.counter++;
         }
+
+        public string GetLoopUnrollPrefix() {
+            return "_unroll" + this.counter++;
+        }
     }
 }

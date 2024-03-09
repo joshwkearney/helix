@@ -11,20 +11,25 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         /// <summary>
         /// A set of aliases that exist after the current loop exits. This
-        /// will either be from a standard exit or a break statement.
+        /// will always be because of a break statement since all loops are
+        /// infinite by default in Hmm
         /// </summary>
         public ImmutableHashSet<AliasingTracker> LoopAppendixAliases { get; private set; }
 
+        public ImmutableHashSet<TypeStore> LoopAppendixTypes { get; private set; }
+
         public ControlFlowFrame() {
-            IsInsideLoop = false;
-            FunctionReturnType = VoidType.Instance;
-            LoopAppendixAliases = [];
+            this.IsInsideLoop = false;
+            this.FunctionReturnType = VoidType.Instance;
+            this.LoopAppendixAliases = [];
+            this.LoopAppendixTypes = [];
         }
 
         private ControlFlowFrame(IHelixType returnType) {
-            IsInsideLoop = true;
-            FunctionReturnType = returnType;
-            LoopAppendixAliases = [];
+            this.IsInsideLoop = true;
+            this.FunctionReturnType = returnType;
+            this.LoopAppendixAliases = [];
+            this.LoopAppendixTypes = [];
         }
 
         public ControlFlowFrame CreateLoopFrame() {
@@ -35,14 +40,15 @@ namespace Helix.MiddleEnd.TypeChecking {
             return new ControlFlowFrame(returnType);
         }
 
-        public void AddLoopAppendix(AliasingTracker aliases) {
+        public void AddLoopAppendix(AliasingTracker aliases, TypeStore types) {
             Assert.IsTrue(IsInsideLoop);
 
-            LoopAppendixAliases = LoopAppendixAliases.Add(aliases);
+            this.LoopAppendixAliases = this.LoopAppendixAliases.Add(aliases);
+            this.LoopAppendixTypes = this.LoopAppendixTypes.Add(types);
         }
 
         public void SetReturnType(IHelixType returnType) {
-            FunctionReturnType = returnType;
+            this.FunctionReturnType = returnType;
         }
     }
 }

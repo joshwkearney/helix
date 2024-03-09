@@ -1,0 +1,22 @@
+func test3(var test_0 as bool) as word {
+    var sum_2 = 0;
+    let temp_4 = 0 as word;
+    var i_3 = temp_4;
+
+    loop {
+        let temp_7 = 1 as word;
+        let temp_8 = i_3 > temp_7;
+
+        if temp_8 then {
+            break;
+        }
+
+        let temp_12 = sum_2 + 1;
+        sum_2 = temp_12;
+
+        let temp_13 = i_3 + 1;
+        i_3 = temp_13;
+    }
+
+    return sum_2;
+}

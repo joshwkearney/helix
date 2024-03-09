@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resources", "resources", "{
 		resources\Program.helix = resources\Program.helix
 		resources\Scratch.txt = resources\Scratch.txt
 		resources\Syntax.iro = resources\Syntax.iro
+		test.helix = test.helix
 		resources\TODO.txt = resources\TODO.txt
 	EndProjectSection
 EndProject
@@ -22,9 +23,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix.common", "src\helix.c
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix.front", "src\helix.front\helix.front.csproj", "{F10CD9CE-BA80-4CCC-9889-AA7EC800DCC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "helix+new", "src\helix+new\helix+new.csproj", "{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix+new", "src\helix+new\helix+new.csproj", "{6066BB5A-F6A6-4885-BD6C-530C467D4DDE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "helix.middle", "src\helix.middle\helix.middle.csproj", "{00DDAD89-3076-48C5-94B0-E19DB5B844A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "helix.middle", "src\helix.middle\helix.middle.csproj", "{00DDAD89-3076-48C5-94B0-E19DB5B844A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

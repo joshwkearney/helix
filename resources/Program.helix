@@ -1,77 +1,17 @@
-union Option {
-	var first as word;
-	var second as void;
-	var third as word;
-}
-
-// TODO: Fix new Point
-//struct Point {
-//	var x as word;
-//	var y as word;
-//}
-
-//func test2(var opt as Option) as word {
-//	if opt is third then {
-//		return opt + 10;
-//	}
-
-//	return 45;
-//}
-
-//struct Thing {
-//	func sum() as word => 0;
-//}
 
 
 
-struct Point {
-0	var x as word;
-	var y as word;
-}
+func test3(var test as word) as word {
+	var sum = 0;
 
-func test3(var test as bool) as word {
-	var first = 10;
-	var firstb = 15;
-
-	var second = &first;
-
-	if test then {
-		second = &firstb;
-	}
-	else {
-		second = &firstb;
+	for i = 1 to 10 {
+		if i <= 5 then {
+			sum += i;
+		}
+		else {
+			sum += test;
+		}
 	}
 
-	return *second;
+	return sum;
 }
-
-func doNOTHING(var foo as *word) -> void;
-
-func map(var x as T[], var f as func(T)=>E) => E[] over T, E {
-	
-}
-
-struct Point(var T as ) over T {
-	var x as T;
-	var y as T;
-}
-
-//func test4(var opt as Option) {
-//	while opt is third {
-//		var x = opt + 10;
-//	}
-//}
-
-//func test(var x as word) as word {
-//	var result = {
-//		var sum = 0;//
-//
-//		for i = 0 to 10 {
-//			sum += i;
-//		}//
-//
-//		sum;
-//	};//
-//
-//	return result;
-//}

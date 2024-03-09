@@ -4,18 +4,86 @@ using Helix.Common.Types;
 using Helix.MiddleEnd.Interpreting;
 
 namespace Helix.MiddleEnd.TypeChecking {
-    public enum StatementControlFlow {
-        Normal, FunctionReturn, LoopReturn
+    public enum ControlFlowCertainty {
+        Yes, No, Maybe
     }
 
-    public record struct TypeCheckResult(string ResultName, StatementControlFlow ControlFlow) {
-        public static TypeCheckResult VoidResult { get; } = new TypeCheckResult("void", StatementControlFlow.Normal);
+    public record struct ControlFlow(ControlFlowCertainty FunctionReturn, ControlFlowCertainty Continue, ControlFlowCertainty Break) {
+        public static ControlFlow NormalFlow { get; } = new ControlFlow(ControlFlowCertainty.No, ControlFlowCertainty.No, ControlFlowCertainty.No);
 
-        public static TypeCheckResult LoopReturn { get; } = new TypeCheckResult("void", StatementControlFlow.LoopReturn);
+        public static ControlFlow BreakFlow { get; } = new ControlFlow(ControlFlowCertainty.No, ControlFlowCertainty.No, ControlFlowCertainty.Yes);
 
-        public static TypeCheckResult FunctionReturn { get; } = new TypeCheckResult("void", StatementControlFlow.FunctionReturn);
+        public static ControlFlow ContinueFlow { get; } = new ControlFlow(ControlFlowCertainty.No, ControlFlowCertainty.Yes, ControlFlowCertainty.No);
 
-        public static TypeCheckResult NormalFlow(string resultName) => new TypeCheckResult(resultName, StatementControlFlow.Normal);
+        public static ControlFlow FunctionReturnFlow { get; } = new ControlFlow(ControlFlowCertainty.Yes, ControlFlowCertainty.No, ControlFlowCertainty.No);
+
+        public bool DoesFunctionReturn => this.FunctionReturn == ControlFlowCertainty.Yes;
+
+        public bool DoesBreak => this.Break == ControlFlowCertainty.Yes;
+
+        public bool DoesContinue => this.Continue == ControlFlowCertainty.Yes;
+
+        public bool DoesLoopReturn => this.Continue == ControlFlowCertainty.Yes || this.Break == ControlFlowCertainty.Yes;
+
+        public bool CouldFunctionReturn => this.FunctionReturn == ControlFlowCertainty.Yes || this.FunctionReturn == ControlFlowCertainty.Maybe;
+
+        public bool CouldLoopReturn => this.DoesLoopReturn
+            || this.Break == ControlFlowCertainty.Maybe 
+            || this.Continue == ControlFlowCertainty.Maybe;
+
+        public bool CouldJump => this.CouldFunctionReturn || this.CouldLoopReturn;
+
+        public bool DoesJump => this.FunctionReturn == ControlFlowCertainty.Yes || this.DoesLoopReturn;
+
+        public ControlFlow Merge(ControlFlow other) {
+            var funcReturn = ControlFlowCertainty.No;
+            var breakFlow = ControlFlowCertainty.No;
+            var continueFlow = ControlFlowCertainty.No;
+
+            if (this.FunctionReturn == ControlFlowCertainty.Yes && other.FunctionReturn == ControlFlowCertainty.Yes) {
+                funcReturn = ControlFlowCertainty.Yes;
+            }
+            else if (this.FunctionReturn == ControlFlowCertainty.Yes || other.FunctionReturn == ControlFlowCertainty.Yes) {
+                funcReturn = ControlFlowCertainty.Maybe;
+            }
+            else if (this.FunctionReturn == ControlFlowCertainty.Maybe || other.FunctionReturn == ControlFlowCertainty.Maybe) {
+                funcReturn = ControlFlowCertainty.Maybe;
+            }
+
+            if (this.Continue == ControlFlowCertainty.Yes && other.Continue == ControlFlowCertainty.Yes) {
+                continueFlow = ControlFlowCertainty.Yes;
+            }
+            else if (this.Continue == ControlFlowCertainty.Yes || other.Continue == ControlFlowCertainty.Yes) {
+                continueFlow = ControlFlowCertainty.Maybe;
+            }
+            else if (this.Continue == ControlFlowCertainty.Maybe || other.Continue == ControlFlowCertainty.Maybe) {
+                continueFlow = ControlFlowCertainty.Maybe;
+            }
+
+            if (this.Break == ControlFlowCertainty.Yes && other.Break == ControlFlowCertainty.Yes) {
+                breakFlow = ControlFlowCertainty.Yes;
+            }
+            else if (this.Break == ControlFlowCertainty.Yes || other.Break == ControlFlowCertainty.Yes) {
+                breakFlow = ControlFlowCertainty.Maybe;
+            }
+            else if (this.Break == ControlFlowCertainty.Maybe || other.Break == ControlFlowCertainty.Maybe) {
+                breakFlow = ControlFlowCertainty.Maybe;
+            }
+
+            return new ControlFlow(funcReturn, continueFlow, breakFlow);
+        }
+    }
+
+    public record struct TypeCheckResult(string ResultName, ControlFlow ControlFlow) {
+        public static TypeCheckResult VoidResult { get; } = new TypeCheckResult("void", ControlFlow.NormalFlow);
+
+        public static TypeCheckResult Break { get; } = new TypeCheckResult("void", ControlFlow.BreakFlow);
+
+        public static TypeCheckResult Continue { get; } = new TypeCheckResult("void", ControlFlow.ContinueFlow);
+
+        public static TypeCheckResult FunctionReturn { get; } = new TypeCheckResult("void", ControlFlow.FunctionReturnFlow);
+
+        public static TypeCheckResult NormalFlow(string resultName) => new TypeCheckResult(resultName, ControlFlow.NormalFlow);
     }
 
     internal class TypeChecker : IHmmVisitor<TypeCheckResult> {
@@ -46,7 +114,6 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         private readonly AnalysisContext context;
         private readonly Evaluator eval;
-        private readonly Stack<ControlFlowFrame> controlFlow = [];
 
         private HmmWriter Writer => this.context.Writer;
 
@@ -171,25 +238,25 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitBreak(HmmBreakSyntax syntax) {
-            Assert.IsTrue(this.controlFlow.Any());
+            Assert.IsTrue(this.context.ControlFlow.Any());
 
-            if (!this.controlFlow.Peek().IsInsideLoop) {
+            if (!this.context.ControlFlow.Peek().IsInsideLoop) {
                 throw TypeCheckException.NotInLoop(syntax.Location);
             }
 
-            this.controlFlow.Peek().AddLoopAppendix(this.Aliases);
+            this.context.ControlFlow.Peek().AddLoopAppendix(this.Aliases, this.Types);
 
             this.Writer.AddLine(new HmmBreakSyntax() {
                 Location = syntax.Location
             });
 
-            return TypeCheckResult.LoopReturn;
+            return TypeCheckResult.Break;
         }
 
         public TypeCheckResult VisitContinue(HmmContinueSyntax syntax) {
-            Assert.IsTrue(this.controlFlow.Any());
+            Assert.IsTrue(this.context.ControlFlow.Any());
 
-            if (!this.controlFlow.Peek().IsInsideLoop) {
+            if (!this.context.ControlFlow.Peek().IsInsideLoop) {
                 throw TypeCheckException.NotInLoop(syntax.Location);
             }
 
@@ -197,14 +264,14 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Location = syntax.Location
             });
 
-            return TypeCheckResult.LoopReturn;
+            return TypeCheckResult.Continue;
         }
 
         public TypeCheckResult VisitFunctionDeclaration(HmmFunctionDeclaration syntax) {
             var frame = new ControlFlowFrame();
             frame.SetReturnType(syntax.Signature.ReturnType);
 
-            this.controlFlow.Push(frame);
+            this.context.ControlFlow.Push(frame);
             this.context.WriterStack.Push(this.Writer.CreateScope());
 
             foreach (var par in syntax.Signature.Parameters) {
@@ -215,20 +282,20 @@ namespace Helix.MiddleEnd.TypeChecking {
             var (_, bodyFlow) = this.CheckBody(syntax.Body);
 
             // Add a void function return if we need it
-            if (syntax.Signature.ReturnType == VoidType.Instance && bodyFlow != StatementControlFlow.FunctionReturn) {
+            if (syntax.Signature.ReturnType == VoidType.Instance && !bodyFlow.DoesFunctionReturn) {
                 var line = new HmmReturnSyntax() { Location = syntax.Location, Operand = "void" };
 
                 line.Accept(this);
-                bodyFlow = StatementControlFlow.FunctionReturn;
+                bodyFlow = ControlFlow.FunctionReturnFlow;
             }
 
             // Make sure we return
-            if (bodyFlow != StatementControlFlow.FunctionReturn) {
+            if (!bodyFlow.DoesFunctionReturn) {
                 throw TypeCheckException.NoReturn(syntax.Location);
             }
 
             var writtenBody = this.context.WriterStack.Pop().ScopedLines;
-            this.controlFlow.Pop();
+            this.context.ControlFlow.Pop();
 
             this.Writer.AddLine(new HmmFunctionDeclaration() {
                 Location = syntax.Location,
@@ -322,14 +389,13 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             this.Aliases.RegisterIf(syntax.Result, totalType, affirm, neg);
 
-            if (affirmFlow == StatementControlFlow.FunctionReturn && negFlow == StatementControlFlow.FunctionReturn) {
-                return TypeCheckResult.FunctionReturn;
-            }
-            else if (affirmFlow == StatementControlFlow.LoopReturn && negFlow == StatementControlFlow.LoopReturn) {
-                return TypeCheckResult.LoopReturn;
-            }
+            var totalFlow = affirmFlow.Merge(negFlow);
+
+            if (totalFlow.DoesJump) {
+                return new TypeCheckResult("void", totalFlow);
+            } 
             else {
-                return TypeCheckResult.NormalFlow(syntax.Result);
+                return new TypeCheckResult(syntax.Result, totalFlow);
             }
         }
 
@@ -387,26 +453,34 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitLoop(HmmLoopSyntax syntax) {
-            Assert.IsTrue(this.controlFlow.Any());
+            Assert.IsTrue(this.context.ControlFlow.Any());
+
+            if (this.eval.TryEvaluateLoop(syntax, out var eval)) {
+                return eval;
+            }
 
             var returnFlow = TypeCheckResult.NormalFlow("void");
-            var outerAliases = this.context.AliasesStack.Pop();
+
+            var outerAliases = this.context.AliasesStack.Peek();
+            var outerTypes = this.context.Types;
 
             while (true) {
-                this.controlFlow.Push(this.controlFlow.Peek().CreateLoopFrame());
+                this.context.ControlFlow.Push(this.context.ControlFlow.Peek().CreateLoopFrame());
                 this.context.WriterStack.Push(this.Writer.CreateScope());
                 this.context.AliasesStack.Push(outerAliases.CreateScope());
+                this.context.TypesStack.Push(outerTypes.CreateScope());
 
                 var (_, bodyFlow) = this.CheckBody(syntax.Body);
 
+                var loopTypes = this.context.TypesStack.Pop();
                 var loopAliases = this.context.AliasesStack.Pop();
                 var body = this.context.WriterStack.Pop();
-                var loopControlFlow = this.controlFlow.Peek();
+                var loopControlFlow = this.context.ControlFlow.Peek();
 
                 // If the loop modified anything the outer scope, we need to type check this again
                 // because types from previous iterations could affect later iterations
 
-                if (!outerAliases.WasModifiedBy(loopAliases)) {
+                if (!outerAliases.WasModifiedBy(loopAliases) && !outerTypes.WasModifiedBy(loopTypes)) {
                     this.Writer.AddLine(new HmmLoopSyntax() {
                         Location = syntax.Location,
                         Body = body.ScopedLines
@@ -417,18 +491,26 @@ namespace Helix.MiddleEnd.TypeChecking {
                     // are the only way for a loop to terminate
                     outerAliases = loopControlFlow.LoopAppendixAliases.Aggregate((x, y) => x.MergeWith(y));
 
-                    if (bodyFlow == StatementControlFlow.FunctionReturn) {
-                        returnFlow = TypeCheckResult.FunctionReturn;
+                    // The types that have stabilized are the ones left once we typecheck the loop
+                    outerTypes = loopControlFlow.LoopAppendixTypes.Aggregate((x, y) => x.MergeWith(y));
+
+                    if (bodyFlow.DoesFunctionReturn) {
+                        returnFlow = new TypeCheckResult("void", bodyFlow);
                     }
 
                     break;
                 }
                 else {
                     outerAliases = outerAliases.MergeWith(loopAliases);
+                    outerTypes = outerTypes.MergeWith(loopTypes);
                 }
             }
 
+            this.context.AliasesStack.Pop();
             this.context.AliasesStack.Push(outerAliases);
+
+            this.context.TypesStack.Pop();
+            this.context.TypesStack.Push(outerTypes);
 
             return returnFlow;
         }
@@ -677,9 +759,9 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitReturn(HmmReturnSyntax syntax) {
-            Assert.IsTrue(this.controlFlow.Any());
+            Assert.IsTrue(this.context.ControlFlow.Any());
 
-            var returnType = this.controlFlow.Peek().FunctionReturnType;
+            var returnType = this.context.ControlFlow.Peek().FunctionReturnType;
             var operand = this.Unifier.Convert(syntax.Operand, returnType, syntax.Location);
 
             this.Writer.AddLine(new HmmReturnSyntax() {
@@ -713,6 +795,10 @@ namespace Helix.MiddleEnd.TypeChecking {
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Minus);
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.AddressOf);
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Dereference);
+
+            if (this.eval.TryEvaluateUnarySyntax(syntax, out var eval)) {
+                return eval;
+            }
 
             if (syntax.Operator == UnaryOperatorKind.Not) {
                 var arg = this.Unifier.Convert(syntax.Operand, BoolType.Instance, syntax.Location);
@@ -835,18 +921,19 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult CheckBody(IReadOnlyList<IHmmSyntax> stats) {
-            foreach (var stat in stats) {
-                var result = stat.Accept(this);
+            var resultFlow = ControlFlow.NormalFlow;
 
-                if (result.ControlFlow == StatementControlFlow.LoopReturn) {
-                    return TypeCheckResult.LoopReturn;
+            foreach (var stat in stats) {
+                var statResult = stat.Accept(this);
+
+                if (statResult.ControlFlow.DoesJump) {
+                    return new TypeCheckResult("void", statResult.ControlFlow);
                 }
-                else if (result.ControlFlow == StatementControlFlow.FunctionReturn) {
-                    return TypeCheckResult.FunctionReturn;
-                }
+
+                resultFlow = resultFlow.Merge(statResult.ControlFlow);
             }
 
-            return TypeCheckResult.VoidResult;
+            return new TypeCheckResult("void", resultFlow);
         }
     }
 }
