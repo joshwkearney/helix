@@ -3,6 +3,7 @@ using Helix.Common.Hmm;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,6 +11,7 @@ namespace Helix.MiddleEnd.Optimizations {
     internal class HmmDeadCodeEliminator : IHmmVisitor<Option<IHmmSyntax>> {
         private readonly HashSet<string> usedVariables = [];
         private readonly HashSet<string> usedSinceAssignment = [];
+        private readonly HashSet<string> assignmentsTo = [];
 
         private Option<IHmmSyntax> VisitExpression(IHmmSyntax syntax, string result, params string[] args) {
             if (!this.usedVariables.Contains(result)) {
@@ -35,17 +37,14 @@ namespace Helix.MiddleEnd.Optimizations {
         public Option<IHmmSyntax> VisitArrayLiteral(HmmArrayLiteral syntax) => this.VisitExpression(syntax, syntax.Result, syntax.Args.ToArray());
 
         public Option<IHmmSyntax> VisitAssignment(HmmAssignment syntax) {
-            if (!this.usedVariables.Contains(syntax.Variable)) {
-                return Option.None;
-            }
-
-            if (!this.usedSinceAssignment.Contains(syntax.Variable)) {
+            if (this.assignmentsTo.Contains(syntax.Variable) && !this.usedSinceAssignment.Contains(syntax.Variable)) {
                 return Option.None;
             }
 
             this.UseVariable(syntax.Variable);
             this.UseVariable(syntax.Value);
             this.usedSinceAssignment.Remove(syntax.Variable);
+            this.assignmentsTo.Add(syntax.Variable);
 
             return syntax;
         }

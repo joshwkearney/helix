@@ -1,17 +1,17 @@
 
 
 
-func test3(var test as word) as word {
+func test3(var test as bool) as word {
 	var sum = 0;
 
 	for i = 1 to 10 {
-		if i <= 5 then {
-			sum += i;
+		if i > 5 and test then {
+			break
 		}
-		else {
-			sum += test;
-		}
+
+		sum += i;
 	}
 
 	return sum;
 }
+

@@ -19,6 +19,7 @@ namespace Helix.MiddleEnd.Interpreting {
                 this.context.ControlFlow.Push(this.context.ControlFlow.Peek().CreateLoopFrame());
                 this.context.WriterStack.Push(this.context.Writer.CreateScope());
                 this.context.AliasesStack.Push(this.context.AliasesStack.Peek().CreateScope());
+                this.context.TypesStack.Push(this.context.TypesStack.Peek().CreateScope());
 
                 // Rewrite the loop body with different variables so different iterations don't
                 // conflict with each other when unrolled
@@ -31,6 +32,7 @@ namespace Helix.MiddleEnd.Interpreting {
                 // Type check the body
                 var bodyResult = this.context.TypeChecker.CheckBody(rewrittenBody);
 
+                var loopTypes = this.context.TypesStack.Pop();
                 var loopAliases = this.context.AliasesStack.Pop();
                 var bodyWriter = this.context.WriterStack.Pop();
                 var loopControlFlow = this.context.ControlFlow.Peek();
@@ -41,6 +43,10 @@ namespace Helix.MiddleEnd.Interpreting {
                     // because the loop break can no longer be determined at compile time
 
                     if (firstIteration) {
+                        // No iterations were able to be unrolled, so fail. Luckily any type
+                        // or alias modifications went into the new scopes so we are already
+                        // rolled back
+
                         result = default;
                         return false;
                     }
@@ -53,9 +59,13 @@ namespace Helix.MiddleEnd.Interpreting {
                 // We either definitely return or fall through the loop to iterate again,
                 // so we can unroll this iteration
 
-                // Merge in our aliases
-                loopAliases = loopAliases.MergeWith(this.context.AliasesStack.Pop());
+                // Replace the current aliases with our aliases
+                this.context.AliasesStack.Pop();
                 this.context.AliasesStack.Push(loopAliases);
+
+                // Replace the current types with our types
+                this.context.TypesStack.Pop();
+                this.context.TypesStack.Push(loopTypes);
 
                 // Remove any residual breaks and continues
                 var replacedBody = bodyWriter.ScopedLines.SelectMany(x => x.Accept(LoopEvalJumpRemover.Instance)).ToArray();
@@ -148,6 +158,7 @@ namespace Helix.MiddleEnd.Interpreting {
             var leftType = this.context.Types[syntax.Left];
             var rightType = this.context.Types[syntax.Right];
 
+            // Evaluate word operations when we know both sides
             if (leftType is SingularWordType wordLeft && rightType is SingularWordType wordRight) {
                 IHelixType? result = syntax.Operator switch {
                     BinaryOperationKind.Add => new SingularWordType(wordLeft.Value + wordRight.Value),
@@ -183,6 +194,7 @@ namespace Helix.MiddleEnd.Interpreting {
                 return true;
             }
 
+            // Evaluate book operations when we know both sides
             if (leftType is SingularBoolType boolLeft && rightType is SingularBoolType boolRight) {
                 IHelixType? result = syntax.Operator switch {
                     BinaryOperationKind.And => new SingularBoolType(boolLeft.Value & boolRight.Value),
@@ -208,8 +220,71 @@ namespace Helix.MiddleEnd.Interpreting {
                 resultName = stat.Accept(this.context.TypeChecker);
                 return true;
             }
+            
+
+            // Evaluate bool operations when we know one side
+            if (leftType is SingularBoolType boolLeft2) {
+                return TryCheckSingleBinaryExpression(syntax, boolLeft2.Value, syntax.Right, out resultName);
+            }
+            else if (rightType is SingularBoolType boolRight2) {
+                return TryCheckSingleBinaryExpression(syntax, boolRight2.Value, syntax.Left, out resultName);
+            }
 
             resultName = default;
+            return false;
+        }
+
+        bool TryCheckSingleBinaryExpression(HmmBinarySyntax syntax, bool value, string other, out TypeCheckResult result) {
+            if (syntax.Operator == BinaryOperationKind.Or) {
+                if (value) {
+                    var stat = new HmmVariableStatement() {
+                        IsMutable = false,
+                        Location = syntax.Location,
+                        Value = "true",
+                        Variable = syntax.Result
+                    };
+
+                    result = stat.Accept(this.context.TypeChecker);
+                    return true;
+                }
+                else {
+                    var stat = new HmmVariableStatement() {
+                        IsMutable = false,
+                        Location = syntax.Location,
+                        Value = other,
+                        Variable = syntax.Result
+                    };
+
+                    result = stat.Accept(this.context.TypeChecker);
+                    return true;
+                }
+            }
+            else if (syntax.Operator == BinaryOperationKind.And) {
+                if (value) {
+                    var stat = new HmmVariableStatement() {
+                        IsMutable = false,
+                        Location = syntax.Location,
+                        Value = other,
+                        Variable = syntax.Result
+                    };
+
+                    result = stat.Accept(this.context.TypeChecker);
+                    return true;
+                }
+                else {
+                    var stat = new HmmVariableStatement() {
+                        IsMutable = false,
+                        Location = syntax.Location,
+                        Value = "false",
+                        Variable = syntax.Result
+                    };
+
+                    result = stat.Accept(this.context.TypeChecker);
+                    return true;
+                }
+            }
+
+            result = default;
             return false;
         }
 
