@@ -8,15 +8,15 @@ namespace Helix.MiddleEnd {
 
         public Stack<TypeStore> TypesStack { get; } = [];
 
-        public Stack<AliasingTracker> AliasesStack { get; } = [];
+        public Stack<AliasStore> AliasesStack { get; } = [];
 
-        public Stack<ControlFlowFrame> ControlFlow { get; } = [];
+        public Stack<ControlFlowFrame> ControlFlowStack { get; } = [];
 
         public HmmWriter Writer => WriterStack.Peek();
 
         public TypeStore Types => TypesStack.Peek();
 
-        public AliasingTracker Aliases => AliasesStack.Peek();
+        public AliasStore Aliases => AliasesStack.Peek();
 
         public NamesStore Names { get; }
 
@@ -24,14 +24,17 @@ namespace Helix.MiddleEnd {
 
         public TypeUnifier Unifier { get; }
 
-        public AnalysisContext() {
-            Names = new NamesStore();
-            TypeChecker = new TypeChecker(this);
-            Unifier = new TypeUnifier(this);
+        public AliasTracker AliasTracker { get; }
 
-            WriterStack.Push(new HmmWriter());
-            TypesStack.Push(new TypeStore(this));
-            AliasesStack.Push(new AliasingTracker(this));
+        public AnalysisContext() {
+            this.Names = new NamesStore();
+            this.TypeChecker = new TypeChecker(this);
+            this.Unifier = new TypeUnifier(this);
+            this.AliasTracker = new AliasTracker(this);
+
+            this.WriterStack.Push(new HmmWriter());
+            this.TypesStack.Push(new TypeStore(this));
+            this.AliasesStack.Push(new AliasStore(this));
         }
     }
 }

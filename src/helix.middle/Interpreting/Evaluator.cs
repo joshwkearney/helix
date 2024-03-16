@@ -16,7 +16,7 @@ namespace Helix.MiddleEnd.Interpreting {
             var firstIteration = true;
 
             while (true) {
-                this.context.ControlFlow.Push(this.context.ControlFlow.Peek().CreateLoopFrame());
+                this.context.ControlFlowStack.Push(this.context.ControlFlowStack.Peek().CreateLoopFrame());
                 this.context.WriterStack.Push(this.context.Writer.CreateScope());
                 this.context.AliasesStack.Push(this.context.AliasesStack.Peek().CreateScope());
                 this.context.TypesStack.Push(this.context.TypesStack.Peek().CreateScope());
@@ -35,7 +35,7 @@ namespace Helix.MiddleEnd.Interpreting {
                 var loopTypes = this.context.TypesStack.Pop();
                 var loopAliases = this.context.AliasesStack.Pop();
                 var bodyWriter = this.context.WriterStack.Pop();
-                var loopControlFlow = this.context.ControlFlow.Peek();
+                var loopControlFlow = this.context.ControlFlowStack.Peek();
 
                 if (!bodyResult.ControlFlow.DoesJump && bodyResult.ControlFlow.CouldJump) {
                     // Here we have normal control flow until the end of the loop but don't know

@@ -14,7 +14,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         /// will always be because of a break statement since all loops are
         /// infinite by default in Hmm
         /// </summary>
-        public ImmutableHashSet<AliasingTracker> LoopAppendixAliases { get; private set; }
+        public ImmutableHashSet<AliasStore> LoopAppendixAliases { get; private set; }
 
         public ImmutableHashSet<TypeStore> LoopAppendixTypes { get; private set; }
 
@@ -40,7 +40,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             return new ControlFlowFrame(returnType);
         }
 
-        public void AddLoopAppendix(AliasingTracker aliases, TypeStore types) {
+        public void AddLoopAppendix(AliasStore aliases, TypeStore types) {
             Assert.IsTrue(IsInsideLoop);
 
             this.LoopAppendixAliases = this.LoopAppendixAliases.Add(aliases);

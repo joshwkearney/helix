@@ -14,4 +14,3 @@ func test3(var test as bool) as word {
 
 	return sum;
 }
-
