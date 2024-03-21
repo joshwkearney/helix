@@ -1,16 +1,14 @@
-
-
+union Option {
+	var none as void;
+	var some as word;
+}
 
 func test3(var test as bool) as word {
-	var sum = 0;
+	//var opt = 456 as Option;
 
-	for i = 1 to 10 {
-		if i > 5 and test then {
-			break
-		}
-
-		sum += i;
+	if test == true xor test != true then {
+		return 10;
 	}
 
-	return sum;
+	return 0;
 }

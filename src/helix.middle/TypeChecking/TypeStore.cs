@@ -33,6 +33,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             return new TypeStore(this.context, this.values);
         }
 
+        public void SetImplications(IReadOnlyDictionary<IValueLocation, IHelixType> implications) {
+            foreach (var (key, value) in implications) {
+                this.values = this.values.SetItem(key, value);
+            }
+        }
+
         public bool WasModifiedBy(TypeStore other) {
             var keys = this.values.Keys.Intersect(other.values.Keys);
 

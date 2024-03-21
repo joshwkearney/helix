@@ -18,8 +18,7 @@ namespace Helix.MiddleEnd.Interpreting {
             while (true) {
                 this.context.ControlFlowStack.Push(this.context.ControlFlowStack.Peek().CreateLoopFrame());
                 this.context.WriterStack.Push(this.context.Writer.CreateScope());
-                this.context.AliasesStack.Push(this.context.AliasesStack.Peek().CreateScope());
-                this.context.TypesStack.Push(this.context.TypesStack.Peek().CreateScope());
+                this.context.ScopeStack.Push(this.context.ScopeStack.Peek().CreateScope());
 
                 // Rewrite the loop body with different variables so different iterations don't
                 // conflict with each other when unrolled
@@ -32,8 +31,7 @@ namespace Helix.MiddleEnd.Interpreting {
                 // Type check the body
                 var bodyResult = this.context.TypeChecker.CheckBody(rewrittenBody);
 
-                var loopTypes = this.context.TypesStack.Pop();
-                var loopAliases = this.context.AliasesStack.Pop();
+                var loopScope = this.context.ScopeStack.Pop();
                 var bodyWriter = this.context.WriterStack.Pop();
                 var loopControlFlow = this.context.ControlFlowStack.Peek();
 
@@ -60,12 +58,8 @@ namespace Helix.MiddleEnd.Interpreting {
                 // so we can unroll this iteration
 
                 // Replace the current aliases with our aliases
-                this.context.AliasesStack.Pop();
-                this.context.AliasesStack.Push(loopAliases);
-
-                // Replace the current types with our types
-                this.context.TypesStack.Pop();
-                this.context.TypesStack.Push(loopTypes);
+                this.context.ScopeStack.Pop();
+                this.context.ScopeStack.Push(loopScope);
 
                 // Remove any residual breaks and continues
                 var replacedBody = bodyWriter.ScopedLines.SelectMany(x => x.Accept(LoopEvalJumpRemover.Instance)).ToArray();
@@ -91,10 +85,18 @@ namespace Helix.MiddleEnd.Interpreting {
 
         public bool TryEvaluateIfExpression(HmmIfExpression syntax, string cond, out TypeCheckResult result) {
             var condType = this.context.Types[cond];
-
+            
             if (condType is not SingularBoolType boolType) {
-                result = default;
-                return false;
+                if (this.context.Predicates[cond].IsTrue) {
+                    boolType = new SingularBoolType(true);
+                }
+                else if (this.context.Predicates[cond].IsFalse) {
+                    boolType = new SingularBoolType(false);
+                }
+                else {
+                    result = default;
+                    return false;
+                }
             }
 
             if (boolType.Value) {

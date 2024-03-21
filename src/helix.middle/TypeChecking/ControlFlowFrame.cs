@@ -14,22 +14,18 @@ namespace Helix.MiddleEnd.TypeChecking {
         /// will always be because of a break statement since all loops are
         /// infinite by default in Hmm
         /// </summary>
-        public ImmutableHashSet<AliasStore> LoopAppendixAliases { get; private set; }
-
-        public ImmutableHashSet<TypeStore> LoopAppendixTypes { get; private set; }
+        public ImmutableHashSet<AnalysisScope> LoopAppendix { get; private set; }
 
         public ControlFlowFrame() {
             this.IsInsideLoop = false;
             this.FunctionReturnType = VoidType.Instance;
-            this.LoopAppendixAliases = [];
-            this.LoopAppendixTypes = [];
+            this.LoopAppendix = [];
         }
 
         private ControlFlowFrame(IHelixType returnType) {
             this.IsInsideLoop = true;
             this.FunctionReturnType = returnType;
-            this.LoopAppendixAliases = [];
-            this.LoopAppendixTypes = [];
+            this.LoopAppendix = [];
         }
 
         public ControlFlowFrame CreateLoopFrame() {
@@ -40,11 +36,10 @@ namespace Helix.MiddleEnd.TypeChecking {
             return new ControlFlowFrame(returnType);
         }
 
-        public void AddLoopAppendix(AliasStore aliases, TypeStore types) {
+        public void AddLoopAppendix(AnalysisScope scope) {
             Assert.IsTrue(IsInsideLoop);
 
-            this.LoopAppendixAliases = this.LoopAppendixAliases.Add(aliases);
-            this.LoopAppendixTypes = this.LoopAppendixTypes.Add(types);
+            this.LoopAppendix = this.LoopAppendix.Add(scope);
         }
 
         public void SetReturnType(IHelixType returnType) {

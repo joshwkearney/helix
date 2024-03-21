@@ -1,6 +1,7 @@
 ﻿using Helix.Common;
 using Helix.Common.Hmm;
 using Helix.Common.Types;
+using Helix.MiddleEnd.FlowTyping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +31,7 @@ namespace Helix.MiddleEnd.Interpreting {
                     foreach (var root in roots) {
                         this.context.Aliases.SetBoxedRoots(root, mem.Type, [UnknownLocation.Instance]);
                         this.context.Types.ClearType(root);
+                        this.context.Predicates.MutateLocation(root, CnfTerm.Empty);
                     }
                 }
             }
@@ -44,8 +46,9 @@ namespace Helix.MiddleEnd.Interpreting {
 
             foreach (var mem in assignType.GetMembers(this.context)) {
                 var lValueLocation = mem.CreateLocation(targetLValue);
+                var rValueLocation = mem.CreateLocation(assignRValue);
                 var targets = this.context.Aliases.GetReferencedRoots(lValueLocation);
-                var assignedRoots = this.context.Aliases.GetBoxedRoots(mem.CreateLocation(assignRValue), mem.Type);
+                var assignedRoots = this.context.Aliases.GetBoxedRoots(rValueLocation, mem.Type);
 
                 if (targets.Count == 1 && !targets.First().IsUnknown) {
                     // We only have one target lvalue which isn't unknown, so we know exactly what
@@ -54,6 +57,8 @@ namespace Helix.MiddleEnd.Interpreting {
 
                     this.context.Aliases.SetBoxedRoots(targets.First(), mem.Type, assignedRoots);
                     this.context.Types[targets.First()] = mem.Type;
+
+                    this.context.Predicates.MutateLocation(targets.First(), this.context.Predicates[rValueLocation]);
                 }
                 else {
                     // Here the target could be multiple roots or unknown, so in this case we have
@@ -67,7 +72,10 @@ namespace Helix.MiddleEnd.Interpreting {
                             .ToArray();
 
                         this.context.Aliases.SetBoxedRoots(target, mem.Type, allRoots);
-                        this.context.Types.ClearType(lValueLocation);
+
+                        // Merge types and predicates rather than clearing them
+                        this.context.Types[target] = this.context.Unifier.UnifyWithConvert(this.context.Types[target], mem.Type, default);
+                        this.context.Predicates.MutateLocation(target, this.context.Predicates[target].Or(this.context.Predicates[rValueLocation]));
                     }
                 }
             }
@@ -103,6 +111,9 @@ namespace Helix.MiddleEnd.Interpreting {
                 // instead of the member's type (the assign expression can be
                 // more specific)
                 this.context.Types[variableLocation] = assignType;
+
+                // Set the predicates to the assignment predicates
+                this.context.Predicates[variableLocation] = this.context.Predicates[assignValue];
             }
         }
 
@@ -113,7 +124,7 @@ namespace Helix.MiddleEnd.Interpreting {
                 this.context.Aliases.SetReferencedRoots(variableLocation, [variableLocation]);
                 this.context.Aliases.SetBoxedRoots(variableLocation, mem.Type, []);
 
-                this.context.Types[variableLocation] = mem.Type;
+                this.context.Types[variableLocation] = mem.Type; 
             }
         }
 
@@ -132,6 +143,7 @@ namespace Helix.MiddleEnd.Interpreting {
 
                 this.context.Aliases.SetBoxedRoots(variableLocation, mem.Type, aliases1.Concat(aliases2));
                 this.context.Types[variableLocation] = mem.Type;
+                this.context.Predicates[variableLocation] = this.context.Predicates[assign1].Or(this.context.Predicates[assign2]);
 
                 var affirmType = this.context.Types[assign1];
                 var negType = this.context.Types[assign2];
@@ -171,6 +183,7 @@ namespace Helix.MiddleEnd.Interpreting {
 
                     this.context.Aliases.SetBoxedRoots(targetLocation, mem.Type, boxedRoots);
                     this.context.Types[targetLocation] = assignType;
+                    this.context.Predicates[targetLocation] = this.context.Predicates[assignValueLocation];
 
                     // TODO: How to get the type this is supposed to be for the signature?
                 }
@@ -265,7 +278,9 @@ namespace Helix.MiddleEnd.Interpreting {
 
         public void RegisterArrayLiteral(string resultName, long length, IHelixType elementType) {
             // TODO pending fixed length array types
-            this.context.Types[new NamedLocation(resultName)] = new ArrayType() { InnerType = elementType };
+            var loc = new NamedLocation(resultName);
+
+            this.context.Types[loc] = new ArrayType() { InnerType = elementType };
         }
 
         public void RegisterDereferencedPointerReference(string resultName, IHelixType resultType, string dereferenceTarget) {
@@ -306,7 +321,6 @@ namespace Helix.MiddleEnd.Interpreting {
             var roots = this.context.Aliases.GetReferencedRoots(derefTargetLocation);
 
             this.context.Aliases.SetBoxedRoots(resultLocation, addressOfType, roots);
-
             this.context.Types[resultLocation] = addressOfType;
         }
     }

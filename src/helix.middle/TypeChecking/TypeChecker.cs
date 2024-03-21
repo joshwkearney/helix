@@ -1,6 +1,7 @@
 ﻿using Helix.Common;
 using Helix.Common.Hmm;
 using Helix.Common.Types;
+using Helix.MiddleEnd.FlowTyping;
 using Helix.MiddleEnd.Interpreting;
 
 namespace Helix.MiddleEnd.TypeChecking {
@@ -32,6 +33,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         private readonly AnalysisContext context;
         private readonly Evaluator eval;
+        private readonly PredicatesTracker predicateTracker;
 
         private HmmWriter Writer => this.context.Writer;
 
@@ -44,6 +46,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         public TypeChecker(AnalysisContext context) {
             this.context = context;
             this.eval = new Evaluator(context);
+            this.predicateTracker = new PredicatesTracker(context);
         }
 
         public TypeCheckResult VisitArrayLiteral(HmmArrayLiteral syntax) {
@@ -151,6 +154,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.context.AliasTracker.RegisterLocal(syntax.Result, returnType);
+            this.predicateTracker.TrackBinaryExpression(syntax);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
         }
@@ -162,7 +166,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.NotInLoop(syntax.Location);
             }
 
-            this.context.ControlFlowStack.Peek().AddLoopAppendix(this.Aliases, this.Types);
+            this.context.ControlFlowStack.Peek().AddLoopAppendix(this.context.ScopeStack.Peek());
 
             this.Writer.AddLine(new HmmBreakSyntax() {
                 Location = syntax.Location
@@ -240,26 +244,24 @@ namespace Helix.MiddleEnd.TypeChecking {
             }
 
             // Write affirmative block
-            this.context.TypesStack.Push(this.Types.CreateScope());
+            this.context.ScopeStack.Push(this.context.ScopeStack.Peek().CreateScope());
             this.context.WriterStack.Push(this.Writer.CreateScope());
-            this.context.AliasesStack.Push(this.Aliases.CreateScope());
+            this.context.Types.SetImplications(this.context.Predicates[cond].GetImplications());
 
             var (_, affirmFlow) = this.CheckBody(syntax.AffirmativeBody);
 
-            var affirmAliases = this.context.AliasesStack.Pop();
             var affirmBody = this.context.WriterStack.Pop();
-            var affirmTypes = this.context.TypesStack.Pop();
+            var affirmScope = this.context.ScopeStack.Pop();
 
             // Write negative block
-            this.context.TypesStack.Push(this.Types.CreateScope());
+            this.context.ScopeStack.Push(this.context.ScopeStack.Peek().CreateScope());
             this.context.WriterStack.Push(this.Writer.CreateScope());
-            this.context.AliasesStack.Push(this.Aliases.CreateScope());
+            this.context.Types.SetImplications(this.context.Predicates[cond].Negate().GetImplications());
 
             var (_, negFlow) = this.CheckBody(syntax.NegativeBody);
 
-            var negAliases = this.context.AliasesStack.Pop();
             var negBody = this.context.WriterStack.Pop();
-            var negTypes = this.context.TypesStack.Pop();
+            var negScope = this.context.ScopeStack.Pop();
 
             // Unify types
             var affirmType = this.Types[syntax.Affirmative];
@@ -267,26 +269,22 @@ namespace Helix.MiddleEnd.TypeChecking {
             var totalType = this.Unifier.UnifyWithConvert(affirmType, negType, syntax.Location);
 
             // Unify the true branch in its scope
-            this.context.TypesStack.Push(affirmTypes);
+            this.context.ScopeStack.Push(affirmScope);
             this.context.WriterStack.Push(affirmBody);
-            this.context.AliasesStack.Push(affirmAliases);
 
             var affirm = this.Unifier.Convert(syntax.Affirmative, totalType, syntax.Location);
 
-            this.context.AliasesStack.Pop();
             this.context.WriterStack.Pop();
-            this.context.TypesStack.Pop();
+            this.context.ScopeStack.Pop();
 
             // Unify the false branch in its scope
-            this.context.TypesStack.Push(negTypes);
+            this.context.ScopeStack.Push(negScope);
             this.context.WriterStack.Push(negBody);
-            this.context.AliasesStack.Push(negAliases);
 
             var neg = this.Unifier.Convert(syntax.Negative, totalType, syntax.Location);
 
-            this.context.AliasesStack.Pop();
             this.context.WriterStack.Pop();
-            this.context.TypesStack.Pop();
+            this.context.ScopeStack.Pop();
 
             this.Writer.AddLine(new HmmIfExpression() {
                 Location = syntax.Location,
@@ -299,11 +297,18 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             // Combine the branch aliases and replace the current ones
-            this.context.AliasesStack.Pop();
-            this.context.AliasesStack.Push(affirmAliases.MergeWith(negAliases));
-
-            this.context.TypesStack.Pop();
-            this.context.TypesStack.Push(affirmTypes.MergeWith(negTypes));
+            if (affirmFlow.DoesJump) {
+                this.context.ScopeStack.Pop();
+                this.context.ScopeStack.Push(negScope);
+            }
+            else if (negFlow.DoesJump) {
+                this.context.ScopeStack.Pop();
+                this.context.ScopeStack.Push(affirmScope);
+            }
+            else {
+                this.context.ScopeStack.Pop();
+                this.context.ScopeStack.Push(affirmScope.MergeWith(negScope));
+            }            
 
             this.context.AliasTracker.RegisterIf(syntax.Result, totalType, affirm, neg);
 
@@ -379,26 +384,23 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             var returnFlow = TypeCheckResult.NormalFlow("void");
 
-            var outerAliases = this.context.AliasesStack.Peek();
-            var outerTypes = this.context.Types;
+            var outerScope = this.context.ScopeStack.Peek();
 
             while (true) {
                 this.context.ControlFlowStack.Push(this.context.ControlFlowStack.Peek().CreateLoopFrame());
                 this.context.WriterStack.Push(this.Writer.CreateScope());
-                this.context.AliasesStack.Push(outerAliases.CreateScope());
-                this.context.TypesStack.Push(outerTypes.CreateScope());
+                this.context.ScopeStack.Push(outerScope.CreateScope());
 
                 var (_, bodyFlow) = this.CheckBody(syntax.Body);
 
-                var loopTypes = this.context.TypesStack.Pop();
-                var loopAliases = this.context.AliasesStack.Pop();
+                var loopScope = this.context.ScopeStack.Pop();
                 var body = this.context.WriterStack.Pop();
                 var loopControlFlow = this.context.ControlFlowStack.Peek();
 
                 // If the loop modified anything the outer scope, we need to type check this again
                 // because types from previous iterations could affect later iterations
 
-                if (!outerAliases.WasModifiedBy(loopAliases) && !outerTypes.WasModifiedBy(loopTypes)) {
+                if (!outerScope.WasModifiedBy(loopScope)) {
                     this.Writer.AddLine(new HmmLoopSyntax() {
                         Location = syntax.Location,
                         Body = body.ScopedLines
@@ -407,10 +409,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                     // Get all the aliases that existed at the time of a break statement, which are
                     // going to be the state of the world after the loop finishes since break statements
                     // are the only way for a loop to terminate
-                    outerAliases = loopControlFlow.LoopAppendixAliases.Aggregate((x, y) => x.MergeWith(y));
-
-                    // The types that have stabilized are the ones left once we typecheck the loop
-                    outerTypes = loopControlFlow.LoopAppendixTypes.Aggregate((x, y) => x.MergeWith(y));
+                    outerScope = loopControlFlow.LoopAppendix.Aggregate((x, y) => x.MergeWith(y));
 
                     if (bodyFlow.DoesFunctionReturn) {
                         returnFlow = new TypeCheckResult("void", bodyFlow);
@@ -419,16 +418,12 @@ namespace Helix.MiddleEnd.TypeChecking {
                     break;
                 }
                 else {
-                    outerAliases = outerAliases.MergeWith(loopAliases);
-                    outerTypes = outerTypes.MergeWith(loopTypes);
+                    outerScope = outerScope.MergeWith(loopScope);
                 }
             }
 
-            this.context.AliasesStack.Pop();
-            this.context.AliasesStack.Push(outerAliases);
-
-            this.context.TypesStack.Pop();
-            this.context.TypesStack.Push(outerTypes);
+            this.context.ScopeStack.Pop();
+            this.context.ScopeStack.Push(outerScope);
 
             return returnFlow;
         }
@@ -703,7 +698,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitTypeDeclaration(HmmTypeDeclaration syntax) {
-            this.Writer.AddLine(syntax);
+            this.Writer.AddTypeDeclaration(syntax);
 
             return TypeCheckResult.VoidResult;
         }
