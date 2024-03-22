@@ -24,6 +24,8 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public bool VisitSingularBoolType(SingularBoolType type) => type.Value == false;
 
+        public bool VisitSingularUnionType(SingularUnionType type) => type.Value.Accept(this);
+
         public bool VisitSingularWordType(SingularWordType type) => type.Value == 0;
 
         public bool VisitStructType(StructType type) => type.Members.All(x => x.Type.Accept(this));

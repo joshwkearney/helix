@@ -666,7 +666,8 @@ namespace Helix.MiddleEnd.TypeChecking {
                 Result = syntax.Result
             });
 
-            this.context.AliasTracker.RegisterNewUnion(syntax.Result, syntax.Type, value);
+            var singUnionType = new SingularUnionType(syntax.Type, mem.Name, this.context.Types[value]);
+            this.context.AliasTracker.RegisterNewUnion(syntax.Result, singUnionType, value);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
         }

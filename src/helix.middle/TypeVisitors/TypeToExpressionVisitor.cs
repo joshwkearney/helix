@@ -17,6 +17,8 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public Option<string> VisitSingularBoolType(SingularBoolType type) => type.ToString();
 
+        public Option<string> VisitSingularUnionType(SingularUnionType type) => Option.None;
+
         public Option<string> VisitSingularWordType(SingularWordType type) => type.ToString();
 
         public Option<string> VisitStructType(StructType type) => Option.None;

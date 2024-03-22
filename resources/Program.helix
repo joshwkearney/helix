@@ -3,12 +3,12 @@ union Option {
 	var some as word;
 }
 
-func test3(var test as bool) as word {
-	//var opt = 456 as Option;
+func test3(var test as bool) as Option {
+	var opt = 45 as Option;
 
 	if test == true xor test != true then {
 		return 10;
 	}
 
-	return 0;
+	return opt + 10;
 }

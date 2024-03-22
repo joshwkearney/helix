@@ -16,6 +16,8 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public bool VisitSingularBoolType(SingularBoolType type) => false;
 
+        public bool VisitSingularUnionType(SingularUnionType type) => type.Signature.Accept(this);
+
         public bool VisitSingularWordType(SingularWordType type) => false;
 
         public bool VisitStructType(StructType type) => false;

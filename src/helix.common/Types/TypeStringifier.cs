@@ -28,6 +28,10 @@
             return type.Value ? "true" : "false";
         }
 
+        public string VisitSingularUnionType(SingularUnionType type) {
+            return type.Signature + " { " + type.Member + " = " + type.Value + " }";
+        }
+
         public string VisitSingularWordType(SingularWordType type) {
             return type.Value.ToString();
         }

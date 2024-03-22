@@ -23,6 +23,10 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public IEnumerable<IHelixType> VisitSingularBoolType(SingularBoolType type) => [];
 
+        public IEnumerable<IHelixType> VisitSingularUnionType(SingularUnionType type) {
+            return type.Signature.Accept(this);
+        }
+
         public IEnumerable<IHelixType> VisitSingularWordType(SingularWordType type) => [];
 
         public IEnumerable<IHelixType> VisitStructType(StructType type) {

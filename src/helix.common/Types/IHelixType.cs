@@ -8,7 +8,7 @@ namespace Helix.Common.Types {
 
         public bool IsBool => this is BoolType;
 
-        public Option<UnionType> AsUnion() => (this is UnionType type) ? type : Option.None;
+        //public Option<UnionType> AsUnion() => (this is UnionType type) ? type : Option.None;
 
         public abstract T Accept<T>(ITypeVisitor<T> visitor);
 
@@ -83,6 +83,22 @@ namespace Helix.Common.Types {
         public ValueList<UnionMember> Members { get; init; } = [];
 
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitUnionType(this);
+    }
+
+    public record SingularUnionType : IHelixType {
+        public IHelixType Signature { get; }
+
+        public string Member { get; }
+
+        public IHelixType Value { get; }
+
+        public SingularUnionType(IHelixType sig, string mem, IHelixType value) {
+            this.Signature = sig;
+            this.Member = mem;
+            this.Value = value;
+        }
+
+        public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitSingularUnionType(this);
     }
 
     public record UnionMember {

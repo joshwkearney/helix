@@ -5,10 +5,6 @@ using Helix.MiddleEnd.TypeVisitors;
 
 namespace Helix.MiddleEnd {
     internal static class Extensions {
-        public static IHelixType GetSupertype(this IHelixType type) {
-            return type.Accept(SupertypeVisitor.Instance);
-        }
-
         public static Option<FunctionType> TryGetFunctionSignature(this IHelixType type, AnalysisContext context) {
             if (type is FunctionType f) {
                 return f;

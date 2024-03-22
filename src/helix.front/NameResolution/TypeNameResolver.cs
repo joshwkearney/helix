@@ -60,6 +60,10 @@ namespace Helix.Frontend.NameResolution {
 
         public IHelixType VisitSingularBoolType(SingularBoolType type) => type;
 
+        public IHelixType VisitSingularUnionType(SingularUnionType type) {
+            return new SingularUnionType(type.Signature.Accept(this), type.Member, type.Value.Accept(this));
+        }
+
         public IHelixType VisitSingularWordType(SingularWordType type) => type;
 
         public IHelixType VisitStructType(StructType type) {

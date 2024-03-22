@@ -16,6 +16,8 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public IHelixType VisitSingularBoolType(SingularBoolType type) => new BoolType();
 
+        public IHelixType VisitSingularUnionType(SingularUnionType type) => type.Signature;
+
         public IHelixType VisitSingularWordType(SingularWordType type) => new WordType();
 
         public IHelixType VisitStructType(StructType type) => type;

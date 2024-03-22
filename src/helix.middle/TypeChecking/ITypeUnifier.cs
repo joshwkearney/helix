@@ -145,6 +145,9 @@ namespace Helix.MiddleEnd.TypeChecking {
             else if (fromType is SingularBoolType) {
                 yield return SingularBoolUnificationFactory.Instance;
             }
+            else if (fromType is SingularUnionType) {
+                yield return SingularUnionUnificationFactory.Instance;
+            }
 
             if (toType.GetUnionSignature(context).HasValue) {
                 yield return ToUnionUnificationFactory.Instance;

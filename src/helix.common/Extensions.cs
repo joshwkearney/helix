@@ -1,4 +1,6 @@
 ﻿using Helix.Common.Collections;
+using Helix.Common.Types;
+using Helix.MiddleEnd.TypeVisitors;
 using System.Collections.Immutable;
 
 namespace Helix.Common {
@@ -25,6 +27,10 @@ namespace Helix.Common {
             else {
                 return new ValueSet<T>(sequence);
             }
+        }
+
+        public static IHelixType GetSupertype(this IHelixType type) {
+            return type.Accept(SupertypeVisitor.Instance);
         }
     }
 }

@@ -21,5 +21,7 @@
         public T VisitStructType(StructType type);
 
         public T VisitUnionType(UnionType type);
+
+        public T VisitSingularUnionType(SingularUnionType type);
     }
 }
