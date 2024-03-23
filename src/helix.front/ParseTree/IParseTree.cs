@@ -54,7 +54,7 @@ namespace Helix.Frontend.ParseTree {
     internal record FunctionDeclaration : IParseTree {
         public required TokenLocation Location { get; init; }
 
-        public required FunctionType Signature { get; init; }
+        public required FunctionSignature Signature { get; init; }
 
         public required string Name { get; init; }
 
@@ -66,7 +66,7 @@ namespace Helix.Frontend.ParseTree {
     internal record StructDeclaration : IParseTree {
         public required TokenLocation Location { get; init; }
 
-        public required StructType Signature { get; init; }
+        public required StructSignature Signature { get; init; }
 
         public required string Name { get; init; }
 
@@ -77,7 +77,7 @@ namespace Helix.Frontend.ParseTree {
     internal record UnionDeclaration : IParseTree {
         public required TokenLocation Location { get; init; }
 
-        public required UnionType Signature { get; init; }
+        public required UnionSignature Signature { get; init; }
 
         public required string Name { get; init; }
 

@@ -9,7 +9,7 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public Option<string> VisitBoolType(BoolType type) => Option.None;
 
-        public Option<string> VisitFunctionType(FunctionType type) => Option.None;
+        public Option<string> VisitFunctionType(FunctionSignature type) => Option.None;
 
         public Option<string> VisitNominalType(NominalType type) => Option.None;
 
@@ -21,9 +21,9 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public Option<string> VisitSingularWordType(SingularWordType type) => type.ToString();
 
-        public Option<string> VisitStructType(StructType type) => Option.None;
+        public Option<string> VisitStructType(StructSignature type) => Option.None;
 
-        public Option<string> VisitUnionType(UnionType type) => Option.None;
+        public Option<string> VisitUnionType(UnionSignature type) => Option.None;
 
         public Option<string> VisitVoidType(VoidType type) => "void";
 

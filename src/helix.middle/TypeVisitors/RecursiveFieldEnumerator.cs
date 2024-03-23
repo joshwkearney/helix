@@ -13,10 +13,31 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public IEnumerable<IHelixType> VisitBoolType(BoolType type) => [];
 
-        public IEnumerable<IHelixType> VisitFunctionType(FunctionType type) => [];
-
         public IEnumerable<IHelixType> VisitNominalType(NominalType type) {
-            return context.Types[type.Name].Accept(this);
+            if (this.context.Signatures.StructSignatures.TryGetValue(type, out var structSig)) {
+                foreach (var mem in structSig.Members) {
+                    foreach (var sub in mem.Type.Accept(this)) {
+                        if (visitedStructs.Contains(sub)) {
+                            continue;
+                        }
+
+                        visitedStructs.Add(sub);
+                        yield return sub;
+                    }
+                }
+            }
+            else if (this.context.Signatures.UnionSignatures.TryGetValue(type, out var unionSig)) {
+                foreach (var mem in unionSig.Members) {
+                    foreach (var sub in mem.Type.Accept(this)) {
+                        if (visitedStructs.Contains(sub)) {
+                            continue;
+                        }
+
+                        visitedStructs.Add(sub);
+                        yield return sub;
+                    }
+                }
+            }
         }
 
         public IEnumerable<IHelixType> VisitPointerType(PointerType type) => [];
@@ -24,36 +45,10 @@ namespace Helix.MiddleEnd.TypeVisitors {
         public IEnumerable<IHelixType> VisitSingularBoolType(SingularBoolType type) => [];
 
         public IEnumerable<IHelixType> VisitSingularUnionType(SingularUnionType type) {
-            return type.Signature.Accept(this);
+            return type.UnionType.Accept(this);
         }
 
         public IEnumerable<IHelixType> VisitSingularWordType(SingularWordType type) => [];
-
-        public IEnumerable<IHelixType> VisitStructType(StructType type) {
-            foreach (var mem in type.Members) {
-                foreach (var sub in mem.Type.Accept(this)) {
-                    if (visitedStructs.Contains(sub)) {
-                        continue;
-                    }
-
-                    visitedStructs.Add(sub);
-                    yield return sub;
-                }
-            }
-        }
-
-        public IEnumerable<IHelixType> VisitUnionType(UnionType type) {
-            foreach (var mem in type.Members) {
-                foreach (var sub in mem.Type.Accept(this)) {
-                    if (visitedStructs.Contains(sub)) {
-                        continue;
-                    }
-
-                    visitedStructs.Add(sub);
-                    yield return sub;
-                }
-            }
-        }
 
         public IEnumerable<IHelixType> VisitVoidType(VoidType type) => [];
 

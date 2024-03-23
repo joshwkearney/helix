@@ -8,7 +8,7 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public bool VisitBoolType(BoolType type) => false;
 
-        public bool VisitFunctionType(FunctionType type) => false;
+        public bool VisitFunctionType(FunctionSignature type) => false;
 
         public bool VisitNominalType(NominalType type) => false;
 
@@ -16,13 +16,13 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public bool VisitSingularBoolType(SingularBoolType type) => false;
 
-        public bool VisitSingularUnionType(SingularUnionType type) => type.Signature.Accept(this);
+        public bool VisitSingularUnionType(SingularUnionType type) => type.UnionType.Accept(this);
 
         public bool VisitSingularWordType(SingularWordType type) => false;
 
-        public bool VisitStructType(StructType type) => false;
+        public bool VisitStructType(StructSignature type) => false;
 
-        public bool VisitUnionType(UnionType type) => false;
+        public bool VisitUnionType(UnionSignature type) => false;
 
         public bool VisitVoidType(VoidType type) => false;
 

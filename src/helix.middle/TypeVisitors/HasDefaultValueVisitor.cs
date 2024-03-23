@@ -12,7 +12,7 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public bool VisitBoolType(BoolType type) => true;
 
-        public bool VisitFunctionType(FunctionType type) {
+        public bool VisitFunctionType(FunctionSignature type) {
             throw new NotImplementedException();
         }
 
@@ -28,9 +28,9 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public bool VisitSingularWordType(SingularWordType type) => type.Value == 0;
 
-        public bool VisitStructType(StructType type) => type.Members.All(x => x.Type.Accept(this));
+        public bool VisitStructType(StructSignature type) => type.Members.All(x => x.Type.Accept(this));
 
-        public bool VisitUnionType(UnionType type) => type.Members.Count == 0 || type.Members.First().Type.Accept(this);
+        public bool VisitUnionType(UnionSignature type) => type.Members.Count == 0 || type.Members.First().Type.Accept(this);
 
         public bool VisitVoidType(VoidType type) => true;
 

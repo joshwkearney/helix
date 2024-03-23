@@ -117,7 +117,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             // From singular union
             if (fromType is SingularUnionType sing3) {
-                if (toType == sing3.Signature) {
+                if (toType == sing3.UnionType) {
                     return Option.Some<TypeConverter>((value, _) => value);
                 }
                 else if (GetConverter(sing3.Value, toType).TryGetValue(out var innerConverter)) {
@@ -166,7 +166,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             return Option.None;
         }
 
-        private static Option<UnionMember> FindUnionMember(IHelixType fromType, UnionType unionType, AnalysisContext context) {
+        private static Option<UnionMember> FindUnionMember(IHelixType fromType, UnionSignature unionType, AnalysisContext context) {
             // If this type exactly matches one union member, convert to that
             var matching = unionType.Members.Where(x => x.Type == fromType).ToArray();
 

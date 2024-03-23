@@ -56,7 +56,7 @@ namespace Helix.Frontend.NameResolution {
                 throw NameResolutionException.ExpectedLValue(syntax.Location);
             }
 
-            var resolvedType = syntax.Type.Accept(this.GetTypeNameResolver(syntax.Location));
+            var resolvedType = this.GetTypeNameResolver(syntax.Location).ResolveType(syntax.Type);
             var target = syntax.Operand.Accept(this);
             var result = this.mangler.CreateMangledTempName(this.Scope);
 
@@ -302,8 +302,10 @@ namespace Helix.Frontend.NameResolution {
             }
 
             // Declare the function again in case we're not at the top level
-            var funcType = (FunctionType)syntax.Signature.Accept(this.GetTypeNameResolver(syntax.Location));
-            this.declarations.SetDeclaration(funcPath, funcType);
+            var funcType = this.GetTypeNameResolver(syntax.Location).ResolveFunctionSignature(syntax.Signature);
+            var nominalType = this.GetTypeNameResolver(syntax.Location).ResolveType(new NominalType() { DisplayName = syntax.Name, Name = syntax.Name });
+
+            this.declarations.SetDeclaration(funcPath, nominalType);
 
             syntax.Body.Accept(this);
 
@@ -319,7 +321,8 @@ namespace Helix.Frontend.NameResolution {
             this.Writer.AddFowardDeclaration(new HmmFunctionForwardDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
-                Signature = funcType
+                Signature = funcType,
+                Type = nominalType
             });
 
             this.Writer.AddLine(new HmmFunctionDeclaration() {
@@ -450,7 +453,7 @@ namespace Helix.Frontend.NameResolution {
                 throw NameResolutionException.ExpectedLValue(syntax.Location);
             }
 
-            var type = syntax.Type.Accept(this.GetTypeNameResolver(syntax.Location));
+            var type = this.GetTypeNameResolver(syntax.Location).ResolveType(syntax.Type);
             var result = this.mangler.CreateMangledTempName(this.Scope);
 
             var fields = syntax.Assignments
@@ -490,12 +493,10 @@ namespace Helix.Frontend.NameResolution {
                 throw NameResolutionException.ExpectedLValue(syntax.Location);
             }
 
-            var structType = (StructType)syntax.Signature.Accept(this.GetTypeNameResolver(syntax.Location));
+            var structSig = this.GetTypeNameResolver(syntax.Location).ResolveStructSignature(syntax.Signature);
+            var nominalType = this.GetTypeNameResolver(syntax.Location).ResolveType(new NominalType() { DisplayName = syntax.Name, Name = syntax.Name });
 
-            this.declarations.SetDeclaration(this.Scope, syntax.Name, structType);
-
-            var mangled = this.mangler.GetMangledName(this.Scope, syntax.Name);
-            var nominalType = new NominalType() { Name = mangled, DisplayName = syntax.Name };
+            this.declarations.SetDeclaration(this.Scope, syntax.Name, nominalType);
 
             this.Writer.AddTypeDeclaration(new HmmTypeDeclaration() {
                 Location = syntax.Location,
@@ -506,7 +507,7 @@ namespace Helix.Frontend.NameResolution {
             this.Writer.AddLine(new HmmStructDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
-                Signature = structType,
+                Signature = structSig,
                 Type = nominalType
             });
 
@@ -605,12 +606,10 @@ namespace Helix.Frontend.NameResolution {
                 throw NameResolutionException.ExpectedLValue(syntax.Location);
             }
 
-            var unionType = (UnionType)syntax.Signature.Accept(this.GetTypeNameResolver(syntax.Location));
+            var unionSig = this.GetTypeNameResolver(syntax.Location).ResolveUnionSignature(syntax.Signature);
+            var nominalType = this.GetTypeNameResolver(syntax.Location).ResolveType(new NominalType() { Name = syntax.Name, DisplayName = syntax.Name });
 
-            this.declarations.SetDeclaration(this.Scope, syntax.Name, unionType);
-
-            var mangled = this.mangler.GetMangledName(this.Scope, syntax.Name);
-            var nominalType = new NominalType() { Name = mangled, DisplayName = syntax.Name };
+            this.declarations.SetDeclaration(this.Scope, syntax.Name, nominalType);
 
             this.Writer.AddTypeDeclaration(new HmmTypeDeclaration() {
                 Location = syntax.Location,
@@ -621,7 +620,7 @@ namespace Helix.Frontend.NameResolution {
             this.Writer.AddLine(new HmmUnionDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
-                Signature = unionType,
+                Signature = unionSig,
                 Type = nominalType
             });
 

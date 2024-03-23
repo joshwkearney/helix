@@ -103,7 +103,7 @@ namespace Helix.Common.Hmm {
     public record HirFunctionDeclaration : IHirSyntax {
         public required TokenLocation Location { get; init; }
 
-        public required FunctionType Signature { get; init; }
+        public required FunctionSignature Signature { get; init; }
 
         public required string Name { get; init; }
 

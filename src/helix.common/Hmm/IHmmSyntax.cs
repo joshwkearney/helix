@@ -76,7 +76,9 @@ namespace Helix.Common.Hmm {
 
         public required string Name { get; init; }
 
-        public required FunctionType Signature { get; init; }
+        public required FunctionSignature Signature { get; init; }
+
+        public required IHelixType Type { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitFunctionForwardDeclaration(this);
 
@@ -86,9 +88,9 @@ namespace Helix.Common.Hmm {
     public record HmmStructDeclaration : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
-        public required NominalType Type { get; init; }
+        public required IHelixType Type { get; init; }
 
-        public required StructType Signature { get; init; }
+        public required StructSignature Signature { get; init; }
 
         public required string Name { get; init; }
 
@@ -100,9 +102,9 @@ namespace Helix.Common.Hmm {
     public record HmmUnionDeclaration : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
-        public required NominalType Type { get; init; }
+        public required IHelixType Type { get; init; }
 
-        public required UnionType Signature { get; init; }
+        public required UnionSignature Signature { get; init; }
 
         public required string Name { get; init; }
 
@@ -178,7 +180,7 @@ namespace Helix.Common.Hmm {
     public record HmmFunctionDeclaration : IHmmSyntax {
         public required TokenLocation Location { get; init; }
 
-        public required FunctionType Signature { get; init; }
+        public required FunctionSignature Signature { get; init; }
 
         public required string Name { get; init; }
 

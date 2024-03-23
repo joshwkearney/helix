@@ -12,15 +12,9 @@
 
         public T VisitArrayType(ArrayType type);
 
-        public T VisitFunctionType(FunctionType type);
-
         public T VisitNominalType(NominalType type);
 
         public T VisitPointerType(PointerType type);
-
-        public T VisitStructType(StructType type);
-
-        public T VisitUnionType(UnionType type);
 
         public T VisitSingularUnionType(SingularUnionType type);
     }

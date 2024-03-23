@@ -237,7 +237,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax) {
-            this.Types[new NamedLocation(syntax.Name)] = syntax.Signature;
+            this.context.Signatures.FunctionSignatures[syntax.Type] = syntax.Signature;
             this.Writer.AddFowardDeclaration(syntax);
 
             return TypeCheckResult.VoidResult;
@@ -565,7 +565,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        private TypeCheckResult TypeCheckNewStruct(HmmNewSyntax syntax, StructType sig) {
+        private TypeCheckResult TypeCheckNewStruct(HmmNewSyntax syntax, StructSignature sig) {
             var namedMems = syntax.Assignments
                 .Where(x => x.Field.HasValue)
                 .ToArray();
@@ -658,7 +658,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             return TypeCheckResult.NormalFlow(syntax.Result);
         }
 
-        private TypeCheckResult TypeCheckNewUnion(HmmNewSyntax syntax, UnionType sig) {
+        private TypeCheckResult TypeCheckNewUnion(HmmNewSyntax syntax, UnionSignature sig) {
             if (syntax.Assignments.Count > 1) {
                 throw TypeCheckException.NewUnionMultipleMembers(syntax.Location);
             }
@@ -724,7 +724,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitStructDeclaration(HmmStructDeclaration syntax) {
-            this.Types[new NamedLocation(syntax.Name)] = syntax.Signature;
+            this.context.Signatures.StructSignatures[syntax.Type] = syntax.Signature;
             this.Writer.AddLine(syntax);
 
             // Make sure this struct isn't circular
@@ -771,7 +771,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeCheckResult VisitUnionDeclaration(HmmUnionDeclaration syntax) {
-            this.Types[new NamedLocation(syntax.Name)] = syntax.Signature;
+            this.context.Signatures.UnionSignatures[syntax.Type] = syntax.Signature;
             this.Writer.AddLine(syntax);
 
             // Make sure this struct isn't circular

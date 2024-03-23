@@ -10,7 +10,7 @@
             return "bool";
         }
 
-        public string VisitFunctionType(FunctionType type) {
+        public string VisitFunctionType(FunctionSignature type) {
             var args = type.Parameters.Select(x => (x.IsMutable ? "var" : "let") + " " + x.Name + " as " + x.Type);
 
             return "func(" + string.Join(", ", type.Parameters) + ") as " + type.ReturnType;
@@ -29,20 +29,20 @@
         }
 
         public string VisitSingularUnionType(SingularUnionType type) {
-            return type.Signature + " { " + type.Member + " = " + type.Value + " }";
+            return type.UnionType + " { " + type.Member + " = " + type.Value + " }";
         }
 
         public string VisitSingularWordType(SingularWordType type) {
             return type.Value.ToString();
         }
 
-        public string VisitStructType(StructType type) {
+        public string VisitStructType(StructSignature type) {
             var members = type.Members.Select(x => (x.IsMutable ? "var" : "let") + " " + x.Name + " as " + x.Type + "; ");
 
             return "struct { " + string.Join("", members) + "}";
         }
 
-        public string VisitUnionType(UnionType type) {
+        public string VisitUnionType(UnionSignature type) {
             var members = type.Members.Select(x => (x.IsMutable ? "var" : "let") + " " + x.Name + " as " + x.Type + "; ");
 
             return "union { " + string.Join("", members) + "}";

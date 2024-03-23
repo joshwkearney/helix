@@ -1,14 +1,10 @@
-﻿using Helix.Common.Collections;
-
-namespace Helix.Common.Types {
+﻿namespace Helix.Common.Types {
     public abstract record IHelixType {
         public bool IsVoid => this is VoidType;
 
         public bool IsWord => this is WordType;
 
         public bool IsBool => this is BoolType;
-
-        //public Option<UnionType> AsUnion() => (this is UnionType type) ? type : Option.None;
 
         public abstract T Accept<T>(ITypeVisitor<T> visitor);
 
@@ -31,26 +27,6 @@ namespace Helix.Common.Types {
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitSingularBoolType(this);
     }
 
-    public record FunctionType : IHelixType {
-        public required IHelixType ReturnType { get; init; }
-
-        public required IReadOnlyList<FunctionParameter> Parameters { get; init; }
-
-        public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitFunctionType(this);
-    }
-
-    public record FunctionParameter {
-        public required string Name { get; init; }
-
-        public required IHelixType Type { get; init; }
-
-        public required bool IsMutable { get; init; }
-
-        public override string ToString() {
-            return (this.IsMutable ? "var" : "let") + " " + this.Name + " as " + this.Type.ToString();
-        }
-    }
-
     public record NominalType : IHelixType {
         public required string Name { get; init; }
 
@@ -65,48 +41,20 @@ namespace Helix.Common.Types {
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitPointerType(this);
     }
 
-    public record StructType : IHelixType {
-        public ValueList<StructMember> Members { get; init; } = [];
-
-        public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitStructType(this);
-    }
-
-    public record StructMember {
-        public required string Name { get; init; }
-
-        public required IHelixType Type { get; init; }
-
-        public required bool IsMutable { get; init; }
-    }
-
-    public record UnionType : IHelixType {
-        public ValueList<UnionMember> Members { get; init; } = [];
-
-        public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitUnionType(this);
-    }
-
     public record SingularUnionType : IHelixType {
-        public IHelixType Signature { get; }
+        public IHelixType UnionType { get; }
 
         public string Member { get; }
 
         public IHelixType Value { get; }
 
         public SingularUnionType(IHelixType sig, string mem, IHelixType value) {
-            this.Signature = sig;
+            this.UnionType = sig;
             this.Member = mem;
             this.Value = value;
         }
 
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitSingularUnionType(this);
-    }
-
-    public record UnionMember {
-        public required string Name { get; init; }
-
-        public required IHelixType Type { get; init; }
-
-        public required bool IsMutable { get; init; }
     }
 
     public record VoidType : IHelixType {

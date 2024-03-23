@@ -134,7 +134,7 @@ namespace Helix.Frontend.ParseTree {
             throw ParseException.UnexpectedToken(Advance());
         }
 
-        private (FunctionType sig, string name, TokenLocation loc) FunctionSignature() {
+        private (FunctionSignature sig, string name, TokenLocation loc) FunctionSignature() {
             var start = this.Advance(TokenKind.FunctionKeyword);
             var funcName = this.Advance(TokenKind.Identifier).Value;
 
@@ -162,7 +162,7 @@ namespace Helix.Frontend.ParseTree {
                 returnType = this.ParseType();
             }
 
-            var func = new FunctionType() { ReturnType = returnType, Parameters = pars };
+            var func = new FunctionSignature() { ReturnType = returnType, Parameters = pars };
             var loc = start.Location.Span(end.Location);
 
             return (func, funcName, loc);
@@ -219,7 +219,7 @@ namespace Helix.Frontend.ParseTree {
             return new StructDeclaration() {
                 Location = loc,
                 Name = name,
-                Signature = new StructType() {
+                Signature = new StructSignature() {
                     Members = mems.ToValueList()
                 }
             };
@@ -254,7 +254,7 @@ namespace Helix.Frontend.ParseTree {
             return new UnionDeclaration() {
                 Location = loc,
                 Name = name,
-                Signature = new UnionType() {
+                Signature = new UnionSignature() {
                     Members = mems.ToValueList()
                 }
             };

@@ -22,6 +22,8 @@ namespace Helix.MiddleEnd {
 
         public NamesStore Names { get; }
 
+        public SignatureStore Signatures { get; }
+
         public TypeChecker TypeChecker { get; }
 
         public TypeUnifier Unifier { get; }
@@ -30,6 +32,7 @@ namespace Helix.MiddleEnd {
 
         public AnalysisContext() {
             this.Names = new NamesStore();
+            this.Signatures = new SignatureStore();
             this.TypeChecker = new TypeChecker(this);
             this.Unifier = new TypeUnifier(this);
             this.AliasTracker = new AliasTracker(this);

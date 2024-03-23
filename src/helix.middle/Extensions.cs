@@ -5,36 +5,25 @@ using Helix.MiddleEnd.TypeVisitors;
 
 namespace Helix.MiddleEnd {
     internal static class Extensions {
-        public static Option<FunctionType> TryGetFunctionSignature(this IHelixType type, AnalysisContext context) {
-            if (type is FunctionType f) {
-                return f;
-            }
-            else if (type is NominalType nom) {
-                return context.Types[nom.Name].TryGetFunctionSignature(context);
+        public static Option<FunctionSignature> TryGetFunctionSignature(this IHelixType type, AnalysisContext context) {
+            if (type is NominalType nom) {
+                return context.Signatures.FunctionSignatures[nom];
             }
             else {
                 return Option.None;
             }
         }
 
-        public static Option<StructType> GetStructSignature(this IHelixType type, AnalysisContext context) {
-            if (type is StructType structType) {
-                return structType;
-            }
-            else if (type is NominalType nom) {
-                return context.Types[nom.Name].GetStructSignature(context);
-            }
-            else {
-                return Option.None;
-            }
+        public static Option<StructSignature> GetStructSignature(this IHelixType type, AnalysisContext context) {
+            return context.Signatures.StructSignatures.GetValueOrNone(type);
         }
 
-        public static Option<UnionType> GetUnionSignature(this IHelixType type, AnalysisContext context) {
-            if (type is UnionType unionType) {
-                return unionType;
+        public static Option<UnionSignature> GetUnionSignature(this IHelixType type, AnalysisContext context) {
+            if (type is NominalType nom) {
+                return context.Signatures.UnionSignatures.GetValueOrNone(nom);
             }
-            else if (type is NominalType nom) {
-                return context.Types[nom.Name].GetUnionSignature(context);
+            else if (type is SingularUnionType sing) {
+                return context.Signatures.UnionSignatures.GetValueOrNone(sing.UnionType);
             }
             else {
                 return Option.None;

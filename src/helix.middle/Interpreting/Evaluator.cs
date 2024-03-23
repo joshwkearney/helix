@@ -293,7 +293,7 @@ namespace Helix.MiddleEnd.Interpreting {
             return false;
         }
 
-        public bool TryEvaluateRValueStructMemberAccess(HmmMemberAccess syntax, StructType structType, out TypeCheckResult result) {
+        public bool TryEvaluateRValueStructMemberAccess(HmmMemberAccess syntax, StructSignature structType, out TypeCheckResult result) {
             Assert.IsTrue(structType.Members.Any(x => x.Name == syntax.Member));
 
             var loc = new MemberAccessLocation() {
