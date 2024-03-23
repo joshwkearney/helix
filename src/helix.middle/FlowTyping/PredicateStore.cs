@@ -2,6 +2,7 @@
 using Helix.Common.Types;
 using Helix.MiddleEnd.FlowTyping;
 using Helix.MiddleEnd.Interpreting;
+using System;
 using System.Collections.Immutable;
 
 namespace Helix.MiddleEnd.TypeChecking {
@@ -19,12 +20,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.predicates = preds;
         }
 
-        public CnfTerm this[IValueLocation index] {
+        public Option<CnfTerm> this[IValueLocation index] {
             get => this.GetPredicate(index);
             set => this.SetPredicate(index, value);
         }
 
-        public CnfTerm this[string name] => this.GetPredicate(name);
+        public Option<CnfTerm> this[string name] => this.GetPredicate(name);
 
         public PredicateStore(AnalysisContext context) {
             this.context = context;
@@ -70,6 +71,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.predicates = this.predicates.SetItem(location, predicate);
         }
 
+        public void SetPredicate(IValueLocation location, Option<CnfTerm> opt) {
+            if (opt.TryGetValue(out var pred)) {
+                this.SetPredicate(location, pred);
+            }
+        }
+
         public void SetPredicate(IValueLocation location, IEnumerable<CnfTerm> predicates) {
             var pred = predicates.Aggregate((x, y) => x.Or(y));
 
@@ -80,21 +87,20 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.predicates = this.predicates.Remove(location);
         }
 
-        public CnfTerm GetPredicate(IValueLocation location) {
+        public Option<CnfTerm> GetPredicate(IValueLocation location) {
             if (location is NamedLocation named) {
                 return this.GetPredicate(named.Name);
             }
-
 
             Assert.IsTrue(this.predicates.ContainsKey(location));
             return this.predicates[location];
         }
 
-        public CnfTerm GetPredicate(string name) {
+        public Option<CnfTerm> GetPredicate(string name) {
             var loc = new NamedLocation(name);
 
             if (long.TryParse(name, out _) || name == "void") {
-                return CnfTerm.Empty;
+                return Option.None;
             }
             else if (bool.TryParse(name, out var b)) {
                 return (CnfTerm)new BooleanLiteralPredicate(b);
@@ -106,17 +112,22 @@ namespace Helix.MiddleEnd.TypeChecking {
                 return cnf;
             }
             else {
-                return CnfTerm.Empty;
+                return Option.None;
             }
         }
 
-        public void MutateLocation(IValueLocation location, CnfTerm mutateWith) {
+        public void MutateLocation(IValueLocation location, Option<CnfTerm> mutateWith) {
             foreach (var (key, value) in this.predicates) {
                 if (key == location) {
-                    this.predicates = this.predicates.SetItem(key, mutateWith);
+                    if (mutateWith.TryGetValue(out var mutateWithValue)) {
+                        this.predicates = this.predicates.SetItem(key, mutateWithValue);
+                    }
+                    else {
+                        this.predicates = this.predicates.Remove(key);
+                    }
                 }
                 else if (value.UsesVariable(location)) {
-                    this.predicates = this.predicates.SetItem(key, CnfTerm.Empty);
+                    this.predicates = this.predicates.Remove(key);
                 }
             }
         }

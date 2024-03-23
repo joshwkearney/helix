@@ -253,7 +253,10 @@ namespace Helix.MiddleEnd.TypeChecking {
             // Write affirmative block
             this.context.ScopeStack.Push(this.context.ScopeStack.Peek().CreateScope());
             this.context.WriterStack.Push(this.Writer.CreateScope());
-            this.context.Types.SetImplications(this.context.Predicates[cond].GetImplications());
+
+            if (this.context.Predicates[cond].TryGetValue(out var affirmPred)) {
+                this.context.Types.SetImplications(affirmPred.GetImplications());
+            }
 
             var (_, affirmFlow) = this.CheckBody(syntax.AffirmativeBody);
 
@@ -263,7 +266,10 @@ namespace Helix.MiddleEnd.TypeChecking {
             // Write negative block
             this.context.ScopeStack.Push(this.context.ScopeStack.Peek().CreateScope());
             this.context.WriterStack.Push(this.Writer.CreateScope());
-            this.context.Types.SetImplications(this.context.Predicates[cond].Negate().GetImplications());
+
+            if (this.context.Predicates[cond].Select(x => x.Negate()).TryGetValue(out var negPred)) {
+                this.context.Types.SetImplications(negPred.GetImplications());
+            }
 
             var (_, negFlow) = this.CheckBody(syntax.NegativeBody);
 

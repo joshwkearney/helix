@@ -87,12 +87,18 @@ namespace Helix.MiddleEnd.Interpreting {
             var condType = this.context.Types[cond];
             
             if (condType is not SingularBoolType boolType) {
-                if (this.context.Predicates[cond].IsTrue) {
-                    boolType = new SingularBoolType(true);
-                }
-                else if (this.context.Predicates[cond].IsFalse) {
-                    boolType = new SingularBoolType(false);
-                }
+                if (this.context.Predicates[cond].TryGetValue(out var pred)) {
+                    if (pred.IsTrue) {
+                        boolType = new SingularBoolType(true);
+                    }
+                    else if (pred.IsFalse) {
+                        boolType = new SingularBoolType(false);
+                    }
+                    else {
+                        result = default;
+                        return false;
+                    }
+                }                
                 else {
                     result = default;
                     return false;

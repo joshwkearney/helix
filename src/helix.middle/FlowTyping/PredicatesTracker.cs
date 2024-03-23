@@ -33,31 +33,42 @@ namespace Helix.MiddleEnd.FlowTyping {
 
         private void TrackXor(HmmBinarySyntax syntax) {
             var finalLocation = new NamedLocation(syntax.Result);
-            var left = this.context.Predicates[syntax.Left];
-            var right = this.context.Predicates[syntax.Right];
+            var leftOpt = this.context.Predicates[syntax.Left];
+            var rightOpt = this.context.Predicates[syntax.Right];
 
-            this.context.Predicates[finalLocation] = (left | right) & (!left | !right);
+            if (leftOpt.TryGetValue(out var left) && rightOpt.TryGetValue(out var right)) {
+                this.context.Predicates[finalLocation] = (left | right) & (!left | !right);
+            }
         }
 
         private void TrackXnor(HmmBinarySyntax syntax) {
             var finalLocation = new NamedLocation(syntax.Result);
-            var left = this.context.Predicates[syntax.Left];
-            var right = this.context.Predicates[syntax.Right];
+            var leftOpt = this.context.Predicates[syntax.Left];
+            var rightOpt = this.context.Predicates[syntax.Right];
 
-            // TODO: If one of these is empty this should be false
-            this.context.Predicates[finalLocation] = (left | !right) & (!left | right);
+            if (leftOpt.TryGetValue(out var left) && rightOpt.TryGetValue(out var right)) {
+                this.context.Predicates[finalLocation] = (left | !right) & (!left | right);
+            }
         }
 
         private void TrackOr(HmmBinarySyntax syntax) {
             var finalLocation = new NamedLocation(syntax.Result);
+            var leftOpt = this.context.Predicates[syntax.Left];
+            var rightOpt = this.context.Predicates[syntax.Right];
 
-            this.context.Predicates[finalLocation] = this.context.Predicates[syntax.Left].Or(this.context.Predicates[syntax.Right]);
+            if (leftOpt.TryGetValue(out var left) && rightOpt.TryGetValue(out var right)) {
+                this.context.Predicates[finalLocation] = left | right;
+            }
         }
 
         private void TrackAnd(HmmBinarySyntax syntax) {
             var finalLocation = new NamedLocation(syntax.Result);
+            var leftOpt = this.context.Predicates[syntax.Left];
+            var rightOpt = this.context.Predicates[syntax.Right];
 
-            this.context.Predicates[finalLocation] = this.context.Predicates[syntax.Left].And(this.context.Predicates[syntax.Right]);
+            if (leftOpt.TryGetValue(out var left) && rightOpt.TryGetValue(out var right)) {
+                this.context.Predicates[finalLocation] = left & right;
+            }
         }
 
         private void TrackEquals(HmmBinarySyntax syntax) {

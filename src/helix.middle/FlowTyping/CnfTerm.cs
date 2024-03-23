@@ -8,8 +8,6 @@ namespace Helix.MiddleEnd.FlowTyping {
         // Writing CNF code correctly is cursed
         // PLEASE DO NOT TOUCH
 
-        public static CnfTerm Empty { get; } = new CnfTerm(new CnfPolynomial(new EmptyPredicate()));
-
         public ValueSet<CnfPolynomial> Operands { get; } = [];
 
         public bool IsFalse {

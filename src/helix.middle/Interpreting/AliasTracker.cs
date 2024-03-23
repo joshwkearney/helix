@@ -31,7 +31,7 @@ namespace Helix.MiddleEnd.Interpreting {
                     foreach (var root in roots) {
                         this.context.Aliases.SetBoxedRoots(root, mem.Type, [UnknownLocation.Instance]);
                         this.context.Types.ClearType(root);
-                        this.context.Predicates.MutateLocation(root, CnfTerm.Empty);
+                        this.context.Predicates.MutateLocation(root, Option.None);
                     }
                 }
             }
@@ -75,7 +75,7 @@ namespace Helix.MiddleEnd.Interpreting {
 
                         // Merge types and predicates rather than clearing them
                         this.context.Types[target] = this.context.Unifier.UnifyWithConvert(this.context.Types[target], mem.Type, default);
-                        this.context.Predicates.MutateLocation(target, this.context.Predicates[target].Or(this.context.Predicates[rValueLocation]));
+                        this.context.Predicates.MutateLocation(target, this.context.Predicates[target].SelectMany(x => this.context.Predicates[rValueLocation].Select(y => x.Or(x))));
                     }
                 }
             }
@@ -143,7 +143,7 @@ namespace Helix.MiddleEnd.Interpreting {
 
                 this.context.Aliases.SetBoxedRoots(variableLocation, mem.Type, aliases1.Concat(aliases2));
                 this.context.Types[variableLocation] = mem.Type;
-                this.context.Predicates[variableLocation] = this.context.Predicates[assign1].Or(this.context.Predicates[assign2]);
+                this.context.Predicates[variableLocation] = this.context.Predicates[assign1].SelectMany(x => this.context.Predicates[assign2].Select(y => x.Or(y)));
 
                 var affirmType = this.context.Types[assign1];
                 var negType = this.context.Types[assign2];

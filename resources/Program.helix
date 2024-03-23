@@ -6,9 +6,9 @@ union Option {
 func test3(var test as bool) as Option {
 	var opt = 45 as Option;
 
-	if test == true xor test != true then {
+	if test == true or test != true then {
 		return 10;
 	}
 
-	return opt + 10;
+	return opt;
 }
