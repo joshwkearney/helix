@@ -55,7 +55,7 @@ namespace Helix.Common.Hmm {
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitAddressOf(this);
     }
 
-    public record HmmTypeDeclaration : IHmmSyntax {
+    public record HmmTypeDeclaration : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
         public required string Name { get; init; }
@@ -63,13 +63,15 @@ namespace Helix.Common.Hmm {
         public required TypeDeclarationKind Kind { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitTypeDeclaration(this);
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitTypeDeclaration(this);
     }
 
     public enum TypeDeclarationKind {
         Struct, Union, Function
     }
 
-    public record HmmFunctionForwardDeclaration : IHmmSyntax {
+    public record HmmFunctionForwardDeclaration : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
         public required string Name { get; init; }
@@ -77,9 +79,11 @@ namespace Helix.Common.Hmm {
         public required FunctionType Signature { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitFunctionForwardDeclaration(this);
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitFunctionForwardDeclaration(this);
     }
 
-    public record HmmStructDeclaration : IHmmSyntax {
+    public record HmmStructDeclaration : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
         public required NominalType Type { get; init; }
@@ -89,9 +93,11 @@ namespace Helix.Common.Hmm {
         public required string Name { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitStructDeclaration(this);
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitStructDeclaration(this);
     }
 
-    public record HmmUnionDeclaration : IHmmSyntax {
+    public record HmmUnionDeclaration : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
         public required NominalType Type { get; init; }
@@ -101,6 +107,8 @@ namespace Helix.Common.Hmm {
         public required string Name { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitUnionDeclaration(this);
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitUnionDeclaration(this);
     }
 
     public record HmmArrayLiteral : IHmmExpression {
@@ -113,7 +121,7 @@ namespace Helix.Common.Hmm {
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitArrayLiteral(this);
     }
 
-    public record HmmAssignment : IHmmSyntax {
+    public record HmmAssignment : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
         public required string Variable { get; init; }
@@ -121,6 +129,8 @@ namespace Helix.Common.Hmm {
         public required string Value { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitAssignment(this);
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitAssignment(this);
     }
 
     public record HmmAsSyntax : IHmmExpression {
@@ -149,16 +159,20 @@ namespace Helix.Common.Hmm {
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitBinarySyntax(this);
     }
 
-    public record HmmBreakSyntax : IHmmSyntax {
+    public record HmmBreakSyntax : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitBreak(this);
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitBreak(this);
     }
 
-    public record HmmContinueSyntax : IHmmSyntax {
+    public record HmmContinueSyntax : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitContinue(this);
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitContinue(this);
     }
 
     public record HmmFunctionDeclaration : IHmmSyntax {
@@ -257,12 +271,14 @@ namespace Helix.Common.Hmm {
         public Option<string> Field { get; init; } = Option.None;
     }
 
-    public record HmmReturnSyntax : IHmmSyntax {
+    public record HmmReturnSyntax : IHmmSyntax, IHirSyntax {
         public required TokenLocation Location { get; init; }
 
         public required string Operand { get; init; }
 
         public T Accept<T>(IHmmVisitor<T> visitor) => visitor.VisitReturn(this);
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitReturn(this);
     }
 
     public record HmmUnaryOperator : IHmmExpression {

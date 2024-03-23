@@ -35,7 +35,7 @@ namespace Helix.MiddleEnd.TypeChecking {
         private readonly Evaluator eval;
         private readonly PredicatesTracker predicateTracker;
 
-        private HmmWriter Writer => this.context.Writer;
+        private SyntaxWriter<IHirSyntax> Writer => this.context.Writer;
 
         private TypeStore Types => this.context.Types;
 
@@ -68,10 +68,11 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             this.context.AliasTracker.RegisterArrayLiteral(syntax.Result, args.Length, totalType);
 
-            this.Writer.AddLine(new HmmArrayLiteral() {
+            this.Writer.AddLine(new HirArrayLiteral() {
                 Location = syntax.Location,
                 Args = args,
-                Result = syntax.Result
+                Result = syntax.Result,
+                ResultType = new ArrayType() { InnerType = totalType }
             });
 
             return TypeCheckResult.NormalFlow(syntax.Result);
@@ -95,11 +96,16 @@ namespace Helix.MiddleEnd.TypeChecking {
         public TypeCheckResult VisitAsSyntax(HmmAsSyntax syntax) {
             var result = this.Unifier.Convert(syntax.Operand, syntax.Type, syntax.Location);
 
-            this.Writer.AddLine(new HmmVariableStatement() {
+            this.Writer.AddLine(new HirVariableStatement() {
                 Location = syntax.Location,
-                IsMutable = false,
-                Value = result,
-                Variable = syntax.Result
+                Variable = syntax.Result,
+                VariableType = syntax.Type
+            });
+
+            this.Writer.AddLine(new HmmAssignment() {
+                Location = syntax.Location,
+                Variable = syntax.Result,
+                Value = result
             });
 
             this.context.AliasTracker.RegisterLocal(syntax.Result, result);
@@ -145,12 +151,13 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.InvalidBinaryOperator(syntax.Location, type1, type2, syntax.Operator);
             }
 
-            this.Writer.AddLine(new HmmBinarySyntax() {
+            this.Writer.AddLine(new HirBinarySyntax() {
                 Location = syntax.Location,
                 Left = left,
                 Right = right,
                 Operator = syntax.Operator,
-                Result = syntax.Result
+                Result = syntax.Result,
+                ResultType = returnType
             });
 
             this.context.AliasTracker.RegisterLocal(syntax.Result, returnType);
@@ -219,7 +226,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             var writtenBody = this.context.WriterStack.Pop().ScopedLines;
             this.context.ControlFlowStack.Pop();
 
-            this.Writer.AddLine(new HmmFunctionDeclaration() {
+            this.Writer.AddLine(new HirFunctionDeclaration() {
                 Location = syntax.Location,
                 Name = syntax.Name,
                 Signature = syntax.Signature,
@@ -274,6 +281,12 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             var affirm = this.Unifier.Convert(syntax.Affirmative, totalType, syntax.Location);
 
+            this.Writer.AddLine(new HmmAssignment() {
+                Location = syntax.Location,
+                Variable = syntax.Result,
+                Value = affirm
+            });
+
             this.context.WriterStack.Pop();
             this.context.ScopeStack.Pop();
 
@@ -283,18 +296,14 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             var neg = this.Unifier.Convert(syntax.Negative, totalType, syntax.Location);
 
+            this.Writer.AddLine(new HmmAssignment() {
+                Location = syntax.Location,
+                Variable = syntax.Result,
+                Value = neg
+            });
+
             this.context.WriterStack.Pop();
             this.context.ScopeStack.Pop();
-
-            this.Writer.AddLine(new HmmIfExpression() {
-                Location = syntax.Location,
-                Affirmative = affirm,
-                Negative = neg,
-                AffirmativeBody = affirmBody.ScopedLines,
-                NegativeBody = negBody.ScopedLines,
-                Condition = cond,
-                Result = syntax.Result
-            });
 
             // Combine the branch aliases and replace the current ones
             if (affirmFlow.DoesJump) {
@@ -311,6 +320,19 @@ namespace Helix.MiddleEnd.TypeChecking {
             }            
 
             this.context.AliasTracker.RegisterIf(syntax.Result, totalType, affirm, neg);
+
+            this.Writer.AddLine(new HirVariableStatement() {
+                Location = syntax.Location,
+                Variable = syntax.Result,
+                VariableType = this.context.Types[syntax.Result]
+            });
+
+            this.Writer.AddLine(new HirIfExpression() {
+                Location = syntax.Location,
+                AffirmativeBody = affirmBody.ScopedLines,
+                NegativeBody = negBody.ScopedLines,
+                Condition = cond
+            });
 
             var totalFlow = affirmFlow.Merge(negFlow);
 
@@ -340,11 +362,12 @@ namespace Helix.MiddleEnd.TypeChecking {
                 newArgs.Add(newArg);
             }
 
-            this.Writer.AddLine(new HmmInvokeSyntax() {
+            this.Writer.AddLine(new HirInvokeSyntax() {
                 Location = syntax.Location,
                 Target = syntax.Target,
                 Arguments = newArgs,
-                Result = syntax.Result
+                Result = syntax.Result,
+                ResultType = sig.ReturnType
             });
 
             this.context.AliasTracker.RegisterInvoke(syntax.Result, sig.ReturnType, newArgs, sig.Parameters.Select(x => x.Type).ToArray());
@@ -363,11 +386,12 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.MemberUndefined(syntax.Location, type, syntax.Field);
             }
 
-            this.Writer.AddLine(new HmmIsSyntax() {
+            this.Writer.AddLine(new HirIsSyntax() {
                 Location = syntax.Location,
                 Field = syntax.Field,
                 Operand = syntax.Operand,
-                Result = syntax.Result
+                Result = syntax.Result,
+                ResultType = BoolType.Instance
             });
 
             this.context.AliasTracker.RegisterLocal(syntax.Result, BoolType.Instance);
@@ -401,7 +425,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 // because types from previous iterations could affect later iterations
 
                 if (!outerScope.WasModifiedBy(loopScope)) {
-                    this.Writer.AddLine(new HmmLoopSyntax() {
+                    this.Writer.AddLine(new HirLoopSyntax() {
                         Location = syntax.Location,
                         Body = body.ScopedLines
                     });
@@ -440,11 +464,12 @@ namespace Helix.MiddleEnd.TypeChecking {
                     throw TypeCheckException.ExpectedRValue(syntax.Location);
                 }
 
-                this.Writer.AddLine(new HmmMemberAccess() {
+                this.Writer.AddLine(new HirMemberAccess() {
                     Location = syntax.Location,
                     Member = syntax.Member,
                     Operand = syntax.Operand,
                     Result = syntax.Result,
+                    ResultType = WordType.Instance,
                     IsLValue = false
                 });
 
@@ -468,11 +493,12 @@ namespace Helix.MiddleEnd.TypeChecking {
                     }
                 }
 
-                this.Writer.AddLine(new HmmMemberAccess() {
+                this.Writer.AddLine(new HirMemberAccess() {
                     Location = syntax.Location,
                     Member = syntax.Member,
                     Operand = syntax.Operand,
                     Result = syntax.Result,
+                    ResultType = mem.Type,
                     IsLValue = syntax.IsLValue
                 });
 
@@ -488,11 +514,16 @@ namespace Helix.MiddleEnd.TypeChecking {
             if (syntax.Type == VoidType.Instance || syntax.Type == WordType.Instance || syntax.Type == BoolType.Instance) {
                 var result = this.Unifier.Convert("void", syntax.Type, syntax.Location);
 
-                this.Writer.AddLine(new HmmVariableStatement() {
+                this.Writer.AddLine(new HirVariableStatement() {
                     Location = syntax.Location,
-                    IsMutable = false,
-                    Value = result,
-                    Variable = syntax.Result
+                    Variable = syntax.Result,
+                    VariableType = syntax.Type
+                });
+
+                this.Writer.AddLine(new HmmAssignment() {
+                    Location = syntax.Location,
+                    Variable = syntax.Result,
+                    Value = result
                 });
 
                 this.context.AliasTracker.RegisterLocal(syntax.Result, syntax.Type);
@@ -517,10 +548,10 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.NewObjectHasExtraneousFields(syntax.Location, syntax.Type);
             }
 
-            this.Writer.AddLine(new HmmNewSyntax() {
+            this.Writer.AddLine(new HirNewSyntax() {
                 Location = syntax.Location,
                 Result = syntax.Result,
-                Type = syntax.Type
+                ResultType = sig
             });
 
             this.context.AliasTracker.RegisterLocal(syntax.Result, syntax.Type);
@@ -609,11 +640,11 @@ namespace Helix.MiddleEnd.TypeChecking {
                 });
             }
 
-            this.Writer.AddLine(new HmmNewSyntax() {
+            this.Writer.AddLine(new HirNewSyntax() {
                 Location = syntax.Location,
                 Assignments = newAssignments,
                 Result = syntax.Result,
-                Type = syntax.Type
+                ResultType = syntax.Type
             });
 
             this.context.AliasTracker.RegisterNewStruct(syntax.Result, syntax.Type, newAssignments);
@@ -659,11 +690,11 @@ namespace Helix.MiddleEnd.TypeChecking {
                 }
             };
 
-            this.Writer.AddLine(new HmmNewSyntax() {
+            this.Writer.AddLine(new HirNewSyntax() {
                 Location = syntax.Location,
-                Type = syntax.Type,
                 Assignments = assignments,
-                Result = syntax.Result
+                Result = syntax.Result,
+                ResultType = syntax.Type
             });
 
             var singUnionType = new SingularUnionType(syntax.Type, mem.Name, this.context.Types[value]);
@@ -717,11 +748,12 @@ namespace Helix.MiddleEnd.TypeChecking {
             if (syntax.Operator == UnaryOperatorKind.Not) {
                 var arg = this.Unifier.Convert(syntax.Operand, BoolType.Instance, syntax.Location);
 
-                this.Writer.AddLine(new HmmUnaryOperator() {
+                this.Writer.AddLine(new HirUnaryOperator() {
                     Location = syntax.Location,
                     Operand = arg,
                     Operator = syntax.Operator,
-                    Result = syntax.Result
+                    Result = syntax.Result,
+                    ResultType = BoolType.Instance
                 });
 
                 this.context.AliasTracker.RegisterLocal(syntax.Result, BoolType.Instance);
@@ -749,11 +781,16 @@ namespace Helix.MiddleEnd.TypeChecking {
             var sigType = assignType.GetSupertype();
             var assign = this.Unifier.Convert(syntax.Value, sigType, syntax.Location);
 
-            this.Writer.AddLine(new HmmVariableStatement() {
+            this.Writer.AddLine(new HirVariableStatement() {
                 Location = syntax.Location,
-                IsMutable = syntax.IsMutable,
-                Value = assign,
-                Variable = syntax.Variable
+                Variable = syntax.Variable,
+                VariableType = sigType
+            });
+
+            this.Writer.AddLine(new HmmAssignment() {
+                Location = syntax.Location,
+                Variable = syntax.Variable,
+                Value = assign
             });
 
             this.context.AliasTracker.RegisterLocal(syntax.Variable, assign);
@@ -772,11 +809,12 @@ namespace Helix.MiddleEnd.TypeChecking {
                 return result;
             }
 
-            this.Writer.AddLine(new HmmDereference() {
+            this.Writer.AddLine(new HirDereference() {
                 Location = syntax.Location,
                 IsLValue = syntax.IsLValue,
                 Operand = syntax.Operand,
-                Result = syntax.Result
+                Result = syntax.Result,
+                ResultType = sig.InnerType
             });
 
             if (syntax.IsLValue) {
@@ -798,11 +836,12 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             var index = this.Unifier.Convert(syntax.Index, WordType.Instance, syntax.Location);
 
-            this.Writer.AddLine(new HmmIndex() {
+            this.Writer.AddLine(new HirIndex() {
                 Location = syntax.Location,
                 Operand = syntax.Operand,
                 Index = index,
                 Result = syntax.Result,
+                ResultType = arrayType.InnerType,
                 IsLValue = syntax.IsLValue
             });
 
@@ -821,13 +860,14 @@ namespace Helix.MiddleEnd.TypeChecking {
 
             // The name resolver has already confirmed that our operand is a real lvalue, so no need to check that
 
-            this.Writer.AddLine(new HmmAddressOf() {
+            var returnType = new PointerType() { InnerType = operandType };
+
+            this.Writer.AddLine(new HirAddressOf() {
                 Location = syntax.Location,
                 Operand = syntax.Operand,
-                Result = syntax.Result
+                Result = syntax.Result,
+                ResultType = returnType
             });
-
-            var returnType = new PointerType() { InnerType = operandType };
 
             this.context.AliasTracker.RegisterAddressOf(syntax.Result, syntax.Operand);
 

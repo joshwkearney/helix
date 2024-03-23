@@ -8,14 +8,14 @@ using System.Linq.Expressions;
 namespace Helix.Frontend.NameResolution {
     internal class NameResolver : IParseTreeVisitor<string> {
         private readonly Stack<IdentifierPath> scopes = [];
-        private readonly Stack<HmmWriter> writers = [];
+        private readonly Stack<SyntaxWriter<IHmmSyntax>> writers = [];
         private readonly Stack<bool> expectedLValue = [];
         private readonly NameMangler mangler;
         private readonly DeclarationStore declarations;
 
         private IdentifierPath Scope => this.scopes.Peek();
 
-        private HmmWriter Writer => this.writers.Peek();
+        private SyntaxWriter<IHmmSyntax> Writer => this.writers.Peek();
 
         public IReadOnlyList<IHmmSyntax> Result => this.Writer.AllLines;
 
@@ -26,7 +26,7 @@ namespace Helix.Frontend.NameResolution {
             this.mangler = mangler;
 
             this.scopes.Push(new IdentifierPath());
-            this.writers.Push(new HmmWriter());
+            this.writers.Push(new SyntaxWriter<IHmmSyntax>());
             this.expectedLValue.Push(false);
         }
 

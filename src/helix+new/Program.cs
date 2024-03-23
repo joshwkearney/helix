@@ -1,4 +1,5 @@
 ﻿using Helix.Common;
+using Helix.Common.Hir;
 using Helix.Common.Hmm;
 using Helix.Frontend;
 using Helix.MiddleEnd;
@@ -16,14 +17,14 @@ contents = contents
 try {
     var step1 = frontend.Compile(contents);
     var step2 = middleend.TypeCheck(step1);
-    var result = HmmToString(step2);
+    var result = HirToString(step2);
 
     var watch = new Stopwatch();
     watch.Start();
 
     step1 = frontend.Compile(contents);
     step2 = middleend.TypeCheck(step1);
-    result = HmmToString(step2);
+    result = HirToString(step2);
 
     watch.Stop();
     var ms = watch.ElapsedMilliseconds;
@@ -40,8 +41,8 @@ catch (HelixException ex) {
 
 Console.Read();
 
-static string HmmToString(IReadOnlyList<IHmmSyntax> hmm) {
-    var stringifier = new HmmStringifier();
+static string HirToString(IReadOnlyList<IHirSyntax> hmm) {
+    var stringifier = new HirStringifier();
     var result = "";
 
     foreach (var line in hmm) {

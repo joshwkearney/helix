@@ -4,13 +4,13 @@ using Helix.MiddleEnd.TypeChecking;
 
 namespace Helix.MiddleEnd {
     internal class AnalysisContext {
-        public Stack<HmmWriter> WriterStack { get; } = [];
+        public Stack<SyntaxWriter<IHirSyntax>> WriterStack { get; } = [];
 
         public Stack<AnalysisScope> ScopeStack { get; } = [];
 
         public Stack<ControlFlowFrame> ControlFlowStack { get; } = [];
 
-        public HmmWriter Writer => WriterStack.Peek();
+        public SyntaxWriter<IHirSyntax> Writer => WriterStack.Peek();
 
         public ControlFlowFrame ControlFlow => this.ControlFlowStack.Peek();
 
@@ -34,7 +34,7 @@ namespace Helix.MiddleEnd {
             this.Unifier = new TypeUnifier(this);
             this.AliasTracker = new AliasTracker(this);
 
-            this.WriterStack.Push(new HmmWriter());
+            this.WriterStack.Push(new SyntaxWriter<IHirSyntax>());
             this.ScopeStack.Push(new AnalysisScope(this));
         }
     }
