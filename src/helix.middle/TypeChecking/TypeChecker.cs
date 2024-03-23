@@ -59,7 +59,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             for (int i = 1; i < syntax.Args.Count; i++) {
                 var argType = this.Types[syntax.Args[i]];
 
-                if (!this.Unifier.TryUnifyWithConvert(argType, totalType).TryGetValue(out totalType)) {
+                if (!this.Unifier.TryUnifyTypes(argType, totalType).TryGetValue(out totalType)) {
                     throw TypeCheckException.TypeConversionFailed(syntax.Location, totalType, argType);
                 }
             }
@@ -118,11 +118,6 @@ namespace Helix.MiddleEnd.TypeChecking {
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.BranchingOr);
             Assert.IsFalse(syntax.Operator == BinaryOperationKind.Index);
 
-            // Try to evaluate this at compile time
-            if (this.eval.TryEvaluateVisitBinarySyntax(syntax, out var evalResult)) {
-                return evalResult;
-            }
-
             var type1 = this.Types[syntax.Left];
             var type2 = this.Types[syntax.Right];
 
@@ -149,6 +144,11 @@ namespace Helix.MiddleEnd.TypeChecking {
             }
             else {
                 throw TypeCheckException.InvalidBinaryOperator(syntax.Location, type1, type2, syntax.Operator);
+            }
+
+            // Try to evaluate this at compile time
+            if (this.eval.TryEvaluateVisitBinarySyntax(syntax, this.context.Types[left], this.context.Types[right], out var evalResult)) {
+                return evalResult;
             }
 
             this.Writer.AddLine(new HirBinarySyntax() {
@@ -279,7 +279,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             // Unify types
             var affirmType = this.Types[syntax.Affirmative];
             var negType = this.Types[syntax.Negative];
-            var totalType = this.Unifier.UnifyWithConvert(affirmType, negType, syntax.Location);
+            var totalType = this.Unifier.UnifyTypes(affirmType, negType, syntax.Location);
 
             // Unify the true branch in its scope
             this.context.ScopeStack.Push(affirmScope);

@@ -6,9 +6,14 @@ union Option {
 func test3(var test as bool) as Option {
 	var opt = 45 as Option;
 
-	if test == true or test != true then {
+	if test then {
 		return 10;
 	}
 
-	return opt;
+	return opt + 10;
 }
+
+// DONE - Simplify unification
+// Remove anonymous struct and union types
+// Add singular structs and singular arrays
+// Make types indexable only by strings

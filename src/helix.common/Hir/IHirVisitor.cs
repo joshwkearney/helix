@@ -43,5 +43,7 @@
         public T VisitTypeDeclaration(HmmTypeDeclaration syntax);
 
         public T VisitFunctionForwardDeclaration(HmmFunctionForwardDeclaration syntax);
+
+        public T VisitIntrinsicUnionMemberAccess(HirIntrinsicUnionMemberAccess syntax);
     }
 }

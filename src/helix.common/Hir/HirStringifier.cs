@@ -246,5 +246,9 @@ namespace Helix.Common.Hir {
         public string VisitVariableStatement(HirVariableStatement syntax) {
             return this.GetIndent() + $"var {syntax.Variable} as {syntax.VariableType};\n";
         }
+
+        public string VisitIntrinsicUnionMemberAccess(HirIntrinsicUnionMemberAccess syntax) {
+            return this.GetIndent() + $"let {syntax.Result} as {syntax.ResultType} = __intrinsic_union_access({syntax.Operand}, {syntax.UnionMember});\n";
+        }
     }
 }

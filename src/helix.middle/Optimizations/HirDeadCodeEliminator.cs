@@ -186,5 +186,9 @@ namespace Helix.MiddleEnd.Optimizations {
         public Unit VisitVariableStatement(HirVariableStatement syntax) {
             return this.VisitExpression(syntax, syntax.Variable);
         }
+
+        public Unit VisitIntrinsicUnionMemberAccess(HirIntrinsicUnionMemberAccess syntax) {
+            return this.VisitExpression(syntax, syntax.Result, syntax.Operand);
+        }
     }
 }

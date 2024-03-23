@@ -58,7 +58,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             foreach (var key in keys) {
                 if (this.values.ContainsKey(key) && other.values.ContainsKey(key)) {
                     // TODO: Fix not having a location here
-                    resultValues[key] = this.context.Unifier.UnifyWithConvert(this.values[key], other.values[key], default);
+                    resultValues[key] = this.context.Unifier.UnifyTypes(this.values[key], other.values[key], default);
                 }
                 else if (this.values.ContainsKey(key)) {
                     resultValues[key] = this.values[key];

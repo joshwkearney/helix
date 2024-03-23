@@ -1,37 +1,26 @@
 ﻿using Helix.Common;
+using Helix.Common.Hmm;
 using Helix.Common.Tokens;
 using Helix.Common.Types;
+using System;
+using System.Net.NetworkInformation;
 
 namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeUnifier {
+        private delegate string TypeConverter(string name, TokenLocation location);
+
         private readonly AnalysisContext context;
 
         public TypeUnifier(AnalysisContext context) {
             this.context = context;
         }
 
-        //public bool CanCast(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Cast).HasValue;
-
-        public bool CanConvert(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Convert).HasValue;
-
-        //public bool CanPun(IHelixType fromType, IHelixType toType) => GetUnifier(fromType, toType, UnificationKind.Pun).HasValue;
-
-        public bool CanUnify(IHelixType fromType, IHelixType toType, UnificationKind kind) => GetUnifier(fromType, toType, kind).HasValue;
-
-        //public string Cast(string value, IHelixType toType, TokenLocation loc) {
-        //    var fromType = context.Types.GetLocalType(value);
-
-        //    if (!GetUnifier(fromType, toType, UnificationKind.Cast).TryGetValue(out var unifier)) {
-        //        throw new InvalidOperationException();
-        //    }
-
-        //    return unifier.Invoke(value, loc);
-        //}
+        public bool CanConvert(IHelixType fromType, IHelixType toType) => GetConverter(fromType, toType).HasValue;
 
         public string Convert(string value, IHelixType toType, TokenLocation loc) {
             var fromType = context.Types[value];
 
-            if (!GetUnifier(fromType, toType, UnificationKind.Convert).TryGetValue(out var unifier)) {
+            if (!GetConverter(fromType, toType).TryGetValue(out var unifier)) {
                 throw TypeCheckException.TypeConversionFailed(loc, fromType, toType);
             }
 
@@ -43,41 +32,29 @@ namespace Helix.MiddleEnd.TypeChecking {
             return result;
         }
 
-        //public string Pun(string value, IHelixType toType, TokenLocation loc) {
-        //    var fromType = context.Types.GetLocalType(value);
-
-        //    if (!GetUnifier(fromType, toType, UnificationKind.Pun).TryGetValue(out var unifier)) {
-        //        throw new InvalidOperationException();
-        //    }
-
-        //    return unifier.Invoke(value, loc);
-        //}
-
-        //public Option<IHelixType> TryUnifyWithCast(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Cast);
-
-        public Option<IHelixType> TryUnifyWithConvert(IHelixType fromType, IHelixType toType) {
-            var result = GetUnifyingType(fromType, toType, UnificationKind.Convert);
-
-            if (result.TryGetValue(out var type)) {
-                Assert.IsTrue(fromType == type || fromType.GetSupertype() == type);
-                Assert.IsTrue(toType == type || toType.GetSupertype() == type);
+        public Option<IHelixType> TryUnifyTypes(IHelixType type1, IHelixType type2) {
+            if (GetConverter(type1, type2).TryGetValue(out _)) {
+                return type2;
+            }
+            else if (GetConverter(type2, type1).TryGetValue(out _)) {
+                return type1;
             }
 
-            return result;
+            var sig1 = type1.GetSupertype();
+            var sig2 = type2.GetSupertype();
+
+            if (GetConverter(type1, sig2).TryGetValue(out _)) {
+                return sig2;
+            }
+            else if (GetConverter(type2, sig1).TryGetValue(out _)) {
+                return sig1;
+            }
+
+            return Option.None;
         }
 
-        //public Option<IHelixType> TryUnifyWithPun(IHelixType fromType, IHelixType toType) => GetUnifyingType(fromType, toType, UnificationKind.Pun);
-
-        //public IHelixType UnifyWithCast(IHelixType type1, IHelixType type2, TokenLocation loc) {
-        //    if (!this.TryUnifyWithCast(type1, type2).TryGetValue(out var type)) {
-        //        throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
-        //    }
-
-        //    return type;
-        //}
-
-        public IHelixType UnifyWithConvert(IHelixType type1, IHelixType type2, TokenLocation loc) {
-            if (!TryUnifyWithConvert(type1, type2).TryGetValue(out var type)) {
+        public IHelixType UnifyTypes(IHelixType type1, IHelixType type2, TokenLocation loc) {
+            if (!TryUnifyTypes(type1, type2).TryGetValue(out var type)) {
                 throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
             }
 
@@ -87,71 +64,126 @@ namespace Helix.MiddleEnd.TypeChecking {
             return type;
         }
 
-        //public IHelixType UnifyWithPun(IHelixType type1, IHelixType type2, TokenLocation loc) {
-        //    if (!this.TryUnifyWithPun(type1, type2).TryGetValue(out var type)) {
-        //        throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
-        //    }
-
-        //    return type;
-        //}
-
-        private Option<IHelixType> GetUnifyingType(IHelixType type1, IHelixType type2, UnificationKind kind) {
-            if (GetUnifier(type1, type2, kind).TryGetValue(out var u)) {
-                return type2;
-            }
-            else if (GetUnifier(type2, type1, kind).TryGetValue(out u)) {
-                return type1;
+        private Option<TypeConverter> GetConverter(IHelixType fromType, IHelixType toType) {
+            if (fromType == toType) {
+                return Option.Some<TypeConverter>((value, _) => value);
             }
 
-            var sig1 = type1.GetSupertype();
-            var sig2 = type2.GetSupertype();
+            // From void
+            if (fromType == VoidType.Instance) {
+                if (toType == WordType.Instance) {
+                    return Option.Some<TypeConverter>((_, _) => "0");
+                }
+                else if (toType == BoolType.Instance) {
+                    return Option.Some<TypeConverter>((_, _) => "false");
+                }
+                else if (toType.GetArraySignature(context).TryGetValue(out var arraySig)) {
+                    return Option.Some<TypeConverter>((value, loc) => {
+                        var name = context.Names.GetConvertName();
 
-            if (GetUnifier(type1, sig2, kind).TryGetValue(out u)) {
-                return sig2;
+                        var line = new HmmNewSyntax() {
+                            Location = loc,
+                            Result = name,
+                            Type = toType
+                        };
+
+                        return line.Accept(context.TypeChecker).ResultName;
+                    });
+                }
+            }                        
+
+            // From singular word
+            if (fromType is SingularWordType sing) {
+                if (toType == WordType.Instance) {
+                    return Option.Some<TypeConverter>((_, _) => sing.ToString());
+                }
+                else if (toType == BoolType.Instance && sing.Value == 1) {
+                    return Option.Some<TypeConverter>((_, _) => "true");
+                }
+                else if (toType == BoolType.Instance && sing.Value == 0) {
+                    return Option.Some<TypeConverter>((_, _) => "false");
+                }
             }
-            else if (GetUnifier(type2, sig1, kind).TryGetValue(out u)) {
-                return sig1;
+
+            // From singular bool
+            if (fromType is SingularBoolType sing2) {
+                if (toType == BoolType.Instance) {
+                    return Option.Some<TypeConverter>((_, _) => sing2.ToString());
+                }
+                else if (toType == WordType.Instance) {
+                    return Option.Some<TypeConverter>((_, _) => sing2.Value ? "1" : "0");
+                }
+            }
+
+            // From singular union
+            if (fromType is SingularUnionType sing3) {
+                if (toType == sing3.Signature) {
+                    return Option.Some<TypeConverter>((value, _) => value);
+                }
+                else if (GetConverter(sing3.Value, toType).TryGetValue(out var innerConverter)) {
+                    return Option.Some<TypeConverter>((value, loc) => {
+                        var memAccessName = this.context.Names.GetConvertName();
+
+                        var memAccess = new HirIntrinsicUnionMemberAccess() {
+                            Location = loc,
+                            Result = memAccessName,
+                            Operand = value,
+                            ResultType = sing3.Value,
+                            UnionMember = sing3.Member
+                        };
+
+                        this.context.Writer.AddLine(memAccess);
+                        this.context.AliasTracker.RegisterLocal(memAccessName, sing3.Value);
+
+                        return innerConverter(memAccessName, loc);
+                    });
+                }
+            }
+
+            // To union
+            if (toType.GetUnionSignature(this.context).TryGetValue(out var unionType)) {
+                if (FindUnionMember(fromType, unionType, context).TryGetValue(out var member)) {
+                    return Option.Some<TypeConverter>((value, loc) => {
+                        var name = context.Names.GetConvertName();
+
+                        var syntax = new HmmNewSyntax() {
+                            Location = loc,
+                            Assignments = [
+                                new HmmNewFieldAssignment() {
+                                    Field = member.Name,
+                                    Value = value
+                                }
+                            ],
+                            Type = toType,
+                            Result = name
+                        };
+
+                        return syntax.Accept(context.TypeChecker).ResultName;
+                    });
+                }
             }
 
             return Option.None;
         }
 
-        private Option<Unifier> GetUnifier(IHelixType fromType, IHelixType toType, UnificationKind kind) {
-            if (fromType == toType) {
-                return Option.Some<Unifier>((value, _) => value);
+        private static Option<UnionMember> FindUnionMember(IHelixType fromType, UnionType unionType, AnalysisContext context) {
+            // If this type exactly matches one union member, convert to that
+            var matching = unionType.Members.Where(x => x.Type == fromType).ToArray();
+
+            if (matching.Length == 1) {
+                return matching[0];
             }
 
-            var kinds = new[] { kind };
+            // If this type can convert to exactly one member, convert to that
+            matching = unionType.Members
+                .Where(x => context.Unifier.CanConvert(fromType, x.Type))
+                .ToArray();
 
-            if (kind == UnificationKind.Convert) {
-                kinds = [UnificationKind.Convert, UnificationKind.Pun];
-            }
-            else if (kind == UnificationKind.Cast) {
-                kinds = [UnificationKind.Cast, UnificationKind.Convert, UnificationKind.Pun];
-            }
-
-            return kinds
-                .SelectMany(kind => GetUnifiers(fromType, toType).SelectMany(x => x.CreateUnifier(fromType, toType, kind, context).ToEnumerable()))
-                .FirstOrNone();
-        }
-
-        private IEnumerable<IUnificationFactory> GetUnifiers(IHelixType fromType, IHelixType toType) {
-            if (fromType.IsVoid) {
-                yield return VoidUnificationFactory.Instance;
-            }
-            else if (fromType is SingularWordType) {
-                yield return SingularWordUnificationFactory.Instance;
-            }
-            else if (fromType is SingularBoolType) {
-                yield return SingularBoolUnificationFactory.Instance;
-            }
-            else if (fromType is SingularUnionType) {
-                yield return SingularUnionUnificationFactory.Instance;
+            if (matching.Length == 1) {
+                return matching[0];
             }
 
-            if (toType.GetUnionSignature(context).HasValue) {
-                yield return ToUnionUnificationFactory.Instance;
-            }
+            return Option.None;
         }
     }
 }

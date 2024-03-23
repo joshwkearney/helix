@@ -74,7 +74,7 @@ namespace Helix.MiddleEnd.Interpreting {
                         this.context.Aliases.SetBoxedRoots(target, mem.Type, allRoots);
 
                         // Merge types and predicates rather than clearing them
-                        this.context.Types[target] = this.context.Unifier.UnifyWithConvert(this.context.Types[target], mem.Type, default);
+                        this.context.Types[target] = this.context.Unifier.UnifyTypes(this.context.Types[target], mem.Type, default);
                         this.context.Predicates.MutateLocation(target, this.context.Predicates[target].SelectMany(x => this.context.Predicates[rValueLocation].Select(y => x.Or(x))));
                     }
                 }

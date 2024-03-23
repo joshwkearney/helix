@@ -3,11 +3,11 @@
         private int counter = 0;
 
         public string GetConvertName() {
-            return "__convert_" + this.counter++;
+            return "$convert_" + this.counter++;
         }
 
         public string GetLoopUnrollPrefix() {
-            return "_unroll" + this.counter++;
+            return "$unroll" + this.counter++;
         }
     }
 }

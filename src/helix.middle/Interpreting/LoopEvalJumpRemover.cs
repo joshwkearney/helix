@@ -39,6 +39,8 @@ namespace Helix.MiddleEnd.Interpreting {
 
         public Option<IHirSyntax> VisitIndex(HirIndex syntax) => syntax;
 
+        public Option<IHirSyntax> VisitIntrinsicUnionMemberAccess(HirIntrinsicUnionMemberAccess syntax) => syntax;
+
         public Option<IHirSyntax> VisitInvoke(HirInvokeSyntax syntax) => syntax;
 
         public Option<IHirSyntax> VisitIs(HirIsSyntax syntax) => syntax;

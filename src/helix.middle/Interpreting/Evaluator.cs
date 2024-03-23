@@ -162,10 +162,7 @@ namespace Helix.MiddleEnd.Interpreting {
             return false;
         }
 
-        public bool TryEvaluateVisitBinarySyntax(HmmBinarySyntax syntax, out TypeCheckResult resultName) {
-            var leftType = this.context.Types[syntax.Left];
-            var rightType = this.context.Types[syntax.Right];
-
+        public bool TryEvaluateVisitBinarySyntax(HmmBinarySyntax syntax, IHelixType leftType, IHelixType rightType, out TypeCheckResult resultName) {
             // Evaluate word operations when we know both sides
             if (leftType is SingularWordType wordLeft && rightType is SingularWordType wordRight) {
                 IHelixType? result = syntax.Operator switch {

@@ -16,6 +16,20 @@ namespace Helix.Common.Hmm {
         }
     }
 
+    public record HirIntrinsicUnionMemberAccess : IHirSyntax {
+        public required string Result { get; init; }
+
+        public required IHelixType ResultType { get; init; }
+
+        public required string Operand { get; init; }
+
+        public required string UnionMember { get; init; }
+
+        public TokenLocation Location { get; init; }
+
+        public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitIntrinsicUnionMemberAccess(this);
+    }
+
     public record HirDereference : IHirSyntax {
         public required string Result { get; init; }
 
