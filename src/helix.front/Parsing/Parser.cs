@@ -954,7 +954,7 @@ namespace Helix.Frontend.ParseTree {
                 this.Advance(TokenKind.Semicolon);
 
                 return new ReturnSyntax() { 
-                    Location = start.Location, 
+                    Location = start.Location.Span(operand.Location), 
                     Payload = operand
                 };
             }

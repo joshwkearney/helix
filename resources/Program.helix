@@ -8,16 +8,22 @@ struct Point {
 	var y as word;
 }
 
-func test3(var foo as word) as Point {
-	var p = new Point { 4, y = foo };
+func test3(var test as bool) as word {
+	var p = new Point { 4, 5 };
 
-	return p;
+	if test then {
+		p.x = 45;
+	}
+
+	var q = p;
+
+	return q.x + q.y;
 }
 
 // DONE - Simplify unification
 // DONE - Remove anonymous struct and union types
 // DONE - Predicate bools
 // DONE - Singular structs
-// Make types indexable only by strings
+// DONE - Make types indexable only by strings
 // Singular pointers
-// Singular arrays?
+// Singular arrays

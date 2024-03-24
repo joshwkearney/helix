@@ -5,25 +5,28 @@ using System.Collections.Immutable;
 
 namespace Helix.MiddleEnd.TypeChecking {
     internal class TypeStore {
-        private ImmutableDictionary<IValueLocation, IHelixType> values
-            = ImmutableDictionary<IValueLocation, IHelixType>.Empty;
+        private ImmutableDictionary<string, IHelixType> values
+            = ImmutableDictionary<string, IHelixType>.Empty;
 
         private readonly AnalysisContext context;
 
         private TypeStore(
             AnalysisContext context,
-            ImmutableDictionary<IValueLocation, IHelixType> currentTypes) {
+            ImmutableDictionary<string, IHelixType> currentTypes) {
 
             this.context = context;
             this.values = currentTypes;
         }
 
         public IHelixType this[IValueLocation index] {
-            get => this.GetType(index);
-            set => this.SetType(index, value);
+            get => this.GetValueLocation(index);
+            set => this.SetValueLocation(index, value);
         }
 
-        public IHelixType this[string name] => this.GetType(name);
+        public IHelixType this[string name] {
+            get => this.GetSingularTypes(name).OrElse(() => this.values[name]);
+            set => this.values = this.values.SetItem(name, value);
+        }
 
         public TypeStore(AnalysisContext context) {
             this.context = context;
@@ -35,7 +38,7 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         public void SetImplications(IReadOnlyDictionary<IValueLocation, IHelixType> implications) {
             foreach (var (key, value) in implications) {
-                this.values = this.values.SetItem(key, value);
+                this.SetValueLocation(key, value);
             }
         }
 
@@ -52,12 +55,12 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public TypeStore MergeWith(TypeStore other) {
-            var resultValues = new Dictionary<IValueLocation, IHelixType>();
+            var resultValues = new Dictionary<string, IHelixType>();
             var keys = this.values.Keys.Union(other.values.Keys);
 
             foreach (var key in keys) {
                 if (this.values.ContainsKey(key) && other.values.ContainsKey(key)) {
-                    // TODO: Fix not having a location here
+                    // TODO: Fix not having a token location here
                     resultValues[key] = this.context.Unifier.UnifyTypes(this.values[key], other.values[key], default);
                 }
                 else if (this.values.ContainsKey(key)) {
@@ -72,25 +75,98 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public void ClearType(IValueLocation location) {
-            this.values = this.values.SetItem(location, this.values[location].GetSupertype());
+            this.SelectValueLocation(location, x => x.GetSupertype());
         }
 
-        private void SetType(IValueLocation location, IHelixType valueType) {
-            this.values = this.values.SetItem(location, valueType);
-        }
+        private IHelixType GetValueLocation(IValueLocation loc) {
+            if (loc is NamedLocation named) {
+                if (this.GetSingularTypes(named.Name).TryGetValue(out var sing)) {
+                    return sing;
+                }
+                else {
+                    Assert.IsTrue(this.values.ContainsKey(named.Name));
+                    return this.values[named.Name];
+                }
+            }
+            else if (loc is MemberAccessLocation memberAccess) {
+                var parentType = this.GetValueLocation(memberAccess.Parent);
 
-        private IHelixType GetType(IValueLocation location) {
-            if (location is NamedLocation named) {
-                if (this.GetSingularTypes(named.Name).TryGetValue(out var type)) {
-                    return type;
+                if (parentType is NominalType nom) {
+                    Assert.IsTrue(nom.GetStructSignature(this.context).HasValue);
+
+                    var sig = nom.GetStructSignature(this.context).GetValue();
+                    Assert.IsTrue(sig.Members.Any(x => x.Name == memberAccess.Member));
+
+                    return sig.Members.First(x => x.Name == memberAccess.Member).Type;
+                }
+                else {
+                    Assert.IsTrue(parentType is SingularStructType);
+
+                    var sing = (SingularStructType)parentType;
+                    Assert.IsTrue(sing.Members.Any(x => x.Name == memberAccess.Member));
+
+                    return sing.Members.First(x => x.Name == memberAccess.Member).Type;
                 }
             }
 
-            Assert.IsTrue(this.values.ContainsKey(location));
-            return this.values[location];
+            throw Assert.Fail();
         }
 
-        private IHelixType GetType(string name) => this.GetType(new NamedLocation(name));
+        private void SetValueLocation(IValueLocation loc, IHelixType newType) {
+            if (loc is NamedLocation named) {
+                this.values = this.values.SetItem(named.Name, newType);
+            }
+
+            this.SelectValueLocation(loc, _ => newType);
+        }
+
+        private void SelectValueLocation(IValueLocation loc, Func<IHelixType, IHelixType> typeSelector) {
+            if (loc is NamedLocation named) {
+                Assert.IsTrue(this.values.ContainsKey(named.Name));
+
+                this.values = this.values.SetItem(named.Name, typeSelector(this.values[named.Name]));
+            }
+            else if (loc is MemberAccessLocation memberAccess) {
+                this.SelectValueLocation(memberAccess.Parent, parentType => {
+                    SingularStructType sing;
+
+                    if (parentType is NominalType nom) {
+                        Assert.IsTrue(nom.GetStructSignature(this.context).HasValue);
+
+                        var sig = nom.GetStructSignature(this.context).GetValue();
+
+                        sing = new SingularStructType() {
+                            StructType = nom,
+                            Members = sig.Members.ToValueSet()
+                        };
+                    }
+                    else {
+                        Assert.IsTrue(parentType is SingularStructType);
+
+                        sing = (SingularStructType)parentType;
+                    }
+
+                    Assert.IsTrue(sing.Members.Any(x => x.Name == memberAccess.Member));
+
+                    var initialType = sing.Members.First(x => x.Name == memberAccess.Member).Type;
+
+                    var newMems = sing.Members
+                        .Where(x => x.Name != memberAccess.Member)
+                        .Append(new StructMember() { IsMutable = false, Name = memberAccess.Member, Type = typeSelector(initialType) })
+                        .ToValueSet();
+
+                    Assert.IsTrue(newMems.Select(x => x.Name).ToHashSet().SetEquals(sing.Members.Select(x => x.Name)));
+
+                    return new SingularStructType() {
+                        StructType = sing.StructType,
+                        Members = newMems
+                    };
+                });
+            }
+            else {
+                Assert.Fail();
+            }
+        }
 
         private Option<IHelixType> GetSingularTypes(string name) {
             if (long.TryParse(name, out var longValue)) {

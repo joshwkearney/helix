@@ -31,6 +31,14 @@ namespace Helix.MiddleEnd.TypeChecking {
         }
 
         public Option<IHelixType> TryUnifyTypes(IHelixType type1, IHelixType type2) {
+            // Singular struct unification. This is separate because singular structs
+            // can unify to more singular structs, not only the supertype
+            if (type1 is SingularStructType struct1 && type2 is SingularStructType struct2) {
+                if (this.UnifySingularStructs(struct1, struct2).TryGetValue(out var structResult)) {
+                    return structResult;
+                }
+            }
+
             if (GetConverter(type1, type2).TryGetValue(out _)) {
                 return type2;
             }
@@ -56,8 +64,8 @@ namespace Helix.MiddleEnd.TypeChecking {
                 throw TypeCheckException.TypeUnificationFailed(loc, type1, type2);
             }
 
-            Assert.IsTrue(type1 == type || type1.GetSupertype() == type);
-            Assert.IsTrue(type2 == type || type2.GetSupertype() == type);
+            //Assert.IsTrue(type1 == type || type1.GetSupertype() == type);
+            //Assert.IsTrue(type2 == type || type2.GetSupertype() == type);
 
             return type;
         }
@@ -148,6 +156,11 @@ namespace Helix.MiddleEnd.TypeChecking {
                 if (toType == sing4.StructType) {
                     return Option.Some<TypeConverter>((value, _) => value);
                 }
+                else if (toType is SingularStructType sing5 && sing4.StructType == sing5.StructType) {
+                    if (CanPunSingularStruct(sing4, sing5)) {
+                        return Option.Some<TypeConverter>((value, loc) => value);
+                    }
+                }
             }
 
             // To union
@@ -176,6 +189,40 @@ namespace Helix.MiddleEnd.TypeChecking {
             return Option.None;
         }
 
+        private bool CanPunSingularStruct(SingularStructType fromType, SingularStructType toType) {
+            foreach (var mem in fromType.Members) {
+                var mem2 = toType.Members.First(x => x.Name == mem.Name);
+
+                if (mem.Type != mem2.Type && mem.Type.GetSupertype() != mem.Type) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private Option<SingularStructType> UnifySingularStructs(SingularStructType type1, SingularStructType type2) {
+            if (type1.StructType != type2.StructType) {
+                return Option.None;
+            }
+
+            var newMems = new List<StructMember>();
+
+            foreach (var mem1 in type1.Members) {
+                var mem2 = type2.Members.First(x => x.Name == mem1.Name);
+
+                // TODO: No location
+                var type = this.UnifyTypes(mem1.Type, mem2.Type, default);
+
+                newMems.Add(new StructMember() { IsMutable = false, Name = mem1.Name, Type = type });
+            }
+
+            return new SingularStructType() {
+                StructType = type1.StructType,
+                Members = newMems.ToValueSet()
+            };
+        }
+ 
         private static Option<UnionMember> FindUnionMember(IHelixType fromType, UnionSignature unionType, AnalysisContext context) {
             // If this type exactly matches one union member, convert to that
             var matching = unionType.Members.Where(x => x.Type == fromType).ToArray();

@@ -157,7 +157,7 @@ namespace Helix.MiddleEnd.Interpreting {
                 this.context.Aliases.SetReferencedRoots(variableLocation, [variableLocation]);
             }
 
-            this.context.Types[new NamedLocation(resultName)] = variableType;
+            this.context.Types[resultName] = variableType;
 
             foreach (var assign in assignments) {
                 var assignType = this.context.Types[assign.Value];

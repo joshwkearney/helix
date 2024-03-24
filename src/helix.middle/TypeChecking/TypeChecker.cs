@@ -867,7 +867,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.Writer.AddLine(new HirVariableStatement() {
                 Location = syntax.Location,
                 Variable = syntax.Variable,
-                VariableType = sigType
+                VariableType = this.context.Types[assign]
             });
 
             this.Writer.AddLine(new HmmAssignment() {

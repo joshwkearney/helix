@@ -15,7 +15,7 @@ namespace Helix.MiddleEnd {
                 line.Accept(deadCodeEliminator);
             }
 
-            return deadCodeEliminator.AllLines;
+            return context.Writer.AllLines;
         }
     }
 }

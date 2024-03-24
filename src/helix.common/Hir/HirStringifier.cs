@@ -160,7 +160,7 @@ namespace Helix.Common.Hir {
                 }
             });
 
-            var result = this.GetIndent() + $"let {syntax.Result} as {syntax.ResultType} = new {syntax.ResultType}";
+            var result = this.GetIndent() + $"let {syntax.Result} = new {syntax.ResultType}";
 
             if (syntax.Assignments.Count > 0) {
                 result += " {\n";
