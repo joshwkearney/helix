@@ -69,7 +69,12 @@ namespace Helix.MiddleEnd.FlowTyping {
         }
 
         public override string ToString() {
-            return "(" + string.Join(" or ", this.Operands) + ")";
+            if (this.Operands.Count == 1) {
+                return this.Operands.First().ToString();
+            }
+            else {
+                return "(" + string.Join(" or ", this.Operands) + ")";
+            }
         }
 
         public bool Test(ICnfLeaf other) {

@@ -283,7 +283,7 @@ namespace Helix.Common.Hmm {
         public T Accept<T>(IHirVisitor<T> visitor) => visitor.VisitReturn(this);
     }
 
-    public record HmmUnaryOperator : IHmmExpression {
+    public record HmmUnarySyntax : IHmmExpression {
         public required TokenLocation Location { get; init; }
 
         public required string Result { get; init; }

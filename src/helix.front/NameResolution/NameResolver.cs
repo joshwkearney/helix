@@ -548,7 +548,7 @@ namespace Helix.Frontend.NameResolution {
             var arg = syntax.Operand.Accept(this);
             var result = this.mangler.CreateMangledTempName(this.Scope);
 
-            this.Writer.AddLine(new HmmUnaryOperator() {
+            this.Writer.AddLine(new HmmUnarySyntax() {
                 Location = syntax.Location,
                 Operand = arg,
                 Operator = syntax.Operator,

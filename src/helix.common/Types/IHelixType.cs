@@ -1,4 +1,7 @@
-﻿namespace Helix.Common.Types {
+﻿using Helix.Common.Types.Visitors;
+using Helix.MiddleEnd.FlowTyping;
+
+namespace Helix.Common.Types {
     public abstract record IHelixType {
         public bool IsVoid => this is VoidType;
 
@@ -23,7 +26,9 @@
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitBoolType(this);
     }
 
-    public record SingularBoolType(bool Value) : IHelixType {
+    public record SingularBoolType(CnfTerm Predicate) : IHelixType {
+        public SingularBoolType(bool Value) : this(new CnfTerm(new CnfPolynomial(new BooleanLiteralPredicate(Value)))) { }
+
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitSingularBoolType(this);
     }
 

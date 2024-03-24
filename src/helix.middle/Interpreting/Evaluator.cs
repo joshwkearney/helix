@@ -85,27 +85,26 @@ namespace Helix.MiddleEnd.Interpreting {
 
         public bool TryEvaluateIfExpression(HmmIfExpression syntax, string cond, out TypeCheckResult result) {
             var condType = this.context.Types[cond];
-            
-            if (condType is not SingularBoolType boolType) {
-                if (this.context.Predicates[cond].TryGetValue(out var pred)) {
-                    if (pred.IsTrue) {
-                        boolType = new SingularBoolType(true);
-                    }
-                    else if (pred.IsFalse) {
-                        boolType = new SingularBoolType(false);
-                    }
-                    else {
-                        result = default;
-                        return false;
-                    }
-                }                
+            bool value = false;
+
+            if (condType is SingularBoolType boolType) {
+                if (boolType.Predicate.IsTrue) {
+                    value = true;
+                }
+                else if (boolType.Predicate.IsFalse) {
+                    value = false;
+                }
                 else {
                     result = default;
                     return false;
                 }
             }
+            else {
+                result = default;
+                return false;
+            }
 
-            if (boolType.Value) {
+            if (value) {
                 var affirmFlow = this.context.TypeChecker.CheckBody(syntax.AffirmativeBody);
 
                 if (affirmFlow.ControlFlow.DoesJump) {
@@ -143,24 +142,24 @@ namespace Helix.MiddleEnd.Interpreting {
             }
         }
 
-        public bool TryEvaluateUnarySyntax(HmmUnaryOperator syntax, out TypeCheckResult result) {
-            var type = this.context.Types[syntax.Operand];
+        //public bool TryEvaluateUnarySyntax(HmmUnarySyntax syntax, out TypeCheckResult result) {
+        //    var type = this.context.Types[syntax.Operand];
 
-            if (type is SingularBoolType boolType && syntax.Operator == UnaryOperatorKind.Not) {
-                var stat = new HmmVariableStatement() {
-                    Location = syntax.Location,
-                    IsMutable = false,
-                    Variable = syntax.Result,
-                    Value = (!boolType.Value).ToString().ToLower()
-                };
+        //    if (type is SingularBoolType boolType && syntax.Operator == UnaryOperatorKind.Not) {
+        //        var stat = new HmmUnarySyntax() {
+        //            Location = syntax.Location,
+        //            Result = syntax.Result,
+        //            Operator = UnaryOperatorKind.Not,
+        //            Operand = 
+        //        };
 
-                result = stat.Accept(this.context.TypeChecker);
-                return true;
-            }
+        //        result = stat.Accept(this.context.TypeChecker);
+        //        return true;
+        //    }
 
-            result = default;
-            return false;
-        }
+        //    result = default;
+        //    return false;
+        //}
 
         public bool TryEvaluateVisitBinarySyntax(HmmBinarySyntax syntax, IHelixType leftType, IHelixType rightType, out TypeCheckResult resultName) {
             // Evaluate word operations when we know both sides
@@ -200,40 +199,40 @@ namespace Helix.MiddleEnd.Interpreting {
             }
 
             // Evaluate book operations when we know both sides
-            if (leftType is SingularBoolType boolLeft && rightType is SingularBoolType boolRight) {
-                IHelixType? result = syntax.Operator switch {
-                    BinaryOperationKind.And => new SingularBoolType(boolLeft.Value & boolRight.Value),
-                    BinaryOperationKind.Or => new SingularBoolType(boolLeft.Value | boolRight.Value),
-                    BinaryOperationKind.Xor => new SingularBoolType(boolLeft.Value ^ boolRight.Value),
-                    BinaryOperationKind.EqualTo => new SingularBoolType(boolLeft.Value == boolRight.Value),
-                    BinaryOperationKind.NotEqualTo => new SingularBoolType(boolLeft.Value != boolRight.Value),
-                    _ => null,
-                };
+            //if (leftType is SingularBoolType boolLeft && rightType is SingularBoolType boolRight) {
+            //    IHelixType? result = syntax.Operator switch {
+            //        BinaryOperationKind.And => new SingularBoolType(boolLeft.Value & boolRight.Value),
+            //        BinaryOperationKind.Or => new SingularBoolType(boolLeft.Value | boolRight.Value),
+            //        BinaryOperationKind.Xor => new SingularBoolType(boolLeft.Value ^ boolRight.Value),
+            //        BinaryOperationKind.EqualTo => new SingularBoolType(boolLeft.Value == boolRight.Value),
+            //        BinaryOperationKind.NotEqualTo => new SingularBoolType(boolLeft.Value != boolRight.Value),
+            //        _ => null,
+            //    };
 
-                if (result == null) {
-                    resultName = default;
-                    return false;
-                }
+            //    if (result == null) {
+            //        resultName = default;
+            //        return false;
+            //    }
 
-                var stat = new HmmVariableStatement() {
-                    IsMutable = false,
-                    Location = syntax.Location,
-                    Value = result.ToString(),
-                    Variable = syntax.Result
-                };
+            //    var stat = new HmmVariableStatement() {
+            //        IsMutable = false,
+            //        Location = syntax.Location,
+            //        Value = result.ToString(),
+            //        Variable = syntax.Result
+            //    };
 
-                resultName = stat.Accept(this.context.TypeChecker);
-                return true;
-            }
+            //    resultName = stat.Accept(this.context.TypeChecker);
+            //    return true;
+            //}
             
 
-            // Evaluate bool operations when we know one side
-            if (leftType is SingularBoolType boolLeft2) {
-                return TryCheckSingleBinaryExpression(syntax, boolLeft2.Value, syntax.Right, out resultName);
-            }
-            else if (rightType is SingularBoolType boolRight2) {
-                return TryCheckSingleBinaryExpression(syntax, boolRight2.Value, syntax.Left, out resultName);
-            }
+            //// Evaluate bool operations when we know one side
+            //if (leftType is SingularBoolType boolLeft2) {
+            //    return TryCheckSingleBinaryExpression(syntax, boolLeft2.Value, syntax.Right, out resultName);
+            //}
+            //else if (rightType is SingularBoolType boolRight2) {
+            //    return TryCheckSingleBinaryExpression(syntax, boolRight2.Value, syntax.Left, out resultName);
+            //}
 
             resultName = default;
             return false;

@@ -1,7 +1,9 @@
 ﻿using Helix.Common;
 using Helix.Common.Types;
+using Helix.Common.Types.Visitors;
 
-namespace Helix.MiddleEnd.TypeVisitors {
+namespace Helix.MiddleEnd.TypeVisitors
+{
     internal class TypeToExpressionVisitor : ITypeVisitor<Option<string>> {
         public static TypeToExpressionVisitor Instance { get; } = new();
 

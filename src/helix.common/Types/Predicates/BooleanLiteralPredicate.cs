@@ -3,7 +3,7 @@ using Helix.MiddleEnd.Interpreting;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Helix.MiddleEnd.FlowTyping {
-    internal record BooleanLiteralPredicate : ICnfLeaf {
+    public record BooleanLiteralPredicate : ICnfLeaf {
         public bool IsTrue { get; }
 
         public BooleanLiteralPredicate(bool isTrue) {

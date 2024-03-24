@@ -6,7 +6,7 @@
 
         public T VisitAddressOf(HmmAddressOf syntax);
 
-        public T VisitUnaryOperator(HmmUnaryOperator syntax);
+        public T VisitUnaryOperator(HmmUnarySyntax syntax);
 
         public T VisitBinarySyntax(HmmBinarySyntax syntax);
 

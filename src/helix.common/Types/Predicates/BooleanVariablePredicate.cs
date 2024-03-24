@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace Helix.MiddleEnd.FlowTyping {
-    internal record BooleanVariablePredicate : ICnfLeaf {
+    public record BooleanVariablePredicate : ICnfLeaf {
         public IValueLocation Variable { get; }
 
         public bool IsNegated { get; }

@@ -33,7 +33,6 @@ namespace Helix.MiddleEnd.TypeChecking {
 
         private readonly AnalysisContext context;
         private readonly Evaluator eval;
-        private readonly PredicatesTracker predicateTracker;
 
         private SyntaxWriter<IHirSyntax> Writer => this.context.Writer;
 
@@ -46,7 +45,6 @@ namespace Helix.MiddleEnd.TypeChecking {
         public TypeChecker(AnalysisContext context) {
             this.context = context;
             this.eval = new Evaluator(context);
-            this.predicateTracker = new PredicatesTracker(context);
         }
 
         public TypeCheckResult VisitArrayLiteral(HmmArrayLiteral syntax) {
@@ -127,7 +125,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             IHelixType? returnType;
 
             if (this.Unifier.CanConvert(type1, BoolType.Instance) && this.Unifier.CanConvert(type2, BoolType.Instance)) {
-                if (!boolOperations.TryGetValue(syntax.Operator, out returnType)) {
+                if (!this.GetBoolOperationReturnType(syntax.Operator, type1, type2).TryGetValue(out returnType)) {
                     throw TypeCheckException.InvalidBinaryOperator(syntax.Location, type1, type2, syntax.Operator);
                 }
 
@@ -161,9 +159,75 @@ namespace Helix.MiddleEnd.TypeChecking {
             });
 
             this.context.AliasTracker.RegisterLocal(syntax.Result, returnType);
-            this.predicateTracker.TrackBinaryExpression(syntax);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
+        }
+
+        private Option<IHelixType> GetBoolOperationReturnType(BinaryOperationKind op, IHelixType left, IHelixType right) {
+            var validOp = 
+                op == BinaryOperationKind.And
+                || op == BinaryOperationKind.Or
+                || op == BinaryOperationKind.EqualTo
+                || op == BinaryOperationKind.NotEqualTo;
+
+            if (!validOp) {
+                return Option.None;
+            }
+
+            if (left is SingularBoolType singLeft && right is SingularBoolType singRight) {
+                if (op == BinaryOperationKind.And) {
+                    return new SingularBoolType(singLeft.Predicate & singRight.Predicate);
+                }
+                else if (op == BinaryOperationKind.Or) {
+                    return new SingularBoolType(singLeft.Predicate | singRight.Predicate);
+                }
+                else if (op == BinaryOperationKind.EqualTo) {
+                    return new SingularBoolType((singLeft.Predicate | !singRight.Predicate) & (!singLeft.Predicate | singRight.Predicate));
+                }
+                else {
+                    return new SingularBoolType((singLeft.Predicate | singRight.Predicate) & (!singLeft.Predicate | !singRight.Predicate));
+                }
+            }
+
+            if (left is SingularBoolType singLeft2) {
+                if (singLeft2.Predicate.IsTrue) {
+                    if (op == BinaryOperationKind.And) {
+                        return right;
+                    }
+                    else if (op == BinaryOperationKind.Or) {
+                        return new SingularBoolType(true);
+                    }
+                }
+                else if (singLeft2.Predicate.IsFalse) {
+                    if (op == BinaryOperationKind.And) {
+                        return new SingularBoolType(false);
+                    }
+                    else if (op == BinaryOperationKind.Or) {
+                        return right;
+                    }
+                }
+            }
+
+            if (right is SingularBoolType singRight2) {
+                if (singRight2.Predicate.IsTrue) {
+                    if (op == BinaryOperationKind.And) {
+                        return left;
+                    }
+                    else if (op == BinaryOperationKind.Or) {
+                        return new SingularBoolType(true);
+                    }
+                }
+                else if (singRight2.Predicate.IsFalse) {
+                    if (op == BinaryOperationKind.And) {
+                        return new SingularBoolType(false);
+                    }
+                    else if (op == BinaryOperationKind.Or) {
+                        return left;
+                    }
+                }
+            }
+
+            return BoolType.Instance;
         }
 
         public TypeCheckResult VisitBreak(HmmBreakSyntax syntax) {
@@ -254,8 +318,8 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.context.ScopeStack.Push(this.context.ScopeStack.Peek().CreateScope());
             this.context.WriterStack.Push(this.Writer.CreateScope());
 
-            if (this.context.Predicates[cond].TryGetValue(out var affirmPred)) {
-                this.context.Types.SetImplications(affirmPred.GetImplications());
+            if (this.Types[cond] is SingularBoolType boolType) {
+                this.context.Types.SetImplications(boolType.Predicate.GetImplications());
             }
 
             var (_, affirmFlow) = this.CheckBody(syntax.AffirmativeBody);
@@ -267,8 +331,8 @@ namespace Helix.MiddleEnd.TypeChecking {
             this.context.ScopeStack.Push(this.context.ScopeStack.Peek().CreateScope());
             this.context.WriterStack.Push(this.Writer.CreateScope());
 
-            if (this.context.Predicates[cond].Select(x => x.Negate()).TryGetValue(out var negPred)) {
-                this.context.Types.SetImplications(negPred.GetImplications());
+            if (this.Types[cond] is SingularBoolType boolType2) {
+                this.context.Types.SetImplications(boolType2.Predicate.Negate().GetImplications());
             }
 
             var (_, negFlow) = this.CheckBody(syntax.NegativeBody);
@@ -741,28 +805,29 @@ namespace Helix.MiddleEnd.TypeChecking {
             return TypeCheckResult.VoidResult;
         }
 
-        public TypeCheckResult VisitUnaryOperator(HmmUnaryOperator syntax) {
+        public TypeCheckResult VisitUnaryOperator(HmmUnarySyntax syntax) {
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Plus);
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Minus);
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.AddressOf);
             Assert.IsFalse(syntax.Operator == UnaryOperatorKind.Dereference);
 
-            if (this.eval.TryEvaluateUnarySyntax(syntax, out var eval)) {
-                return eval;
-            }
-
             if (syntax.Operator == UnaryOperatorKind.Not) {
                 var arg = this.Unifier.Convert(syntax.Operand, BoolType.Instance, syntax.Location);
+                var returnType = BoolType.Instance as IHelixType;
+
+                if (this.context.Types[arg] is SingularBoolType boolType) {
+                    returnType = new SingularBoolType(boolType.Predicate.Negate());
+                }
 
                 this.Writer.AddLine(new HirUnaryOperator() {
                     Location = syntax.Location,
                     Operand = arg,
                     Operator = syntax.Operator,
                     Result = syntax.Result,
-                    ResultType = BoolType.Instance
+                    ResultType = returnType
                 });
 
-                this.context.AliasTracker.RegisterLocal(syntax.Result, BoolType.Instance);
+                this.context.AliasTracker.RegisterLocal(syntax.Result, returnType);
 
                 return TypeCheckResult.NormalFlow(syntax.Result);
             }

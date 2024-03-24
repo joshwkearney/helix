@@ -120,7 +120,7 @@ namespace Helix.MiddleEnd.Optimizations {
 
         public Option<IHmmSyntax> VisitTypeDeclaration(HmmTypeDeclaration syntax) => syntax;
 
-        public Option<IHmmSyntax> VisitUnaryOperator(HmmUnaryOperator syntax) => this.VisitExpression(syntax, syntax.Result, syntax.Operand);
+        public Option<IHmmSyntax> VisitUnaryOperator(HmmUnarySyntax syntax) => this.VisitExpression(syntax, syntax.Result, syntax.Operand);
 
         public Option<IHmmSyntax> VisitUnionDeclaration(HmmUnionDeclaration syntax) => syntax;
 

@@ -108,10 +108,15 @@ namespace Helix.MiddleEnd.TypeChecking {
             // From singular bool
             if (fromType is SingularBoolType sing2) {
                 if (toType == BoolType.Instance) {
-                    return Option.Some<TypeConverter>((_, _) => sing2.ToString());
+                    return Option.Some<TypeConverter>((v, _) => v);
                 }
                 else if (toType == WordType.Instance) {
-                    return Option.Some<TypeConverter>((_, _) => sing2.Value ? "1" : "0");
+                    if (sing2.Predicate.IsTrue) {
+                        return Option.Some<TypeConverter>((_, _) => "1");
+                    }
+                    else if (sing2.Predicate.IsFalse) {
+                        return Option.Some<TypeConverter>((_, _) => "0");
+                    }
                 }
             }
 

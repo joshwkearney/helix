@@ -232,7 +232,7 @@
             }
         }
 
-        public string VisitUnaryOperator(HmmUnaryOperator syntax) {
+        public string VisitUnaryOperator(HmmUnarySyntax syntax) {
             if (syntax.Operator == UnaryOperatorKind.AddressOf) {
                 return this.GetIndent() + $"let {syntax.Result} = &{syntax.Operand};\n";
             }

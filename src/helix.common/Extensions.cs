@@ -1,9 +1,10 @@
 ﻿using Helix.Common.Collections;
 using Helix.Common.Types;
-using Helix.MiddleEnd.TypeVisitors;
+using Helix.Common.Types.Visitors;
 using System.Collections.Immutable;
 
-namespace Helix.Common {
+namespace Helix.Common
+{
     public static class Extensions {
         public static ValueList<T> ToValueList<T>(this IEnumerable<T> sequence) {
             if (sequence is ValueList<T> list) {

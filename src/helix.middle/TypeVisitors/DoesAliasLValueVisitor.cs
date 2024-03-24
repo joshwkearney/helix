@@ -1,6 +1,8 @@
 ﻿using Helix.Common.Types;
+using Helix.Common.Types.Visitors;
 
-namespace Helix.MiddleEnd.TypeVisitors {
+namespace Helix.MiddleEnd.TypeVisitors
+{
     internal class DoesAliasLValueVisitor : ITypeVisitor<bool> {
         public static DoesAliasLValueVisitor Instance { get; } = new();
 

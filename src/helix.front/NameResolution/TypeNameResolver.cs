@@ -1,8 +1,10 @@
 ﻿using Helix.Common;
 using Helix.Common.Tokens;
 using Helix.Common.Types;
+using Helix.Common.Types.Visitors;
 
-namespace Helix.Frontend.NameResolution {
+namespace Helix.Frontend.NameResolution
+{
     internal class TypeNameResolver {
         private readonly IdentifierPath scope;
         private readonly DeclarationStore declarations;

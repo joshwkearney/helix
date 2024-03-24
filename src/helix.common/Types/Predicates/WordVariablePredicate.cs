@@ -3,7 +3,7 @@ using Helix.MiddleEnd.Interpreting;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Helix.MiddleEnd.FlowTyping {
-    internal record WordVariablePredicate : ICnfLeaf {
+    public record WordVariablePredicate : ICnfLeaf {
         public IValueLocation Variable { get; }
 
         public long Value { get; }

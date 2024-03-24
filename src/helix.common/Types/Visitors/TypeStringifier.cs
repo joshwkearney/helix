@@ -1,4 +1,4 @@
-﻿namespace Helix.Common.Types {
+﻿namespace Helix.Common.Types.Visitors {
     internal class TypeStringifier : ITypeVisitor<string> {
         public static TypeStringifier Instance { get; } = new();
 
@@ -25,7 +25,7 @@
         }
 
         public string VisitSingularBoolType(SingularBoolType type) {
-            return type.Value ? "true" : "false";
+            return $"bool[{type.Predicate}]";
         }
 
         public string VisitSingularUnionType(SingularUnionType type) {

@@ -18,8 +18,6 @@ namespace Helix.MiddleEnd {
 
         public AliasStore Aliases => this.ScopeStack.Peek().Aliases;
 
-        public PredicateStore Predicates => this.ScopeStack.Peek().Predicates;
-
         public NamesStore Names { get; }
 
         public SignatureStore Signatures { get; }

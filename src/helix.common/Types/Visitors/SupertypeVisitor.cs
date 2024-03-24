@@ -1,6 +1,6 @@
 ﻿using Helix.Common.Types;
 
-namespace Helix.MiddleEnd.TypeVisitors {
+namespace Helix.Common.Types.Visitors {
     internal class SupertypeVisitor : ITypeVisitor<IHelixType> {
         public static SupertypeVisitor Instance { get; } = new();
 

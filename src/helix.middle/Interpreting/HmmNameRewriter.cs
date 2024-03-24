@@ -177,10 +177,10 @@ namespace Helix.MiddleEnd.Interpreting {
 
         public IHmmSyntax VisitTypeDeclaration(HmmTypeDeclaration syntax) => throw Assert.Fail();
 
-        public IHmmSyntax VisitUnaryOperator(HmmUnaryOperator syntax) {
+        public IHmmSyntax VisitUnaryOperator(HmmUnarySyntax syntax) {
             this.RegisterName(syntax.Result);
 
-            return new HmmUnaryOperator() {
+            return new HmmUnarySyntax() {
                 Location = syntax.Location,
                 Operator = syntax.Operator,
                 Result = this.GetName(syntax.Result),

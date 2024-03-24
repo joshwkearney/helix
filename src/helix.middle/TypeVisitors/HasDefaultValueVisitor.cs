@@ -1,6 +1,8 @@
 ﻿using Helix.Common.Types;
+using Helix.Common.Types.Visitors;
 
-namespace Helix.MiddleEnd.TypeVisitors {
+namespace Helix.MiddleEnd.TypeVisitors
+{
     internal class HasDefaultValueVisitor : ITypeVisitor<bool> {
         private readonly AnalysisContext context;
 
@@ -22,7 +24,7 @@ namespace Helix.MiddleEnd.TypeVisitors {
 
         public bool VisitPointerType(PointerType type) => false;
 
-        public bool VisitSingularBoolType(SingularBoolType type) => type.Value == false;
+        public bool VisitSingularBoolType(SingularBoolType type) => false;
 
         public bool VisitSingularUnionType(SingularUnionType type) => type.Value.Accept(this);
 
