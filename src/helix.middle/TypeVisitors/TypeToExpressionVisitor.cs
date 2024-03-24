@@ -2,8 +2,7 @@
 using Helix.Common.Types;
 using Helix.Common.Types.Visitors;
 
-namespace Helix.MiddleEnd.TypeVisitors
-{
+namespace Helix.MiddleEnd.TypeVisitors {
     internal class TypeToExpressionVisitor : ITypeVisitor<Option<string>> {
         public static TypeToExpressionVisitor Instance { get; } = new();
 
@@ -18,6 +17,8 @@ namespace Helix.MiddleEnd.TypeVisitors
         public Option<string> VisitPointerType(PointerType type) => Option.None;
 
         public Option<string> VisitSingularBoolType(SingularBoolType type) => type.ToString();
+
+        public Option<string> VisitSingularStructType(SingularStructType type) => Option.None;
 
         public Option<string> VisitSingularUnionType(SingularUnionType type) => Option.None;
 

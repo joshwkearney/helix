@@ -25,11 +25,25 @@
         }
 
         public string VisitSingularBoolType(SingularBoolType type) {
-            return $"bool[{type.Predicate}]";
+            if (type.Predicate.IsTrue) {
+                return "true";
+            }
+            else if (type.Predicate.IsFalse) {
+                return "false";
+            }
+            else {
+                return $"bool[{type.Predicate}]";
+            }
+        }
+
+        public string VisitSingularStructType(SingularStructType type) {
+            var mems = type.Members.OrderBy(x => x.Name).Select(x => x.Name + " as " + x.Type);
+
+            return type.StructType + " { " + string.Join("; ", mems) + " }";
         }
 
         public string VisitSingularUnionType(SingularUnionType type) {
-            return type.UnionType + " { " + type.Member + " = " + type.Value + " }";
+            return type.UnionType + " { " + type.Member + " as " + type.Value + "; }";
         }
 
         public string VisitSingularWordType(SingularWordType type) {

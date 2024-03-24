@@ -1,8 +1,7 @@
 ﻿using Helix.Common.Types;
 using Helix.Common.Types.Visitors;
 
-namespace Helix.MiddleEnd.TypeVisitors
-{
+namespace Helix.MiddleEnd.TypeVisitors {
     internal class RecursiveFieldEnumerator : ITypeVisitor<IEnumerable<IHelixType>> {
         private readonly HashSet<IHelixType> visitedStructs = [];
         private readonly AnalysisContext context;
@@ -45,6 +44,10 @@ namespace Helix.MiddleEnd.TypeVisitors
         public IEnumerable<IHelixType> VisitPointerType(PointerType type) => [];
 
         public IEnumerable<IHelixType> VisitSingularBoolType(SingularBoolType type) => [];
+
+        public IEnumerable<IHelixType> VisitSingularStructType(SingularStructType type) {
+            return type.StructType.Accept(this);
+        }
 
         public IEnumerable<IHelixType> VisitSingularUnionType(SingularUnionType type) {
             return type.UnionType.Accept(this);

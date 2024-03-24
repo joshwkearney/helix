@@ -12,11 +12,13 @@ namespace Helix.Common.Types.Visitors {
 
         public IHelixType VisitPointerType(PointerType type) => type;
 
-        public IHelixType VisitSingularBoolType(SingularBoolType type) => new BoolType();
+        public IHelixType VisitSingularBoolType(SingularBoolType type) => BoolType.Instance;
+
+        public IHelixType VisitSingularStructType(SingularStructType type) => type.StructType;
 
         public IHelixType VisitSingularUnionType(SingularUnionType type) => type.UnionType;
 
-        public IHelixType VisitSingularWordType(SingularWordType type) => new WordType();
+        public IHelixType VisitSingularWordType(SingularWordType type) => WordType.Instance;
 
         public IHelixType VisitVoidType(VoidType type) => type;
 

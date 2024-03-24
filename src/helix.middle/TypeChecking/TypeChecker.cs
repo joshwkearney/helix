@@ -167,6 +167,7 @@ namespace Helix.MiddleEnd.TypeChecking {
             var validOp = 
                 op == BinaryOperationKind.And
                 || op == BinaryOperationKind.Or
+                || op == BinaryOperationKind.Xor
                 || op == BinaryOperationKind.EqualTo
                 || op == BinaryOperationKind.NotEqualTo;
 
@@ -184,7 +185,7 @@ namespace Helix.MiddleEnd.TypeChecking {
                 else if (op == BinaryOperationKind.EqualTo) {
                     return new SingularBoolType((singLeft.Predicate | !singRight.Predicate) & (!singLeft.Predicate | singRight.Predicate));
                 }
-                else {
+                else if (op == BinaryOperationKind.NotEqualTo || op == BinaryOperationKind.Xor) {
                     return new SingularBoolType((singLeft.Predicate | singRight.Predicate) & (!singLeft.Predicate | !singRight.Predicate));
                 }
             }
@@ -710,14 +711,25 @@ namespace Helix.MiddleEnd.TypeChecking {
                 });
             }
 
+            var singStruct = new SingularStructType() {
+                StructType = syntax.Type,
+                Members = newAssignments
+                    .Select(x => new StructMember() {
+                        IsMutable = false,
+                        Name = x.Field.GetValue(),
+                        Type = this.context.Types[x.Value]
+                    })
+                    .ToValueSet()
+            };
+
             this.Writer.AddLine(new HirNewSyntax() {
                 Location = syntax.Location,
                 Assignments = newAssignments,
                 Result = syntax.Result,
-                ResultType = syntax.Type
+                ResultType = singStruct
             });
 
-            this.context.AliasTracker.RegisterNewStruct(syntax.Result, syntax.Type, newAssignments);
+            this.context.AliasTracker.RegisterNewStruct(syntax.Result, singStruct, newAssignments);
 
             return TypeCheckResult.NormalFlow(syntax.Result);
         }

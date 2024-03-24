@@ -99,6 +99,13 @@ namespace Helix.Frontend.NameResolution
 
             public IHelixType VisitSingularBoolType(SingularBoolType type) => type;
 
+            public IHelixType VisitSingularStructType(SingularStructType type) {
+                return new SingularStructType() {
+                    StructType = type.StructType,
+                    Members = type.Members.Select(x => new StructMember() { Name = x.Name, Type = x.Type.Accept(this), IsMutable = false }).ToValueSet()
+                };
+            }
+
             public IHelixType VisitSingularUnionType(SingularUnionType type) {
                 return new SingularUnionType(type.UnionType.Accept(this), type.Member, type.Value.Accept(this));
             }

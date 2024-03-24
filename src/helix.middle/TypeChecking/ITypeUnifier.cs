@@ -27,8 +27,6 @@ namespace Helix.MiddleEnd.TypeChecking {
             var result = unifier.Invoke(value, loc);
             var resultType = context.Types[result];
 
-            Assert.IsTrue(resultType.GetSupertype() == toType);
-
             return result;
         }
 
@@ -142,6 +140,13 @@ namespace Helix.MiddleEnd.TypeChecking {
 
                         return innerConverter(memAccessName, loc);
                     });
+                }
+            }
+
+            // From singular struct
+            if (fromType is SingularStructType sing4) {
+                if (toType == sing4.StructType) {
+                    return Option.Some<TypeConverter>((value, _) => value);
                 }
             }
 

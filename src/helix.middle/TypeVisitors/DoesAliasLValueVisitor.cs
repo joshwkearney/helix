@@ -1,8 +1,7 @@
 ﻿using Helix.Common.Types;
 using Helix.Common.Types.Visitors;
 
-namespace Helix.MiddleEnd.TypeVisitors
-{
+namespace Helix.MiddleEnd.TypeVisitors {
     internal class DoesAliasLValueVisitor : ITypeVisitor<bool> {
         public static DoesAliasLValueVisitor Instance { get; } = new();
 
@@ -17,6 +16,8 @@ namespace Helix.MiddleEnd.TypeVisitors
         public bool VisitPointerType(PointerType type) => true;
 
         public bool VisitSingularBoolType(SingularBoolType type) => false;
+
+        public bool VisitSingularStructType(SingularStructType type) => type.StructType.Accept(this);
 
         public bool VisitSingularUnionType(SingularUnionType type) => type.UnionType.Accept(this);
 

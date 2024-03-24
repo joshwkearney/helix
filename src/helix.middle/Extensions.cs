@@ -15,7 +15,15 @@ namespace Helix.MiddleEnd {
         }
 
         public static Option<StructSignature> GetStructSignature(this IHelixType type, AnalysisContext context) {
-            return context.Signatures.StructSignatures.GetValueOrNone(type);
+            if (type is NominalType nom) {
+                return context.Signatures.StructSignatures.GetValueOrNone(nom);
+            }
+            else if (type is SingularStructType sing) {
+                return context.Signatures.StructSignatures.GetValueOrNone(sing.StructType);
+            }
+            else {
+                return Option.None;
+            }
         }
 
         public static Option<UnionSignature> GetUnionSignature(this IHelixType type, AnalysisContext context) {

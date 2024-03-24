@@ -17,5 +17,7 @@
         public T VisitPointerType(PointerType type);
 
         public T VisitSingularUnionType(SingularUnionType type);
+
+        public T VisitSingularStructType(SingularStructType type);
     }
 }

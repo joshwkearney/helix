@@ -3,24 +3,21 @@ union Option {
 	var some as word;
 }
 
-func test3(var foo as bool) as Option {
-	var opt = 45 as Option;
-	var test = true;
+struct Point {
+	var x as word;
+	var y as word;
+}
 
-	if false then {
-		test = test and foo;
-	}
+func test3(var foo as word) as Point {
+	var p = new Point { 4, y = foo };
 
-	if test then {
-		return 10;
-	}
-
-	return opt + 10;
+	return p;
 }
 
 // DONE - Simplify unification
 // DONE - Remove anonymous struct and union types
 // DONE - Predicate bools
-// Singular pointers
-// Add singular structs and singular arrays?
+// DONE - Singular structs
 // Make types indexable only by strings
+// Singular pointers
+// Singular arrays?

@@ -1,4 +1,5 @@
-﻿using Helix.Common.Types.Visitors;
+﻿using Helix.Common.Collections;
+using Helix.Common.Types.Visitors;
 using Helix.MiddleEnd.FlowTyping;
 
 namespace Helix.Common.Types {
@@ -44,6 +45,14 @@ namespace Helix.Common.Types {
         public required IHelixType InnerType { get; init; }
 
         public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitPointerType(this);
+    }
+
+    public record SingularStructType : IHelixType {
+        public required IHelixType StructType { get; init;  }
+
+        public required ValueSet<StructMember> Members { get; init; }
+
+        public override T Accept<T>(ITypeVisitor<T> visitor) => visitor.VisitSingularStructType(this);
     }
 
     public record SingularUnionType : IHelixType {
