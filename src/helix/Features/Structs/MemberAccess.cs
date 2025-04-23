@@ -1,13 +1,11 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.Types;
 using Helix.Generation;
-using Helix.Features.Aggregates;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Flow;
-using System.Reflection;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.Structs;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -22,7 +20,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Aggregates {
+namespace Helix.Features.Structs {
     public record MemberAccessSyntax : ISyntaxTree {
         private static int tempCounter = 0;
 
@@ -81,13 +79,10 @@ namespace Helix.Features.Aggregates {
                         target,
                         "count",
                         types.Scope);
-
-                    var bounds = AnalyzeFlow(this.MemberName, PrimitiveType.Word, this.path, target, types);
-
+                    
                     SyntaxTagBuilder.AtFrame(types)
                         .WithChildren(target)
                         .WithReturnType(PrimitiveType.Word)
-                        .WithLifetimes(bounds)
                         .BuildFor(result);
 
                     return result;
@@ -108,13 +103,10 @@ namespace Helix.Features.Aggregates {
                         target,
                         this.MemberName,
                         types.Scope);                    
-
-                    var bounds = AnalyzeFlow(this.MemberName, field.Type, result.path, target, types);
-
+                    
                     SyntaxTagBuilder.AtFrame(types)
                         .WithChildren(target)
                         .WithReturnType(field.Type)
-                        .WithLifetimes(bounds)
                         .BuildFor(result);
 
                     return result;
@@ -122,26 +114,6 @@ namespace Helix.Features.Aggregates {
             }
 
             throw TypeException.MemberUndefined(this.Location, targetType, this.MemberName);
-        }
-
-        private static LifetimeBounds AnalyzeFlow(string memName, HelixType memType, IdentifierPath path, 
-                                                  ISyntaxTree target, TypeFrame flow) {
-            var targetLifetimes = target.GetLifetimes(flow);
-            var parentLifetimes = flow.DataFlowGraph.GetMemberLifetimes(targetLifetimes.ValueLifetime, memName);
-
-            var memLifetime = new ValueLifetime(
-                path, 
-                LifetimeRole.Alias, 
-                LifetimeOrigin.TempValue);
-
-            var newLocal = new LocalInfo(memType, new LifetimeBounds(memLifetime));
-            flow.Locals = flow.Locals.SetItem(path, newLocal);
-
-            foreach (var parent in parentLifetimes) {
-                flow.DataFlowGraph.AddAssignment(parent, memLifetime, memType);
-            }
-
-            return new LifetimeBounds(memLifetime);
         }
 
         public virtual ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

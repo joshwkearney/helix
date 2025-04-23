@@ -1,9 +1,6 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
-using Helix.Analysis.Types;
-using Helix.Features.FlowControl;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -59,8 +56,6 @@ namespace Helix.Features.Functions {
             var result = new ReturnSyntax(this.Location, payload, sig);
 
             SyntaxTagBuilder.AtFrame(types).BuildFor(result);
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, this.funcSig, payload, types);
-
             return result;
         }
 

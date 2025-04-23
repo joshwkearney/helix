@@ -8,11 +8,9 @@ using Helix.Features.Functions;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Features.Variables;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.Collections;
 using Helix.Features.Types;
 
 namespace Helix.Parsing {
@@ -112,10 +110,7 @@ namespace Helix.Features.Functions {
 
             // Declare parameters
             FunctionsHelper.DeclareParameters(sig, path, types);
-
-            // Make sure we include the heap in the root set
-            types.ValidRoots = types.ValidRoots.Add(Lifetime.Heap);
-
+            
             // Check types
             var body = this.body;
 
@@ -129,9 +124,7 @@ namespace Helix.Features.Functions {
             body = body.CheckTypes(types)
                 .ToRValue(types)
                 .UnifyTo(sig.ReturnType, types);
-
-            FunctionsHelper.AnalyzeReturnValueFlow(this.Location, sig, body, types);
-
+            
 #if DEBUG
             // Debug check: make sure that every syntax tree was type checked
             foreach (var expr in body.GetAllChildren()) {

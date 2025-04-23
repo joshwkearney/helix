@@ -1,6 +1,4 @@
-﻿using Helix.Analysis;
-
-namespace Helix.Parsing {
+﻿namespace Helix.Parsing {
     /// <summary>
     /// Represents a lexer that tokenizes the Helix language source code.
     /// </summary>

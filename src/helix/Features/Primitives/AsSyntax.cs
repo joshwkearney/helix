@@ -1,5 +1,4 @@
-﻿using Helix.Analysis;
-using Helix.Features.Primitives;
+﻿using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;

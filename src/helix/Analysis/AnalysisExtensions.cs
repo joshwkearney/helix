@@ -1,6 +1,5 @@
 ﻿using Helix.Syntax;
 using Helix.Analysis.Types;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
 using Helix.Analysis.Predicates;
@@ -149,11 +148,7 @@ namespace Helix.Analysis {
         public static ISyntaxPredicate GetPredicate(this ISyntaxTree syntax, TypeFrame types) {
             return types.SyntaxTags[syntax].Predicate;
         }
-
-        public static LifetimeBounds GetLifetimes(this ISyntaxTree syntax, TypeFrame flow) {
-            return flow.SyntaxTags[syntax].Bounds;
-        }
-
+        
         public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, TypeFrame types) {
             var dict = new Dictionary<IdentifierPath, HelixType>();
 

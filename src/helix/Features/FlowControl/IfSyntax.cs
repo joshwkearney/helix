@@ -5,12 +5,9 @@ using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
-using System.Reflection;
-using Helix.Features.Variables;
 using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.Collections;
 using Helix.Analysis.Predicates;
 
 namespace Helix.Parsing {
@@ -112,10 +109,7 @@ namespace Helix.Features.FlowControl {
 
             iftrue = iftrue.UnifyFrom(iffalse, types);
             iffalse = iffalse.UnifyFrom(iftrue, types);
-
-            // Update any variables modified in either branch
-            MutateLocals(iftrueTypes, iffalseTypes, types);
-
+            
             var resultType = iftrue.GetReturnType(types);
 
             var result = new IfSyntax(
@@ -128,7 +122,6 @@ namespace Helix.Features.FlowControl {
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(cond, iftrue, iffalse)
                 .WithReturnType(resultType)
-                .WithLifetimes(AnalyzeFlow(this.path, iftrue, iffalse, types))
                 .BuildFor(result);
 
             return result;
@@ -141,113 +134,7 @@ namespace Helix.Features.FlowControl {
 
             return this;
         }
-
-        private static LifetimeBounds AnalyzeFlow(IdentifierPath path, ISyntaxTree iftrue, 
-                                                  ISyntaxTree iffalse, TypeFrame flow) {
-            var ifTrueBounds = iftrue.GetLifetimes(flow);
-            var ifFalseBounds = iffalse.GetLifetimes(flow);
-
-            if (iftrue.GetReturnType(flow).IsValueType(flow) || iffalse.GetReturnType(flow).IsValueType(flow)) {
-                return new LifetimeBounds();
-            }
-
-            var role = LifetimeRole.Alias;
-            var newRoots = false
-                || HasNewRoots(ifTrueBounds.ValueLifetime, flow) 
-                || HasNewRoots(ifFalseBounds.ValueLifetime, flow);
-
-            if (newRoots) {
-                role = LifetimeRole.Root;
-            }
-
-            var valueLifetime = new ValueLifetime(
-                path,  
-                role, 
-                LifetimeOrigin.TempValue);
-
-            flow.DataFlowGraph.AddAssignment(
-                valueLifetime, 
-                ifTrueBounds.ValueLifetime, 
-                iftrue.GetReturnType(flow));
-
-            flow.DataFlowGraph.AddAssignment(
-                valueLifetime, 
-                ifFalseBounds.ValueLifetime,
-                iffalse.GetReturnType(flow));
-
-            if (newRoots) {
-                flow.ValidRoots = flow.ValidRoots.Add(valueLifetime);
-            }
-
-            return new LifetimeBounds(valueLifetime);
-        }
-
-        private static bool HasNewRoots(Lifetime lifetime, TypeFrame flow) {
-            var roots = flow.GetMaximumRoots(lifetime);
-
-            return roots.Any(x => !flow.ValidRoots.Contains(x));
-        }
-
-        private static void MutateLocals(
-            TypeFrame trueFrame,
-            TypeFrame falseFrame,
-            TypeFrame flow) {
-
-            var modifiedLocals = trueFrame.Locals
-                .Concat(falseFrame.Locals)
-                .Where(x => !flow.Locals.Contains(x))
-                .Select(x => x.Key)
-                .Where(flow.Locals.ContainsKey)
-                .ToArray();
-
-            foreach (var varPath in modifiedLocals) {
-                var parentType = flow.Locals[varPath].Type;
-
-                var trueLocal = trueFrame
-                    .Locals
-                    .GetValueOrNone(varPath)
-                    .OrElse(() => new LocalInfo(parentType));
-
-                var falseLocal = falseFrame
-                    .Locals
-                    .GetValueOrNone(varPath)
-                    .OrElse(() => new LocalInfo(parentType));
-
-                var trueLifetime = trueLocal.Bounds.ValueLifetime;
-                var falseLifetime = falseLocal.Bounds.ValueLifetime;
-
-                Lifetime postLifetime;
-                if (trueLifetime.Version >= falseLifetime.Version || falseLifetime == Lifetime.None) {
-                    postLifetime = trueLifetime.IncrementVersion();
-                }
-                else {
-                    postLifetime = falseLifetime.IncrementVersion();
-                }
-
-                flow.DataFlowGraph.AddAssignment(trueLifetime, postLifetime, trueLocal.Type);
-                flow.DataFlowGraph.AddAssignment(falseLifetime, postLifetime, falseLocal.Type);
-
-                var roots = flow.GetMaximumRoots(postLifetime);
-
-                // If the new value of this variable depends on a lifetime that was created
-                // inside the loop, we need to declare a new root so that nothing after the
-                // loop uses code that is no longer in scope
-                if (roots.Any(x => !flow.ValidRoots.Contains(x))) {
-                    postLifetime = new ValueLifetime(
-                        postLifetime.Path,
-                        LifetimeRole.Root,
-                        LifetimeOrigin.TempValue,
-                        postLifetime.Version + 1);
-                }
-
-                var newLocal = flow.Locals[varPath]
-                    .WithBounds(new LifetimeBounds(postLifetime))
-                    .WithType(parentType.GetMutationSupertype(flow));                
-
-                flow.Locals = flow.Locals.SetItem(varPath, newLocal);
-            }
-        }
-
+        
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();
             var negList = new List<ICStatement>();

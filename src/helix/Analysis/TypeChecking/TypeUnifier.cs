@@ -1,7 +1,7 @@
 ﻿using Helix.Analysis.Types;
-using Helix.Features.Aggregates;
 using Helix.Features.FlowControl;
-using Helix.Features.Primitives;
+using Helix.Features.Structs;
+using Helix.Features.Unions;
 using Helix.Syntax;
 
 namespace Helix.Analysis.TypeChecking {
@@ -108,7 +108,7 @@ namespace Helix.Analysis.TypeChecking {
             else if (first is SingularWordType) {
                 return TryUnifyFromSingularInt(second, types);
             }
-            else if (first is SingularBoolType || first is PredicateBool) {
+            else if (first is SingularBoolType) {
                 return TryUnifyFromSingularBool(second, types);
             }
             else if (first is PointerType pointerType) {

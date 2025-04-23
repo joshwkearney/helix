@@ -1,8 +1,5 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
-using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
@@ -30,7 +27,6 @@ namespace Helix.Features.Variables {
 
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(args)
-                .WithLifetimes(new LifetimeBounds())
                 .BuildFor(result);
 
             return result;

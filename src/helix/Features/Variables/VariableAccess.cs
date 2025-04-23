@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
@@ -9,7 +8,6 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Features.Functions;
-using System.IO;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -102,7 +100,6 @@ namespace Helix.Features.Variables {
             SyntaxTagBuilder.AtFrame(types)
                 .WithReturnType(this.VariableSignature.InnerType)
                 .WithCapturedVariables(cap)
-                .WithLifetimes(types.Locals[this.VariablePath].Bounds)
                 .BuildFor(this);
 
             return this;

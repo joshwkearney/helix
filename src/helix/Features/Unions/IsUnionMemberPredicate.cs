@@ -1,17 +1,10 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Collections;
-using Helix.Features.Aggregates;
 using Helix.Parsing;
 using Helix.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Helix.Features.Unions {
     public class IsUnionMemberPredicate : SyntaxPredicateLeaf {

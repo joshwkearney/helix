@@ -4,7 +4,6 @@ using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Variables;
@@ -81,8 +80,8 @@ namespace Helix.Features.Primitives {
                 var arg = this.arg.CheckTypes(types);
                 var returnType = arg.GetReturnType(types);
 
-                if (returnType is PredicateBool pred) {
-                    returnType = new PredicateBool(pred.Predicate.Negate());
+                if (returnType is SingularBoolType singularBool) {
+                    returnType = new SingularBoolType(!singularBool.Value);
                 }
                 else {
                     arg = arg.UnifyTo(PrimitiveType.Bool, types);

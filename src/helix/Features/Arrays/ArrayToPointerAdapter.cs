@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Flow;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis;
 using Helix.Analysis.Types;
@@ -48,7 +47,6 @@ namespace Helix.Features.Arrays {
 
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(this.target, this.offset)
-                .WithLifetimes(this.target.GetLifetimes(types))
                 .WithReturnType(new PointerType(this.arrayType.InnerType))
                 .BuildFor(this);
 

@@ -1,10 +1,7 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
-using Helix.Generation;
-using Helix.Generation.Syntax;
 using Helix.Parsing;
-using Helix.Analysis;
 
 namespace Helix.Features {
     public record TypeSyntax : ISyntaxTree {

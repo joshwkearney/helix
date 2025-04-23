@@ -1,5 +1,4 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 
 namespace Helix.Features.Types {

@@ -1,5 +1,4 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 
 namespace Helix.Analysis.Types {
     public record StructType(IReadOnlyList<StructMember> Members) : HelixType {

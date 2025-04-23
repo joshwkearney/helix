@@ -1,10 +1,11 @@
 ﻿using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Parsing;
-using Helix.Features.Aggregates;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis;
+using Helix.Features.Structs;
+using Helix.Features.Unions;
 
 namespace Helix.Parsing {
     public partial class Parser {

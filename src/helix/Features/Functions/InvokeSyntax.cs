@@ -4,7 +4,6 @@ using Helix.Generation;
 using Helix.Features.Functions;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
@@ -82,33 +81,14 @@ namespace Helix.Features.Functions {
 
             var path = types.Scope.Append("$call" + tempCounter++);
             var result = new InvokeSyntax(this.Location, sig, newArgs, named.Path, path);
-            var bounds = AnalyzeFlow(this.Location, path, types);
 
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(newArgs.Append(target))
                 .WithReturnType(sig.ReturnType)
-                .WithLifetimes(bounds)
                 .BuildFor(result);
 
             return result;            
         }
-
-        private static LifetimeBounds AnalyzeFlow(TokenLocation loc, IdentifierPath path, TypeFrame flow) {
-            // Things to do:
-            // 1) Figure out possible reference type aliasing through arguments
-            // 1) Figure out possible pointer aliasing through arguments
-            // 2) Figure out possible argument dependencies for the return value
-            // 3) Create new inferenced return value lifetime
-
-            var invokeLifetime = new InferredLocationLifetime(
-                loc,
-                path,
-                flow.ValidRoots,
-                LifetimeOrigin.TempValue);
-
-            return new LifetimeBounds(invokeLifetime);
-        }
-
     }
 
     public record InvokeSyntax : ISyntaxTree {
@@ -142,14 +122,8 @@ namespace Helix.Features.Functions {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            var region = this
-                .GetLifetimes(types)
-                .ValueLifetime
-                .GenerateCode(types, writer);
-
             var args = this.args
                 .Select(x => x.GenerateCode(types, writer))
-                .Prepend(region)
                 .ToArray();
 
             var result = new CInvoke() {

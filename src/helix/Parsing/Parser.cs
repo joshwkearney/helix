@@ -1,5 +1,4 @@
 ﻿using Helix.Syntax;
-using Helix.Analysis;
 using Helix.Features.Variables;
 
 namespace Helix.Parsing {

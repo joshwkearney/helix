@@ -1,8 +1,5 @@
-﻿using Helix.Analysis.Flow;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
-using Helix.Generation;
-using Helix.Generation.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Analysis.Types {

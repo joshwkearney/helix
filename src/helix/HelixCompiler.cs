@@ -1,6 +1,5 @@
 ﻿using Helix.Parsing;
 using Helix.Generation;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 
 namespace Helix {

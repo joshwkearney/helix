@@ -1,6 +1,5 @@
 ﻿using Helix.Generation;
 using Helix.Generation.CSyntax;
-using Helix.Features.Aggregates;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Analysis.Types;
@@ -8,6 +7,8 @@ using Helix.Syntax;
 using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis;
+using Helix.Features.Structs;
+using Helix.Features.Unions;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -40,7 +41,7 @@ namespace Helix.Parsing {
     }
 }
 
-namespace Helix.Features.Aggregates {
+namespace Helix.Features.Unions {
     public record UnionParseDeclaration : IDeclaration {
         private readonly StructParseSignature signature;
 

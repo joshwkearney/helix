@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis.TypeChecking;
-using Helix.Syntax;
 
 namespace Helix.Analysis.Types {
     public record ArrayType : HelixType {

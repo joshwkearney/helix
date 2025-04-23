@@ -6,13 +6,6 @@ using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
 using Helix.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Helix.Collections;
 
 namespace Helix.Features.Unions {
     public class FlowVarStatement : ISyntaxTree {
@@ -66,27 +59,15 @@ namespace Helix.Features.Unions {
                 this.ShadowedPath, 
                 VariableCaptureKind.LocationCapture, 
                 this.ShadowedType);
-
-            var bounds = AnalyzeFlow(this.ShadowedPath, path, types);
-
+            
             SyntaxTagBuilder.AtFrame(types)
                 .WithCapturedVariables(cap)
-                .WithLifetimes(bounds)
                 .BuildFor(result);
 
             return result;
         }
 
         public ISyntaxTree ToRValue(TypeFrame types) => this;
-
-        public static LifetimeBounds AnalyzeFlow(IdentifierPath shadowedPath, IdentifierPath newPath, 
-                                                 TypeFrame flow) {
-
-            var shadowedBounds = flow.Locals[shadowedPath];
-            flow.Locals = flow.Locals.SetItem(newPath, shadowedBounds);
-
-            return new LifetimeBounds();
-        }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             ICSyntax assign = new CAddressOf() {

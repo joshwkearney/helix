@@ -5,11 +5,9 @@ using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Features.FlowControl;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
-using System;
 
 namespace Helix.Parsing {
     public partial class Parser {

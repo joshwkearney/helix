@@ -1,6 +1,4 @@
-﻿using Helix.Analysis;
-
-namespace Helix.Parsing {
+﻿namespace Helix.Parsing {
     public record struct TokenLocation {
         public int StartIndex { get; }
 

@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
@@ -111,7 +110,6 @@ namespace Helix.Features.Variables {
             }
 
             var pointerType = this.target.AssertIsPointer(types);
-            var bounds = AnalyzeFlow(this.tempPath, this.target, types);
 
             HelixType returnType;
             if (this.isLValue) {
@@ -124,39 +122,11 @@ namespace Helix.Features.Variables {
             SyntaxTagBuilder.AtFrame(types)
                 .WithChildren(this.target)
                 .WithReturnType(returnType)
-                .WithLifetimes(bounds)
                 .BuildFor(this);
 
             return this;
         }
-
-        private static LifetimeBounds AnalyzeFlow(IdentifierPath tempPath, ISyntaxTree target, TypeFrame flow) {
-            var pointerType = target.AssertIsPointer(flow);
-            var pointerLifetime = target.GetLifetimes(flow);
-
-            if (pointerType.InnerType.IsValueType(flow)) {
-                flow.Locals = flow.Locals.SetItem(tempPath, new LocalInfo(target.GetReturnType(flow)));
-                return new LifetimeBounds();
-            }
-
-            // This value's lifetime actually isn't the pointer's lifetime, but some
-            // other lifetime that outlives the pointer. It's important to represent
-            // the value like this because we can't store things into it that only
-            // outlive the pointer
-            var derefValueLifetime = new ValueLifetime(tempPath, LifetimeRole.Root, LifetimeOrigin.TempValue);
-
-            // Make sure we add this as a root
-            flow.ValidRoots = flow.ValidRoots.Add(derefValueLifetime);
-
-            // The lifetime that is stored in the pointer must outlive the pointer itself
-            flow.DataFlowGraph.AddStored(
-                derefValueLifetime, 
-                pointerLifetime.ValueLifetime, 
-                pointerType.InnerType);
-
-            return new LifetimeBounds(derefValueLifetime, pointerLifetime.ValueLifetime);
-        }
-
+        
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = this.target.GenerateCode(types, writer);
 

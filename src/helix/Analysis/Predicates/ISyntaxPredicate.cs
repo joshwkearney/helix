@@ -1,21 +1,8 @@
-﻿using Helix.Analysis.Flow;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Parsing;
 using Helix.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Helix.Analysis.Predicates {
-    public abstract class SyntaxPredicateLeaf : ISyntaxPredicate {
-        public abstract bool TryOrWith(ISyntaxPredicate other, out ISyntaxPredicate result);
-
-        public abstract bool TryAndWith(ISyntaxPredicate other, out ISyntaxPredicate result);
-    }
-
     public abstract class ISyntaxPredicate : IEquatable<ISyntaxPredicate> {
         public static ISyntaxPredicate Empty { get; } = new EmptyPredicate();
 
