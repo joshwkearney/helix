@@ -98,7 +98,7 @@ namespace Helix {
                 path,
                 assign);
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .BuildFor(result);
 
             return result.CheckTypes(types);

@@ -60,7 +60,7 @@ namespace Helix.Features.Unions {
                 VariableCaptureKind.LocationCapture, 
                 this.ShadowedType);
             
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithCapturedVariables(cap)
                 .BuildFor(result);
 

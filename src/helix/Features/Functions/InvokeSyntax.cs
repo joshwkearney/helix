@@ -82,7 +82,7 @@ namespace Helix.Features.Functions {
             var path = types.Scope.Append("$call" + tempCounter++);
             var result = new InvokeSyntax(this.Location, sig, newArgs, named.Path, path);
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(newArgs.Append(target))
                 .WithReturnType(sig.ReturnType)
                 .BuildFor(result);

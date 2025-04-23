@@ -92,7 +92,7 @@ namespace Helix.Features.Primitives {
                     this.Location,
                     arg);
 
-                SyntaxTagBuilder.AtFrame(types)
+                new SyntaxTagBuilder(types)
                     .WithChildren(arg)
                     .WithReturnType(returnType)
                     .BuildFor(result);

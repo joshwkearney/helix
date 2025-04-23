@@ -80,7 +80,7 @@ namespace Helix.Features.Structs {
                         "count",
                         types.Scope);
                     
-                    SyntaxTagBuilder.AtFrame(types)
+                    new SyntaxTagBuilder(types)
                         .WithChildren(target)
                         .WithReturnType(PrimitiveType.Word)
                         .BuildFor(result);
@@ -104,7 +104,7 @@ namespace Helix.Features.Structs {
                         this.MemberName,
                         types.Scope);                    
                     
-                    SyntaxTagBuilder.AtFrame(types)
+                    new SyntaxTagBuilder(types)
                         .WithChildren(target)
                         .WithReturnType(field.Type)
                         .BuildFor(result);
@@ -153,7 +153,7 @@ namespace Helix.Features.Structs {
                 return this;
             }
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(target)
                 .WithReturnType(new PointerType(this.memberType))
                 .BuildFor(this);

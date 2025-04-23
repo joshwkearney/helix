@@ -237,7 +237,7 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(left, right)
                 .WithReturnType(returnType)
                 .BuildFor(result);
@@ -294,7 +294,7 @@ namespace Helix.Features.Primitives {
 
             var result = returnType.ToSyntax(this.Location, types).GetValue();
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 // .WithChildren(left, right) <-- Add this back??
                 .WithReturnType(returnType)
                 .BuildFor(result);
@@ -339,7 +339,7 @@ namespace Helix.Features.Primitives {
 
             var result = new BinarySyntax(this.Location, left, right, this.op, true);
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(left, right)
                 .WithReturnType(returnType)
                 .BuildFor(result);
@@ -371,7 +371,7 @@ namespace Helix.Features.Primitives {
             var returnType = new SingularBoolType(value, pred);
             var result = returnType.ToSyntax(this.Location, types).GetValue();
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithReturnType(returnType)
                 .BuildFor(result);
 

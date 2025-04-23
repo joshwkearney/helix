@@ -19,13 +19,6 @@ namespace Helix.Analysis.TypeChecking {
             this.CapturedVariables = cap;
             this.Predicate = pred;
         }
-
-        public SyntaxTagBuilder ToBuilder(TypeFrame types) {
-            return SyntaxTagBuilder.AtFrame(types)
-                .WithCapturedVariables(this.CapturedVariables)
-                .WithPredicate(this.Predicate)
-                .WithReturnType(this.ReturnType);
-        }
     }
 
     public class SyntaxTagBuilder {
@@ -35,15 +28,7 @@ namespace Helix.Analysis.TypeChecking {
         private ISyntaxPredicate Predicate = ISyntaxPredicate.Empty;
         private HelixType ReturnType = PrimitiveType.Void;
 
-        public static SyntaxTagBuilder AtFrame(TypeFrame types) {
-            return new SyntaxTagBuilder(types);
-        }
-
-        public static SyntaxTagBuilder AtFrame(TypeFrame types, ISyntaxTree syntax) {
-            return types.SyntaxTags[syntax].ToBuilder(types);
-        }
-
-        private SyntaxTagBuilder(TypeFrame types) {
+        public SyntaxTagBuilder(TypeFrame types) {
             this.types = types;
         }
 

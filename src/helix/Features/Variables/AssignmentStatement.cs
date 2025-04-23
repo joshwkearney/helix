@@ -98,7 +98,7 @@ namespace Helix.Features.Variables {
                 target,
                 assign);
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(target, assign)
                 .BuildFor(result);
 

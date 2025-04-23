@@ -84,7 +84,7 @@ namespace Helix.Features.FlowControl {
                 .Select(x => x.GetReturnType(bodyTypes))
                 .OrElse(() => PrimitiveType.Void);
 
-            SyntaxTagBuilder.AtFrame(bodyTypes)
+            new SyntaxTagBuilder(bodyTypes)
                 .WithChildren(stats)
                 .WithReturnType(returnType)
                 .WithPredicate(predicate)

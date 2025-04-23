@@ -45,7 +45,7 @@ namespace Helix.Features.Arrays {
                 return this;
             }
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(this.target, this.offset)
                 .WithReturnType(new PointerType(this.arrayType.InnerType))
                 .BuildFor(this);

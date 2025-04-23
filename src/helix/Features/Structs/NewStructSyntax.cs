@@ -152,7 +152,7 @@ namespace Helix.Features.Structs {
                 this.path,
                 true);
             
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(allValues)
                 .WithReturnType(this.structType)
                 .BuildFor(result);

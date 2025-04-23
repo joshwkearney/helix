@@ -119,7 +119,7 @@ namespace Helix.Features.Variables {
                 returnType = pointerType.InnerType;
             }
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(this.target)
                 .WithReturnType(returnType)
                 .BuildFor(this);

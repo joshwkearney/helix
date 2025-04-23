@@ -100,7 +100,7 @@ namespace Helix.Features.Unions {
                 new[] { value },
                 types.Scope.Append(this.tempPath));
             
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(value)
                 .WithReturnType(this.unionType)
                 .BuildFor(result);

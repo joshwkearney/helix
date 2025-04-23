@@ -55,7 +55,7 @@ namespace Helix.Features.Functions {
 
             var result = new ReturnSyntax(this.Location, payload, sig);
 
-            SyntaxTagBuilder.AtFrame(types).BuildFor(result);
+            new SyntaxTagBuilder(types).BuildFor(result);
             return result;
         }
 

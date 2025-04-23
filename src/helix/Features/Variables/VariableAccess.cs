@@ -97,7 +97,7 @@ namespace Helix.Features.Variables {
                 VariableCaptureKind.ValueCapture,
                 this.VariableSignature);
 
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithReturnType(this.VariableSignature.InnerType)
                 .WithCapturedVariables(cap)
                 .BuildFor(this);
@@ -119,7 +119,7 @@ namespace Helix.Features.Variables {
                 VariableCaptureKind.LocationCapture,
                 this.VariableSignature);
 
-            SyntaxTagBuilder.AtFrame(types, result)
+            new SyntaxTagBuilder(types)
                 .WithReturnType(new NominalType(this.VariablePath, NominalTypeKind.Variable))
                 .WithCapturedVariables(captured)
                 .BuildFor(result);

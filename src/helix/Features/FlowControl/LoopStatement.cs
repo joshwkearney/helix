@@ -82,7 +82,7 @@ namespace Helix.Features.FlowControl {
             var body = this.body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
             var result = (ISyntaxTree)new LoopStatement(this.Location, body, this.name);
             
-            SyntaxTagBuilder.AtFrame(types)
+            new SyntaxTagBuilder(types)
                 .WithChildren(body)
                 .BuildFor(result);
 
