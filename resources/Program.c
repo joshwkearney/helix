@@ -22,16 +22,9 @@ struct Point {
 };
 
 _Word test12(_Region* _return_region) {
-    /* Line 7: New variable declaration '$t_0' */
-    Point $t_0 = (Point){ .x= 8, .y= 9 };
+    Point a = (Point){ .x= 8, .y= 9 };
 
-    /* Line 7: New variable declaration 'a' */
-    _Word a = ($t_0.x);
-
-    /* Line 7: New variable declaration 'b' */
-    _Word b = ($t_0.y);
-
-    return a;
+    return (a.x);
 
     return 0;
 }

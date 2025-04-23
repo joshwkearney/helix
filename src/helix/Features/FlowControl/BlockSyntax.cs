@@ -90,10 +90,10 @@ namespace Helix.Features.FlowControl {
             // Evaluate this statement and get the next predicate
             var second = stat.CheckTypes(statTypes).ToRValue(statTypes);
             var result = new BlockSyntax(this.Location, first, second);
-            var returnType = stat.GetReturnType(types);
+            var returnType = second.GetReturnType(statTypes);
 
             types.SyntaxTags[result] = new SyntaxTagBuilder(types)
-                .WithChildren(first, stat)
+                .WithChildren(first, second)
                 .WithReturnType(returnType)
                 .WithPredicate(predicate)
                 .Build();

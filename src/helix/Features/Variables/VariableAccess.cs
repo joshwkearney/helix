@@ -99,7 +99,6 @@ namespace Helix.Features.Variables {
 
             types.SyntaxTags[this] = new SyntaxTagBuilder(types)
                 .WithReturnType(this.VariableSignature.InnerType)
-                .WithCapturedVariables(cap)
                 .Build();
 
             return this;
@@ -121,7 +120,6 @@ namespace Helix.Features.Variables {
 
             types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithReturnType(new NominalType(this.VariablePath, NominalTypeKind.Variable))
-                .WithCapturedVariables(captured)
                 .Build();
 
             return result;

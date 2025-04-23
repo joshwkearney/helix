@@ -124,10 +124,6 @@ namespace Helix.Analysis {
             return types.SyntaxTags[syntax].ReturnType;
         }
 
-        public static IReadOnlyList<VariableCapture> GetCapturedVariables(this ISyntaxTree syntax, TypeFrame types) {
-            return types.SyntaxTags[syntax].CapturedVariables;
-        }
-
         public static PointerType AssertIsPointer(this ISyntaxTree syntax, TypeFrame types) {
             var type = syntax.GetReturnType(types);
 

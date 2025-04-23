@@ -28,15 +28,10 @@ namespace Helix.Features.Variables {
             var target = this.target.CheckTypes(types).ToLValue(types);
             var varType = target.GetReturnType(types);
             var result = new AddressOfSyntax(Location, target);
-
-            var capturedVars = target.GetCapturedVariables(types)
-                .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, x.Signature))
-                .ToArray();
             
             types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithChildren(target)
                 .WithReturnType(varType)
-                .WithCapturedVariables(capturedVars)
                 .Build();
 
             return result;

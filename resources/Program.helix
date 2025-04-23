@@ -5,6 +5,10 @@ struct Point {
 
 func test12() as word {
 	var a = new Point { 8, 9 };
+	
+	if int.TryParse("4", var x = 0) {
+	    
+	}
 
 	return a.x;
 };

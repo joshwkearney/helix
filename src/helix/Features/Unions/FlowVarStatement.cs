@@ -54,16 +54,8 @@ namespace Helix.Features.Unions {
                 this.ShadowedPath, 
                 this.ShadowedType, 
                 path);
-
-            var cap = new VariableCapture(
-                this.ShadowedPath, 
-                VariableCaptureKind.LocationCapture, 
-                this.ShadowedType);
             
-            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
-                .WithCapturedVariables(cap)
-                .Build();
-
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types).Build();
             return result;
         }
 

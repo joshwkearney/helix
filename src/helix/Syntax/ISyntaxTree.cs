@@ -5,6 +5,14 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Syntax {
+    public interface IParseTree {
+        public TokenLocation Location { get; }
+
+        public Option<HelixType> AsType(TypeFrame types) => Option.None;
+        
+        public ISyntaxTree CheckTypes(TypeFrame types);
+    }
+    
     public interface ISyntaxTree {
         public TokenLocation Location { get; }
 

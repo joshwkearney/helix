@@ -173,7 +173,10 @@ namespace Helix {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
-            throw new NotImplementedException();
+            var assign = this.assignSyntax.GenerateCode(flow, writer);
+            
+            this.GenerateStackAllocation(assign, flow, writer);
+            return new CIntLiteral(0);
         }
 
         private void GenerateStackAllocation(ICSyntax assign, TypeFrame types, ICStatementWriter writer) {
