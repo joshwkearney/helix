@@ -103,8 +103,8 @@ namespace Helix.Features.FlowControl {
             var ifTruePrepend = condPredicate.ApplyToTypes(this.cond.Location, iftrueTypes);
             var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.cond.Location, iffalseTypes);
 
-            ISyntaxTree iftrue = new CompoundSyntax(this.iftrue.Location, ifTruePrepend.Append(this.iftrue).ToArray());
-            ISyntaxTree iffalse = new CompoundSyntax(this.iffalse.Location, ifFalsePrepend.Append(this.iffalse).ToArray());
+            var iftrue = BlockSyntax.FromMany(this.iftrue.Location, ifTruePrepend.Append(this.iftrue).ToArray());
+            var iffalse = FlowControl.BlockSyntax.FromMany(this.iffalse.Location, ifFalsePrepend.Append(this.iffalse).ToArray());
 
             iftrue = iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
             iffalse = iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);

@@ -23,16 +23,7 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(end.Location);
 
-            if (stats.Count == 0) {
-                return new VoidLiteral(loc);
-            }
-            else if (stats.Count == 1) {
-                return stats[0];
-            }
-            else {
-                stats.Reverse();
-                return stats.Aggregate((x, y) => new BlockSyntax(x.Location.Span(y.Location), y, x));
-            }
+            return BlockSyntax.FromMany(loc, stats);
         }
     }
 }
@@ -40,6 +31,20 @@ namespace Helix.Parsing {
 namespace Helix.Features.FlowControl {
     public record BlockSyntax : ISyntaxTree {
         private static int blockCounter = 0;
+
+        public static ISyntaxTree FromMany(TokenLocation loc, IReadOnlyList<ISyntaxTree> stats) {
+            if (stats.Count == 0) {
+                return new VoidLiteral(loc);
+            }
+            else if (stats.Count == 1) {
+                return stats[0];
+            }
+            else {
+                return stats
+                    .Reverse()
+                    .Aggregate((x, y) => new BlockSyntax(y.Location.Span(x.Location), y, x));
+            }
+        }
 
         public TokenLocation Location { get; }
 
@@ -77,7 +82,7 @@ namespace Helix.Features.FlowControl {
 
             // Only make a new block if the predicate injected any statements
             if (newStats.Count > 0) {
-                stat = new CompoundSyntax(
+                stat = FromMany(
                     this.Second.Location, 
                     newStats.Append(this.Second).ToArray());
             }

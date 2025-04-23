@@ -24,7 +24,7 @@ namespace Helix.Analysis.TypeChecking {
                 return new UnificationResult() {
                     Kind = UnificationKind.Pun,
                     Unifier = (s, t) => {
-                        var block = new CompoundSyntax(s.Location, [s]).CheckTypes(t);
+                        var block = BlockSyntax.FromMany(s.Location, [s]).CheckTypes(t);
 
                         t.SyntaxTags[block] = new SyntaxTagBuilder(t)
                             .WithReturnType(adaptedType)

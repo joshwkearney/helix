@@ -7,6 +7,7 @@ using Helix.Parsing;
 using Helix.Generation.Syntax;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.FlowControl;
 using Helix.Features.Structs;
 
 namespace Helix.Parsing {
@@ -143,7 +144,7 @@ namespace Helix {
                 stats.Add(assign);
             }
 
-            return new CompoundSyntax(this.Location, stats).CheckTypes(types);
+            return BlockSyntax.FromMany(this.Location, stats).CheckTypes(types);
         }
     }
 

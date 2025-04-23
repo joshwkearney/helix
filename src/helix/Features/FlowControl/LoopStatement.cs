@@ -37,7 +37,7 @@ namespace Helix.Parsing {
             newBlock.Add(body);
 
             var loc = start.Location.Span(body.Location);
-            var loop = new LoopStatement(loc, new CompoundSyntax(loc, newBlock));
+            var loop = new LoopStatement(loc, BlockSyntax.FromMany(loc, newBlock));
 
             return loop;
         }
