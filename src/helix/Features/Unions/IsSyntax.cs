@@ -67,10 +67,10 @@ namespace Helix.Features.Unions {
 
             var cap = new VariableCapture(path, VariableCaptureKind.ValueCapture, varSig);
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithReturnType(returnType)
                 .WithCapturedVariables(cap)
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

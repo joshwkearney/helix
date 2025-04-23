@@ -152,10 +152,10 @@ namespace Helix.Features.Structs {
                 this.path,
                 true);
             
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithChildren(allValues)
                 .WithReturnType(this.structType)
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

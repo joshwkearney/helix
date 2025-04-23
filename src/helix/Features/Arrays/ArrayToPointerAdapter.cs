@@ -45,10 +45,10 @@ namespace Helix.Features.Arrays {
                 return this;
             }
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[this] = new SyntaxTagBuilder(types)
                 .WithChildren(this.target, this.offset)
                 .WithReturnType(new PointerType(this.arrayType.InnerType))
-                .BuildFor(this);
+                .Build();
 
             return this;
         }

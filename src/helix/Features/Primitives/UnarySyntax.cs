@@ -92,10 +92,10 @@ namespace Helix.Features.Primitives {
                     this.Location,
                     arg);
 
-                new SyntaxTagBuilder(types)
+                types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                     .WithChildren(arg)
                     .WithReturnType(returnType)
-                    .BuildFor(result);
+                    .Build();
 
                 return result;
             }

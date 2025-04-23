@@ -119,10 +119,10 @@ namespace Helix.Features.FlowControl {
                 iffalse,
                 types.Scope.Append(name));
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithChildren(cond, iftrue, iffalse)
                 .WithReturnType(resultType)
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

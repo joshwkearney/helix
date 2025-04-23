@@ -33,11 +33,11 @@ namespace Helix.Features.Variables {
                 .Select(x => new VariableCapture(x.VariablePath, VariableCaptureKind.LocationCapture, x.Signature))
                 .ToArray();
             
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithChildren(target)
                 .WithReturnType(varType)
                 .WithCapturedVariables(capturedVars)
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

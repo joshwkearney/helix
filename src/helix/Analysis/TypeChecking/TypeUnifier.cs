@@ -25,9 +25,9 @@ namespace Helix.Analysis.TypeChecking {
                     Unifier = (s, t) => {
                         var block = new BlockSyntax(s.Location, new[] { s }).CheckTypes(t);
 
-                        new SyntaxTagBuilder(t)
+                        t.SyntaxTags[block] = new SyntaxTagBuilder(t)
                             .WithReturnType(adaptedType)
-                            .BuildFor(block);
+                            .Build();
 
                         return block;
                     }

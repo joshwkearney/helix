@@ -97,10 +97,10 @@ namespace Helix.Features.Variables {
                 VariableCaptureKind.ValueCapture,
                 this.VariableSignature);
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[this] = new SyntaxTagBuilder(types)
                 .WithReturnType(this.VariableSignature.InnerType)
                 .WithCapturedVariables(cap)
-                .BuildFor(this);
+                .Build();
 
             return this;
         }
@@ -119,10 +119,10 @@ namespace Helix.Features.Variables {
                 VariableCaptureKind.LocationCapture,
                 this.VariableSignature);
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithReturnType(new NominalType(this.VariablePath, NominalTypeKind.Variable))
                 .WithCapturedVariables(captured)
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

@@ -33,7 +33,7 @@ namespace Helix.Features.Primitives {
         public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            new SyntaxTagBuilder(types).BuildFor(this);
+            types.SyntaxTags[this] = new SyntaxTagBuilder(types).Build();
 
             return this;
         }

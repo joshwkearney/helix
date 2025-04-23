@@ -100,10 +100,10 @@ namespace Helix.Features.Unions {
                 new[] { value },
                 types.Scope.Append(this.tempPath));
             
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithChildren(value)
                 .WithReturnType(this.unionType)
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

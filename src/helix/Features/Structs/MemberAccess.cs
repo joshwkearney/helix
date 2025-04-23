@@ -80,10 +80,10 @@ namespace Helix.Features.Structs {
                         "count",
                         types.Scope);
                     
-                    new SyntaxTagBuilder(types)
+                    types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                         .WithChildren(target)
                         .WithReturnType(PrimitiveType.Word)
-                        .BuildFor(result);
+                        .Build();
 
                     return result;
                 }
@@ -104,10 +104,10 @@ namespace Helix.Features.Structs {
                         this.MemberName,
                         types.Scope);                    
                     
-                    new SyntaxTagBuilder(types)
+                    types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                         .WithChildren(target)
                         .WithReturnType(field.Type)
-                        .BuildFor(result);
+                        .Build();
 
                     return result;
                 }               
@@ -153,10 +153,10 @@ namespace Helix.Features.Structs {
                 return this;
             }
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[this] = new SyntaxTagBuilder(types)
                 .WithChildren(target)
                 .WithReturnType(new PointerType(this.memberType))
-                .BuildFor(this);
+                .Build();
 
             return this;
         }

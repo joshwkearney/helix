@@ -50,7 +50,7 @@ namespace Helix.Features.FlowControl {
         public ISyntaxTree ToRValue(TypeFrame types) => this;
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            new SyntaxTagBuilder(types).BuildFor(this);
+            types.SyntaxTags[this] = new SyntaxTagBuilder(types).Build();
 
             return this;
         }

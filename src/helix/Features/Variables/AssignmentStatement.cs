@@ -98,9 +98,9 @@ namespace Helix.Features.Variables {
                 target,
                 assign);
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithChildren(target, assign)
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

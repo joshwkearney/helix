@@ -37,9 +37,9 @@ namespace Helix.Features.Primitives {
         }
 
         public ISyntaxTree CheckTypes(TypeFrame types) {
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[this] = new SyntaxTagBuilder(types)
                 .WithReturnType(new SingularBoolType(this.Value))
-                .BuildFor(this);
+                .Build();
 
             return this;
         }

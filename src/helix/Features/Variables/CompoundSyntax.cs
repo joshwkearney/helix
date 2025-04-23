@@ -25,9 +25,9 @@ namespace Helix.Features.Variables {
             var args = this.args.Select(x => x.CheckTypes(types)).ToArray();
             var result = new CompoundSyntax(this.Location, args);
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithChildren(args)
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

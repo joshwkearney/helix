@@ -84,14 +84,13 @@ namespace Helix.Features.FlowControl {
                 .Select(x => x.GetReturnType(bodyTypes))
                 .OrElse(() => PrimitiveType.Void);
 
-            new SyntaxTagBuilder(bodyTypes)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(bodyTypes)
                 .WithChildren(stats)
                 .WithReturnType(returnType)
                 .WithPredicate(predicate)
-                .BuildFor(result);
+                .Build();
 
             MutateLocals(bodyTypes, types);
-
             return result;
         }
 

@@ -98,9 +98,7 @@ namespace Helix {
                 path,
                 assign);
 
-            new SyntaxTagBuilder(types)
-                .BuildFor(result);
-
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types).Build();
             return result.CheckTypes(types);
         }
         

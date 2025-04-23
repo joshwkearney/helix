@@ -94,9 +94,9 @@ namespace Helix.Features.Arrays {
                 args, 
                 types.Scope.Append(this.tempPath));
             
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[result] = new SyntaxTagBuilder(types)
                 .WithReturnType(new ArrayType(totalType))
-                .BuildFor(result);
+                .Build();
 
             return result;
         }

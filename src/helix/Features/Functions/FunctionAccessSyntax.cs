@@ -27,9 +27,9 @@ namespace Helix.Features.Functions {
 
             var funcType = types.Locals[this.FunctionPath].Type;
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[this] = new SyntaxTagBuilder(types)
                 .WithReturnType(funcType)
-                .BuildFor(this);
+                .Build();
 
             return this;
         }

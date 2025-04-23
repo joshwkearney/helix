@@ -119,10 +119,10 @@ namespace Helix.Features.Variables {
                 returnType = pointerType.InnerType;
             }
 
-            new SyntaxTagBuilder(types)
+            types.SyntaxTags[this] = new SyntaxTagBuilder(types)
                 .WithChildren(this.target)
                 .WithReturnType(returnType)
-                .BuildFor(this);
+                .Build();
 
             return this;
         }
