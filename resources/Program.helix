@@ -4,7 +4,7 @@ struct Point {
 };
 
 func test12() as word {
-	var a, b = new Point { 8, 9 };
+	var a = new Point { 8, 9 };
 
-	return a;
+	return a.x;
 };

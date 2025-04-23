@@ -76,10 +76,10 @@ namespace Helix.Parsing {
             loopBlock.Add(body);
             loopBlock.Add(counterInc);
 
-            var loop = new LoopStatement(loc, new BlockSyntax(loc, loopBlock));
+            var loop = new LoopStatement(loc, new CompoundSyntax(loc, loopBlock));
             totalBlock.Add(loop);
 
-            return new BlockSyntax(loc, totalBlock);
+            return new CompoundSyntax(loc, totalBlock);
         }
     }
 }

@@ -7,6 +7,7 @@ using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis;
+using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -36,7 +37,7 @@ namespace Helix.Parsing {
             newBlock.Add(body);
 
             var loc = start.Location.Span(body.Location);
-            var loop = new LoopStatement(loc, new BlockSyntax(loc, newBlock));
+            var loop = new LoopStatement(loc, new CompoundSyntax(loc, newBlock));
 
             return loop;
         }

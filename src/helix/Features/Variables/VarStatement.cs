@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.Flow;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Features.Variables;
@@ -99,6 +100,8 @@ namespace Helix {
                 assign);
 
             types.SyntaxTags[result] = new SyntaxTagBuilder(types).Build();
+            types.Locals = types.Locals.Add(path, new LocalInfo(varSig));
+            
             return result.CheckTypes(types);
         }
         

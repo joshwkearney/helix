@@ -9,6 +9,7 @@ using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
+using Helix.Features.Variables;
 
 namespace Helix.Parsing {
     public partial class Parser {
@@ -55,9 +56,10 @@ namespace Helix.Features.FlowControl {
             this.Location = location;
             this.cond = cond;
 
-            this.iftrue = new BlockSyntax(iftrue.Location, new ISyntaxTree[] {
-                iftrue, new VoidLiteral(iftrue.Location)
-            });
+            this.iftrue = new BlockSyntax(
+                iftrue.Location, 
+                iftrue, 
+                new VoidLiteral(iftrue.Location));
 
             this.iffalse = new VoidLiteral(location);
             this.IsPure = cond.IsPure && iftrue.IsPure;
@@ -101,8 +103,8 @@ namespace Helix.Features.FlowControl {
             var ifTruePrepend = condPredicate.ApplyToTypes(this.cond.Location, iftrueTypes);
             var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.cond.Location, iffalseTypes);
 
-            ISyntaxTree iftrue = new BlockSyntax(this.iftrue.Location, ifTruePrepend.Append(this.iftrue).ToArray());
-            ISyntaxTree iffalse = new BlockSyntax(this.iffalse.Location, ifFalsePrepend.Append(this.iffalse).ToArray());
+            ISyntaxTree iftrue = new CompoundSyntax(this.iftrue.Location, ifTruePrepend.Append(this.iftrue).ToArray());
+            ISyntaxTree iffalse = new CompoundSyntax(this.iffalse.Location, ifFalsePrepend.Append(this.iffalse).ToArray());
 
             iftrue = iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
             iffalse = iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);

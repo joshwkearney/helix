@@ -2,6 +2,7 @@
 using Helix.Features.FlowControl;
 using Helix.Features.Structs;
 using Helix.Features.Unions;
+using Helix.Features.Variables;
 using Helix.Syntax;
 
 namespace Helix.Analysis.TypeChecking {
@@ -23,7 +24,7 @@ namespace Helix.Analysis.TypeChecking {
                 return new UnificationResult() {
                     Kind = UnificationKind.Pun,
                     Unifier = (s, t) => {
-                        var block = new BlockSyntax(s.Location, new[] { s }).CheckTypes(t);
+                        var block = new CompoundSyntax(s.Location, [s]).CheckTypes(t);
 
                         t.SyntaxTags[block] = new SyntaxTagBuilder(t)
                             .WithReturnType(adaptedType)
@@ -214,7 +215,7 @@ namespace Helix.Analysis.TypeChecking {
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var block = new BlockSyntax(syntax.Location, new[] {
+                    var block = new BlockSyntax(syntax.Location,
                         syntax,
                         new NewStructSyntax(
                             syntax.Location, 
@@ -223,7 +224,7 @@ namespace Helix.Analysis.TypeChecking {
                             Array.Empty<string>(), 
                             Array.Empty<ISyntaxTree>(), 
                             types.Scope)
-                    });
+                    );
 
                     return block.CheckTypes(t);
                 }
@@ -238,7 +239,7 @@ namespace Helix.Analysis.TypeChecking {
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var block = new BlockSyntax(syntax.Location, new[] {
+                    var block = new BlockSyntax(syntax.Location,
                         syntax,
                         new NewUnionSyntax(
                             syntax.Location,
@@ -246,7 +247,7 @@ namespace Helix.Analysis.TypeChecking {
                             sig,
                             Array.Empty<string>(),
                             Array.Empty<ISyntaxTree>())
-                    });
+                    );
 
                     return block.CheckTypes(t);
                 }

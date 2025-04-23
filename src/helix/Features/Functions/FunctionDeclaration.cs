@@ -115,10 +115,11 @@ namespace Helix.Features.Functions {
             var body = this.body;
 
             if (sig.ReturnType == PrimitiveType.Void) {
-                body = new BlockSyntax(this.body.Location, new ISyntaxTree[] { 
+                body = new BlockSyntax(
+                    this.body.Location, 
                     this.body,
                     new VoidLiteral(this.body.Location)
-                });
+                );
             }
 
             body = body.CheckTypes(types)
