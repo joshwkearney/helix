@@ -2,13 +2,8 @@
 using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Collections;
 using Helix.Features.Types;
-using Helix.Features.Variables;
 using Helix.Parsing;
-using Helix.Syntax;
-using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace Helix.Features.Functions {
     public static class FunctionsHelper {
@@ -19,12 +14,12 @@ namespace Helix.Features.Functions {
                 .Select(x => x.Key)
                 .ToArray();
 
-            if (dups.Any()) {
+            if (dups.Length > 0) {
                 throw TypeException.IdentifierDefined(loc, dups.First());
             }
         }
 
-        public static void DeclareName(FunctionParseSignature sig, TypeFrame types) {
+        public static void DeclareName(ParseFunctionSignature sig, TypeFrame types) {
             // Make sure this name isn't taken
             if (types.TryResolvePath(types.Scope, sig.Name, out _)) {
                 throw TypeException.IdentifierDefined(sig.Location, sig.Name);

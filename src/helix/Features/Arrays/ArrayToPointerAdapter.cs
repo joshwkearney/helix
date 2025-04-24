@@ -8,14 +8,14 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Features.Arrays {
-    public record ArrayToPointerAdapter : ISyntaxTree {
+    public record ArrayToPointerAdapter : IParseSyntax {
         private readonly ArrayType arrayType;
-        private readonly ISyntaxTree target;
-        private readonly ISyntaxTree offset = null;
+        private readonly IParseSyntax target;
+        private readonly IParseSyntax offset = null;
 
         public TokenLocation Location => this.target.Location;
 
-        public IEnumerable<ISyntaxTree> Children {
+        public IEnumerable<IParseSyntax> Children {
             get {
                 yield return this.target;
 
@@ -27,7 +27,7 @@ namespace Helix.Features.Arrays {
 
         public bool IsPure { get; }
 
-        public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target, ISyntaxTree offset) {
+        public ArrayToPointerAdapter(ArrayType arrayType, IParseSyntax target, IParseSyntax offset) {
             this.arrayType = arrayType;
             this.target = target;
             this.offset = offset;
@@ -35,12 +35,12 @@ namespace Helix.Features.Arrays {
             this.IsPure = target.IsPure && offset.IsPure;
         }
 
-        public ArrayToPointerAdapter(ArrayType arrayType, ISyntaxTree target)
+        public ArrayToPointerAdapter(ArrayType arrayType, IParseSyntax target)
             : this(arrayType, target, new WordLiteral(target.Location, 0)) { }
 
-        ISyntaxTree ISyntaxTree.ToRValue(TypeFrame types) => this;
+        IParseSyntax IParseSyntax.ToRValue(TypeFrame types) => this;
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
+        public IParseSyntax CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }

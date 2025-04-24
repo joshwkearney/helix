@@ -21,8 +21,6 @@ namespace Helix.Analysis.TypeChecking {
         // Global things
         public Dictionary<IdentifierPath, HelixType> NominalSignatures { get; }
         
-        public Dictionary<ISyntaxTree, SyntaxTag> SyntaxTags { get; }
-
         public TypeFrame() {
             this.Locals = ImmutableDictionary<IdentifierPath, LocalInfo>.Empty;
 
@@ -40,12 +38,10 @@ namespace Helix.Analysis.TypeChecking {
 
             this.NominalSignatures = new Dictionary<IdentifierPath, HelixType>();
             this.Scope = new IdentifierPath();
-            this.SyntaxTags = new Dictionary<ISyntaxTree, SyntaxTag>();
         }
 
         private TypeFrame(TypeFrame prev) {
             this.Scope = prev.Scope;
-            this.SyntaxTags = prev.SyntaxTags;
             this.NominalSignatures = prev.NominalSignatures;
             this.Locals = prev.Locals;
         }

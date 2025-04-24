@@ -5,7 +5,7 @@ using Helix.Parsing;
 using Helix.Analysis.Predicates;
 
 namespace Helix.Analysis.Types {
-    public record class PredicateBool : HelixType {
+    public record PredicateBool : HelixType {
         public ISyntaxPredicate Predicate { get; }
 
         public PredicateBool(ISyntaxPredicate predicate) {
@@ -28,8 +28,11 @@ namespace Helix.Analysis.Types {
             this.Value = value;
         }
 
-        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
-            return new BoolLiteral(loc, this.Value);
+        public override Option<ISyntax> ToSyntax(TokenLocation loc, TypeFrame types) {
+            return new BoolLiteral {
+                Location = loc, 
+                Value = this.Value
+            };
         }      
 
         public override string ToString() => this.Value.ToString().ToLower();

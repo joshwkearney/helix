@@ -23,8 +23,11 @@ namespace Helix.Analysis.Types {
             return PrimitiveType.Word;
         }
 
-        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
-            return new WordLiteral(loc, this.Value);
+        public override Option<ISyntax> ToSyntax(TokenLocation loc, TypeFrame types) {
+            return new WordLiteral {
+                Location = loc,
+                Value = this.Value
+            };
         }       
 
         public override string ToString() => this.Value.ToString();

@@ -23,8 +23,8 @@ namespace Helix.Analysis.Predicates {
             return left.Or(right);
         }
 
-        public virtual IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
-            return Array.Empty<ISyntaxTree>();
+        public virtual IReadOnlyList<IParseSyntax> ApplyToTypes(TokenLocation loc, TypeFrame types) {
+            return Array.Empty<IParseSyntax>();
         }
 
         public abstract override bool Equals(object other);

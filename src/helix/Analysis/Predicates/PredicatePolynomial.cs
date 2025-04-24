@@ -57,12 +57,12 @@ namespace Helix.Analysis.Predicates {
             return new PredicateTerm(ops);
         }
 
-        public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
+        public override IReadOnlyList<IParseSyntax> ApplyToTypes(TokenLocation loc, TypeFrame types) {
             if (this.Operands.Count == 1) {
                 return this.Operands.First().ApplyToTypes(loc, types);
             }
 
-            return Array.Empty<ISyntaxTree>();
+            return Array.Empty<IParseSyntax>();
         }
 
         public override bool Equals(ISyntaxPredicate other) {

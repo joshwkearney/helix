@@ -5,7 +5,7 @@ using Helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree ForStatement() {
+        private IParseSyntax ForStatement() {
             var startTok = this.Advance(TokenKind.ForKeyword);
             var id = this.Advance(TokenKind.Identifier);
 
@@ -20,49 +20,49 @@ namespace Helix.Parsing {
 
             var endIndex = this.TopExpression();
 
-            startIndex = new AsParseTree(
+            startIndex = new AsParseSyntax(
                 startIndex.Location,
                 startIndex,
-                new VariableAccessParseSyntax(startIndex.Location, "word"));
+                new VariableAccessParseParse(startIndex.Location, "word"));
 
-            endIndex = new AsParseTree(
+            endIndex = new AsParseSyntax(
                 endIndex.Location,
                 endIndex,
-                new VariableAccessParseSyntax(endIndex.Location, "word"));
+                new VariableAccessParseParse(endIndex.Location, "word"));
 
             var counterName = id.Value;
 
             var counterDecl = new VarParseStatement(
                 startTok.Location, 
                 new[] { counterName }, 
-                new Option<ISyntaxTree>[] { Option.None }, 
+                new Option<IParseSyntax>[] { Option.None }, 
                 startIndex);
 
-            var counterAccess = new VariableAccessParseSyntax(startTok.Location, counterName);
+            var counterAccess = new VariableAccessParseParse(startTok.Location, counterName);
 
             var counterInc = new AssignmentStatement(
                 startTok.Location,
                 counterAccess,
-                new BinarySyntax(
+                new BinaryParseSyntax(
                     startTok.Location,
                     counterAccess,
                     new WordLiteral(startTok.Location, 1),
                     BinaryOperationKind.Add));
 
-            var totalBlock = new List<ISyntaxTree> { counterDecl };
-            var loopBlock = new List<ISyntaxTree>();
+            var totalBlock = new List<IParseSyntax> { counterDecl };
+            var loopBlock = new List<IParseSyntax>();
             var loc = startTok.Location.Span(endIndex.Location);
 
-            var test = new IfSyntax(
+            var test = new IfParse(
                 loc,
-                new BinarySyntax(
+                new BinaryParseSyntax(
                     loc,
                     counterAccess,
                     endIndex,
                     inclusive
                         ? BinaryOperationKind.GreaterThan
                         : BinaryOperationKind.GreaterThanOrEqualTo),
-                new BreakContinueSyntax(loc, true));
+                new BreakContinueParse(loc, true));
 
             loopBlock.Add(test);
 
@@ -76,10 +76,10 @@ namespace Helix.Parsing {
             loopBlock.Add(body);
             loopBlock.Add(counterInc);
 
-            var loop = new LoopStatement(loc, BlockSyntax.FromMany(loc, loopBlock));
+            var loop = new LoopStatement(loc, BlockParse.FromMany(loc, loopBlock));
             totalBlock.Add(loop);
 
-            return BlockSyntax.FromMany(loc, totalBlock);
+            return BlockParse.FromMany(loc, totalBlock);
         }
     }
 }

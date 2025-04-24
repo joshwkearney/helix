@@ -47,7 +47,7 @@ namespace Helix.Analysis.Types {
             }
         }
 
-        public override Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+        public override Option<ISyntax> ToSyntax(TokenLocation loc, TypeFrame types) {
             return types.NominalSignatures[this.Path].ToSyntax(loc, types);
         }
 

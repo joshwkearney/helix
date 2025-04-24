@@ -2,12 +2,11 @@
 using Helix.Features.FlowControl;
 using Helix.Features.Structs;
 using Helix.Features.Unions;
-using Helix.Features.Variables;
 using Helix.Syntax;
 
 namespace Helix.Analysis.TypeChecking {
     public static class TypeUnifier {
-        private delegate ISyntaxTree Unifier(ISyntaxTree tree, TypeFrame frame);
+        private delegate ISyntax Unifier(ISyntax tree, TypeFrame frame);
 
         private readonly struct UnificationResult {
             public static UnificationResult None { get; } = new UnificationResult() {
@@ -24,11 +23,7 @@ namespace Helix.Analysis.TypeChecking {
                 return new UnificationResult() {
                     Kind = UnificationKind.Pun,
                     Unifier = (s, t) => {
-                        var block = BlockSyntax.FromMany(s.Location, [s]).CheckTypes(t);
-
-                        t.SyntaxTags[block] = new SyntaxTagBuilder(t)
-                            .WithReturnType(adaptedType)
-                            .Build();
+                        var block = BlockParse.FromMany(s.Location, [s]).CheckTypes(t);
 
                         return block;
                     }
@@ -70,23 +65,23 @@ namespace Helix.Analysis.TypeChecking {
             return false;
         }
 
-        public static bool CanUnifyTo(this ISyntaxTree fromSyntax, HelixType toType, TypeFrame types) {
-            return fromSyntax.GetReturnType(types).CanUnifyTo(toType, types);
+        public static bool CanUnifyTo(this ISyntax fromParse, HelixType toType, TypeFrame types) {
+            return fromParse.ReturnType.CanUnifyTo(toType, types);
         }
 
-        public static ISyntaxTree UnifyTo(this ISyntaxTree fromSyntax, HelixType toType, TypeFrame types) {
-            var fromType = fromSyntax.GetReturnType(types);
+        public static ISyntax UnifyTo(this ISyntax fromParse, HelixType toType, TypeFrame types) {
+            var fromType = fromParse.ReturnType;
 
             if (!fromType.CanUnifyTo(toType, types)) {
-                throw TypeException.UnexpectedType(fromSyntax.Location, toType, fromType);
+                throw TypeException.UnexpectedType(fromParse.Location, toType, fromType);
             }
 
-            return TryUnify(fromType, toType, types).Unifier(fromSyntax, types);
+            return TryUnify(fromType, toType, types).Unifier(fromParse, types);
         }
 
-        public static ISyntaxTree UnifyFrom(this ISyntaxTree syntax1, ISyntaxTree syntax2, TypeFrame types) {
-            var type1 = syntax1.GetReturnType(types);
-            var type2 = syntax2.GetReturnType(types);
+        public static ISyntax UnifyFrom(this ISyntax syntax1, ISyntax syntax2, TypeFrame types) {
+            var type1 = syntax1.ReturnType;
+            var type2 = syntax2.ReturnType;
 
             if (!type1.CanUnifyFrom(type2, types, out var result)) {
                 throw TypeException.UnexpectedType(syntax1.Location, type2, type1);
@@ -215,16 +210,12 @@ namespace Helix.Analysis.TypeChecking {
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var block = new BlockSyntax(syntax.Location,
+                    var block = new BlockParse(syntax.Location,
                         syntax,
-                        new NewStructSyntax(
-                            syntax.Location, 
-                            structType, 
-                            sig, 
-                            Array.Empty<string>(), 
-                            Array.Empty<ISyntaxTree>(), 
-                            types.Scope)
-                    );
+                        new NewStructParseSyntax {
+                            Location = syntax.Location,
+                            Signature = sig,
+                        });
 
                     return block.CheckTypes(t);
                 }
@@ -239,15 +230,13 @@ namespace Helix.Analysis.TypeChecking {
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var block = new BlockSyntax(syntax.Location,
+                    var block = new BlockParse(
+                        syntax.Location,
                         syntax,
-                        new NewUnionSyntax(
-                            syntax.Location,
-                            sig,
-                            sig,
-                            Array.Empty<string>(),
-                            Array.Empty<ISyntaxTree>())
-                    );
+                        new NewUnionParseSyntax {
+                            Location = syntax.Location,
+                            Signature = sig
+                        });
 
                     return block.CheckTypes(t);
                 }

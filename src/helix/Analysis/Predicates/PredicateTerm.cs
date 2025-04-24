@@ -65,7 +65,7 @@ namespace Helix.Analysis.Predicates {
             return this.And(new PredicatePolynomial(other));
         }
 
-        public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
+        public override IReadOnlyList<IParseSyntax> ApplyToTypes(TokenLocation loc, TypeFrame types) {
             return this.Operands
                 .SelectMany(x => x.ApplyToTypes(loc, types))
                 .ToArray();

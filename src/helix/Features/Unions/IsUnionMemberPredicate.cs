@@ -8,22 +8,15 @@ using Helix.Syntax;
 
 namespace Helix.Features.Unions {
     public class IsUnionMemberPredicate : SyntaxPredicateLeaf {
-        public IdentifierPath TargetPath { get; }
+        public required IdentifierPath TargetPath { get; init; }
 
-        public ValueSet<string> MemberNames { get; }
+        public required ValueSet<string> MemberNames { get; init; }
 
-        public UnionType UnionSignature { get; }
+        public required UnionType UnionSignature { get; init; }
 
-        public IsUnionMemberPredicate(IdentifierPath targetPath, ValueSet<string> memberNames, 
-                                      UnionType unionSig) {
-            this.TargetPath = targetPath;
-            this.MemberNames = memberNames;
-            this.UnionSignature = unionSig;
-        }
-
-        public override IReadOnlyList<ISyntaxTree> ApplyToTypes(TokenLocation loc, TypeFrame types) {
+        public override IReadOnlyList<IParseSyntax> ApplyToTypes(TokenLocation loc, TypeFrame types) {
             if (this.MemberNames.Count != 1) {
-                return Array.Empty<ISyntaxTree>();
+                return Array.Empty<IParseSyntax>();
             }
 
             var memName = this.MemberNames.First();
@@ -33,8 +26,14 @@ namespace Helix.Features.Unions {
                 throw new Exception();
             }
 
-            var inject = new FlowVarStatement(loc, member, this.TargetPath, varSig);
-            return new[] { inject };
+            var inject = new FlowVarParseSyntax {
+                Location = loc,
+                UnionMember = member,
+                ShadowedPath = this.TargetPath,
+                ShadowedType = varSig
+            };
+
+            return [inject];
         }
 
         public override bool TryOrWith(ISyntaxPredicate pred, out ISyntaxPredicate result) {
@@ -48,10 +47,11 @@ namespace Helix.Features.Unions {
                 return false;
             }
 
-            result = new IsUnionMemberPredicate(
-                this.TargetPath,
-                this.MemberNames.Union(other.MemberNames),
-                this.UnionSignature);
+            result = new IsUnionMemberPredicate {
+                TargetPath = this.TargetPath,
+                UnionSignature = this.UnionSignature,
+                MemberNames = this.MemberNames.Union(other.MemberNames)
+            };
 
             return true;
         }
@@ -73,23 +73,27 @@ namespace Helix.Features.Unions {
                 result = ISyntaxPredicate.Empty;
                 return true;
             }
-
-            result = new IsUnionMemberPredicate(
-                this.TargetPath,
-                overlap,
-                this.UnionSignature);
+            
+            result = new IsUnionMemberPredicate {
+                TargetPath = this.TargetPath,
+                UnionSignature = this.UnionSignature,
+                MemberNames = overlap
+            };
 
             return true;
         }
 
         public override ISyntaxPredicate Negate() {
-            return new IsUnionMemberPredicate(
-                this.TargetPath,
-                this.UnionSignature.Members
+            var result = new IsUnionMemberPredicate {
+                TargetPath = this.TargetPath,
+                UnionSignature = this.UnionSignature,
+                MemberNames = this.UnionSignature.Members
                     .Select(x => x.Name)
                     .ToValueSet()
-                    .Except(this.MemberNames),
-                this.UnionSignature);
+                    .Except(this.MemberNames)
+            };
+
+            return result;
         }
 
         public override bool Equals(object other) {

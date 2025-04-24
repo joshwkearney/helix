@@ -10,9 +10,9 @@ using Helix.Features.Arrays;
 
 namespace Helix.Parsing {
     public partial class Parser {
-        private ISyntaxTree ArrayLiteral() {
+        private IParseSyntax ArrayLiteral() {
             var start = this.Advance(TokenKind.OpenBracket);
-            var args = new List<ISyntaxTree>();
+            var args = new List<IParseSyntax>();
 
             while (!this.Peek(TokenKind.CloseBracket)) {
                 args.Add(this.TopExpression());
@@ -25,37 +25,37 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBracket);
             var loc = start.Location.Span(end.Location);
 
-            return new ArrayLiteralSyntax(loc, args);
+            return new ArrayLiteralParse(loc, args);
         }
     }
 }
 
 namespace Helix.Features.Arrays {
-    public record ArrayLiteralSyntax : ISyntaxTree {
+    public record ArrayLiteralParse : IParseSyntax {
         private static int tempCounter = 0;
 
-        private readonly IReadOnlyList<ISyntaxTree> args;
+        private readonly IReadOnlyList<IParseSyntax> args;
         private readonly IdentifierPath tempPath;
 
         public TokenLocation Location { get; }
 
-        public IEnumerable<ISyntaxTree> Children => this.args;
+        public IEnumerable<IParseSyntax> Children => this.args;
 
         public bool IsPure => this.args.All(x => x.IsPure);
 
-        public ArrayLiteralSyntax(TokenLocation loc, IReadOnlyList<ISyntaxTree> args) {
+        public ArrayLiteralParse(TokenLocation loc, IReadOnlyList<IParseSyntax> args) {
             this.Location = loc;
             this.args = args;
             this.tempPath = new IdentifierPath("$array" + tempCounter++);
         }
 
-        public ArrayLiteralSyntax(TokenLocation loc, IReadOnlyList<ISyntaxTree> args, IdentifierPath tempPath) {
+        public ArrayLiteralParse(TokenLocation loc, IReadOnlyList<IParseSyntax> args, IdentifierPath tempPath) {
             this.Location = loc;
             this.args = args;
             this.tempPath = tempPath;
         }
 
-        public ISyntaxTree ToRValue(TypeFrame types) {
+        public IParseSyntax ToRValue(TypeFrame types) {
             if (!this.IsTypeChecked(types)) {
                 throw TypeException.RValueRequired(this.Location);
             }
@@ -63,7 +63,7 @@ namespace Helix.Features.Arrays {
             return this;
         }
 
-        public ISyntaxTree CheckTypes(TypeFrame types) {
+        public IParseSyntax CheckTypes(TypeFrame types) {
             if (this.IsTypeChecked(types)) {
                 return this;
             }
@@ -89,7 +89,7 @@ namespace Helix.Features.Arrays {
 
             args = args.Select(x => x.UnifyTo(totalType, types)).ToArray();
 
-            var result = new ArrayLiteralSyntax(
+            var result = new ArrayLiteralParse(
                 this.Location, 
                 args, 
                 types.Scope.Append(this.tempPath));

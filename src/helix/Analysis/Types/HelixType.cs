@@ -45,7 +45,7 @@ namespace Helix.Analysis.Types {
 
         public abstract HelixType GetSignatureSupertype(TypeFrame types);
 
-        public virtual Option<ISyntaxTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+        public virtual Option<ISyntax> ToSyntax(TokenLocation loc, TypeFrame types) {
             return Option.None;
         }
 

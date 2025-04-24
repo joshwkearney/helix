@@ -116,19 +116,11 @@ namespace Helix.Analysis {
             }
         }
 
-        public static bool IsTypeChecked(this ISyntaxTree syntax, TypeFrame types) {
-            return types.SyntaxTags.ContainsKey(syntax);
-        }
-
-        public static HelixType GetReturnType(this ISyntaxTree syntax, TypeFrame types) {
-            return types.SyntaxTags[syntax].ReturnType;
-        }
-
-        public static PointerType AssertIsPointer(this ISyntaxTree syntax, TypeFrame types) {
-            var type = syntax.GetReturnType(types);
+        public static PointerType AssertIsPointer(this ISyntax parse, TypeFrame types) {
+            var type = parse.ReturnType;
 
             if (!type.AsVariable(types).TryGetValue(out var pointer)) {
-                throw TypeException.ExpectedVariableType(syntax.Location, type);
+                throw TypeException.ExpectedVariableType(parse.Location, type);
             }
 
             return pointer;
@@ -139,10 +131,6 @@ namespace Helix.Analysis {
                 .GetValueOrNone(path)
                 .SelectMany(x => x.Type.AsVariable(types))
                 .TryGetValue(out type);
-        }
-
-        public static ISyntaxPredicate GetPredicate(this ISyntaxTree syntax, TypeFrame types) {
-            return types.SyntaxTags[syntax].Predicate;
         }
         
         public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, TypeFrame types) {

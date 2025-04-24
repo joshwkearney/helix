@@ -73,13 +73,13 @@ namespace Helix.Parsing {
         }
 
         /** Expression Parsing **/
-        private ISyntaxTree TopExpression() => this.BinaryExpression();
+        private IParseSyntax TopExpression() => this.BinaryExpression();
 
-        private ISyntaxTree BinaryExpression() => this.OrExpression();
+        private IParseSyntax BinaryExpression() => this.OrExpression();
 
-        private ISyntaxTree PrefixExpression() => this.AsExpression();     
+        private IParseSyntax PrefixExpression() => this.AsExpression();     
 
-        private ISyntaxTree SuffixExpression() {
+        private IParseSyntax SuffixExpression() {
             var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) 
@@ -107,7 +107,7 @@ namespace Helix.Parsing {
             return first;
         }        
 
-        private ISyntaxTree Atom() {
+        private IParseSyntax Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -135,12 +135,18 @@ namespace Helix.Parsing {
             else if (this.Peek(TokenKind.WordKeyword)) {
                 var tok = this.Advance(TokenKind.WordKeyword);
 
-                return new VariableAccessParseSyntax(tok.Location, "word");
+                return new VariableAccessParseSyntax {
+                    Location = tok.Location,
+                    VariableName = "word"
+                };
             }
             else if (this.Peek(TokenKind.BoolKeyword)) {
                 var tok = this.Advance(TokenKind.BoolKeyword);
 
-                return new VariableAccessParseSyntax(tok.Location, "bool");
+                return new VariableAccessParseSyntax {
+                    Location = tok.Location,
+                    VariableName = "bool"
+                };
             }
             else if (this.Peek(TokenKind.NewKeyword)) {
                 return this.NewExpression();
@@ -155,7 +161,7 @@ namespace Helix.Parsing {
             }
         }        
 
-        private ISyntaxTree ParenExpression() {
+        private IParseSyntax ParenExpression() {
             this.Advance(TokenKind.OpenParenthesis);
             var result = this.TopExpression();
             this.Advance(TokenKind.CloseParenthesis);
@@ -163,8 +169,8 @@ namespace Helix.Parsing {
             return result;
         }
 
-        private ISyntaxTree Statement() {
-            ISyntaxTree result;
+        private IParseSyntax Statement() {
+            IParseSyntax result;
 
             if (this.Peek(TokenKind.WhileKeyword)) {
                 result = this.WhileStatement();
