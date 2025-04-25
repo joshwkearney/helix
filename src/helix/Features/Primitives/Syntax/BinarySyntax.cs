@@ -16,6 +16,8 @@ public record BinarySyntax : ISyntax {
     public BinaryOperationKind Operator { get; init; }
 
     public required HelixType ReturnType { get; init; }
+    
+    public required bool AlwaysJumps { get; init; }
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         return new CBinaryExpression() {

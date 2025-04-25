@@ -14,6 +14,8 @@ namespace Helix.Features.Arrays {
         
         public required ISyntax Index { get; init; }
         
+        public required bool AlwaysJumps { get; init; }
+        
         public TokenLocation Location => this.Operand.Location;
 
         public HelixType ReturnType => new PointerType(this.ArraySignature.InnerType);

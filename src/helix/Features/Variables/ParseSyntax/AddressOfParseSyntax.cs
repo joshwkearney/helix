@@ -28,7 +28,8 @@ public class AddressOfParseSyntax : IParseSyntax {
         var result = new AddressOfSyntax {
             Location = this.Location,
             Operand = operand,
-            ReturnType = nominal
+            ReturnType = nominal,
+            AlwaysJumps = operand.AlwaysJumps
         };
 
         return new TypeCheckResult(result, types);

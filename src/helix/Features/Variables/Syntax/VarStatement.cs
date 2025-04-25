@@ -14,6 +14,8 @@ namespace Helix {
         
         public required IdentifierPath Path { get; init; }
         
+        public required bool AlwaysJumps { get; init; }
+        
         public HelixType ReturnType => PrimitiveType.Void;
 
         public Option<HelixType> AsType(TypeFrame types) {

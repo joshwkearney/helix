@@ -15,25 +15,26 @@ public record AssignmentParseStatement : IParseSyntax {
     public bool IsPure => false;
 
     public TypeCheckResult CheckTypes(TypeFrame types) {
-        (var operand, types) = this.Left.CheckTypes(types);
-        (var assign, types) = this.Right.CheckTypes(types);
+        (var left, types) = this.Left.CheckTypes(types);
+        (var right, types) = this.Right.CheckTypes(types);
             
         // We have to be able to write into the left hand side
-        operand = operand.ToLValue(types);
+        left = left.ToLValue(types);
 
-        var varType = operand.ReturnType
+        var varType = left.ReturnType
             .AsVariable(types)
             .GetValue()
             .InnerType
             .GetSignature(types);
         
         // The assigned type needs to match the left hand side
-        assign = assign.UnifyTo(varType, types);
+        right = right.UnifyTo(varType, types);
         
         var result = new AssignmentStatement {
             Location = this.Location,
-            Left = operand,
-            Right = assign
+            Left = left,
+            Right = right,
+            AlwaysJumps = left.AlwaysJumps || right.AlwaysJumps
         };
 
         return new TypeCheckResult(result, types);

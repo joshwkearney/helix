@@ -51,7 +51,8 @@ namespace Helix.Features.Primitives {
                 var result = new UnaryNotSyntax {
                     Location = this.Location,
                     Operand = arg,
-                    ReturnType = returnType
+                    ReturnType = returnType,
+                    AlwaysJumps = arg.AlwaysJumps
                 };
 
                 return new TypeCheckResult(result, types);

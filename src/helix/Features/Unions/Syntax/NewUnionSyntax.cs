@@ -17,6 +17,8 @@ namespace Helix.Features.Unions {
         
         public required ISyntax Value { get; init; }
         
+        public required bool AlwaysJumps { get; init; }
+        
         public HelixType ReturnType => this.Signature;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

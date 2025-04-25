@@ -17,29 +17,31 @@ namespace Helix.Features.Arrays {
         public bool IsPure => this.Operand.IsPure && this.Index.IsPure;
         
         public TypeCheckResult CheckTypes(TypeFrame types) {
-            (var target, types) = this.Operand.CheckTypes(types);
+            (var operand, types) = this.Operand.CheckTypes(types);
             (var index, types) = this.Index.CheckTypes(types);
                 
             index = index.UnifyTo(PrimitiveType.Word, types);
 
             // Make sure we have an array
-            if (target.ReturnType is not ArrayType arrayType) {
+            if (operand.ReturnType is not ArrayType arrayType) {
                 throw TypeException.ExpectedArrayType(
                     this.Operand.Location, 
-                    target.ReturnType);
+                    operand.ReturnType);
             }
 
             var adapter = new ArrayToPointerSyntax {
                 ArraySignature = arrayType,
-                Operand = target,
-                Index = index
+                Operand = operand,
+                Index = index,
+                AlwaysJumps = operand.AlwaysJumps || index.AlwaysJumps
             };
 
             var result = new DereferenceSyntax {
                 Location = adapter.Location,
                 Operand = adapter,
                 OperandSignature = new PointerType(arrayType.InnerType),
-                IsLValue = false
+                IsLValue = false,
+                AlwaysJumps = adapter.AlwaysJumps
             };
 
             return new TypeCheckResult(result, types);

@@ -17,6 +17,8 @@ public record VariableAccessSyntax : ISyntax {
         
     public required bool IsLValue { get; init; }
 
+    public bool AlwaysJumps => false;
+
     public HelixType ReturnType {
         get {
             if (this.IsLValue) {

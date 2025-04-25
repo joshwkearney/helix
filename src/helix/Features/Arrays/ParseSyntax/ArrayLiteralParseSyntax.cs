@@ -46,7 +46,8 @@ public record ArrayLiteralParseSyntax : IParseSyntax {
         var result = new ArrayLiteralSyntax {
             Location = this.Location,
             Arguments = args,
-            ArraySignature = new ArrayType(totalType)
+            ArraySignature = new ArrayType(totalType),
+            AlwaysJumps = args.Any(x => x.AlwaysJumps)
         };
 
         return new TypeCheckResult(result, types);

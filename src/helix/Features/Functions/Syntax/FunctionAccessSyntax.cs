@@ -15,6 +15,8 @@ namespace Helix.Features.Functions {
         
         public required FunctionType FunctionSignature { get; init; }
 
+        public bool AlwaysJumps => false;
+
         public HelixType ReturnType => this.FunctionSignature;
 
         public bool IsPure => true;

@@ -77,7 +77,8 @@ namespace Helix.Features.Primitives {
                 Left = left,
                 Right = right,
                 Operator = this.Operator,
-                ReturnType = returnType
+                ReturnType = returnType,
+                AlwaysJumps = left.AlwaysJumps || right.AlwaysJumps
             };
             
             return new TypeCheckResult(result, types);
@@ -175,7 +176,8 @@ namespace Helix.Features.Primitives {
                 Left = left,
                 Right = right,
                 Operator = this.Operator,
-                ReturnType = returnType
+                ReturnType = returnType,
+                AlwaysJumps = left.AlwaysJumps || right.AlwaysJumps
             };
             
             return new TypeCheckResult(result, types);

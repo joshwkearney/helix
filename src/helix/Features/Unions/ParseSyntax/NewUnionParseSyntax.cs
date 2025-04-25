@@ -65,7 +65,8 @@ public class NewUnionParseSyntax : IParseSyntax {
             Location = this.Location,
             Signature = this.Signature,
             Name = name,
-            Value = value
+            Value = value,
+            AlwaysJumps = value.AlwaysJumps
         };
                 
         return new TypeCheckResult(result, types);

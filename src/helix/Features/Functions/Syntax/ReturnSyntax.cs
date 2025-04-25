@@ -11,6 +11,8 @@ public record ReturnSyntax : ISyntax {
     public required TokenLocation Location { get; init; }
 
     public required ISyntax Operand { get; init; }
+
+    public bool AlwaysJumps => true;
         
     public HelixType ReturnType => PrimitiveType.Void;
 

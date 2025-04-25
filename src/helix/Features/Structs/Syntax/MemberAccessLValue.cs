@@ -15,6 +15,8 @@ public record MemberAccessLValue : ISyntax {
     public required string MemberName { get; init; }
     
     public required HelixType ReturnType { get; init; }
+    
+    public required bool AlwaysJumps { get; init; }
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         // Our target will be converted to an lvalue, so we have to dereference it first

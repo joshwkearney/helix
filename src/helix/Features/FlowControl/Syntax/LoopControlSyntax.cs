@@ -11,6 +11,8 @@ namespace Helix.Features.FlowControl {
 
         public required TokenLocation Location { get; init; }
 
+        public bool AlwaysJumps => true;
+
         public HelixType ReturnType => PrimitiveType.Void;
 
         public bool IsPure => false;

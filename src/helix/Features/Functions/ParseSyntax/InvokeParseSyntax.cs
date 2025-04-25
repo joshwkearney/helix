@@ -46,7 +46,8 @@ public record InvokeParseSyntax : IParseSyntax {
             Location = this.Location,
             FunctionSignature = sig,
             FunctionPath = named.Path,
-            Arguments = newArgs
+            Arguments = newArgs,
+            AlwaysJumps = newArgs.Any(x => x.AlwaysJumps)
         };
 
         return new TypeCheckResult(result, types);            

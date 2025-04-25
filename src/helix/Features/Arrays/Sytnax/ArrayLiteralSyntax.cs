@@ -12,6 +12,8 @@ namespace Helix.Features.Arrays {
         public required IReadOnlyList<ISyntax> Arguments { get; init; }
         
         public required ArrayType ArraySignature { get; init; }
+        
+        public required bool AlwaysJumps { get; init; }
 
         public HelixType ReturnType => this.ArraySignature;
 

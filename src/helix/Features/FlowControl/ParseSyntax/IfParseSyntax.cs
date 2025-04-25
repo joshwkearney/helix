@@ -40,17 +40,33 @@ public record IfParseSyntax : IParseSyntax {
 
         ifTrueTypes = ifFalseTypes.PopScope();
         ifFalseTypes = ifFalseTypes.PopScope();
-        types = ifTrueTypes.CombineSignaturesWith(ifFalseTypes);
         
         checkedIfTrue = checkedIfTrue.UnifyFrom(checkedIfFalse, types);
         checkedIfFalse = checkedIfFalse.UnifyFrom(checkedIfTrue, types);
+
+        if (!checkedIfTrue.AlwaysJumps && !checkedIfFalse.AlwaysJumps) {
+            // If neither branch jumps, we have to combine the signatures
+            types = ifTrueTypes.CombineSignaturesWith(ifFalseTypes);
+        }
+        else if (!checkedIfTrue.AlwaysJumps && checkedIfFalse.AlwaysJumps) {
+            // If the first branch doesn't jump but the second does, take the first types
+            types = ifTrueTypes;
+        }
+        else if (checkedIfTrue.AlwaysJumps && !checkedIfFalse.AlwaysJumps) {
+            // If the first branch jumps but not the second does, take the second types
+            types = ifFalseTypes;
+        }
+        else {
+            // If both branches jump, leave types alone because none of the context propagates
+        }
 
         var result = new IfSyntax {
             Location = this.Location,
             Condition = cond,
             Affirmative = checkedIfTrue,
             Negative = checkedIfFalse,
-            ReturnType = checkedIfTrue.ReturnType
+            ReturnType = checkedIfTrue.ReturnType,
+            AlwaysJumps = checkedIfTrue.AlwaysJumps && checkedIfFalse.AlwaysJumps
         };
         
         return new TypeCheckResult(result, types);

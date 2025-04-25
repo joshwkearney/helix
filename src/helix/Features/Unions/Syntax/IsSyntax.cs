@@ -19,6 +19,8 @@ namespace Helix.Features.Unions {
 
         public required UnionType UnionSignature { get; init; }
 
+        public bool AlwaysJumps => false;
+
         public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var varName = writer.GetVariableName(this.VariablePath);
 

@@ -37,6 +37,11 @@ _Word test(_Region* _return_region) {
 
     _Word_$Pointer b = (_Word_$Pointer){ (&a) };
 
+    /* Line 14: If statement */
+    if ((a > a)) { 
+        return 0;
+    } 
+
     return (a + 7);
 
     return 0;

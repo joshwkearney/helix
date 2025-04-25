@@ -22,7 +22,8 @@ public record BlockSyntax : ISyntax {
                 .Aggregate((x, y) => new BlockSyntax() {
                     Location = y.Location.Span(x.Location),
                     First = y,
-                    Second = x
+                    Second = x,
+                    AlwaysJumps = y.AlwaysJumps || x.AlwaysJumps
                 });
         }
     }
@@ -32,6 +33,8 @@ public record BlockSyntax : ISyntax {
     public required ISyntax First { get; init; }
         
     public required ISyntax Second { get; init; }
+    
+    public required bool AlwaysJumps { get; init; }
 
     public HelixType ReturnType => this.Second.ReturnType;
 

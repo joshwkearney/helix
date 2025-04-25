@@ -9,6 +9,8 @@ namespace Helix.Features.Primitives {
     public record VoidLiteral : IParseSyntax, ISyntax {
         public required TokenLocation Location { get; init; }
 
+        public bool AlwaysJumps => false;
+
         public HelixType ReturnType => PrimitiveType.Void;
 
         public bool IsPure => true;

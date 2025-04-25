@@ -17,6 +17,8 @@ namespace Helix.Features.Functions {
         
         public required IReadOnlyList<ISyntax> Arguments { get; init; }
         
+        public required bool AlwaysJumps { get; init; }
+        
         public HelixType ReturnType => this.FunctionSignature.ReturnType;
 
         public bool IsPure => false;

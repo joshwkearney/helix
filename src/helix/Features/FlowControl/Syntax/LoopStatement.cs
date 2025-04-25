@@ -11,6 +11,8 @@ namespace Helix.Features.FlowControl {
 
         public required ISyntax Body { get; init; }
         
+        public required bool AlwaysJumps { get; init; }
+        
         public HelixType ReturnType => PrimitiveType.Void;
 
         public bool IsPure => false;

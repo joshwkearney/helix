@@ -122,7 +122,8 @@ public class NewStructParseSyntax : IParseSyntax {
             Location = this.Location,
             Signature = this.Signature,
             Names = allNames,
-            Values = allValues
+            Values = allValues,
+            AlwaysJumps = allValues.Any(x => x.AlwaysJumps)
         };
 
         return new TypeCheckResult(result, types);

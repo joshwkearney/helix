@@ -13,6 +13,8 @@ namespace Helix.Features.Variables {
         
         public required ISyntax Right { get; init; }
         
+        public required bool AlwaysJumps { get; init; }
+        
         public HelixType ReturnType => PrimitiveType.Void;
 
         public bool IsPure => false;

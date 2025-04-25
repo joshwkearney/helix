@@ -41,7 +41,8 @@ public record DereferenceParseSyntax : IParseSyntax {
             Location = this.Location,
             Operand = operand,
             OperandSignature = pointerType,
-            IsLValue = false
+            IsLValue = false,
+            AlwaysJumps = operand.AlwaysJumps
         };
 
         return new TypeCheckResult(result, types);

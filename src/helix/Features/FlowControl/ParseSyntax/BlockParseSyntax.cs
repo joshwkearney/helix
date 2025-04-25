@@ -35,6 +35,11 @@ namespace Helix.Features.FlowControl {
             // Check the first statement
             (var first, types) = this.First.CheckTypes(types);
 
+            // Skip the second statement if the first one returns
+            if (first.AlwaysJumps) {
+                return new TypeCheckResult(first, types);
+            }
+
             // Deepen the scope because the predicate might want to shadow variables
             // and it will need a new path to do so
             types = types.WithScope("$block");
@@ -44,7 +49,8 @@ namespace Helix.Features.FlowControl {
             var result = new BlockSyntax {
                 Location = this.Location,
                 First = first,
-                Second = second
+                Second = second,
+                AlwaysJumps = first.AlwaysJumps || second.AlwaysJumps
             };
 
             return new TypeCheckResult(result, types);

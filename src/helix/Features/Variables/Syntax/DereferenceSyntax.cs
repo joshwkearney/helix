@@ -16,6 +16,8 @@ namespace Helix.Features.Variables {
         
         public required bool IsLValue { get; init; }
 
+        public required bool AlwaysJumps { get; init; }
+
         public HelixType ReturnType {
             get {
                 if (this.IsLValue) {

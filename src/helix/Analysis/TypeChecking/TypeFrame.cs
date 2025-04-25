@@ -25,9 +25,18 @@ namespace Helix.Analysis.TypeChecking {
         
         public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; }
         
+        public ImmutableHashSet<TypeFrame> BreakFrames { get; }
+        
+        public ImmutableHashSet<TypeFrame> ContinueFrames { get; }
+        
         public TypeFrame() {
+            this.Scope = new IdentifierPath();
+            
             this.Declarations = ImmutableDictionary<IdentifierPath, DeclarationInfo>.Empty;
             this.NominalSignatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
+            
+            this.BreakFrames = ImmutableHashSet<TypeFrame>.Empty;
+            this.ContinueFrames = ImmutableHashSet<TypeFrame>.Empty;
 
             this.Declarations = this.Declarations.Add(
                 new IdentifierPath("void"),
@@ -40,27 +49,40 @@ namespace Helix.Analysis.TypeChecking {
             this.Declarations = this.Declarations.Add(
                 new IdentifierPath("bool"),
                 new DeclarationInfo(DeclarationKind.Type, PrimitiveType.Bool));
-
-            this.Scope = new IdentifierPath();
         }
 
         private TypeFrame(
+            IdentifierPath scope,
             ImmutableDictionary<IdentifierPath, DeclarationInfo> decls, 
             ImmutableDictionary<IdentifierPath, HelixType> sigs, 
-            IdentifierPath scope) {
+            ImmutableHashSet<TypeFrame> breakFrames,
+            ImmutableHashSet<TypeFrame> continueFrames) {
+            
+            this.Scope = scope;
             this.Declarations = decls;
             this.NominalSignatures = sigs;
-            this.Scope = scope;
+            this.BreakFrames = breakFrames;
+            this.ContinueFrames = continueFrames;
         }
 
         public TypeFrame WithScope(string newSegment) {
-            return new TypeFrame(this.Declarations, this.NominalSignatures, this.Scope.Append(newSegment));
+            return new TypeFrame(
+                this.Scope.Append(newSegment), 
+                this.Declarations, 
+                this.NominalSignatures,
+                this.BreakFrames,
+                this.ContinueFrames);
         }
 
         public TypeFrame PopScope() {
             var decls = this.Declarations;
             
-            return new TypeFrame(decls, this.NominalSignatures, this.Scope.Pop());
+            return new TypeFrame(
+                this.Scope.Pop(),
+                decls, 
+                this.NominalSignatures,
+                this.BreakFrames,
+                this.ContinueFrames);
         }
 
         public TypeFrame WithDeclaration(IdentifierPath path, DeclarationInfo info) {
@@ -70,7 +92,12 @@ namespace Helix.Analysis.TypeChecking {
             
             var decls = this.Declarations.Add(path, info);
 
-            return new TypeFrame(decls, this.NominalSignatures, this.Scope);
+            return new TypeFrame(
+                this.Scope,
+                decls, 
+                this.NominalSignatures,
+                this.BreakFrames,
+                this.ContinueFrames);
         }
         
         public TypeFrame WithDeclaration(IdentifierPath path, DeclarationKind kind, HelixType type) {
@@ -78,11 +105,47 @@ namespace Helix.Analysis.TypeChecking {
         }
         
         public TypeFrame WithNominalSignature(IdentifierPath path, HelixType sig) {
+            if (sig is NominalType) {
+                throw new InvalidOperationException();
+            }
+            
             var sigs = this.NominalSignatures.SetItem(path, sig);
 
-            return new TypeFrame(this.Declarations, sigs, this.Scope);
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                sigs,
+                this.BreakFrames,
+                this.ContinueFrames);
         }
-
+        
+        public TypeFrame WithBreakFrame(TypeFrame types) {
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                this.NominalSignatures,
+                this.BreakFrames.Add(types),
+                this.ContinueFrames);
+        }
+        
+        public TypeFrame WithContinueFrame(TypeFrame types) {
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                this.NominalSignatures,
+                this.BreakFrames,
+                this.ContinueFrames.Add(types));
+        }
+        
+        public TypeFrame ClearLoopFrames() {
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                this.NominalSignatures,
+                this.BreakFrames.Clear(),
+                this.ContinueFrames.Clear());
+        }
+        
         public string GetVariableName() {
             return "$t_" + this.tempCounter++;
         }
@@ -101,21 +164,22 @@ namespace Helix.Analysis.TypeChecking {
                     continue;
                 }
                 
-                var first = this.Declarations[key];
-                var second = other.Declarations[key];
+                var first = this.NominalSignatures[key];
+                var second = other.NominalSignatures[key];
 
-                if (first.Kind != second.Kind) {
-                    throw new InvalidOperationException();
-                }
-
-                if (!first.Type.CanUnifyFrom(second.Type, this, out var result)) {
+                if (!first.CanUnifyFrom(second, this, out var result)) {
                     throw new InvalidCastException();
                 }
                 
                 sigs = sigs.SetItem(key, result);
             }
 
-            return new TypeFrame(this.Declarations, sigs, this.Scope);
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                sigs,
+                this.BreakFrames,
+                this.ContinueFrames);
         }
     }
 }

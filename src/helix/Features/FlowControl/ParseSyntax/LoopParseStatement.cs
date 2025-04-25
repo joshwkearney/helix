@@ -14,11 +14,13 @@ public record LoopParseStatement : IParseSyntax {
     public TypeCheckResult CheckTypes(TypeFrame types) {
         types = types.WithScope("$loop");
         (var body, types) = this.Body.CheckTypes(types);
-        types = types.PopScope();
+        var doesBreak = !types.BreakFrames.IsEmpty;
+        types = types.PopScope().ClearLoopFrames();
 
         var result = new LoopStatement {
             Location = this.Location,
-            Body = body
+            Body = body,
+            AlwaysJumps = !doesBreak
         };
 
         return new TypeCheckResult(result, types);

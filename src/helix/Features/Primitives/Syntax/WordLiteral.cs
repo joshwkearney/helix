@@ -12,6 +12,8 @@ namespace Helix.Features.Primitives {
         
         public required long Value { get; init; }
 
+        public bool AlwaysJumps => false;
+        
         public HelixType ReturnType => new SingularWordType(this.Value);
 
         public bool IsPure => true;

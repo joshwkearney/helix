@@ -12,6 +12,8 @@ public class TypeAdapterSyntax : ISyntax {
     
     public required HelixType ReturnType { get; init; }
     
+    public required bool AlwaysJumps { get; init; }
+    
     public TokenLocation Location => this.Operand.Location;
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

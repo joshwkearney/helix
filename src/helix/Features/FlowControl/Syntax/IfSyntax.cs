@@ -16,6 +16,8 @@ namespace Helix.Features.FlowControl {
         public required ISyntax  Negative { get; init; }
         
         public required HelixType ReturnType { get; init; }
+        
+        public required bool AlwaysJumps { get; init; }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();

@@ -15,6 +15,8 @@ namespace Helix.Features.Structs {
         public required IReadOnlyList<string> Names { get; init; }
         
         public required IReadOnlyList<ISyntax> Values { get; init; }
+        
+        public required bool AlwaysJumps { get; init; }
 
         public HelixType ReturnType => this.Signature;
 
@@ -23,8 +25,8 @@ namespace Helix.Features.Structs {
                 .Select(x => x.GenerateCode(types, writer))
                 .ToArray();
 
-            if (!memValues.Any()) {
-                memValues = new[] { new CIntLiteral(0) };
+            if (memValues.Length == 0) {
+                memValues = [new CIntLiteral(0)];
             }
 
             return new CCompoundExpression() {

@@ -25,7 +25,8 @@ namespace Helix.Analysis.TypeChecking {
                     Kind = UnificationKind.Pun,
                     Unifier = (s, t) => new TypeAdapterSyntax {
                         Operand = s,
-                        ReturnType = adaptedType
+                        ReturnType = adaptedType,
+                        AlwaysJumps = s.AlwaysJumps
                     }
                 };
             }
@@ -219,7 +220,8 @@ namespace Helix.Analysis.TypeChecking {
                         First = syntax,
                         
                         // TODO: Don't be lazy and construct a new struct synatx without type checking
-                        Second = newStruct.CheckTypes(types).Syntax
+                        Second = newStruct.CheckTypes(types).Syntax,
+                        AlwaysJumps = syntax.AlwaysJumps
                     };
 
                     return block;
@@ -242,13 +244,15 @@ namespace Helix.Analysis.TypeChecking {
                         Location = syntax.Location,
                         Signature = sig,
                         Name = sig.Members[0].Name,
-                        Value = value
+                        Value = value,
+                        AlwaysJumps = false
                     };
 
                     var block = new BlockSyntax {
                         Location = syntax.Location,
                         First = syntax,
-                        Second = newUnion
+                        Second = newUnion,
+                        AlwaysJumps = syntax.AlwaysJumps
                     };
 
                     return block;

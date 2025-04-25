@@ -12,6 +12,8 @@ public record UnaryNotSyntax : ISyntax {
     public required HelixType ReturnType { get; init; }
     
     public required ISyntax Operand { get; init; }
+    
+    public required bool AlwaysJumps { get; init; }
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         return new CNot() {

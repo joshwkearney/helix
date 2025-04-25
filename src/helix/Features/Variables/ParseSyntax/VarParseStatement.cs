@@ -53,7 +53,8 @@ public record VarParseStatement : IParseSyntax {
         var result = new VarStatement {
             Location = this.Location,
             Path = path,
-            Assignment = assign
+            Assignment = assign,
+            AlwaysJumps = assign.AlwaysJumps
         };
 
         return new TypeCheckResult(result, types);

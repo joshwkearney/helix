@@ -12,6 +12,8 @@ namespace Helix.Features.Primitives {
         
         public required bool Value { get; init; }
 
+        public bool AlwaysJumps => false;
+
         public HelixType ReturnType => new SingularBoolType(this.Value);
         
         public bool IsPure => true;
