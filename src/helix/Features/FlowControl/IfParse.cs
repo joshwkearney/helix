@@ -1,51 +1,20 @@
 ﻿using Helix.Analysis.Types;
 using Helix.Analysis;
-using Helix.Features.FlowControl;
 using Helix.Features.Primitives;
 using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
-using Helix.Analysis.Flow;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Predicates;
-using Helix.Features.Variables;
-
-namespace Helix.Parsing {
-    public partial class Parser {
-        private IParseSyntax IfExpression() {
-            var start = this.Advance(TokenKind.IfKeyword);
-            var cond = this.TopExpression();
-
-            this.Advance(TokenKind.ThenKeyword);
-            var affirm = this.TopExpression();
-
-            if (this.TryAdvance(TokenKind.ElseKeyword)) {
-                var neg = this.TopExpression();
-                var loc = start.Location.Span(neg.Location);
-
-                return new IfParse(loc, cond, affirm, neg);
-            }
-            else {
-                var loc = start.Location.Span(affirm.Location);
-
-                return new IfParse(loc, cond, affirm);
-            }
-        }
-    }
-}
 
 namespace Helix.Features.FlowControl {
     public record IfParse : IParseSyntax {
-        private static int ifTempCounter = 0;
-
         private readonly IParseSyntax cond, iftrue, iffalse;
         private readonly IdentifierPath path;
 
         public TokenLocation Location { get; }
-
-        public IEnumerable<IParseSyntax> Children => new[] { this.cond, this.iftrue, this.iffalse };
-
+        
         public bool IsPure { get; }
 
         public IfParse(
