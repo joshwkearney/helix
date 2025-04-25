@@ -26,7 +26,7 @@ namespace Helix.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public IDeclaration CheckTypes(TypeFrame types) {
+        public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
 

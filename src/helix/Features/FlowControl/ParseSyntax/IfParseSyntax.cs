@@ -40,7 +40,7 @@ public record IfParseSyntax : IParseSyntax {
 
         ifTrueTypes = ifFalseTypes.PopScope();
         ifFalseTypes = ifFalseTypes.PopScope();
-        types = ifTrueTypes.CombineWith(ifFalseTypes);
+        types = ifTrueTypes.CombineSignaturesWith(ifFalseTypes);
         
         checkedIfTrue = checkedIfTrue.UnifyFrom(checkedIfFalse, types);
         checkedIfFalse = checkedIfFalse.UnifyFrom(checkedIfTrue, types);

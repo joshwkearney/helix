@@ -96,6 +96,15 @@ namespace Helix.Analysis {
                 return Option.None;
             }
         }
+        
+        public static Option<NominalType> AsNominal(this HelixType type, TypeFrame types) {
+            if (type is NominalType sig) {
+                return sig;
+            }
+            else {
+                return Option.None;
+            }
+        }
 
         public static bool IsBool(this HelixType type, TypeFrame types) {
             if (type.GetSignatureSupertype(types) == PrimitiveType.Bool) {

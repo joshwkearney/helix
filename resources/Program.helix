@@ -1,10 +1,15 @@
 ﻿struct Point {
 	var x as word;
-	var y as word;
+	var y as Test;
 };
 
-func test12() as word {
-	var a = [1, 2, 3, 4];
+struct Test {
+	var x as word;
+};
 
-	return a[1];
+func test() as word {
+	var a = 45;
+	
+
+	return a;
 };

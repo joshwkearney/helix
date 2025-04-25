@@ -27,15 +27,17 @@ public record ExternFunctionParseDeclaration : IDeclaration {
         return types.WithDeclaration(path, DeclarationKind.Function, sig);
     }
 
-    public IDeclaration CheckTypes(TypeFrame types) {
+    public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
         var path = types.Scope.Append(this.Signature.Name);
         var sig = new NominalType(path, NominalTypeKind.Function).AsFunction(types).GetValue();
 
-        return new ExternFunctionDeclaration {
+        var result = new ExternFunctionDeclaration {
             Location = this.Location,
             Signature = sig,
             Path = path
         };
+
+        return new(result, types);
     }
 
     public void GenerateCode(TypeFrame types, ICWriter writer) => throw new InvalidOperationException();

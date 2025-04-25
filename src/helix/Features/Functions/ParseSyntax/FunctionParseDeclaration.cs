@@ -33,10 +33,10 @@ public record FunctionParseDeclaration : IDeclaration {
         var path = types.Scope.Append(this.signature.Name);
         var sig = this.signature.ResolveNames(types);
 
-        return types.WithDeclaration(path, DeclarationKind.Function, sig);
+        return types.WithNominalSignature(path, sig);
     }
         
-    public IDeclaration CheckTypes(TypeFrame types) {
+    public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
         var path = types.ResolvePath(types.Scope, this.signature.Name);
         var sig = new NominalType(path, NominalTypeKind.Function).AsFunction(types).GetValue();
 
@@ -60,11 +60,13 @@ public record FunctionParseDeclaration : IDeclaration {
         (var checkedBody, types) = body.CheckTypes(types);
         checkedBody = checkedBody.UnifyTo(sig.ReturnType, types);
 
-        return new FunctionDeclaration {
+        var result = new FunctionDeclaration {
             Location = this.Location,
             Path = path,
             Signature = sig,
             Body = checkedBody
         };
+
+        return new(result, types);
     }
 }

@@ -32,15 +32,13 @@ namespace Helix {
                 foreach (var stat in parseStats) {
                     types = stat.DeclareTypes(types);
                 }
-
-                var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();
-
-                // We need to declare the flow frame down here after types is done being
-                // modified, because it uses immutable dictionaries
+                
                 var writer = new CWriter(this.header);
 
-                foreach (var stat in stats) {
-                    stat.GenerateCode(types, writer);
+                foreach (var parseStat in parseStats) {
+                    var (stat, statTypes) = parseStat.CheckTypes(types);
+                    
+                    stat.GenerateCode(statTypes, writer);
                 }
 
                 return writer.ToString();

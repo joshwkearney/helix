@@ -24,7 +24,7 @@ namespace Helix.Features.Functions {
             throw new InvalidOperationException();
         }
 
-        public IDeclaration CheckTypes(TypeFrame types) => this;
+        public DeclarationTypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
 
         public void GenerateCode(TypeFrame types, ICWriter writer) {
             var returnType = this.Signature.ReturnType == PrimitiveType.Void

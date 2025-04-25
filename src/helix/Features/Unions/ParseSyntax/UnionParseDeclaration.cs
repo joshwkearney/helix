@@ -34,10 +34,10 @@ public record UnionParseDeclaration : IDeclaration {
         var structSig = this.signature.ResolveNames(types);
         var unionSig = new UnionType(structSig.Members);
 
-        return types.WithDeclaration(path, DeclarationKind.Type, unionSig);
+        return types.WithNominalSignature(path, unionSig);
     }
 
-    public IDeclaration CheckTypes(TypeFrame types) {
+    public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
         var path = types.Scope.Append(this.signature.Name);
         var sig = this.signature.ResolveNames(types);
         var unionSig = new UnionType(sig.Members);
@@ -54,6 +54,8 @@ public record UnionParseDeclaration : IDeclaration {
             throw TypeException.CircularValueObject(this.Location, structType);
         }
 
-        return new UnionDeclaration(this.Location, unionSig, path);
+        var result = new UnionDeclaration(this.Location, unionSig, path);
+
+        return new(result, types);
     }
 }

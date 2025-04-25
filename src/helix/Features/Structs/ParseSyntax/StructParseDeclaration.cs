@@ -26,11 +26,11 @@ public record StructParseDeclaration : IDeclaration {
     public TypeFrame DeclareTypes(TypeFrame types) {
         var path = types.Scope.Append(this.Signature.Name);
         var sig = this.Signature.ResolveNames(types);
-
-        return types.WithDeclaration(path, DeclarationKind.Type, sig);
+        
+        return types.WithNominalSignature(path, sig);
     }
 
-    public IDeclaration CheckTypes(TypeFrame types) {
+    public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
         var path = types.Scope.Append(this.Signature.Name);
         var named = new NominalType(path, NominalTypeKind.Struct);
         var sig = named.AsStruct(types).GetValue();
@@ -46,10 +46,12 @@ public record StructParseDeclaration : IDeclaration {
             throw TypeException.CircularValueObject(this.Location, named);
         }
 
-        return new StructDeclaration {
+        var result = new StructDeclaration {
             Location = this.Location,
             Signature = sig,
             Path = path
         };
+
+        return new(result, types);
     }
 }

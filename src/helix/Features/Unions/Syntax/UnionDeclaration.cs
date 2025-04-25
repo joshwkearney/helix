@@ -25,7 +25,7 @@ namespace Helix.Features.Unions {
 
         public TypeFrame DeclareTypes(TypeFrame types) => types;
 
-        public IDeclaration CheckTypes(TypeFrame types) => this;
+        public DeclarationTypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
 
         public void GenerateCode(TypeFrame types, ICWriter writer) { 
             var structName = writer.GetVariableName(this.path);

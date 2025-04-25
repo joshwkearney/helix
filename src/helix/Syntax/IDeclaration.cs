@@ -10,7 +10,7 @@ namespace Helix.Syntax {
 
         public TypeFrame DeclareTypes(TypeFrame types);
 
-        public IDeclaration CheckTypes(TypeFrame types);
+        public DeclarationTypeCheckResult CheckTypes(TypeFrame types);
 
         public void GenerateCode(TypeFrame types, ICWriter writer) {
             throw new InvalidOperationException();

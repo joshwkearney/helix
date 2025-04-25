@@ -47,7 +47,8 @@ public record VarParseStatement : IParseSyntax {
         var path = types.Scope.Append(this.VariableNames[0]);
         var varSig = new PointerType(assign.ReturnType);
 
-        types = types.WithDeclaration(path, DeclarationKind.Variable, varSig);
+        types = types.WithDeclaration(path, DeclarationKind.Variable, new NominalType(path, NominalTypeKind.Variable));
+        types = types.WithNominalSignature(path, varSig);
 
         var result = new VarStatement {
             Location = this.Location,

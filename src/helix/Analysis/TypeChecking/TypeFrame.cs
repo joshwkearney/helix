@@ -13,6 +13,9 @@ namespace Helix.Analysis.TypeChecking {
     public record struct TypeCheckResult(ISyntax Syntax, TypeFrame Types) {
     }
     
+    public record struct DeclarationTypeCheckResult(IDeclaration Syntax, TypeFrame Types) {
+    }
+    
     public class TypeFrame {
         private int tempCounter = 0;
 
@@ -20,8 +23,11 @@ namespace Helix.Analysis.TypeChecking {
 
         public ImmutableDictionary<IdentifierPath, DeclarationInfo> Declarations { get; }
         
+        public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; }
+        
         public TypeFrame() {
             this.Declarations = ImmutableDictionary<IdentifierPath, DeclarationInfo>.Empty;
+            this.NominalSignatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
 
             this.Declarations = this.Declarations.Add(
                 new IdentifierPath("void"),
@@ -38,13 +44,17 @@ namespace Helix.Analysis.TypeChecking {
             this.Scope = new IdentifierPath();
         }
 
-        private TypeFrame(ImmutableDictionary<IdentifierPath, DeclarationInfo> decls, IdentifierPath scope) {
+        private TypeFrame(
+            ImmutableDictionary<IdentifierPath, DeclarationInfo> decls, 
+            ImmutableDictionary<IdentifierPath, HelixType> sigs, 
+            IdentifierPath scope) {
             this.Declarations = decls;
+            this.NominalSignatures = sigs;
             this.Scope = scope;
         }
 
         public TypeFrame WithScope(string newSegment) {
-            return new TypeFrame(this.Declarations, this.Scope.Append(newSegment));
+            return new TypeFrame(this.Declarations, this.NominalSignatures, this.Scope.Append(newSegment));
         }
 
         public TypeFrame PopScope() {
@@ -52,42 +62,48 @@ namespace Helix.Analysis.TypeChecking {
 
             foreach (var (path, _) in this.Declarations) {
                 if (path.StartsWith(this.Scope)) {
-                    decls = decls.Remove(path);
+                    //decls = decls.Remove(path);
                 }
             }
 
-            return new TypeFrame(decls, this.Scope.Pop());
+            return new TypeFrame(decls, this.NominalSignatures, this.Scope.Pop());
         }
 
         public TypeFrame WithDeclaration(IdentifierPath path, DeclarationInfo info) {
-            var decls = this.Declarations.SetItem(path, info);
+            if (this.Declarations.ContainsKey(path)) {
+                throw new InvalidOperationException($"This type frame already contains a declaration at the path '{path}'");
+            }
+            
+            var decls = this.Declarations.Add(path, info);
 
-            return new TypeFrame(decls, this.Scope);
+            return new TypeFrame(decls, this.NominalSignatures, this.Scope);
         }
         
         public TypeFrame WithDeclaration(IdentifierPath path, DeclarationKind kind, HelixType type) {
             return this.WithDeclaration(path, new DeclarationInfo(kind, type));
+        }
+        
+        public TypeFrame WithNominalSignature(IdentifierPath path, HelixType sig) {
+            var sigs = this.NominalSignatures.SetItem(path, sig);
+
+            return new TypeFrame(this.Declarations, sigs, this.Scope);
         }
 
         public string GetVariableName() {
             return "$t_" + this.tempCounter++;
         }
 
-        public TypeFrame CombineWith(TypeFrame other) {
-            if (this.Scope != other.Scope) {
-                throw new InvalidOperationException();
-            }
-
-            var decls = this.Declarations;
-            var keys = this.Declarations.Keys.Union(other.Declarations.Keys);
+        public TypeFrame CombineSignaturesWith(TypeFrame other) {
+            var sigs = this.NominalSignatures;
+            var keys = this.NominalSignatures.Keys.Union(other.NominalSignatures.Keys);
 
             foreach (var key in keys) {
                 if (!this.Declarations.ContainsKey(key)) {
-                    decls = decls.SetItem(key, other.Declarations[key]);
+                    sigs = sigs.SetItem(key, other.NominalSignatures[key]);
                     continue;
                 }
                 else if (!other.Declarations.ContainsKey(key)) {
-                    decls = decls.SetItem(key, this.Declarations[key]);
+                    sigs = sigs.SetItem(key, this.NominalSignatures[key]);
                     continue;
                 }
                 
@@ -102,10 +118,10 @@ namespace Helix.Analysis.TypeChecking {
                     throw new InvalidCastException();
                 }
                 
-                decls = decls.SetItem(key, new DeclarationInfo(first.Kind, result));
+                sigs = sigs.SetItem(key, result);
             }
 
-            return new TypeFrame(decls, this.Scope);
+            return new TypeFrame(this.Declarations, sigs, this.Scope);
         }
     }
 }

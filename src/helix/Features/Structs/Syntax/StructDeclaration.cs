@@ -19,7 +19,7 @@ namespace Helix.Features.Structs {
 
         public TypeFrame DeclareTypes(TypeFrame types) => types;
 
-        public IDeclaration CheckTypes(TypeFrame types) => this;
+        public DeclarationTypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
 
         public void GenerateCode(TypeFrame types, ICWriter writer) {
             var name = writer.GetVariableName(this.Path);
