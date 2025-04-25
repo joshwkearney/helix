@@ -14,9 +14,9 @@ namespace Helix.Analysis.Types {
 
         public override PassingSemantics GetSemantics(TypeFrame types) => PassingSemantics.ValueType;
 
-        public override HelixType GetMutationSupertype(TypeFrame types) => PrimitiveType.Bool;
+        public override HelixType GetSignature(TypeFrame types) => PrimitiveType.Bool;
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) => PrimitiveType.Bool;
+        public override bool IsBool(TypeFrame types) => true;
     }
 
     public record SingularBoolType : PredicateBool {

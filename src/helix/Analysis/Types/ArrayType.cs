@@ -21,8 +21,8 @@ namespace Helix.Analysis.Types {
             yield return this.InnerType;
         }
 
-        public override HelixType GetMutationSupertype(TypeFrame types) => this;
+        public override HelixType GetSignature(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
+        public override Option<ArrayType> AsArray(TypeFrame types) => this;
     }
 }

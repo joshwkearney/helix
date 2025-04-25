@@ -53,8 +53,8 @@ namespace Helix.Analysis.TypeChecking {
                 return true;
             }
 
-            var abstract1 = type1.GetMutationSupertype(types);
-            var abstract2 = type2.GetMutationSupertype(types);
+            var abstract1 = type1.GetSignature(types);
+            var abstract2 = type2.GetSignature(types);
 
             if (abstract1 == abstract2) {
                 resultType = abstract1;

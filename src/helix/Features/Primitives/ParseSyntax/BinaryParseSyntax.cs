@@ -49,7 +49,7 @@ namespace Helix.Features.Primitives {
             if (left.ReturnType.IsBool(types) && right.ReturnType.IsBool(types)) {
                 return this.CheckBoolExpresion(left, right, types);
             }
-            else if (left.ReturnType.IsInt(types) && right.ReturnType.IsInt(types)) {
+            else if (left.ReturnType.IsWord(types) && right.ReturnType.IsWord(types)) {
                 return this.CheckIntExpresion(left, right, types);
             }
             else {

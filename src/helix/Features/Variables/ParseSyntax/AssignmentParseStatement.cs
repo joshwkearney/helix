@@ -25,7 +25,7 @@ public record AssignmentParseStatement : IParseSyntax {
             .AsVariable(types)
             .GetValue()
             .InnerType
-            .GetMutationSupertype(types);
+            .GetSignature(types);
         
         // The assigned type needs to match the left hand side
         assign = assign.UnifyTo(varType, types);

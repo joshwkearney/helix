@@ -15,13 +15,11 @@ namespace Helix.Analysis.Types {
             return PassingSemantics.ValueType;
         }
 
-        public override HelixType GetMutationSupertype(TypeFrame types) {
+        public override HelixType GetSignature(TypeFrame types) {
             return PrimitiveType.Word;
         }
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) {
-            return PrimitiveType.Word;
-        }
+        public override bool IsWord(TypeFrame types) => true;
 
         public override Option<ISyntax> ToSyntax(TokenLocation loc, TypeFrame types) {
             return new WordLiteral {

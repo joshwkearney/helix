@@ -21,9 +21,11 @@ namespace Helix.Analysis.Types {
             return PassingSemantics.ValueType;
         }
 
-        public override HelixType GetMutationSupertype(TypeFrame types) => this;
+        public override HelixType GetSignature(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
+        public override bool IsWord(TypeFrame types) => this.kind == PrimitiveTypeKind.Word;
+        
+        public override bool IsBool(TypeFrame types) => this.kind == PrimitiveTypeKind.Bool;
 
         public override Option<ISyntax> ToSyntax(TokenLocation loc, TypeFrame types) {
             if (this == Void) {

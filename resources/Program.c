@@ -15,6 +15,7 @@ static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth 
 
 typedef struct Point Point;
 typedef struct Test Test;
+typedef struct _Word_$Pointer _Word_$Pointer;
 _Word test(_Region* _return_region);
 
 struct Point {
@@ -26,10 +27,17 @@ struct Test {
     _Word x;
 };
 
+struct _Word_$Pointer {
+    _Word* data;
+    _Region* region;
+};
+
 _Word test(_Region* _return_region) {
     _Word a = 45;
 
-    return a;
+    _Word_$Pointer b = (_Word_$Pointer){ (&a) };
+
+    return (a + 7);
 
     return 0;
 }

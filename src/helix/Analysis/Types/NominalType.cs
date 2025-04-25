@@ -1,4 +1,5 @@
 ﻿using Helix.Analysis.TypeChecking;
+using Helix.Features.Types;
 using Helix.Parsing;
 using Helix.Syntax;
 
@@ -26,17 +27,8 @@ namespace Helix.Analysis.Types {
             }
         }
 
-        public override HelixType GetMutationSupertype(TypeFrame types) {
-            if (this.Kind == NominalTypeKind.Variable) {
-                return this.GetSignatureSupertype(types).GetMutationSupertype(types);
-            }
-            else {
-                return this;
-            }
-        }
-
-        public override HelixType GetSignatureSupertype(TypeFrame types) {
-            return types.NominalSignatures[this.Path].GetSignatureSupertype(types);
+        public override HelixType GetSignature(TypeFrame types) {
+            return types.NominalSignatures[this.Path].GetSignature(types);
         }
 
         public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame types) {
@@ -53,6 +45,34 @@ namespace Helix.Analysis.Types {
 
         public override string ToString() {
             return this.Path.Segments.Last();
+        }
+
+        public override Option<PointerType> AsVariable(TypeFrame types) {
+            return types.NominalSignatures[this.Path].AsVariable(types);
+        }
+
+        public override Option<FunctionType> AsFunction(TypeFrame types) {
+            return types.NominalSignatures[this.Path].AsFunction(types);
+        }
+
+        public override Option<StructType> AsStruct(TypeFrame types) {
+            return types.NominalSignatures[this.Path].AsStruct(types);
+        }
+
+        public override Option<UnionType> AsUnion(TypeFrame types) {
+            return types.NominalSignatures[this.Path].AsUnion(types);
+        }
+
+        public override Option<ArrayType> AsArray(TypeFrame types) {
+            return types.NominalSignatures[this.Path].AsArray(types);
+        }
+
+        public override bool IsBool(TypeFrame types) {
+            return types.NominalSignatures[this.Path].IsBool(types);
+        }
+
+        public override bool IsWord(TypeFrame types) {
+            return types.NominalSignatures[this.Path].IsWord(types);
         }
     }
 }

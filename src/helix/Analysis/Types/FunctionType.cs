@@ -16,9 +16,9 @@ namespace Helix.Features.Types {
             return PassingSemantics.ReferenceType;
         }
 
-        public override HelixType GetMutationSupertype(TypeFrame types) => this;
+        public override HelixType GetSignature(TypeFrame types) => this;
 
-        public override HelixType GetSignatureSupertype(TypeFrame types) => this;
+        public override Option<FunctionType> AsFunction(TypeFrame types) => this;
     }
 
     public record FunctionParameter {

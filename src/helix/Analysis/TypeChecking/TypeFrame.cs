@@ -59,13 +59,7 @@ namespace Helix.Analysis.TypeChecking {
 
         public TypeFrame PopScope() {
             var decls = this.Declarations;
-
-            foreach (var (path, _) in this.Declarations) {
-                if (path.StartsWith(this.Scope)) {
-                    //decls = decls.Remove(path);
-                }
-            }
-
+            
             return new TypeFrame(decls, this.NominalSignatures, this.Scope.Pop());
         }
 

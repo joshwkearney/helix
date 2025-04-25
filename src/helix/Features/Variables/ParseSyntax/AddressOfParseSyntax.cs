@@ -17,14 +17,13 @@ public class AddressOfParseSyntax : IParseSyntax {
         (var operand, types) = this.Operand.CheckTypes(types);
         operand = operand.ToLValue(types);
         
-        // Make sure we're taking the address of a variable
-        if (!operand.ReturnType.AsNominal(types).TryGetValue(out var nominal) || nominal.Kind != NominalTypeKind.Variable) {
+        // Make sure we're taking the address of a local variable
+        if (operand.ReturnType is not NominalType nominal || nominal.Kind != NominalTypeKind.Variable) {
             throw new InvalidOperationException();
         }
         
         // We need to flush this variable's signature because its value can now be set through an alias
-        var mutatedType = types.NominalSignatures[nominal.Path].GetMutationSupertype(types);
-        types = types.WithNominalSignature(nominal.Path, mutatedType);
+        types = types.WithNominalSignature(nominal.Path, nominal.GetSignature(types));
 
         var result = new AddressOfSyntax {
             Location = this.Location,

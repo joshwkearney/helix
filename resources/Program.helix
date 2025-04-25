@@ -9,7 +9,9 @@ struct Test {
 
 func test() as word {
 	var a = 45;
+	var b = &a;
 	
+	//b* = 78;
 
-	return a;
+	return a + 7;
 };
