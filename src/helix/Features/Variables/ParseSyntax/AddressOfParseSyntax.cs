@@ -11,8 +11,10 @@ public class AddressOfParseSyntax : IParseSyntax {
         
     public bool IsPure => this.Operand.IsPure;
 
-    public ISyntax CheckTypes(TypeFrame types) {
-        var operand = this.Operand.CheckTypes(types).ToLValue(types);
+    public TypeCheckResult CheckTypes(TypeFrame types) {
+        (var operand, types) = this.Operand.CheckTypes(types);
+            
+        operand = operand.ToLValue(types);
         var varType = operand.ReturnType;
 
         var result = new AddressOfSyntax {
@@ -21,6 +23,6 @@ public class AddressOfParseSyntax : IParseSyntax {
             ReturnType = varType
         };
 
-        return result;
+        return new TypeCheckResult(result, types);
     }
 }

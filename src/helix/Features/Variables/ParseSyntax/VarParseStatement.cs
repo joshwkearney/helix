@@ -1,5 +1,4 @@
 using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Features.FlowControl;
@@ -21,16 +20,14 @@ public record VarParseStatement : IParseSyntax {
         
     public bool IsPure => false;
         
-    public ISyntax CheckTypes(TypeFrame types) {
+    public TypeCheckResult CheckTypes(TypeFrame types) {
         // Type check the assignment value
-        var assign = this.Assignment.CheckTypes(types).ToRValue(types);
-
+        (var assign, types) = this.Assignment.CheckTypes(types);
+        
         // If this is a compound assignment, check if we have the right
         // number of names and then recurse
-        var assignType = assign.ReturnType;
-            
         if (this.VariableNames.Count > 1) {
-            return this.Destructure(assignType, types);
+            return this.Destructure(assign.ReturnType, types);
         }
 
         // Make sure assign can unify with our type expression
@@ -40,7 +37,6 @@ public record VarParseStatement : IParseSyntax {
             }
 
             assign = assign.UnifyTo(type, types);
-            assignType = type;
         }
 
         // Make sure we're not shadowing anybody
@@ -49,9 +45,9 @@ public record VarParseStatement : IParseSyntax {
         }
 
         var path = types.Scope.Append(this.VariableNames[0]);
-        var varSig = new PointerType(assignType);
+        var varSig = new PointerType(assign.ReturnType);
 
-        types.NominalSignatures.Add(path, varSig);
+        types = types.WithDeclaration(path, DeclarationKind.Variable, varSig);
 
         var result = new VarStatement {
             Location = this.Location,
@@ -59,11 +55,10 @@ public record VarParseStatement : IParseSyntax {
             Assignment = assign
         };
 
-        types.Locals = types.Locals.Add(path, new LocalInfo(varSig));
-        return result;
+        return new TypeCheckResult(result, types);
     }
         
-    private ISyntax Destructure(HelixType assignType, TypeFrame types) {
+    private TypeCheckResult Destructure(HelixType assignType, TypeFrame types) {
         if (!assignType.AsStruct(types).TryGetValue(out var sig)) {
             throw new TypeException(
                 this.Location,
@@ -110,6 +105,8 @@ public record VarParseStatement : IParseSyntax {
             stats.Add(assign);
         }
 
-        return BlockParseSyntax.FromMany(this.Location, stats).CheckTypes(types);
+        return BlockParseSyntax
+            .FromMany(this.Location, stats)
+            .CheckTypes(types);
     }
 }

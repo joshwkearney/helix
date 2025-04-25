@@ -18,30 +18,30 @@ public record IfParseSyntax : IParseSyntax {
 
     public bool IsPure => this.Affirmative.IsPure && this.Condition.IsPure && this.Negative.Select(x => x.IsPure).OrElse(() => true);
 
-    public ISyntax CheckTypes(TypeFrame types) {
-        var cond = this.Condition.CheckTypes(types).ToRValue(types);
+    public TypeCheckResult CheckTypes(TypeFrame types) {
+        (var cond, types) = this.Condition.CheckTypes(types);
         var condPredicate = ISyntaxPredicate.Empty;
 
+        // TODO: This isn't used
         if (cond.ReturnType is PredicateBool predBool) {
             condPredicate = predBool.Predicate;
         }
 
         cond = cond.UnifyTo(PrimitiveType.Bool, types);
 
-        var iftrueTypes = new TypeFrame(types, "$if_aff");
-        var iffalseTypes = new TypeFrame(types, $"$if_neg");
+        var ifTrueTypes = types.WithScope("$if_aff");
+        var ifFalseTypes = types.WithScope("$if_neg");
+        
+        (var checkedIfTrue, ifTrueTypes) = this.Affirmative.CheckTypes(ifTrueTypes);
+        
+        (var checkedIfFalse, ifFalseTypes) = this.Negative
+            .OrElse(() => new VoidLiteral { Location = this.Location })
+            .CheckTypes(ifFalseTypes);
 
-        var ifTruePrepend = condPredicate.ApplyToTypes(this.Condition.Location, iftrueTypes);
-        var ifFalsePrepend = condPredicate.Negate().ApplyToTypes(this.Condition.Location, iffalseTypes);
-
-        var iffalse = this.Negative.OrElse(() => new VoidLiteral { Location = this.Location });
-
-        var iftrue = BlockParseSyntax.FromMany(this.Affirmative.Location, ifTruePrepend.Append(this.Affirmative).ToArray());
-        iffalse = BlockParseSyntax.FromMany(iffalse.Location, ifFalsePrepend.Append(iffalse).ToArray());
-
-        var checkedIfTrue = iftrue.CheckTypes(iftrueTypes).ToRValue(iftrueTypes);
-        var checkedIfFalse = iffalse.CheckTypes(iffalseTypes).ToRValue(iffalseTypes);
-
+        ifTrueTypes = ifFalseTypes.PopScope();
+        ifFalseTypes = ifFalseTypes.PopScope();
+        types = ifTrueTypes.CombineWith(ifFalseTypes);
+        
         checkedIfTrue = checkedIfTrue.UnifyFrom(checkedIfFalse, types);
         checkedIfFalse = checkedIfFalse.UnifyFrom(checkedIfTrue, types);
 
@@ -52,7 +52,7 @@ public record IfParseSyntax : IParseSyntax {
             Negative = checkedIfFalse,
             ReturnType = checkedIfTrue.ReturnType
         };
-
-        return result;
+        
+        return new TypeCheckResult(result, types);
     }
 }

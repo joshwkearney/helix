@@ -11,15 +11,16 @@ public record LoopParseStatement : IParseSyntax {
         
     public bool IsPure => false;
 
-    public ISyntax CheckTypes(TypeFrame types) {
-        var bodyTypes = new TypeFrame(types, "$loop");
-        var body = this.Body.CheckTypes(bodyTypes).ToRValue(bodyTypes);
+    public TypeCheckResult CheckTypes(TypeFrame types) {
+        types = types.WithScope("$loop");
+        (var body, types) = this.Body.CheckTypes(types);
+        types = types.PopScope();
 
         var result = new LoopStatement {
             Location = this.Location,
             Body = body
         };
 
-        return result;
+        return new TypeCheckResult(result, types);
     }
 }

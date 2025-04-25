@@ -42,9 +42,9 @@ namespace Helix.Features.Primitives {
         
         public bool IsPure => this.Left.IsPure && this.Right.IsPure;
         
-        public ISyntax CheckTypes(TypeFrame types) {
-            var left = this.Left.CheckTypes(types).ToRValue(types);
-            var right = this.Right.CheckTypes(types).ToRValue(types);
+        public TypeCheckResult CheckTypes(TypeFrame types) {
+            (var left, types) = this.Left.CheckTypes(types);
+            (var right, types) = this.Right.CheckTypes(types);
 
             if (left.ReturnType.IsBool(types) && right.ReturnType.IsBool(types)) {
                 return this.CheckBoolExpresion(left, right, types);
@@ -57,7 +57,7 @@ namespace Helix.Features.Primitives {
             }
         }
 
-        private ISyntax CheckIntExpresion(ISyntax left, ISyntax right, TypeFrame types) {
+        private TypeCheckResult CheckIntExpresion(ISyntax left, ISyntax right, TypeFrame types) {
             if (!intOperations.TryGetValue(this.Operator, out var returnType)) {
                 throw TypeException.UnexpectedType(this.Left.Location, left.ReturnType);
             }
@@ -80,10 +80,10 @@ namespace Helix.Features.Primitives {
                 ReturnType = returnType
             };
             
-            return result;
+            return new TypeCheckResult(result, types);
         }
 
-        private ISyntax EvaluateIntExpression(long int1, long int2, TypeFrame types) {
+        private TypeCheckResult EvaluateIntExpression(long int1, long int2, TypeFrame types) {
             HelixType returnType;
 
             switch (this.Operator) {
@@ -131,10 +131,11 @@ namespace Helix.Features.Primitives {
             }
 
             var result = returnType.ToSyntax(this.Location, types).GetValue();
-            return result;
+            
+            return new TypeCheckResult(result, types);
         }
 
-        private ISyntax CheckBoolExpresion(ISyntax left, ISyntax right, TypeFrame types) {
+        private TypeCheckResult CheckBoolExpresion(ISyntax left, ISyntax right, TypeFrame types) {
             var leftType = left.ReturnType;
             var rightType = right.ReturnType;
 
@@ -177,10 +178,10 @@ namespace Helix.Features.Primitives {
                 ReturnType = returnType
             };
             
-            return result;
+            return new TypeCheckResult(result, types);
         }
 
-        private ISyntax EvaluateBoolExpression(bool b1, bool b2, ISyntaxPredicate pred, TypeFrame types) {
+        private TypeCheckResult EvaluateBoolExpression(bool b1, bool b2, ISyntaxPredicate pred, TypeFrame types) {
             bool value;
 
             switch (this.Operator) {
@@ -204,7 +205,7 @@ namespace Helix.Features.Primitives {
             var returnType = new SingularBoolType(value, pred);
             var result = returnType.ToSyntax(this.Location, types).GetValue();
             
-            return result;
+            return new TypeCheckResult(result, types);
         }
     }
 }

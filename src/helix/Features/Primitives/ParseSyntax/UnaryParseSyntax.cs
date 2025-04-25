@@ -16,7 +16,7 @@ namespace Helix.Features.Primitives {
         
         public bool IsPure => this.Operand.IsPure;
 
-        public ISyntax CheckTypes(TypeFrame types) {
+        public TypeCheckResult CheckTypes(TypeFrame types) {
             if (this.Operator == UnaryOperatorKind.Plus || this.Operator == UnaryOperatorKind.Minus) {
                 var left = new WordLiteral {
                     Location = this.Location,
@@ -37,7 +37,7 @@ namespace Helix.Features.Primitives {
                 return result.CheckTypes(types);
             }
             else if (this.Operator == UnaryOperatorKind.Not) {
-                var arg = this.Operand.CheckTypes(types);
+                (var arg, types) = this.Operand.CheckTypes(types);
                 var returnType = arg.ReturnType;
 
                 if (returnType is SingularBoolType singularBool) {
@@ -54,7 +54,7 @@ namespace Helix.Features.Primitives {
                     ReturnType = returnType
                 };
 
-                return result;
+                return new TypeCheckResult(result, types);
             }
             else {
                 throw new Exception("Unexpected unary operator kind");

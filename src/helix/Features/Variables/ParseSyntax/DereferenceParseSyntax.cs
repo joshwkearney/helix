@@ -19,8 +19,8 @@ public record DereferenceParseSyntax : IParseSyntax {
             .Select(x => (HelixType)x);
     }
 
-    public ISyntax CheckTypes(TypeFrame types) {
-        var operand = this.Operand.CheckTypes(types).ToRValue(types);
+    public TypeCheckResult CheckTypes(TypeFrame types) {
+        (var operand, types) = this.Operand.CheckTypes(types);
             
         if (operand.ReturnType is NominalType nom && nom.Kind == NominalTypeKind.Variable) {
             var sig = nom.AsVariable(types).GetValue();
@@ -32,16 +32,18 @@ public record DereferenceParseSyntax : IParseSyntax {
                 IsLValue = false
             };
 
-            return access;
+            return new TypeCheckResult(access, types);
         }
 
         var pointerType = operand.AssertIsPointer(types);
 
-        return new DereferenceSyntax {
+        var result = new DereferenceSyntax {
             Location = this.Location,
             Operand = operand,
             OperandSignature = pointerType,
             IsLValue = false
         };
+
+        return new TypeCheckResult(result, types);
     }
 }

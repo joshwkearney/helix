@@ -15,14 +15,13 @@ public record InvokeParseSyntax : IParseSyntax {
         
     public bool IsPure => false;
         
-    public ISyntax CheckTypes(TypeFrame types) {
-        var target = this.Operand.CheckTypes(types).ToRValue(types);
-        var targetType = target.ReturnType;
+    public TypeCheckResult CheckTypes(TypeFrame types) {
+        (var operand, types) = this.Operand.CheckTypes(types);
 
         // TODO: Support invoking non-nominal functions
         // Make sure the target is a function
-        if (!targetType.AsFunction(types).TryGetValue(out var sig) || targetType is not NominalType named) {
-            throw TypeException.ExpectedFunctionType(this.Operand.Location, targetType);
+        if (!operand.ReturnType.AsFunction(types).TryGetValue(out var sig) || operand.ReturnType is not NominalType named) {
+            throw TypeException.ExpectedFunctionType(this.Operand.Location, operand.ReturnType);
         }
 
         // Make sure the arg count lines up
@@ -39,7 +38,8 @@ public record InvokeParseSyntax : IParseSyntax {
         for (int i = 0; i < this.Arguments.Count; i++) {
             var expectedType = sig.Parameters[i].Type;
 
-            newArgs[i] = this.Arguments[i].CheckTypes(types).UnifyTo(expectedType, types);
+            (newArgs[i], types) = this.Arguments[i].CheckTypes(types);
+            newArgs[i] = newArgs[i].UnifyTo(expectedType, types);
         }
 
         var result = new InvokeSyntax {
@@ -49,6 +49,6 @@ public record InvokeParseSyntax : IParseSyntax {
             Arguments = newArgs
         };
 
-        return result;            
+        return new TypeCheckResult(result, types);            
     }
 }

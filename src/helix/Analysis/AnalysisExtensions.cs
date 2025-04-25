@@ -2,14 +2,13 @@
 using Helix.Analysis.Types;
 using Helix.Analysis.TypeChecking;
 using Helix.Features.Types;
-using Helix.Analysis.Predicates;
 
 namespace Helix.Analysis {
     public static class AnalysisExtensions {
         public static bool TryResolvePath(this TypeFrame types, IdentifierPath scope, string name, out IdentifierPath path) {
             while (true) {
                 path = scope.Append(name);
-                if (types.Locals.ContainsKey(path)) {
+                if (types.Declarations.ContainsKey(path)) {
                     return true;
                 }
 
@@ -37,7 +36,7 @@ namespace Helix.Analysis {
                 return false;
             }
 
-            if (!types.Locals.TryGetValue(path, out var info)) {
+            if (!types.Declarations.TryGetValue(path, out var info)) {
                 value = null;
                 return false;
             }
@@ -47,9 +46,9 @@ namespace Helix.Analysis {
         }
 
         public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {
-            return types.NominalSignatures
+            return types.Declarations
                 .GetValueOrNone(path)
-                .SelectMany(x => x.AsFunction(types))
+                .SelectMany(x => x.Type.AsFunction(types))
                 .TryGetValue(out type);
         }
 
@@ -127,7 +126,7 @@ namespace Helix.Analysis {
         }
 
         public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
-            return types.Locals
+            return types.Declarations
                 .GetValueOrNone(path)
                 .SelectMany(x => x.Type.AsVariable(types))
                 .TryGetValue(out type);

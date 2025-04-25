@@ -18,7 +18,7 @@ namespace Helix.Features.Arrays {
                 .Select(x => (HelixType)x);
         }
 
-        public ISyntax CheckTypes(TypeFrame types) {
+        public TypeCheckResult CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
     }

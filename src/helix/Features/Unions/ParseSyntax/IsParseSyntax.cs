@@ -16,7 +16,8 @@ public record IsParseSyntax : IParseSyntax {
 
     public bool IsPure => this.Operand.IsPure;
         
-    public ISyntax CheckTypes(TypeFrame types) {
+    public TypeCheckResult CheckTypes(TypeFrame types) {
+        // TODO: Why can't we use this on arbitrary expressions???
         if (this.Operand is not VariableAccessParseSyntax access) {
             throw new TypeException(
                 this.Operand.Location, 
@@ -40,7 +41,7 @@ public record IsParseSyntax : IParseSyntax {
         }
 
         // Make sure this union actually contains this member
-        if (!unionSig.Members.Any(x => x.Name == this.MemberName)) {
+        if (unionSig.Members.All(x => x.Name != this.MemberName)) {
             throw TypeException.MemberUndefined(
                 this.Location,
                 unionSig, 
@@ -63,6 +64,6 @@ public record IsParseSyntax : IParseSyntax {
             ReturnType = returnType
         };
 
-        return result;
+        return new TypeCheckResult(result, types);
     }
 }

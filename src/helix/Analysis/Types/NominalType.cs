@@ -22,7 +22,7 @@ namespace Helix.Analysis.Types {
                 case NominalTypeKind.Function:
                     return PassingSemantics.ValueType;
                 default:
-                    return types.NominalSignatures[this.Path].GetSemantics(types);
+                    return types.Declarations[this.Path].Type.GetSemantics(types);
             }
         }
 
@@ -36,19 +36,19 @@ namespace Helix.Analysis.Types {
         }
 
         public override HelixType GetSignatureSupertype(TypeFrame types) {
-            return types.NominalSignatures[this.Path].GetSignatureSupertype(types);
+            return types.Declarations[this.Path].Type.GetSignatureSupertype(types);
         }
 
         public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame types) {
             yield return this;
 
-            foreach (var access in types.NominalSignatures[this.Path].GetAccessibleTypes(types)) {
+            foreach (var access in types.Declarations[this.Path].Type.GetAccessibleTypes(types)) {
                 yield return access;
             }
         }
 
         public override Option<ISyntax> ToSyntax(TokenLocation loc, TypeFrame types) {
-            return types.NominalSignatures[this.Path].ToSyntax(loc, types);
+            return types.Declarations[this.Path].Type.ToSyntax(loc, types);
         }
 
         public override string ToString() {

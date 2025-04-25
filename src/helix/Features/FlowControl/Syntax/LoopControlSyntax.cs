@@ -18,7 +18,7 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure => false;
 
-        public ISyntax CheckTypes(TypeFrame types) => this;
+        public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
 
         public ISyntax ToRValue(TypeFrame types) => this;
 

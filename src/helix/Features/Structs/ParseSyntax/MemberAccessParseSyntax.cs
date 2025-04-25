@@ -15,8 +15,8 @@ public record MemberAccessParseSyntax : IParseSyntax {
         
     public bool IsPure => this.Operand.IsPure;
         
-    public virtual ISyntax CheckTypes(TypeFrame types) {
-        var operand = this.Operand.CheckTypes(types).ToRValue(types);
+    public TypeCheckResult CheckTypes(TypeFrame types) {
+        (var operand, types) = this.Operand.CheckTypes(types);
 
         // Handle getting the count of an array
         if (operand.ReturnType is ArrayType array) {
@@ -28,7 +28,7 @@ public record MemberAccessParseSyntax : IParseSyntax {
                     ReturnType = PrimitiveType.Word
                 };
 
-                return result;
+                return new TypeCheckResult(result, types);
             }
         }
 
@@ -48,7 +48,7 @@ public record MemberAccessParseSyntax : IParseSyntax {
                     ReturnType = field.Type
                 };
 
-                return result;
+                return new TypeCheckResult(result, types);
             }               
         }
 

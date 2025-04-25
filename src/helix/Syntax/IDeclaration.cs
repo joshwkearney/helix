@@ -6,9 +6,9 @@ namespace Helix.Syntax {
     public interface IDeclaration {
         public TokenLocation Location { get; }
 
-        public void DeclareNames(TypeFrame names);
+        public TypeFrame DeclareNames(TypeFrame names);
 
-        public void DeclareTypes(TypeFrame types);
+        public TypeFrame DeclareTypes(TypeFrame types);
 
         public IDeclaration CheckTypes(TypeFrame types);
 

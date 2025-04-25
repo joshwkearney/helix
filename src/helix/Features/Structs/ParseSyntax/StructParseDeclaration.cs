@@ -1,5 +1,4 @@
 using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Parsing;
@@ -12,7 +11,7 @@ public record StructParseDeclaration : IDeclaration {
     
     public required ParseStructSignature Signature { get; init; }
 
-    public void DeclareNames(TypeFrame types) {
+    public TypeFrame DeclareNames(TypeFrame types) {
         // Make sure this name isn't taken
         if (types.TryResolvePath(types.Scope, this.Signature.Name, out _)) {
             throw TypeException.IdentifierDefined(this.Location, this.Signature.Name);
@@ -21,14 +20,14 @@ public record StructParseDeclaration : IDeclaration {
         var path = types.Scope.Append(this.Signature.Name);
         var named = new NominalType(path, NominalTypeKind.Struct);
 
-        types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
+        return types.WithDeclaration(path, DeclarationKind.Type, named);
     }
 
-    public void DeclareTypes(TypeFrame types) {
+    public TypeFrame DeclareTypes(TypeFrame types) {
         var path = types.Scope.Append(this.Signature.Name);
         var sig = this.Signature.ResolveNames(types);
 
-        types.NominalSignatures.Add(path, sig);
+        return types.WithDeclaration(path, DeclarationKind.Type, sig);
     }
 
     public IDeclaration CheckTypes(TypeFrame types) {

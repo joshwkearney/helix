@@ -10,6 +10,6 @@ namespace Helix.Syntax {
 
         public Option<HelixType> AsType(TypeFrame types) => Option.None;
 
-        public ISyntax CheckTypes(TypeFrame types);
+        public TypeCheckResult CheckTypes(TypeFrame types);
     }
 }

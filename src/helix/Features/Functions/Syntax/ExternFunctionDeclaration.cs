@@ -16,11 +16,11 @@ namespace Helix.Features.Functions {
 
         public required IdentifierPath Path { get; init; }
         
-        public void DeclareNames(TypeFrame names) {
+        public TypeFrame DeclareNames(TypeFrame names) {
             throw new InvalidOperationException();
         }
 
-        public void DeclareTypes(TypeFrame types) {
+        public TypeFrame DeclareTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
 

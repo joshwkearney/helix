@@ -20,7 +20,7 @@ namespace Helix.Features.Primitives {
 
         public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
-        public ISyntax CheckTypes(TypeFrame types) => this;
+        public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(0);

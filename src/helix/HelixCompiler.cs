@@ -26,11 +26,11 @@ namespace Helix {
                 var parseStats = parser.Parse();
 
                 foreach (var stat in parseStats) {
-                    stat.DeclareNames(types);
+                    types = stat.DeclareNames(types);
                 }
 
                 foreach (var stat in parseStats) {
-                    stat.DeclareTypes(types);
+                    types = stat.DeclareTypes(types);
                 }
 
                 var stats = parseStats.Select(x => x.CheckTypes(types)).ToArray();

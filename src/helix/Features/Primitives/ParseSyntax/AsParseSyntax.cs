@@ -14,15 +14,16 @@ namespace Helix.Features.Primitives {
 
         public bool IsPure => this.Operand.IsPure && this.TypeSyntax.IsPure;
 
-        public ISyntax CheckTypes(TypeFrame types) {
-            var arg = this.Operand.CheckTypes(types).ToRValue(types);
+        public TypeCheckResult CheckTypes(TypeFrame types) {
+            (var arg, types) = this.Operand.CheckTypes(types);
 
             if (!this.TypeSyntax.AsType(types).TryGetValue(out var targetType)) {
                 throw TypeException.ExpectedTypeExpression(this.TypeSyntax.Location);
             }
 
             arg = arg.UnifyTo(targetType, types);
-            return arg;
+            
+            return new TypeCheckResult(arg, types);
         }
     }
 }

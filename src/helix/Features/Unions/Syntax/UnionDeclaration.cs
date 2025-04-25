@@ -21,9 +21,9 @@ namespace Helix.Features.Unions {
             this.path = path;
         }
 
-        public void DeclareNames(TypeFrame types) { }
+        public TypeFrame DeclareNames(TypeFrame types) => types;
 
-        public void DeclareTypes(TypeFrame types) { }
+        public TypeFrame DeclareTypes(TypeFrame types) => types;
 
         public IDeclaration CheckTypes(TypeFrame types) => this;
 

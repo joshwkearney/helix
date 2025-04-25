@@ -38,7 +38,7 @@ public record VariableAccessSyntax : ISyntax {
     }
 
     public ISyntax ToRValue(TypeFrame types) {
-        var hasSingularValue = types.Locals[this.VariablePath].Type
+        var hasSingularValue = types.Declarations[this.VariablePath].Type
             .AsVariable(types)
             .SelectMany(x => x.InnerType.ToSyntax(this.Location, types))
             .TryGetValue(out var singularSyntax);

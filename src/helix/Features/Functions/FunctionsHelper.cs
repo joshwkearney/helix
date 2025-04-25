@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Features.Types;
@@ -19,7 +18,7 @@ namespace Helix.Features.Functions {
             }
         }
 
-        public static void DeclareName(ParseFunctionSignature sig, TypeFrame types) {
+        public static TypeFrame DeclareName(ParseFunctionSignature sig, TypeFrame types) {
             // Make sure this name isn't taken
             if (types.TryResolvePath(types.Scope, sig.Name, out _)) {
                 throw TypeException.IdentifierDefined(sig.Location, sig.Name);
@@ -29,29 +28,24 @@ namespace Helix.Features.Functions {
             var path = types.Scope.Append(sig.Name);
             var named = new NominalType(path, NominalTypeKind.Function);
 
-            types.Locals = types.Locals.SetItem(path, new LocalInfo(named));
+            return types.WithDeclaration(path, DeclarationKind.Function, named);
         }
 
-        public static void DeclareParameters(FunctionType sig, IdentifierPath path, TypeFrame types) {
-            // Declare the parameters
+        public static TypeFrame DeclareParameters(FunctionType sig, IdentifierPath path, TypeFrame types) {
             for (int i = 0; i < sig.Parameters.Count; i++) {
                 var parsePar = sig.Parameters[i];
                 var parPath = path.Append(parsePar.Name);
                 var parType = sig.Parameters[i].Type;
                 var parSig = new PointerType(parType);
 
-                // Declare this parameter as a root by making an end cycle in the graph
                 foreach (var (relPath, memType) in parType.GetMembers(types)) {
                     var memPath = parPath.Append(relPath);
 
-                    // Put these lifetimes in the main table
-                    types.Locals = types.Locals.SetItem(
-                        memPath, 
-                        new LocalInfo(parSig));
-
-                    types.NominalSignatures.Add(memPath, parSig);
+                    types = types.WithDeclaration(memPath, DeclarationKind.Parameter, parSig);
                 }
             }
+
+            return types;
         }
     }
 }

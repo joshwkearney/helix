@@ -14,14 +14,16 @@ public record ArrayLiteralParseSyntax : IParseSyntax {
         
     public bool IsPure => this.Arguments.All(x => x.IsPure);
 
-    public ISyntax CheckTypes(TypeFrame types) {
+    public TypeCheckResult CheckTypes(TypeFrame types) {
         if (this.Arguments.Count == 0) {
-            return new VoidLiteral { Location = this.Location };
+            return new TypeCheckResult(new VoidLiteral { Location = this.Location }, types);
         }
 
-        var args = this.Arguments
-            .Select(x => x.CheckTypes(types).ToRValue(types))
-            .ToArray();
+        var args = new ISyntax[this.Arguments.Count];
+
+        for (int i = 0; i < this.Arguments.Count; i++) {
+            (args[i], types) = this.Arguments[i].CheckTypes(types);
+        }
 
         var totalType = args[0].ReturnType;
 
@@ -47,6 +49,6 @@ public record ArrayLiteralParseSyntax : IParseSyntax {
             ArraySignature = new ArrayType(totalType)
         };
 
-        return result;
+        return new TypeCheckResult(result, types);
     }
 }

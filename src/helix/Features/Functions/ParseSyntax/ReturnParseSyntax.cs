@@ -12,22 +12,20 @@ namespace Helix.Features.Functions {
         
         public bool IsPure => false;
 
-        public ISyntax CheckTypes(TypeFrame types) {
+        public TypeCheckResult CheckTypes(TypeFrame types) {
             if (!this.TryGetCurrentFunction(types, out var sig)) {
                 throw new InvalidOperationException();
             }
 
-            var operand = this.Operand
-                .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(sig.ReturnType, types);
+            (var operand, types) = this.Operand.CheckTypes(types);
+            operand = operand.UnifyTo(sig.ReturnType, types);
 
             var result = new ReturnSyntax {
                 Location = this.Location,
                 Operand = operand
             };
 
-            return result;
+            return new TypeCheckResult(result, types);
         }
         
         private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {

@@ -16,7 +16,7 @@ public class NewUnionParseSyntax : IParseSyntax {
         
     public bool IsPure => this.Values.All(x => x.IsPure);
         
-    public ISyntax CheckTypes(TypeFrame types) {
+    public TypeCheckResult CheckTypes(TypeFrame types) {
         if (this.Names.Count > 1 || this.Values.Count > 1) {
             throw new TypeException(
                 this.Location,
@@ -42,6 +42,7 @@ public class NewUnionParseSyntax : IParseSyntax {
         }
 
         ISyntax value;
+        
         if (this.Values.Count == 0) {
             if (!mem.Type.HasDefaultValue(types)) {
                 throw new TypeException(
@@ -52,26 +53,21 @@ public class NewUnionParseSyntax : IParseSyntax {
                   + "with a different member.");
             }
 
-            value = new VoidLiteral { Location = this.Location }
-                .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(mem.Type, types);
+            (value, types) = new VoidLiteral { Location = this.Location }.CheckTypes(types);
         }
         else {
-            value = this.Values[0]
-                .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(mem.Type, types);
+            (value, types) = this.Values[0].CheckTypes(types);
         }
+        
+        value = value.UnifyTo(mem.Type, types);
 
         var result = new NewUnionSyntax {
             Location = this.Location,
             Signature = this.Signature,
             Name = name,
-            Value = value,
-            ReturnType = mem.Type
+            Value = value
         };
                 
-        return result;
+        return new TypeCheckResult(result, types);
     }
 }

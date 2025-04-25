@@ -23,7 +23,7 @@ namespace Helix.Features.Primitives {
             return new SingularWordType(this.Value);
         }
 
-        public ISyntax CheckTypes(TypeFrame types) => this;
+        public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
 
         public ISyntax ToRValue(TypeFrame types) => this;
 

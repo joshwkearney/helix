@@ -1,5 +1,6 @@
 ﻿using Helix.Analysis.Types;
 using Helix.Features.FlowControl;
+using Helix.Features.Primitives;
 using Helix.Features.Structs;
 using Helix.Features.Unions;
 using Helix.Syntax;
@@ -199,8 +200,7 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         private static UnificationResult TryUnifyVoidToStruct(HelixType structType, StructType sig, TypeFrame types) {
-            var memsConvertable = sig.Members
-                .All(x => PrimitiveType.Void.CanUnifyTo(x.Type, types));
+            var memsConvertable = sig.Members.All(x => PrimitiveType.Void.CanUnifyTo(x.Type, types));
 
             if (!memsConvertable) {
                 return UnificationResult.None;
@@ -217,7 +217,9 @@ namespace Helix.Analysis.TypeChecking {
                     var block = new BlockSyntax {
                         Location = syntax.Location,
                         First = syntax,
-                        Second = newStruct.CheckTypes(types)
+                        
+                        // TODO: Don't be lazy and construct a new struct synatx without type checking
+                        Second = newStruct.CheckTypes(types).Syntax
                     };
 
                     return block;
@@ -232,16 +234,21 @@ namespace Helix.Analysis.TypeChecking {
 
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
-                Unifier = (syntax, t) => {
-                    var newUnion = new NewUnionParseSyntax {
+                Unifier = (syntax, types) => {
+                    var type = sig.Members[0].Type;
+                    var value = new VoidLiteral { Location = syntax.Location }.UnifyTo(type, types);
+                    
+                    var newUnion = new NewUnionSyntax {
                         Location = syntax.Location,
-                        Signature = sig
+                        Signature = sig,
+                        Name = sig.Members[0].Name,
+                        Value = value
                     };
 
                     var block = new BlockSyntax {
                         Location = syntax.Location,
                         First = syntax,
-                        Second = newUnion.CheckTypes(types)
+                        Second = newUnion
                     };
 
                     return block;

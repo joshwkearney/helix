@@ -23,35 +23,41 @@ namespace Helix.Features.Variables {
             return Option.None;
         }
 
-        public ISyntax CheckTypes(TypeFrame types) {
+        public TypeCheckResult CheckTypes(TypeFrame types) {
             // Make sure this name exists
             if (!types.TryResolvePath(types.Scope, this.VariableName, out var path)) {
                 throw TypeException.VariableUndefined(this.Location, this.VariableName);
             }
 
             if (path == new IdentifierPath("void")) {
-                return new VoidLiteral {
+                var result = new VoidLiteral {
                     Location = this.Location
                 };
+
+                return new TypeCheckResult(result, types);
             }
 
             // See if we are accessing a variable
             if (types.TryGetVariable(path, out var type)) {
-                return new VariableAccessSyntax {
+                var result = new VariableAccessSyntax {
                     Location = this.Location,
                     VariablePath = path,
                     VariableSignature = type,
                     IsLValue = false
                 };
+
+                return new TypeCheckResult(result, types);
             }
 
             // See if we are accessing a function
             if (types.TryGetFunction(path, out var funcSig)) {
-                return new FunctionAccessSyntax {
+                var result = new FunctionAccessSyntax {
                     Location = this.Location,
                     FunctionPath = path,
                     FunctionSignature = funcSig,
                 };
+
+                return new TypeCheckResult(result, types);
             }
 
             throw TypeException.VariableUndefined(this.Location, this.VariableName);

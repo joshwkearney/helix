@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Flow;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Parsing;
@@ -17,12 +16,11 @@ namespace Helix.Features.Unions {
         
         public bool IsPure => true;
         
-        public ISyntax CheckTypes(TypeFrame types) {
+        public TypeCheckResult CheckTypes(TypeFrame types) {
             var varSig = new PointerType(this.UnionMember.Type);
             var path = types.Scope.Append(this.ShadowedPath.Segments.Last());
 
-            types.Locals = types.Locals.SetItem(path, new LocalInfo(varSig));
-            types.NominalSignatures.Add(path, varSig);
+            types = types.WithDeclaration(path, DeclarationKind.Variable, varSig);
 
             var result = new FlowVarSyntax {
                 Location = this.Location,
@@ -31,8 +29,7 @@ namespace Helix.Features.Unions {
                 Path = path
             };
             
-            return result;
+            return new TypeCheckResult(result, types);
         }
     }
-
 }

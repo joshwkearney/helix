@@ -22,9 +22,7 @@ public interface ISyntax {
     /// An LValue is a special type of syntax tree that is used to represent
     /// a location where values can be stored. LValues return and generate 
     /// pointer types but have lifetimes that match the inner type of the
-    /// pointer. This is done so as to not rely on C's lvalue semantics. The
-    /// lifetimes of an lvalue represent the region where the memory storage
-    /// has been allocated, which any assigned values must outlive
+    /// pointer. This is done so as to not rely on C's lvalue semantics.
     /// </summary>
     public ISyntax ToLValue(TypeFrame types) {
         throw TypeException.LValueRequired(this.Location);

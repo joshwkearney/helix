@@ -16,15 +16,11 @@ namespace Helix.Features.Arrays {
 
         public bool IsPure => this.Operand.IsPure && this.Index.IsPure;
         
-        public ISyntax CheckTypes(TypeFrame types) {
-            var target = this.Operand
-                .CheckTypes(types)
-                .ToRValue(types);
-
-            var index = this.Index
-                .CheckTypes(types)
-                .ToRValue(types)
-                .UnifyTo(PrimitiveType.Word, types);
+        public TypeCheckResult CheckTypes(TypeFrame types) {
+            (var target, types) = this.Operand.CheckTypes(types);
+            (var index, types) = this.Index.CheckTypes(types);
+                
+            index = index.UnifyTo(PrimitiveType.Word, types);
 
             // Make sure we have an array
             if (target.ReturnType is not ArrayType arrayType) {
@@ -39,14 +35,14 @@ namespace Helix.Features.Arrays {
                 Index = index
             };
 
-            var deref = new DereferenceSyntax {
+            var result = new DereferenceSyntax {
                 Location = adapter.Location,
                 Operand = adapter,
                 OperandSignature = new PointerType(arrayType.InnerType),
                 IsLValue = false
             };
 
-            return deref;
+            return new TypeCheckResult(result, types);
         }
     }
 }

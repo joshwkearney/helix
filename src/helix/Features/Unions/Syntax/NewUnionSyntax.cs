@@ -11,14 +11,14 @@ namespace Helix.Features.Unions {
 
     public class NewUnionSyntax : ISyntax {
         public required TokenLocation Location { get; init; }
-
-        public required HelixType ReturnType { get; init; }
         
         public required UnionType Signature { get; init; }
         
         public required string Name { get; init; }
         
         public required ISyntax Value { get; init; }
+        
+        public HelixType ReturnType => this.Signature;
         
         public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
 

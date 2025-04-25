@@ -18,7 +18,7 @@ namespace Helix.Features.Primitives {
 
         public bool IsPure => this.TypeSyntax.IsPure && this.Values.All(x => x.IsPure);
 
-        public ISyntax CheckTypes(TypeFrame types) {
+        public TypeCheckResult CheckTypes(TypeFrame types) {
             // Make sure our type is actually a type
             if (!this.TypeSyntax.AsType(types).TryGetValue(out var type)) {
                 throw TypeException.ExpectedTypeExpression(this.TypeSyntax.Location);              

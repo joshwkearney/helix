@@ -17,7 +17,7 @@ public class NewStructParseSyntax : IParseSyntax {
         
     public bool IsPure => this.Values.All(x => x.IsPure);
 
-    public ISyntax CheckTypes(TypeFrame types) {
+    public TypeCheckResult CheckTypes(TypeFrame types) {
         var names = new string[this.Names.Count];
         int missingCounter = 0;
 
@@ -112,8 +112,9 @@ public class NewStructParseSyntax : IParseSyntax {
                 };
             }
 
-            var checkedValue = value.CheckTypes(types).UnifyTo(mem.Type, types);
-                
+            (var checkedValue, types) = value.CheckTypes(types);
+            
+            checkedValue = checkedValue.UnifyTo(mem.Type, types);
             allValues.Add(checkedValue);
         }
 
@@ -124,6 +125,6 @@ public class NewStructParseSyntax : IParseSyntax {
             Values = allValues
         };
 
-        return result;
+        return new TypeCheckResult(result, types);
     }
 }
