@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Predicates;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
@@ -18,10 +17,6 @@ namespace Helix.Features.Arrays {
         public TokenLocation Location => this.Operand.Location;
 
         public HelixType ReturnType => new PointerType(this.ArraySignature.InnerType);
-        
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-        
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = this.Operand.GenerateCode(types, writer);

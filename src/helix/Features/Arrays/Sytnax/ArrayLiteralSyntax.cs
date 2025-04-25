@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Predicates;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation.Syntax;
 using Helix.Generation;
@@ -16,10 +15,6 @@ namespace Helix.Features.Arrays {
 
         public HelixType ReturnType => this.ArraySignature;
 
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
-        public ISyntax ToRValue(TypeFrame types) => this;
-        
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             writer.WriteComment($"Line {this.Location.Line}: Array literal");
 

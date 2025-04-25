@@ -1,4 +1,3 @@
-using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
@@ -15,10 +14,6 @@ public record ReturnSyntax : ISyntax {
         
     public HelixType ReturnType => PrimitiveType.Void;
 
-    public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
-    public ISyntax ToRValue(TypeFrame types) => this;
-        
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         writer.WriteStatement(new CReturn() {
             Target = this.Operand.GenerateCode(types, writer)

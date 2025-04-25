@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Predicates;
 using Helix.Analysis.Types;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
@@ -19,10 +18,6 @@ namespace Helix.Features.Unions {
         public required ISyntax Value { get; init; }
         
         public HelixType ReturnType => this.Signature;
-        
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var value = this.Value.GenerateCode(types, writer);

@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
 using Helix.Analysis.Types;
@@ -27,10 +26,6 @@ namespace Helix.Features.Variables {
                 }
             }
         }
-
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ISyntax ToLValue(TypeFrame types) {
             return this with {

@@ -1,4 +1,3 @@
-using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
@@ -17,10 +16,6 @@ public record BinarySyntax : ISyntax {
     public BinaryOperationKind Operator { get; init; }
 
     public required HelixType ReturnType { get; init; }
-        
-    public ISyntaxPredicate Predicate => this.Left.Predicate.And(this.Right.Predicate);
-
-    public ISyntax ToRValue(TypeFrame types) => this;
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         return new CBinaryExpression() {

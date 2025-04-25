@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Predicates;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Syntax;
 using Helix.Generation;
@@ -16,11 +15,7 @@ namespace Helix.Features.Variables {
         
         public HelixType ReturnType => PrimitiveType.Void;
 
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-        
         public bool IsPure => false;
-
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = new CPointerDereference {

@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Predicates;
-using Helix.Analysis.TypeChecking;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Syntax;
 using Helix.Generation;
@@ -14,13 +13,9 @@ namespace Helix.Features.FlowControl {
 
         public HelixType ReturnType => PrimitiveType.Void;
 
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
         public bool IsPure => false;
 
         public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
-
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (this.Kind == LoopControlKind.Break) {

@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation.Syntax;
@@ -19,10 +18,6 @@ namespace Helix.Features.Unions {
         public required string MemberName { get; init; }
 
         public required UnionType UnionSignature { get; init; }
-        
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-        
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var varName = writer.GetVariableName(this.VariablePath);

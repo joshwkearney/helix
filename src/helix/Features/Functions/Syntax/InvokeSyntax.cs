@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Predicates;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Parsing;
@@ -20,11 +19,7 @@ namespace Helix.Features.Functions {
         
         public HelixType ReturnType => this.FunctionSignature.ReturnType;
 
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
         public bool IsPure => false;
-        
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var args = this.Arguments

@@ -1,5 +1,4 @@
 using Helix.Analysis;
-using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
@@ -19,10 +18,6 @@ public class FlowVarSyntax : ISyntax {
     public required TokenLocation Location { get; init; }
 
     public HelixType ReturnType => this.UnionMember.Type;
-
-    public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
-    public ISyntax ToRValue(TypeFrame types) => this;
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         ICSyntax assign = new CAddressOf() {

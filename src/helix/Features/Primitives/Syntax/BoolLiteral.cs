@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Predicates;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
@@ -12,9 +11,7 @@ namespace Helix.Features.Primitives {
         public required TokenLocation Location { get; init; }
         
         public required bool Value { get; init; }
-        
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-        
+
         public HelixType ReturnType => new SingularBoolType(this.Value);
         
         public bool IsPure => true;
@@ -24,8 +21,6 @@ namespace Helix.Features.Primitives {
         }
 
         public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
-
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value ? 1 : 0);

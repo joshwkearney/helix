@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Predicates;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Features.Primitives;
 using Helix.Parsing;
@@ -15,8 +14,6 @@ namespace Helix.Features.Primitives {
 
         public HelixType ReturnType => new SingularWordType(this.Value);
 
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-        
         public bool IsPure => true;
 
         public Option<HelixType> AsType(TypeFrame types) {
@@ -24,8 +21,6 @@ namespace Helix.Features.Primitives {
         }
 
         public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
-
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value);

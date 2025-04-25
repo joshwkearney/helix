@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Predicates;
-using Helix.Analysis.Types;
+﻿using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Parsing;
 using Helix.Generation.Syntax;
@@ -15,10 +14,6 @@ namespace Helix.Features.Structs {
         public required TokenLocation Location { get; init; }
 
         public required HelixType ReturnType { get; init; }
-
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-        
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ISyntax ToLValue(TypeFrame types) {
             var target = this.Operand.ToLValue(types);

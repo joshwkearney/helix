@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis;
-using Helix.Analysis.Predicates;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Parsing;
@@ -17,13 +16,9 @@ namespace Helix {
         
         public HelixType ReturnType => PrimitiveType.Void;
 
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
         public Option<HelixType> AsType(TypeFrame types) {
             return new NominalType(this.Path, NominalTypeKind.Variable);
         }
-        
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var assign = this.Assignment.GenerateCode(flow, writer);

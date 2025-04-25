@@ -1,5 +1,4 @@
-﻿using Helix.Analysis.Predicates;
-using Helix.Generation.Syntax;
+﻿using Helix.Generation.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
 using Helix.Syntax;
@@ -13,10 +12,6 @@ namespace Helix.Features.Variables {
         public required HelixType ReturnType { get; init; }
         
         public required ISyntax Operand { get; init; }
-        
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-        
-        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CCompoundExpression {

@@ -1,4 +1,3 @@
-using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
@@ -11,12 +10,8 @@ public interface ISyntax {
     public TokenLocation Location { get; }
 
     public HelixType ReturnType { get; }
-        
-    public ISyntaxPredicate Predicate { get; }
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer);
-
-    public ISyntax ToRValue(TypeFrame types);
 
     /// <summary>
     /// An LValue is a special type of syntax tree that is used to represent

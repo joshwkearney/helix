@@ -14,10 +14,6 @@ public class TypeAdapterSyntax : ISyntax {
     
     public TokenLocation Location => this.Operand.Location;
 
-    public ISyntaxPredicate Predicate => this.Operand.Predicate;
-    
-    public ISyntax ToRValue(TypeFrame types) => this;
-    
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         return this.Operand.GenerateCode(types, writer);
     }

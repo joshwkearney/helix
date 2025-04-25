@@ -4,7 +4,6 @@ using Helix.Generation;
 using Helix.Parsing;
 using Helix.Syntax;
 using Helix.Analysis.TypeChecking;
-using Helix.Analysis.Predicates;
 
 namespace Helix.Features.FlowControl {
     public record IfSyntax : ISyntax {
@@ -18,10 +17,6 @@ namespace Helix.Features.FlowControl {
         
         public required HelixType ReturnType { get; init; }
 
-        public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
-        public ISyntax ToRValue(TypeFrame types) => this;
-        
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();
             var negList = new List<ICStatement>();

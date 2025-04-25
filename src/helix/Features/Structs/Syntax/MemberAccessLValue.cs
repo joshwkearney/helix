@@ -1,4 +1,3 @@
-using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
@@ -17,8 +16,6 @@ public record MemberAccessLValue : ISyntax {
     
     public required HelixType ReturnType { get; init; }
 
-    public ISyntaxPredicate Predicate => ISyntaxPredicate.Empty;
-
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         // Our target will be converted to an lvalue, so we have to dereference it first
         var target = new CPointerDereference {
@@ -32,9 +29,5 @@ public record MemberAccessLValue : ISyntax {
                 IsPointerAccess = false
             }
         };
-    }
-
-    public ISyntax ToRValue(TypeFrame types) {
-        throw new InvalidOperationException();
     }
 }
