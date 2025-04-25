@@ -55,11 +55,11 @@ public record FunctionParseDeclaration : IDeclaration {
         var body = this.body;
 
         if (sig.ReturnType == PrimitiveType.Void) {
-            body = new BlockParse(
-                this.body.Location, 
-                this.body,
-                new VoidLiteral { Location = this.body.Location }
-            );
+            body = new BlockParseSyntax {
+                Location = body.Location,
+                First = body,
+                Second = new VoidLiteral { Location = this.body.Location }
+            };
         }
 
         var checkedbody = body.CheckTypes(types)

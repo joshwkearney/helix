@@ -13,14 +13,10 @@ public interface ISyntax {
     public HelixType ReturnType { get; }
         
     public ISyntaxPredicate Predicate { get; }
-        
-    public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-        throw new Exception("Compiler bug");
-    }
 
-    public ISyntax ToRValue(TypeFrame types) {
-        throw TypeException.RValueRequired(this.Location);
-    }
+    public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer);
+
+    public ISyntax ToRValue(TypeFrame types);
 
     /// <summary>
     /// An LValue is a special type of syntax tree that is used to represent

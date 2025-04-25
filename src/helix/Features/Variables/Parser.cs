@@ -68,8 +68,8 @@ public partial class Parser {
 
             var result = new AssignmentParseStatement {
                 Location = loc,
-                Operand = start,
-                Assignment = assign
+                Left = start,
+                Right = assign
             };
 
             return result;
@@ -108,8 +108,8 @@ public partial class Parser {
 
             var stat = new AssignmentParseStatement {
                 Location = loc,
-                Operand = start,
-                Assignment = assign
+                Left = start,
+                Right = assign
             };
             
             return stat;

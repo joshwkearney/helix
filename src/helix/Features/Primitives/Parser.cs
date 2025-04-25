@@ -110,14 +110,15 @@ namespace Helix.Parsing {
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    first = new IfParse(
-                        loc, 
-                        first,
-                        new BoolLiteral {
+                    first = new IfParseSyntax {
+                        Location = loc,
+                        Condition = first,
+                        Affirmative = new BoolLiteral {
                             Location = loc,
                             Value = true
                         },
-                        second);
+                        Negative = Option.Some(second)
+                    };
                 }
                 else {
                     first = new BinaryParseSyntax {
@@ -159,18 +160,19 @@ namespace Helix.Parsing {
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    first = new IfParse(
-                        loc,
-                        new UnaryParseSyntax {
+                    first = new IfParseSyntax {
+                        Location = loc,
+                        Condition = new UnaryParseSyntax {
                             Location = loc,
                             Operand = first,
                             Operator = UnaryOperatorKind.Not
                         },
-                        new BoolLiteral {
+                        Affirmative = new BoolLiteral {
                             Location = loc,
                             Value = false
                         },
-                        second);
+                        Negative = Option.Some(second)
+                    };
                 }
                 else {
                     first = new BinaryParseSyntax {

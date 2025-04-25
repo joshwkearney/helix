@@ -1,25 +1,41 @@
 using Helix.Features.FlowControl;
 using Helix.Features.Primitives;
+using Helix.Features.Variables;
 using Helix.Syntax;
 
 namespace Helix.Parsing {
     public partial class Parser {
+        private IParseSyntax Block() {
+            var start = this.Advance(TokenKind.OpenBrace);
+            var stats = new List<IParseSyntax>();
+
+            while (!this.Peek(TokenKind.CloseBrace)) {
+                stats.Add(this.Statement());
+            }
+
+            var end = this.Advance(TokenKind.CloseBrace);
+            var loc = start.Location.Span(end.Location);
+
+            return BlockParseSyntax.FromMany(loc, stats);
+        }
+        
         private IParseSyntax WhileStatement() {
             var start = this.Advance(TokenKind.WhileKeyword);
             var cond = this.TopExpression();
             var newBlock = new List<IParseSyntax>();
 
-            var test = new IfParse(
-                cond.Location,
-                new UnaryParseSyntax {
+            var test = new IfParseSyntax {
+                Location = cond.Location,
+                Condition = new UnaryParseSyntax {
                     Location = cond.Location,
                     Operand = cond,
                     Operator = UnaryOperatorKind.Not
                 },
-                new LoopControlSyntax {
+                Affirmative = new LoopControlSyntax {
                     Location = cond.Location,
                     Kind = LoopControlKind.Break
-                });
+                }
+            };
 
             // False loops will never run and true loops don't need a break test
             if (cond is not Features.Primitives.BoolLiteral) {
@@ -40,7 +56,7 @@ namespace Helix.Parsing {
 
             var loop = new LoopParseStatement {
                 Location = loc,
-                Body = BlockParse.FromMany(loc, newBlock)
+                Body = BlockParseSyntax.FromMany(loc, newBlock)
             };
 
             return loop;
@@ -83,13 +99,125 @@ namespace Helix.Parsing {
                 var neg = this.TopExpression();
                 var loc = start.Location.Span(neg.Location);
 
-                return new IfParse(loc, cond, affirm, neg);
+                return new IfParseSyntax {
+                    Location = loc,
+                    Condition = cond,
+                    Affirmative = affirm,
+                    Negative = Option.Some(neg)
+                };
             }
             else {
                 var loc = start.Location.Span(affirm.Location);
 
-                return new IfParse(loc, cond, affirm);
+                return new IfParseSyntax {
+                    Location = loc,
+                    Condition = cond,
+                    Affirmative = affirm
+                };
             }
+        }
+        
+        private IParseSyntax ForStatement() {
+            var startTok = this.Advance(TokenKind.ForKeyword);
+            var id = this.Advance(TokenKind.Identifier);
+
+            this.Advance(TokenKind.Assignment);
+            var startIndex = this.TopExpression();
+
+            var inclusive = true;
+            if (!this.TryAdvance(TokenKind.ToKeyword)) {
+                this.Advance(TokenKind.UntilKeyword);
+                inclusive = false;
+            }
+
+            var endIndex = this.TopExpression();
+
+            startIndex = new AsParseSyntax {
+                Location = startIndex.Location,
+                Operand = startIndex,
+                TypeSyntax = new VariableAccessParseSyntax {
+                    Location = startIndex.Location,
+                    VariableName = "word"
+                }
+            };
+            
+            endIndex = new AsParseSyntax {
+                Location = endIndex.Location,
+                Operand = endIndex,
+                TypeSyntax = new VariableAccessParseSyntax {
+                    Location = endIndex.Location,
+                    VariableName = "word"
+                }
+            };
+
+            var counterName = id.Value;
+
+            var counterDecl = new VarParseStatement {
+                Location = startTok.Location,
+                VariableNames = [counterName],
+                VariableTypes = new Option<IParseSyntax>[] { Option.None },
+                Assignment = startIndex
+            };
+
+            var counterAccess = new VariableAccessParseSyntax {
+                Location = startTok.Location,
+                VariableName = counterName
+            };
+
+            var counterInc = new AssignmentParseStatement {
+                Location = startTok.Location,
+                Left = counterAccess,
+                Right = new BinaryParseSyntax {
+                    Location = startTok.Location,
+                    Left = counterAccess,
+                    Right = new WordLiteral {
+                        Location = startTok.Location,
+                        Value = 1
+                    },
+                    Operator = BinaryOperationKind.Add
+                }
+            };
+
+            var totalBlock = new List<IParseSyntax> { counterDecl };
+            var loopBlock = new List<IParseSyntax>();
+            var loc = startTok.Location.Span(endIndex.Location);
+
+            var test = new IfParseSyntax {
+                Location = loc,
+                Condition = new BinaryParseSyntax {
+                    Location = loc,
+                    Left = counterAccess,
+                    Right = endIndex,
+                    Operator = inclusive
+                        ? BinaryOperationKind.GreaterThan
+                        : BinaryOperationKind.GreaterThanOrEqualTo
+                },
+                Affirmative = new LoopControlSyntax {
+                    Location = loc,
+                    Kind = LoopControlKind.Break
+                }
+            };
+
+            loopBlock.Add(test);
+
+            if (!this.Peek(TokenKind.OpenBrace)) {
+                this.Advance(TokenKind.Yields);
+            }
+
+            var body = this.TopExpression();
+            loc = loc.Span(body.Location);
+
+            loopBlock.Add(body);
+            loopBlock.Add(counterInc);
+
+            var loop = new LoopParseStatement {
+                Location = loc,
+                Body = BlockParseSyntax.FromMany(loc, loopBlock)
+            };
+
+            totalBlock.Add(loop);
+
+            return BlockParseSyntax.FromMany(loc, totalBlock);
         }
     }
 }

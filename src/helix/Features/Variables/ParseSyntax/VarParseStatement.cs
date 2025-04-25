@@ -110,6 +110,6 @@ public record VarParseStatement : IParseSyntax {
             stats.Add(assign);
         }
 
-        return BlockParse.FromMany(this.Location, stats).CheckTypes(types);
+        return BlockParseSyntax.FromMany(this.Location, stats).CheckTypes(types);
     }
 }

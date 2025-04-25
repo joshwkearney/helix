@@ -1,14 +1,10 @@
-struct Point {
+﻿struct Point {
 	var x as word;
 	var y as word;
 };
 
 func test12() as word {
-	var a = new Point { 8, 9 };
-	
-	if int.TryParse("4", var x = 0) {
-	    
-	}
+	var a = [1, 2, 3, 4];
 
-	return a.x;
+	return a[1];
 };

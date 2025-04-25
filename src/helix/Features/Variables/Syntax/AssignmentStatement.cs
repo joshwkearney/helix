@@ -10,9 +10,9 @@ namespace Helix.Features.Variables {
     public record AssignmentStatement : ISyntax {
         public required TokenLocation Location { get; init; }
         
-        public required ISyntax Operand { get; init; }
+        public required ISyntax Left { get; init; }
         
-        public required ISyntax Assignment { get; init; }
+        public required ISyntax Right { get; init; }
         
         public HelixType ReturnType => PrimitiveType.Void;
 
@@ -24,10 +24,10 @@ namespace Helix.Features.Variables {
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = new CPointerDereference {
-                Target = this.Operand.GenerateCode(types, writer)
+                Target = this.Left.GenerateCode(types, writer)
             };
 
-            var assign = this.Assignment.GenerateCode(types, writer);
+            var assign = this.Right.GenerateCode(types, writer);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Assignment statement");

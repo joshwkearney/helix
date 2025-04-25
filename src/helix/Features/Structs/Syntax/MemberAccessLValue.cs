@@ -33,4 +33,8 @@ public record MemberAccessLValue : ISyntax {
             }
         };
     }
+
+    public ISyntax ToRValue(TypeFrame types) {
+        throw new InvalidOperationException();
+    }
 }

@@ -25,7 +25,7 @@ namespace Helix.Features.Primitives {
 
         public ISyntax CheckTypes(TypeFrame types) => this;
 
-        public IParseSyntax ToRValue(TypeFrame types) => this;
+        public ISyntax ToRValue(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value);

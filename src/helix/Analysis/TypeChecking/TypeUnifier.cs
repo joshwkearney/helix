@@ -22,10 +22,9 @@ namespace Helix.Analysis.TypeChecking {
             public static UnificationResult Pun(HelixType adaptedType) {
                 return new UnificationResult() {
                     Kind = UnificationKind.Pun,
-                    Unifier = (s, t) => {
-                        var block = BlockParse.FromMany(s.Location, [s]).CheckTypes(t);
-
-                        return block;
+                    Unifier = (s, t) => new TypeAdapterSyntax {
+                        Operand = s,
+                        ReturnType = adaptedType
                     }
                 };
             }
@@ -210,14 +209,18 @@ namespace Helix.Analysis.TypeChecking {
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var block = new BlockParse(syntax.Location,
-                        syntax,
-                        new NewStructParseSyntax {
-                            Location = syntax.Location,
-                            Signature = sig,
-                        });
+                    var newStruct = new NewStructParseSyntax {
+                        Location = syntax.Location,
+                        Signature = sig,
+                    };
+                    
+                    var block = new BlockSyntax {
+                        Location = syntax.Location,
+                        First = syntax,
+                        Second = newStruct.CheckTypes(types)
+                    };
 
-                    return block.CheckTypes(t);
+                    return block;
                 }
             };
         }
@@ -230,15 +233,18 @@ namespace Helix.Analysis.TypeChecking {
             return new UnificationResult() {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var block = new BlockParse(
-                        syntax.Location,
-                        syntax,
-                        new NewUnionParseSyntax {
-                            Location = syntax.Location,
-                            Signature = sig
-                        });
+                    var newUnion = new NewUnionParseSyntax {
+                        Location = syntax.Location,
+                        Signature = sig
+                    };
 
-                    return block.CheckTypes(t);
+                    var block = new BlockSyntax {
+                        Location = syntax.Location,
+                        First = syntax,
+                        Second = newUnion.CheckTypes(types)
+                    };
+
+                    return block;
                 }
             };
         }

@@ -16,13 +16,11 @@ namespace Helix.Features.Primitives {
 
         public bool IsPure => true;
 
-        public IParseSyntax ToRValue(TypeFrame types) => this;
+        public ISyntax ToRValue(TypeFrame types) => this;
 
         public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
-        public ISyntax CheckTypes(TypeFrame types) {
-            return this;
-        }
+        public ISyntax CheckTypes(TypeFrame types) => this;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(0);

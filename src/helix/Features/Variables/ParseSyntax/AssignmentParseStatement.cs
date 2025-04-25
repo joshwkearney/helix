@@ -8,14 +8,14 @@ namespace Helix.Features.Variables;
 public record AssignmentParseStatement : IParseSyntax {
     public required TokenLocation Location { get; init; }
         
-    public required IParseSyntax Operand { get; init; }
+    public required IParseSyntax Left { get; init; }
         
-    public required IParseSyntax Assignment { get; init; }
+    public required IParseSyntax Right { get; init; }
         
     public bool IsPure => false;
 
     public ISyntax CheckTypes(TypeFrame types) {
-        var operand = this.Operand.CheckTypes(types).ToLValue(types);
+        var operand = this.Left.CheckTypes(types).ToLValue(types);
 
         var varSig = operand.ReturnType
             .AsVariable(types)
@@ -23,7 +23,7 @@ public record AssignmentParseStatement : IParseSyntax {
             .InnerType
             .GetMutationSupertype(types);
 
-        var assign = this.Assignment
+        var assign = this.Right
             .CheckTypes(types)
             .ToRValue(types);
             
@@ -31,8 +31,8 @@ public record AssignmentParseStatement : IParseSyntax {
 
         var result = new AssignmentStatement {
             Location = this.Location,
-            Operand = operand,
-            Assignment = assign
+            Left = operand,
+            Right = assign
         };
 
         return result;
