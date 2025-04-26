@@ -34,7 +34,7 @@ public record FunctionParseDeclaration : IDeclaration {
         var path = types.Scope.Append(this.signature.Name);
         var sig = this.signature.ResolveNames(types);
 
-        return types.WithNominalSignature(path, sig);
+        return types.WithSignature(path, sig);
     }
         
     public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {

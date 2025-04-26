@@ -21,14 +21,14 @@ public record StructParseDeclaration : IDeclaration {
         var path = types.Scope.Append(this.Signature.Name);
         var named = new NominalType(path, NominalTypeKind.Struct);
 
-        return types.WithDeclaration(path, DeclarationKind.Type, named);
+        return types.WithDeclaration(path, named);
     }
 
     public TypeFrame DeclareTypes(TypeFrame types) {
         var path = types.Scope.Append(this.Signature.Name);
         var sig = this.Signature.ResolveNames(types);
         
-        return types.WithNominalSignature(path, sig);
+        return types.WithSignature(path, sig);
     }
 
     public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {

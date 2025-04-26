@@ -27,7 +27,7 @@ public record UnionParseDeclaration : IDeclaration {
         var path = types.Scope.Append(this.signature.Name);
         var named = new NominalType(path, NominalTypeKind.Union);
 
-        return types.WithDeclaration(path, DeclarationKind.Type, named);
+        return types.WithDeclaration(path, named);
     }
 
     public TypeFrame DeclareTypes(TypeFrame types) {
@@ -35,7 +35,7 @@ public record UnionParseDeclaration : IDeclaration {
         var structSig = this.signature.ResolveNames(types);
         var unionSig = new UnionType(structSig.Members);
 
-        return types.WithNominalSignature(path, unionSig);
+        return types.WithSignature(path, unionSig);
     }
 
     public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {

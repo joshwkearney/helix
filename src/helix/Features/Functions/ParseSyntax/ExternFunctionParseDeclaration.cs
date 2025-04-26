@@ -24,7 +24,7 @@ public record ExternFunctionParseDeclaration : IDeclaration {
         var path = types.Scope.Append(this.Signature.Name);
         var sig = this.Signature.ResolveNames(types);
 
-        return types.WithDeclaration(path, DeclarationKind.Function, sig);
+        return types.WithSignature(path, sig);
     }
 
     public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {

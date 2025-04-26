@@ -29,25 +29,24 @@ namespace Helix.Analysis {
                 $"Compiler error: The path '{name}' does not contain a value.");
         }
 
-        public static bool TryResolveName(this TypeFrame types, IdentifierPath scope, string name, out HelixType value) {
+        public static bool TryResolveName(this TypeFrame types, IdentifierPath scope, string name, out NominalType value) {
             if (!types.TryResolvePath(scope, name, out var path)) {
                 value = null;
                 return false;
             }
 
-            if (!types.Declarations.TryGetValue(path, out var info)) {
+            if (!types.Declarations.TryGetValue(path, out value)) {
                 value = null;
                 return false;
             }
 
-            value = info.Type;
             return true;
         }
 
         public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {
             return types.Declarations
                 .GetValueOrNone(path)
-                .SelectMany(x => x.Type.AsFunction(types))
+                .SelectMany(x => x.AsFunction(types))
                 .TryGetValue(out type);
         }
 
@@ -64,7 +63,7 @@ namespace Helix.Analysis {
         public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
             return types.Declarations
                 .GetValueOrNone(path)
-                .SelectMany(x => x.Type.AsVariable(types))
+                .SelectMany(x => x.AsVariable(types))
                 .TryGetValue(out type);
         }
         

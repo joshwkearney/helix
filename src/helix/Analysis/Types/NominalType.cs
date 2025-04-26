@@ -22,24 +22,24 @@ namespace Helix.Analysis.Types {
                 case NominalTypeKind.Function:
                     return PassingSemantics.ValueType;
                 default:
-                    return types.NominalSignatures[this.Path].GetSemantics(types);
+                    return types.Signatures[this.Path].GetSemantics(types);
             }
         }
 
         public override HelixType GetSignature(TypeFrame types) {
-            return types.NominalSignatures[this.Path].GetSignature(types);
+            return types.Signatures[this.Path].GetSignature(types);
         }
 
         public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame types) {
             yield return this;
 
-            foreach (var access in types.NominalSignatures[this.Path].GetAccessibleTypes(types)) {
+            foreach (var access in types.Signatures[this.Path].GetAccessibleTypes(types)) {
                 yield return access;
             }
         }
 
         public override Option<ISyntax> ToSyntax(TokenLocation loc, TypeFrame types) {
-            return types.NominalSignatures[this.Path].ToSyntax(loc, types);
+            return types.Signatures[this.Path].ToSyntax(loc, types);
         }
 
         public override string ToString() {
@@ -47,31 +47,31 @@ namespace Helix.Analysis.Types {
         }
 
         public override Option<PointerType> AsVariable(TypeFrame types) {
-            return types.NominalSignatures[this.Path].AsVariable(types);
+            return types.Signatures[this.Path].AsVariable(types);
         }
 
         public override Option<FunctionType> AsFunction(TypeFrame types) {
-            return types.NominalSignatures[this.Path].AsFunction(types);
+            return types.Signatures[this.Path].AsFunction(types);
         }
 
         public override Option<StructType> AsStruct(TypeFrame types) {
-            return types.NominalSignatures[this.Path].AsStruct(types);
+            return types.Signatures[this.Path].AsStruct(types);
         }
 
         public override Option<UnionType> AsUnion(TypeFrame types) {
-            return types.NominalSignatures[this.Path].AsUnion(types);
+            return types.Signatures[this.Path].AsUnion(types);
         }
 
         public override Option<ArrayType> AsArray(TypeFrame types) {
-            return types.NominalSignatures[this.Path].AsArray(types);
+            return types.Signatures[this.Path].AsArray(types);
         }
 
         public override bool IsBool(TypeFrame types) {
-            return types.NominalSignatures[this.Path].IsBool(types);
+            return types.Signatures[this.Path].IsBool(types);
         }
 
         public override bool IsWord(TypeFrame types) {
-            return types.NominalSignatures[this.Path].IsWord(types);
+            return types.Signatures[this.Path].IsWord(types);
         }
     }
 }

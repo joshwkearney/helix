@@ -29,7 +29,7 @@ public class AddressOfParseSyntax : IParseSyntax {
         }
         
         // We need to flush this variable's signature because its value can now be set through an alias
-        types = types.WithNominalSignature(nominal.Path, nominal.GetSignature(types));
+        types = types.WithSignature(nominal.Path, nominal.GetSignature(types));
 
         var result = new AddressOfSyntax {
             Location = this.Location,

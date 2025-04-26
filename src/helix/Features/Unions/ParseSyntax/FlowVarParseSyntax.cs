@@ -21,7 +21,9 @@ namespace Helix.Features.Unions.ParseSyntax {
             var varSig = new PointerType(this.UnionMember.Type);
             var path = types.Scope.Append(this.ShadowedPath.Segments.Last());
 
-            types = types.WithDeclaration(path, DeclarationKind.Variable, varSig);
+            // TODO: Do we need a new nominal type for this?
+            types = types.WithDeclaration(path, new NominalType(path, NominalTypeKind.Variable));
+            types = types.WithSignature(path, varSig);
 
             var result = new FlowVarSyntax {
                 Location = this.Location,

@@ -3,13 +3,6 @@ using Helix.Syntax;
 using System.Collections.Immutable;
 
 namespace Helix.Analysis.TypeChecking {
-    public enum DeclarationKind {
-        Type, Function, Parameter, Variable
-    }
-    
-    public record struct DeclarationInfo(DeclarationKind Kind, HelixType Type) {
-    }
-
     public record struct TypeCheckResult(ISyntax Syntax, TypeFrame Types) {
     }
     
@@ -21,9 +14,9 @@ namespace Helix.Analysis.TypeChecking {
 
         public IdentifierPath Scope { get; }
 
-        public ImmutableDictionary<IdentifierPath, DeclarationInfo> Declarations { get; }
+        public ImmutableDictionary<IdentifierPath, NominalType> Declarations { get; }
         
-        public ImmutableDictionary<IdentifierPath, HelixType> NominalSignatures { get; }
+        public ImmutableDictionary<IdentifierPath, HelixType> Signatures { get; }
         
         public ImmutableHashSet<TypeFrame> BreakFrames { get; }
         
@@ -32,35 +25,23 @@ namespace Helix.Analysis.TypeChecking {
         public TypeFrame() {
             this.Scope = new IdentifierPath();
             
-            this.Declarations = ImmutableDictionary<IdentifierPath, DeclarationInfo>.Empty;
-            this.NominalSignatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
+            this.Declarations = ImmutableDictionary<IdentifierPath, NominalType>.Empty;
+            this.Signatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
             
             this.BreakFrames = ImmutableHashSet<TypeFrame>.Empty;
             this.ContinueFrames = ImmutableHashSet<TypeFrame>.Empty;
-
-            this.Declarations = this.Declarations.Add(
-                new IdentifierPath("void"),
-                new DeclarationInfo(DeclarationKind.Type, PrimitiveType.Void));
-
-            this.Declarations = this.Declarations.Add(
-                new IdentifierPath("word"),
-                new DeclarationInfo(DeclarationKind.Type, PrimitiveType.Word));
-
-            this.Declarations = this.Declarations.Add(
-                new IdentifierPath("bool"),
-                new DeclarationInfo(DeclarationKind.Type, PrimitiveType.Bool));
         }
 
         private TypeFrame(
             IdentifierPath scope,
-            ImmutableDictionary<IdentifierPath, DeclarationInfo> decls, 
+            ImmutableDictionary<IdentifierPath, NominalType> decls, 
             ImmutableDictionary<IdentifierPath, HelixType> sigs, 
             ImmutableHashSet<TypeFrame> breakFrames,
             ImmutableHashSet<TypeFrame> continueFrames) {
             
             this.Scope = scope;
             this.Declarations = decls;
-            this.NominalSignatures = sigs;
+            this.Signatures = sigs;
             this.BreakFrames = breakFrames;
             this.ContinueFrames = continueFrames;
         }
@@ -69,7 +50,7 @@ namespace Helix.Analysis.TypeChecking {
             return new TypeFrame(
                 this.Scope.Append(newSegment), 
                 this.Declarations, 
-                this.NominalSignatures,
+                this.Signatures,
                 this.BreakFrames,
                 this.ContinueFrames);
         }
@@ -80,36 +61,32 @@ namespace Helix.Analysis.TypeChecking {
             return new TypeFrame(
                 this.Scope.Pop(),
                 decls, 
-                this.NominalSignatures,
+                this.Signatures,
                 this.BreakFrames,
                 this.ContinueFrames);
         }
 
-        public TypeFrame WithDeclaration(IdentifierPath path, DeclarationInfo info) {
+        public TypeFrame WithDeclaration(IdentifierPath path, NominalType type) {
             if (this.Declarations.ContainsKey(path)) {
                 throw new InvalidOperationException($"This type frame already contains a declaration at the path '{path}'");
             }
             
-            var decls = this.Declarations.Add(path, info);
+            var decls = this.Declarations.Add(path, type);
 
             return new TypeFrame(
                 this.Scope,
                 decls, 
-                this.NominalSignatures,
+                this.Signatures,
                 this.BreakFrames,
                 this.ContinueFrames);
         }
         
-        public TypeFrame WithDeclaration(IdentifierPath path, DeclarationKind kind, HelixType type) {
-            return this.WithDeclaration(path, new DeclarationInfo(kind, type));
-        }
-        
-        public TypeFrame WithNominalSignature(IdentifierPath path, HelixType sig) {
+        public TypeFrame WithSignature(IdentifierPath path, HelixType sig) {
             if (sig is NominalType) {
                 throw new InvalidOperationException();
             }
             
-            var sigs = this.NominalSignatures.SetItem(path, sig);
+            var sigs = this.Signatures.SetItem(path, sig);
 
             return new TypeFrame(
                 this.Scope, 
@@ -123,7 +100,7 @@ namespace Helix.Analysis.TypeChecking {
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
-                this.NominalSignatures,
+                this.Signatures,
                 this.BreakFrames.Add(types),
                 this.ContinueFrames);
         }
@@ -132,7 +109,7 @@ namespace Helix.Analysis.TypeChecking {
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
-                this.NominalSignatures,
+                this.Signatures,
                 this.BreakFrames,
                 this.ContinueFrames.Add(types));
         }
@@ -141,7 +118,7 @@ namespace Helix.Analysis.TypeChecking {
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
-                this.NominalSignatures,
+                this.Signatures,
                 this.BreakFrames.Clear(),
                 this.ContinueFrames.Clear());
         }
@@ -151,21 +128,21 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         public TypeFrame CombineSignaturesWith(TypeFrame other) {
-            var sigs = this.NominalSignatures;
-            var keys = this.NominalSignatures.Keys.Union(other.NominalSignatures.Keys);
+            var sigs = this.Signatures;
+            var keys = this.Signatures.Keys.Union(other.Signatures.Keys);
 
             foreach (var key in keys) {
                 if (!this.Declarations.ContainsKey(key)) {
-                    sigs = sigs.SetItem(key, other.NominalSignatures[key]);
+                    sigs = sigs.SetItem(key, other.Signatures[key]);
                     continue;
                 }
                 else if (!other.Declarations.ContainsKey(key)) {
-                    sigs = sigs.SetItem(key, this.NominalSignatures[key]);
+                    sigs = sigs.SetItem(key, this.Signatures[key]);
                     continue;
                 }
                 
-                var first = this.NominalSignatures[key];
-                var second = other.NominalSignatures[key];
+                var first = this.Signatures[key];
+                var second = other.Signatures[key];
 
                 if (!first.CanUnifyFrom(second, this, out var result)) {
                     throw new InvalidCastException();
@@ -186,7 +163,7 @@ namespace Helix.Analysis.TypeChecking {
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
-                this.NominalSignatures,
+                this.Signatures,
                 this.BreakFrames.Union(other.BreakFrames),
                 this.ContinueFrames);
         }
@@ -195,18 +172,18 @@ namespace Helix.Analysis.TypeChecking {
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
-                this.NominalSignatures,
+                this.Signatures,
                 this.BreakFrames,
                 this.ContinueFrames.Union(other.ContinueFrames));
         }
 
         public bool DoSignaturesMatchWith(TypeFrame other) {
-            if (this.NominalSignatures.Count != other.NominalSignatures.Count) {
+            if (this.Signatures.Count != other.Signatures.Count) {
                 return false;
             }
 
-            foreach (var (key, value) in this.NominalSignatures) {
-                if (!other.NominalSignatures.TryGetValue(key, out var otherValue)) {
+            foreach (var (key, value) in this.Signatures) {
+                if (!other.Signatures.TryGetValue(key, out var otherValue)) {
                     return false;
                 }
 

@@ -37,7 +37,7 @@ public record AssignmentParseStatement : IParseSyntax {
         // TODO: Instead of writing the signature type, write the assigned type if
         // this variable hasn't had its address taken
         if (left.ReturnType is NominalType nom) {
-            types = types.WithNominalSignature(nom.Path, new PointerType(innerType));
+            types = types.WithSignature(nom.Path, new PointerType(innerType));
         }
         
         var result = new AssignmentStatement {

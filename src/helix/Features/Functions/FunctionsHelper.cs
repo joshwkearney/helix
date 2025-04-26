@@ -27,7 +27,7 @@ namespace Helix.Features.Functions {
             var path = types.Scope.Append(sig.Name);
             var named = new NominalType(path, NominalTypeKind.Function);
 
-            return types.WithDeclaration(path, DeclarationKind.Function, named);
+            return types.WithDeclaration(path, named);
         }
 
         public static TypeFrame DeclareParameters(FunctionType sig, IdentifierPath path, TypeFrame types) {
@@ -37,11 +37,9 @@ namespace Helix.Features.Functions {
                 var parType = sig.Parameters[i].Type;
                 var parSig = new PointerType(parType);
 
-                foreach (var (relPath, memType) in parType.GetMembers(types)) {
-                    var memPath = parPath.Append(relPath);
-
-                    types = types.WithDeclaration(memPath, DeclarationKind.Parameter, parSig);
-                }
+                // TODO: Have another type for a variable?
+                types = types.WithDeclaration(parPath, new NominalType(parPath, NominalTypeKind.Variable));
+                types = types.WithSignature(parPath, parSig);
             }
 
             return types;

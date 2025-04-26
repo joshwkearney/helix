@@ -1,4 +1,6 @@
-﻿using Helix.Syntax;
+﻿using Helix.Analysis.Types;
+using Helix.Features.Primitives.ParseSyntax;
+using Helix.Syntax;
 using Helix.Features.Variables.ParseSyntax;
 
 namespace Helix.Parsing {
@@ -131,17 +133,17 @@ namespace Helix.Parsing {
             else if (this.Peek(TokenKind.WordKeyword)) {
                 var tok = this.Advance(TokenKind.WordKeyword);
 
-                return new VariableAccessParseSyntax {
+                return new TypeParseSyntax {
                     Location = tok.Location,
-                    VariableName = "word"
+                    Type = PrimitiveType.Word
                 };
             }
             else if (this.Peek(TokenKind.BoolKeyword)) {
                 var tok = this.Advance(TokenKind.BoolKeyword);
 
-                return new VariableAccessParseSyntax {
+                return new TypeParseSyntax {
                     Location = tok.Location,
-                    VariableName = "bool"
+                    Type = PrimitiveType.Bool
                 };
             }
             else if (this.Peek(TokenKind.NewKeyword)) {
