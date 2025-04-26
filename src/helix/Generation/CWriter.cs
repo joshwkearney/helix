@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis;
 using Helix.Analysis.Types;
-using Helix.Generation.CSyntax;
 using Helix.Generation.Syntax;
 
 namespace Helix.Generation {

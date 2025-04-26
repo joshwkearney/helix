@@ -1,8 +1,8 @@
 ﻿using Helix.Analysis.Types;
-using Helix.Features.FlowControl;
-using Helix.Features.Primitives;
-using Helix.Features.Structs;
-using Helix.Features.Unions;
+using Helix.Features.FlowControl.Syntax;
+using Helix.Features.Primitives.Syntax;
+using Helix.Features.Structs.ParseSyntax;
+using Helix.Features.Unions.Syntax;
 using Helix.Syntax;
 
 namespace Helix.Analysis.TypeChecking {

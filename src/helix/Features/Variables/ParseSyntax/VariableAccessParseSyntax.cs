@@ -1,12 +1,13 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
-using Helix.Syntax;
 using Helix.Analysis.Types;
-using Helix.Features.Primitives;
+using Helix.Features.Functions.Syntax;
+using Helix.Features.Primitives.Syntax;
+using Helix.Features.Variables.Syntax;
 using Helix.Parsing;
-using Helix.Features.Functions;
+using Helix.Syntax;
 
-namespace Helix.Features.Variables {
+namespace Helix.Features.Variables.ParseSyntax {
     public record VariableAccessParseSyntax : IParseSyntax {
         public required TokenLocation Location { get; init; }
         

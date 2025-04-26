@@ -1,7 +1,7 @@
 ﻿using Helix.Syntax;
-using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Analysis.TypeChecking;
+using Helix.Features.Primitives.Syntax;
 
 namespace Helix.Analysis.Types {
     public record PrimitiveType : HelixType {

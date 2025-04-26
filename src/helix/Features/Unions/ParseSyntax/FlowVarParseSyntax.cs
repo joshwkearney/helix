@@ -1,10 +1,11 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Features.Unions.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Unions {
+namespace Helix.Features.Unions.ParseSyntax {
     public class FlowVarParseSyntax : IParseSyntax {
         public required StructMember UnionMember { get; init; }
         

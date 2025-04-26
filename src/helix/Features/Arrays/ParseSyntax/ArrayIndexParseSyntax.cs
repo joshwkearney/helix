@@ -1,12 +1,11 @@
-﻿using Helix.Analysis;
-using Helix.Analysis.TypeChecking;
-using Helix.Syntax;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Features.Arrays.Sytnax;
+using Helix.Features.Variables.Syntax;
 using Helix.Parsing;
-using Helix.Features.Variables;
+using Helix.Syntax;
 
-
-namespace Helix.Features.Arrays {
+namespace Helix.Features.Arrays.ParseSyntax {
     public record ArrayIndexParseSyntax : IParseSyntax {
         public required TokenLocation Location { get; init; }
         

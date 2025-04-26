@@ -1,5 +1,5 @@
 ﻿using Helix.Syntax;
-using Helix.Features.Variables;
+using Helix.Features.Variables.ParseSyntax;
 
 namespace Helix.Parsing {
     public partial class Parser {

@@ -1,7 +1,9 @@
-using Helix.Features.FlowControl;
+using Helix.Features.FlowControl.ParseSyntax;
 using Helix.Features.Primitives;
-using Helix.Features.Unions;
-using Helix.Features.Variables;
+using Helix.Features.Primitives.ParseSyntax;
+using Helix.Features.Primitives.Syntax;
+using Helix.Features.Unions.ParseSyntax;
+using Helix.Features.Variables.ParseSyntax;
 using Helix.Syntax;
 
 namespace Helix.Parsing {
@@ -46,7 +48,7 @@ namespace Helix.Parsing {
         
         private IParseSyntax WordLiteral() {
             var tok = this.Advance(TokenKind.WordLiteral);
-            var num = long.Parse(tok.Value);
+            var num = long.Parse((string)tok.Value);
 
             return new WordLiteral {
                 Location = tok.Location,
@@ -64,7 +66,7 @@ namespace Helix.Parsing {
         
         private IParseSyntax BoolLiteral() {
             var start = this.Advance(TokenKind.BoolLiteral);
-            var value = bool.Parse(start.Value);
+            var value = bool.Parse((string)start.Value);
 
             return new BoolLiteral {
                 Location = start.Location,

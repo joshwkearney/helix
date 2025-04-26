@@ -1,12 +1,11 @@
-﻿using Helix.Analysis;
+﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Parsing;
-using Helix.Generation.Syntax;
 using Helix.Generation;
+using Helix.Generation.Syntax;
+using Helix.Parsing;
 using Helix.Syntax;
-using Helix.Analysis.TypeChecking;
 
-namespace Helix.Features.Structs {
+namespace Helix.Features.Structs.Syntax {
     public class NewStructSyntax : ISyntax {
         public required TokenLocation Location { get; init; }
         

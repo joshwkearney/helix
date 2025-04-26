@@ -4,7 +4,8 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
-namespace Helix.Features.Primitives;
+
+namespace Helix.Features.Primitives.Syntax;
 
 public record UnaryNotSyntax : ISyntax {
     public required TokenLocation Location { get; init; }

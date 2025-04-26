@@ -2,10 +2,12 @@ using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Collections;
-using Helix.Features.Variables;
+using Helix.Features.Unions.Syntax;
+using Helix.Features.Variables.ParseSyntax;
 using Helix.Parsing;
 using Helix.Syntax;
-namespace Helix.Features.Unions;
+
+namespace Helix.Features.Unions.ParseSyntax;
 
 public record IsParseSyntax : IParseSyntax {
     public required TokenLocation Location { get; init; }

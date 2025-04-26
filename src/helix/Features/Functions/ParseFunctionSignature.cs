@@ -1,7 +1,7 @@
 ﻿using Helix.Analysis.TypeChecking;
+using Helix.Analysis.Types;
 using Helix.Syntax;
 using Helix.Parsing;
-using Helix.Features.Types;
 
 namespace Helix.Features.Functions {
     public record ParseFunctionSignature {

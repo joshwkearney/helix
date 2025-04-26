@@ -1,7 +1,6 @@
 ﻿using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Features.Types;
 using Helix.Parsing;
 
 namespace Helix.Features.Functions {

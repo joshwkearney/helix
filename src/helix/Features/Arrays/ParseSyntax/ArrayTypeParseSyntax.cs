@@ -1,9 +1,9 @@
 ﻿using Helix.Analysis.TypeChecking;
-using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Parsing;
+using Helix.Syntax;
 
-namespace Helix.Features.Arrays {
+namespace Helix.Features.Arrays.ParseSyntax {
     public record ArrayTypeParseSyntax : IParseSyntax {
         public required TokenLocation Location { get; init; }
         

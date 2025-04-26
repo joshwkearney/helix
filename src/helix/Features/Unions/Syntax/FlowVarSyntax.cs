@@ -6,7 +6,7 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Unions;
+namespace Helix.Features.Unions.Syntax;
 
 public class FlowVarSyntax : ISyntax {
     public required StructMember UnionMember { get; init; }

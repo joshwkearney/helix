@@ -1,12 +1,12 @@
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Features.Primitives;
+using Helix.Features.Primitives.Syntax;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.FlowControl;
+namespace Helix.Features.FlowControl.Syntax;
 
 public record BlockSyntax : ISyntax {
     public static ISyntax FromMany(TokenLocation loc, IReadOnlyList<ISyntax> stats) {

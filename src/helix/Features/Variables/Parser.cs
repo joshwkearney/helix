@@ -1,5 +1,6 @@
 using Helix.Features.Primitives;
-using Helix.Features.Variables;
+using Helix.Features.Primitives.ParseSyntax;
+using Helix.Features.Variables.ParseSyntax;
 using Helix.Syntax;
 
 namespace Helix.Parsing;
@@ -15,7 +16,7 @@ public partial class Parser {
             names.Add(name);
 
             if (this.TryAdvance(TokenKind.AsKeyword)) {
-                types.Add(Option.Some(this.TopExpression()));
+                types.Add(Option.Some<IParseSyntax>(this.TopExpression()));
             }
             else {
                 types.Add(Option.None);

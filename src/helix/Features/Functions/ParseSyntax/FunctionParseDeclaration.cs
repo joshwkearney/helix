@@ -1,12 +1,13 @@
 using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Features.FlowControl;
-using Helix.Features.Primitives;
+using Helix.Features.FlowControl.ParseSyntax;
+using Helix.Features.Functions.Syntax;
+using Helix.Features.Primitives.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Functions;
+namespace Helix.Features.Functions.ParseSyntax;
 
 public record FunctionParseDeclaration : IDeclaration {
     private readonly ParseFunctionSignature signature;

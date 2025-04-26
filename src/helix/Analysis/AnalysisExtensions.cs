@@ -1,7 +1,6 @@
 ﻿using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Analysis.TypeChecking;
-using Helix.Features.Types;
 
 namespace Helix.Analysis {
     public static class AnalysisExtensions {

@@ -1,7 +1,6 @@
 ﻿using System.Text;
-using Helix.Generation.Syntax;
 
-namespace Helix.Generation.CSyntax {
+namespace Helix.Generation.Syntax {
     public readonly record struct CParameter() {
         public ICSyntax Type { get; init; } = null;
 

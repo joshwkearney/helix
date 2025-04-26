@@ -1,11 +1,11 @@
-﻿using Helix.Analysis;
+﻿using Helix.Analysis.Predicates;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Features.Primitives.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
-using Helix.Analysis.TypeChecking;
-using Helix.Analysis.Predicates;
 
-namespace Helix.Features.Primitives {
+namespace Helix.Features.Primitives.ParseSyntax {
     public record BinaryParseSyntax : IParseSyntax {
         private static readonly Dictionary<BinaryOperationKind, HelixType> intOperations = new() {
             { BinaryOperationKind.Add,                  PrimitiveType.Word },

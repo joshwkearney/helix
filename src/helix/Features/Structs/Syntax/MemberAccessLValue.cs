@@ -5,7 +5,7 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Structs;
+namespace Helix.Features.Structs.Syntax;
 
 public record MemberAccessLValue : ISyntax {
     public required TokenLocation Location { get; init; }

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
 
-namespace Helix.Analysis {
+namespace Helix.Collections {
     public class ValueSet<T> : IEquatable<ValueSet<T>>, IEnumerable<T>, IReadOnlySet<T>, 
                                IReadOnlyCollection<T>, IImmutableSet<T> {
 

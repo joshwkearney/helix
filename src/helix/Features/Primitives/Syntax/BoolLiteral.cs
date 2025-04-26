@@ -1,12 +1,11 @@
-﻿using Helix.Analysis.Types;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Analysis.Types;
 using Helix.Generation;
-using Helix.Features.Primitives;
-using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Parsing;
 using Helix.Syntax;
-using Helix.Analysis.TypeChecking;
 
-namespace Helix.Features.Primitives {
+namespace Helix.Features.Primitives.Syntax {
     public record BoolLiteral : IParseSyntax, ISyntax {
         public required TokenLocation Location { get; init; }
         

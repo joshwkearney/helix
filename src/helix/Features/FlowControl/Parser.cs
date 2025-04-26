@@ -1,6 +1,10 @@
 using Helix.Features.FlowControl;
+using Helix.Features.FlowControl.ParseSyntax;
+using Helix.Features.FlowControl.Syntax;
 using Helix.Features.Primitives;
-using Helix.Features.Variables;
+using Helix.Features.Primitives.ParseSyntax;
+using Helix.Features.Primitives.Syntax;
+using Helix.Features.Variables.ParseSyntax;
 using Helix.Syntax;
 
 namespace Helix.Parsing {
@@ -38,7 +42,7 @@ namespace Helix.Parsing {
             };
 
             // False loops will never run and true loops don't need a break test
-            if (cond is not Features.Primitives.BoolLiteral) {
+            if (cond is not Features.Primitives.Syntax.BoolLiteral) {
                 newBlock.Add(test);
             }
 
@@ -103,7 +107,7 @@ namespace Helix.Parsing {
                     Location = loc,
                     Condition = cond,
                     Affirmative = affirm,
-                    Negative = Option.Some(neg)
+                    Negative = Option.Some<IParseSyntax>(neg)
                 };
             }
             else {

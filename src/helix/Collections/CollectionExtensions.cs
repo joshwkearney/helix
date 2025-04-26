@@ -1,5 +1,4 @@
-﻿using Helix.Analysis;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 
 namespace Helix.Collections {
     public static class CollectionExtensions {

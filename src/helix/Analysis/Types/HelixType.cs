@@ -1,5 +1,4 @@
 ﻿using Helix.Analysis.TypeChecking;
-using Helix.Features.Types;
 using Helix.Syntax;
 using Helix.Parsing;
 

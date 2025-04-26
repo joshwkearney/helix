@@ -1,13 +1,13 @@
 using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Features.FlowControl;
-using Helix.Features.Structs;
-using Helix.Features.Variables;
+using Helix.Features.FlowControl.ParseSyntax;
+using Helix.Features.Structs.ParseSyntax;
+using Helix.Features.Variables.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix;
+namespace Helix.Features.Variables.ParseSyntax;
 
 public record VarParseStatement : IParseSyntax {
     public required TokenLocation Location { get; init; }

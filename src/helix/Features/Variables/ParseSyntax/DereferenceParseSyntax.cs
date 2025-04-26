@@ -1,10 +1,11 @@
 using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Features.Variables.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Variables;
+namespace Helix.Features.Variables.ParseSyntax;
 
 public record DereferenceParseSyntax : IParseSyntax {
     public required TokenLocation Location { get; init; }

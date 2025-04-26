@@ -1,8 +1,8 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
-using Helix.Features.Primitives;
 using Helix.Parsing;
 using Helix.Analysis.Predicates;
+using Helix.Features.Primitives.Syntax;
 
 namespace Helix.Analysis.Types {
     public record PredicateBool : HelixType {

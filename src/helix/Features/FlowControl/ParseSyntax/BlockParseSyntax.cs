@@ -1,9 +1,10 @@
-﻿using Helix.Parsing;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Features.FlowControl.Syntax;
+using Helix.Features.Primitives.Syntax;
+using Helix.Parsing;
 using Helix.Syntax;
-using Helix.Analysis.TypeChecking;
-using Helix.Features.Primitives;
 
-namespace Helix.Features.FlowControl {
+namespace Helix.Features.FlowControl.ParseSyntax {
     public record BlockParseSyntax : IParseSyntax {
         public static IParseSyntax FromMany(TokenLocation loc, IReadOnlyList<IParseSyntax> stats) {
             if (stats.Count == 0) {

@@ -1,11 +1,12 @@
 using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Features.Primitives;
+using Helix.Features.FlowControl.Syntax;
+using Helix.Features.Primitives.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.FlowControl;
+namespace Helix.Features.FlowControl.ParseSyntax;
 
 public record IfParseSyntax : IParseSyntax {
     public required TokenLocation Location { get; init; }

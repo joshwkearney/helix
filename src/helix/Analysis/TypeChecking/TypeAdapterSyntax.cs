@@ -1,4 +1,3 @@
-using Helix.Analysis.Predicates;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;

@@ -1,10 +1,10 @@
-using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Features.Structs.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Structs;
+namespace Helix.Features.Structs.ParseSyntax;
 
 public record MemberAccessParseSyntax : IParseSyntax {
     public required IParseSyntax Operand { get; init; }

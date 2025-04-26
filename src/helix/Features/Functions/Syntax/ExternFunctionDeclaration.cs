@@ -1,14 +1,12 @@
-﻿using Helix.Analysis.Types;
-using Helix.Generation;
-using Helix.Generation.CSyntax;
-using Helix.Parsing;
-using Helix.Generation.Syntax;
-using Helix.Syntax;
+﻿using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
-using Helix.Features.Types;
-using Helix.Analysis;
+using Helix.Analysis.Types;
+using Helix.Generation;
+using Helix.Generation.Syntax;
+using Helix.Parsing;
+using Helix.Syntax;
 
-namespace Helix.Features.Functions {
+namespace Helix.Features.Functions.Syntax {
     public record ExternFunctionDeclaration : IDeclaration {
         public required FunctionType Signature { get; init; }
 

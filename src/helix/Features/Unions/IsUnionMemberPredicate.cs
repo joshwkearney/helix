@@ -3,6 +3,7 @@ using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Collections;
+using Helix.Features.Unions.ParseSyntax;
 using Helix.Parsing;
 using Helix.Syntax;
 

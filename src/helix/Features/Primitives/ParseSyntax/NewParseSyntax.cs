@@ -1,12 +1,12 @@
-﻿using Helix.Analysis.Types;
+﻿using Helix.Analysis.TypeChecking;
+using Helix.Analysis.Types;
+using Helix.Features.Primitives.Syntax;
+using Helix.Features.Structs.ParseSyntax;
+using Helix.Features.Unions.ParseSyntax;
 using Helix.Parsing;
 using Helix.Syntax;
-using Helix.Analysis.TypeChecking;
-using Helix.Analysis;
-using Helix.Features.Structs;
-using Helix.Features.Unions;
 
-namespace Helix.Features.Primitives {
+namespace Helix.Features.Primitives.ParseSyntax {
     public class NewParseSyntax : IParseSyntax {
         public required TokenLocation Location { get; init; }
         

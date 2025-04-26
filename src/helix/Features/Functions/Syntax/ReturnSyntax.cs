@@ -5,7 +5,7 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Functions;
+namespace Helix.Features.Functions.Syntax;
 
 public record ReturnSyntax : ISyntax {
     public required TokenLocation Location { get; init; }

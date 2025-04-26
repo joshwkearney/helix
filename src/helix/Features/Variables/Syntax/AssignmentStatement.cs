@@ -1,11 +1,11 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
-using Helix.Syntax;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Syntax;
 
-namespace Helix.Features.Variables {
+namespace Helix.Features.Variables.Syntax {
     public record AssignmentStatement : ISyntax {
         public required TokenLocation Location { get; init; }
         

@@ -1,4 +1,4 @@
-using Helix.Features.Arrays;
+using Helix.Features.Arrays.ParseSyntax;
 using Helix.Syntax;
 
 namespace Helix.Parsing;

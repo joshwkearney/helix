@@ -1,14 +1,12 @@
 ﻿using Helix.Analysis;
+using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
-using Helix.Generation.CSyntax;
-using Helix.Parsing;
 using Helix.Generation.Syntax;
+using Helix.Parsing;
 using Helix.Syntax;
-using Helix.Analysis.TypeChecking;
-using Helix.Features.Types;
 
-namespace Helix.Features.Functions {
+namespace Helix.Features.Functions.Syntax {
     public record FunctionDeclaration : IDeclaration {
         public TokenLocation Location { get; init; }
         

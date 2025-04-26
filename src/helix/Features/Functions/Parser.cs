@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Helix.Features.Functions;
-using Helix.Features.Primitives;
+using Helix.Features.Functions.ParseSyntax;
+using Helix.Features.Primitives.Syntax;
 using Helix.Syntax;
 
 namespace Helix.Parsing;

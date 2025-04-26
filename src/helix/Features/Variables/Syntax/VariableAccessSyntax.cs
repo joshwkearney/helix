@@ -6,7 +6,7 @@ using Helix.Generation.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Variables;
+namespace Helix.Features.Variables.Syntax;
 
 public record VariableAccessSyntax : ISyntax {
     public required TokenLocation Location { get; init; }

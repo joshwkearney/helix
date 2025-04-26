@@ -1,6 +1,6 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Syntax;
-using Helix.Features.Primitives;
+using Helix.Features.Primitives.Syntax;
 using Helix.Parsing;
 
 namespace Helix.Analysis.Types {

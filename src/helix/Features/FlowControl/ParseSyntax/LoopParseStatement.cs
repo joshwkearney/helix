@@ -1,8 +1,9 @@
 using Helix.Analysis.TypeChecking;
+using Helix.Features.FlowControl.Syntax;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.FlowControl;
+namespace Helix.Features.FlowControl.ParseSyntax;
 
 public record LoopParseStatement : IParseSyntax {
     public required TokenLocation Location { get; init; }

@@ -1,6 +1,6 @@
 ﻿using Helix.Analysis.Types;
-using System.Collections.Immutable;
 using Helix.Syntax;
+using System.Collections.Immutable;
 
 namespace Helix.Analysis.TypeChecking {
     public enum DeclarationKind {

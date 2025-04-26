@@ -1,12 +1,12 @@
 ﻿using Helix.Analysis.TypeChecking;
-using Helix.Syntax;
 using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.Parsing;
+using Helix.Syntax;
 
-namespace Helix.Features.Arrays {
+namespace Helix.Features.Arrays.Sytnax {
     public record ArrayToPointerSyntax : ISyntax {
         public required ArrayType ArraySignature { get; init; }
         

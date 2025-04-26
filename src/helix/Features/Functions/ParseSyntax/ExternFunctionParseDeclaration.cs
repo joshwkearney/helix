@@ -1,11 +1,11 @@
-using Helix.Analysis;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Features.Functions.Syntax;
 using Helix.Generation;
 using Helix.Parsing;
 using Helix.Syntax;
 
-namespace Helix.Features.Functions;
+namespace Helix.Features.Functions.ParseSyntax;
 
 public record ExternFunctionParseDeclaration : IDeclaration {
     public required TokenLocation Location { get; init; }
