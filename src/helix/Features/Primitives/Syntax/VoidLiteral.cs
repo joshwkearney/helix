@@ -2,6 +2,7 @@
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
 using Helix.Syntax;
 
@@ -22,5 +23,7 @@ namespace Helix.Features.Primitives.Syntax {
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(0);
         }
+
+        public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName) => new Immediate.Void();
     }
 }

@@ -3,6 +3,7 @@ using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
 using Helix.Syntax;
 
@@ -22,6 +23,13 @@ namespace Helix.Features.Variables.Syntax {
             return new NominalType(this.Path, NominalTypeKind.Variable);
         }
 
+        public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName = null) {
+            var name = writer.GetVariable(this.Path.Segments.Last());
+            context.SetVariable(this.Path, name);
+            
+            return this.Assignment.GenerateIR(writer, context, name);
+        }
+        
         public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var assign = this.Assignment.GenerateCode(flow, writer);
             

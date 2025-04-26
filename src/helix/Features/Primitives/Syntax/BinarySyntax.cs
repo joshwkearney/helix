@@ -1,7 +1,9 @@
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Features.Primitives.IR;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
 using Helix.Syntax;
 
@@ -26,5 +28,21 @@ public record BinarySyntax : ISyntax {
             Right = this.Right.GenerateCode(types, writer),
             Operation = this.Operator
         };
+    }
+
+    public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName = null) {
+        var left = this.Left.GenerateIR(writer, context);
+        var right = this.Right.GenerateIR(writer, context);
+        var name = returnName ?? writer.GetVariable();
+
+        writer.WriteOp(new BinaryOp {
+            Left = left,
+            Right = right,
+            Operation = this.Operator,
+            ReturnType = this.ReturnType,
+            ReturnValue = name
+        });
+
+        return name;
     }
 }

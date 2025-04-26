@@ -1,7 +1,9 @@
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
+using Helix.Features.Primitives.IR;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
 using Helix.Syntax;
 
@@ -20,5 +22,19 @@ public record UnaryNotSyntax : ISyntax {
         return new CNot() {
             Target = this.Operand.GenerateCode(types, writer)
         };
+    }
+
+    public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName = null) {
+        var operand = this.Operand.GenerateIR(writer, context);
+        var name = returnName ?? writer.GetVariable();
+        
+        writer.WriteOp(new UnaryOp {
+            Operation = UnaryOperatorKind.Not,
+            Operand = operand,
+            ReturnValue = name,
+            ReturnType = this.ReturnType
+        });
+
+        return name;
     }
 }
