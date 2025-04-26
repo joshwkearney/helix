@@ -10,8 +10,13 @@ struct Test {
 func test(var limit as word) as word {
     var i = 0;
 
-	while i < limit {
-	    i += 1;
+	while true {
+	    if i < limit then {
+	        i += 1;  
+	        continue;
+	    };
+	    
+	    return i;
 	};
 
 	return i;

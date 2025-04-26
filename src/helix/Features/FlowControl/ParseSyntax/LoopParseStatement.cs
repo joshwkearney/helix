@@ -13,7 +13,7 @@ public record LoopParseStatement : IParseSyntax {
 
     public TypeCheckResult CheckTypes(TypeFrame types) {
         ISyntax body;
-        bool alwaysJumps = true;
+        bool alwaysJumps = false;
         
         while (true) {
             // Push a new context for our loop body
@@ -21,7 +21,14 @@ public record LoopParseStatement : IParseSyntax {
             
             (body, var loopTypes) = this.TypeCheckLoopBody(types);
             
-            // If there aren't any continue frames, this loop never loops so we can be done
+            // If there aren't any continue frames or break frames, this loop either runs forever or returns
+            if (loopTypes.ContinueFrames.IsEmpty && loopTypes.BreakFrames.IsEmpty) {
+                alwaysJumps = true;
+                break;
+            }
+            
+            // If there aren't any continue frames, we the loop never loops. Since we already type checked it,
+            // we're done
             if (loopTypes.ContinueFrames.IsEmpty) {
                 break;
             }
@@ -45,6 +52,7 @@ public record LoopParseStatement : IParseSyntax {
             // returns from the function without going to the next statement after the loop.
             // In this case, we can be done
             if (loopTypes.BreakFrames.IsEmpty) {
+                alwaysJumps = true;
                 break;
             }
             
@@ -53,8 +61,6 @@ public record LoopParseStatement : IParseSyntax {
             var breakTypes = loopTypes.BreakFrames.Aggregate((x, y) => x.CombineSignaturesWith(y));
 
             types = breakTypes.PopScope().PopLoopFrames();
-            alwaysJumps = false;
-            
             break;
         }
 

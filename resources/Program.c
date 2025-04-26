@@ -31,16 +31,16 @@ _Word test(_Region* _return_region, _Word limit) {
 
     /* Line 13: Loop */
     while (1) {
-        /* Line 13: If statement */
-        if (!(i < limit)) { 
-            break;
+        /* Line 14: If statement */
+        if ((i < limit)) { 
+            /* Line 15: Assignment statement */
+            i = (i + 1);
+
+            continue;
         } 
 
-        /* Line 14: Assignment statement */
-        i = (i + 1);
+        return i;
     }
-
-    return i;
 
     return 0;
 }
