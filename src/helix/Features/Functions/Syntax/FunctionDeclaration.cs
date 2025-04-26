@@ -63,13 +63,6 @@ namespace Helix.Features.Functions.Syntax {
             // Generate the body
             var retExpr = this.Body.GenerateCode(types, bodyWriter);
 
-            if (this.Signature.ReturnType != PrimitiveType.Void) {
-                bodyWriter.WriteEmptyLine();
-                bodyWriter.WriteStatement(new CReturn() { 
-                    Target = retExpr
-                });
-            }
-
             // If the body ends with an empty line, trim it
             if (body.Any() && body.Last().IsEmpty) {
                 body = body.SkipLast(1).ToList();

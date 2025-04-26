@@ -12,6 +12,12 @@ public class AddressOfParseSyntax : IParseSyntax {
     public required IParseSyntax Operand { get; init; }
         
     public bool IsPure => this.Operand.IsPure;
+    
+    public Option<HelixType> AsType(TypeFrame types) {
+        return this.Operand
+            .AsType(types)
+            .Select(HelixType (x) => new PointerType(x));
+    }
 
     public TypeCheckResult CheckTypes(TypeFrame types) {
         (var operand, types) = this.Operand.CheckTypes(types);

@@ -38,9 +38,6 @@ namespace Helix.Features.Variables.Syntax {
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = this.Operand.GenerateCode(types, writer);
 
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.Location.Line}: Pointer dereference");
-
             if (this.IsLValue) {
                 return new CMemberAccess() {
                     Target = target,
@@ -52,6 +49,9 @@ namespace Helix.Features.Variables.Syntax {
                 var tempName = writer.GetVariableName();
                 var tempType = writer.ConvertType(pointerType.InnerType, types);
 
+                writer.WriteEmptyLine();
+                writer.WriteComment($"Line {this.Location.Line}: Pointer dereference");
+                
                 writer.WriteStatement(new CVariableDeclaration() {
                     Name = tempName,
                     Type = tempType,

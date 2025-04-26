@@ -14,12 +14,6 @@ public record DereferenceParseSyntax : IParseSyntax {
         
     public bool IsPure => this.Operand.IsPure;
 
-    public Option<HelixType> AsType(TypeFrame types) {
-        return this.Operand.AsType(types)
-            .Select(x => new PointerType(x))
-            .Select(x => (HelixType)x);
-    }
-
     public TypeCheckResult CheckTypes(TypeFrame types) {
         (var operand, types) = this.Operand.CheckTypes(types);
             

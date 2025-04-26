@@ -48,18 +48,13 @@ public record FunctionParseDeclaration : IDeclaration {
         types = FunctionsHelper.DeclareParameters(sig, path, types);
             
         // Check types
-        var body = this.body;
-
-        if (sig.ReturnType == PrimitiveType.Void) {
-            body = new BlockParseSyntax {
-                Location = body.Location,
-                First = body,
-                Second = new VoidLiteral { Location = this.body.Location }
-            };
-        }
-
-        (var checkedBody, types) = body.CheckTypes(types);
+        (var checkedBody, types) = this.body.CheckTypes(types);
         checkedBody = checkedBody.UnifyTo(sig.ReturnType, types);
+        
+        // Make sure we always return a value
+        if (sig.ReturnType != PrimitiveType.Void && !checkedBody.AlwaysJumps) {
+            throw new InvalidOperationException("Function does not return a value");
+        }
 
         var result = new FunctionDeclaration {
             Location = this.Location,

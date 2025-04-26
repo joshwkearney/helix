@@ -15,6 +15,10 @@ static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth 
 
 typedef struct Point Point;
 typedef struct Test Test;
+typedef struct _Word_$Pointer _Word_$Pointer;
+_Word fib(_Region* _return_region, _Word x);
+_Word fib2(_Region* _return_region, _Word x_1);
+void test2(_Region* _return_region, _Word_$Pointer z);
 _Word test(_Region* _return_region, _Word limit);
 
 struct Point {
@@ -26,22 +30,83 @@ struct Test {
     _Word x;
 };
 
+struct _Word_$Pointer {
+    _Word* data;
+    _Region* region;
+};
+
+_Word fib(_Region* _return_region, _Word x) {
+    /* Line 11: If statement */
+    _Word $C;
+    if ((x <= 1)) { 
+        $C = x;
+    } 
+    else {
+        /* Line 13: Function call */
+        _Word $A = fib((x - 1));
+
+        /* Line 13: Function call */
+        _Word $B = fib((x - 2));
+
+        $C = ($A + $B);
+    }
+
+    return $C;
+}
+
+_Word fib2(_Region* _return_region, _Word x_1) {
+    /* Line 17: If statement */
+    if ((x_1 <= 1)) { 
+        return x_1;
+    } 
+
+    /* Line 21: Function call */
+    _Word $B = fib((x_1 - 1));
+
+    /* Line 21: Function call */
+    _Word $C = fib((x_1 - 2));
+
+    return ($B + $C);
+}
+
+void test2(_Region* _return_region, _Word_$Pointer z) {
+    _Word x_2 = 45;
+
+    _Word_$Pointer y = (_Word_$Pointer){ (&x_2) };
+
+    /* Line 28: Assignment statement */
+    y = z;
+
+    /* Line 30: Pointer dereference */
+    _Word $A = (*(y.data));
+
+    /* Line 30: Assignment statement */
+    (*(y.data)) = (7 * $A);
+}
+
 _Word test(_Region* _return_region, _Word limit) {
     _Word i = 0;
 
-    /* Line 13: Loop */
+    /* Line 36: Loop */
     while (1) {
-        /* Line 14: If statement */
+        /* Line 37: If statement */
         if ((i < limit)) { 
-            /* Line 15: Assignment statement */
+            /* Line 38: Assignment statement */
             i = (i + 1);
 
             continue;
         } 
 
-        return i;
-    }
+        /* Line 42: If statement */
+        _Word $B;
+        if ((i < 5)) { 
+            $B = 0;
+        } 
+        else {
+            $B = 8;
+        }
 
-    return 0;
+        return $B;
+    }
 }
 

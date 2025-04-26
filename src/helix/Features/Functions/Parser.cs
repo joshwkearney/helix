@@ -15,12 +15,11 @@ public partial class Parser {
 
         var pars = ImmutableList<ParseFunctionParameter>.Empty;
         while (!this.Peek(TokenKind.CloseParenthesis)) {
-            var parStart = this.Advance(TokenKind.VarKeyword);
-            var parName = this.Advance(TokenKind.Identifier).Value;
+            var parName = this.Advance(TokenKind.Identifier);
             this.Advance(TokenKind.AsKeyword);
 
             var parType = this.TopExpression();
-            var parLoc = parStart.Location.Span(parType.Location);
+            var parLoc = parName.Location.Span(parType.Location);
 
             if (!this.Peek(TokenKind.CloseParenthesis)) {
                 this.Advance(TokenKind.Comma);
@@ -28,7 +27,7 @@ public partial class Parser {
 
             pars = pars.Add(new ParseFunctionParameter {
                 Location = parLoc,
-                Name = parName,
+                Name = parName.Value,
                 Type = parType
             });
         }
@@ -60,7 +59,6 @@ public partial class Parser {
         }
 
         var body = this.TopExpression();           
-        this.Advance(TokenKind.Semicolon);
 
         return new FunctionParseDeclaration(
             sig.Location.Span(body.Location), 
@@ -106,9 +104,10 @@ public partial class Parser {
     private IParseSyntax ReturnStatement() {
         var start = this.Advance(TokenKind.ReturnKeyword);
         var arg = this.TopExpression();
+        var last = this.Advance(TokenKind.Semicolon);
 
         return new ReturnParseSyntax {
-            Location = start.Location.Span(arg.Location),
+            Location = start.Location.Span(last.Location),
             Operand = arg
         };
     }

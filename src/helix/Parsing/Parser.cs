@@ -84,8 +84,7 @@ namespace Helix.Parsing {
 
             while (this.Peek(TokenKind.OpenParenthesis) 
                 || this.Peek(TokenKind.Dot) 
-                || this.Peek(TokenKind.OpenBracket)
-                || this.Peek(TokenKind.Star)) {
+                || this.Peek(TokenKind.OpenBracket)) {
 
                 if (this.Peek(TokenKind.OpenParenthesis)) {
                     first = this.InvokeExpression(first);
@@ -95,9 +94,6 @@ namespace Helix.Parsing {
                 }
                 else if (this.Peek(TokenKind.OpenBracket)) {
                     first = this.ArrayExpression(first);
-                }
-                else if (this.Peek(TokenKind.Star)) {
-                    first = this.DereferenceExpression(first);
                 }
                 else {
                     throw new Exception("Unexpected suffix token");
@@ -182,17 +178,19 @@ namespace Helix.Parsing {
                 result = this.Block();
             }
             else if (this.Peek(TokenKind.BreakKeyword) || this.Peek(TokenKind.ContinueKeyword)) {
-                result = this.BreakStatement();
+                result = this.BreakContinueStatement();
             }
             else if (this.Peek(TokenKind.ReturnKeyword)) {
                 result = this.ReturnStatement();
             }
+            else if (this.Peek(TokenKind.IfKeyword)) {
+                result = this.IfStatement();
+            }
             else {
                 result = this.AssignmentStatement();
+                this.Advance(TokenKind.Semicolon);
             }
-
-            this.Advance(TokenKind.Semicolon);
-
+            
             return result;
         }    
     }

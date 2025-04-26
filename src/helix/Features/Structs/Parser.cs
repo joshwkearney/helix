@@ -40,8 +40,7 @@ namespace Helix.Parsing {
                 });
             }
 
-            this.Advance(TokenKind.CloseBrace);
-            var last = this.Advance(TokenKind.Semicolon);
+            var last = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(last.Location);
 
             var sig = new ParseStructSignature {

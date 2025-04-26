@@ -42,6 +42,7 @@ namespace Helix.Features.Functions.Syntax {
 
             writer.WriteComment($"Line {this.Location.Line}: Function call");
             writer.WriteStatement(stat);
+            writer.WriteEmptyLine();
 
             return new CVariableLiteral(name);
         }

@@ -54,8 +54,7 @@ namespace Helix.Features.Variables.ParseSyntax {
             if (types.TryGetFunction(path, out var funcSig)) {
                 var result = new FunctionAccessSyntax {
                     Location = this.Location,
-                    FunctionPath = path,
-                    FunctionSignature = funcSig,
+                    FunctionPath = path
                 };
 
                 return new TypeCheckResult(result, types);

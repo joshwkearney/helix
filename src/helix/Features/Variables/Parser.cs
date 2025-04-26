@@ -50,16 +50,6 @@ public partial class Parser {
         };
     }
     
-    public IParseSyntax DereferenceExpression(IParseSyntax first) {
-        var op = this.Advance(TokenKind.Star);
-        var loc = first.Location.Span(op.Location);
-
-        return new DereferenceParseSyntax {
-            Location = loc,
-            Operand = first
-        };
-    }
-    
     private IParseSyntax AssignmentStatement() {
         var start = this.TopExpression();
 
@@ -78,6 +68,7 @@ public partial class Parser {
         else {
             BinaryOperationKind op;
 
+            // These are operators like += and -=
             if (this.TryAdvance(TokenKind.PlusAssignment)) {
                 op = BinaryOperationKind.Add;
             }

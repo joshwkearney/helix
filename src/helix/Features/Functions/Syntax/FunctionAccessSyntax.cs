@@ -12,11 +12,9 @@ namespace Helix.Features.Functions.Syntax {
 
         public required IdentifierPath FunctionPath { get; init; }
         
-        public required FunctionType FunctionSignature { get; init; }
-
         public bool AlwaysJumps => false;
 
-        public HelixType ReturnType => this.FunctionSignature;
+        public HelixType ReturnType => new NominalType(this.FunctionPath, NominalTypeKind.Function);
 
         public bool IsPure => true;
 

@@ -66,7 +66,7 @@ namespace Helix.Parsing {
             return loop;
         }
         
-        private IParseSyntax BreakStatement() {
+        private IParseSyntax BreakContinueStatement() {
             Token start;
             LoopControlKind kind;
 
@@ -86,41 +86,14 @@ namespace Helix.Parsing {
                     "Break and continue statements must only appear inside of loops");
             }
 
+            var end = this.Advance(TokenKind.Semicolon);
+            
             return new LoopControlSyntax {
-                Location = start.Location,
+                Location = start.Location.Span(end.Location),
                 Kind = kind
             };
         }
-        
-        private IParseSyntax IfExpression() {
-            var start = this.Advance(TokenKind.IfKeyword);
-            var cond = this.TopExpression();
-
-            this.Advance(TokenKind.ThenKeyword);
-            var affirm = this.TopExpression();
-
-            if (this.TryAdvance(TokenKind.ElseKeyword)) {
-                var neg = this.TopExpression();
-                var loc = start.Location.Span(neg.Location);
-
-                return new IfParseSyntax {
-                    Location = loc,
-                    Condition = cond,
-                    Affirmative = affirm,
-                    Negative = Option.Some<IParseSyntax>(neg)
-                };
-            }
-            else {
-                var loc = start.Location.Span(affirm.Location);
-
-                return new IfParseSyntax {
-                    Location = loc,
-                    Condition = cond,
-                    Affirmative = affirm
-                };
-            }
-        }
-        
+    
         private IParseSyntax ForStatement() {
             var startTok = this.Advance(TokenKind.ForKeyword);
             var id = this.Advance(TokenKind.Identifier);
@@ -222,6 +195,64 @@ namespace Helix.Parsing {
             totalBlock.Add(loop);
 
             return BlockParseSyntax.FromMany(loc, totalBlock);
+        }
+        
+        // This is like the if expression, but it doesn't need a "then" keyword,
+        // and it requires brackets
+        private IParseSyntax IfStatement() {
+            var start = this.Advance(TokenKind.IfKeyword);
+            var cond = this.TopExpression();
+            var affirm = this.Block();
+
+            if (this.TryAdvance(TokenKind.ElseKeyword)) {
+                var neg = this.Block();
+                var loc = start.Location.Span(neg.Location);
+
+                return new IfParseSyntax {
+                    Location = loc,
+                    Condition = cond,
+                    Affirmative = affirm,
+                    Negative = Option.Some(neg)
+                };
+            }
+            else {
+                var loc = start.Location.Span(affirm.Location);
+
+                return new IfParseSyntax {
+                    Location = loc,
+                    Condition = cond,
+                    Affirmative = affirm
+                };
+            }
+        }
+        
+        private IParseSyntax IfExpression() {
+            var start = this.Advance(TokenKind.IfKeyword);
+            var cond = this.TopExpression();
+
+            this.Advance(TokenKind.ThenKeyword);
+            var affirm = this.TopExpression();
+
+            if (this.TryAdvance(TokenKind.ElseKeyword)) {
+                var neg = this.TopExpression();
+                var loc = start.Location.Span(neg.Location);
+
+                return new IfParseSyntax {
+                    Location = loc,
+                    Condition = cond,
+                    Affirmative = affirm,
+                    Negative = Option.Some(neg)
+                };
+            }
+            else {
+                var loc = start.Location.Span(affirm.Location);
+
+                return new IfParseSyntax {
+                    Location = loc,
+                    Condition = cond,
+                    Affirmative = affirm
+                };
+            }
         }
     }
 }
