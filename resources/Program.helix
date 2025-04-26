@@ -4,9 +4,9 @@
 }
 
 func test(x as Option) as word {
-    if (x is none) {
+    if x is none {
         return 0;
     }
     
-    return x + 6;
+    return x + 1;
 }

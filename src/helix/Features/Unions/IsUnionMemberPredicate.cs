@@ -1,4 +1,5 @@
-﻿using Helix.Analysis;
+﻿using System.Diagnostics;
+using Helix.Analysis;
 using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
@@ -16,10 +17,25 @@ namespace Helix.Features.Unions {
         public required ValueSet<string> MemberNames { get; init; }
         
         public override TypeFrame ApplyToTypes(TypeFrame types) {
+            var mems = this.UnionSignature.Members
+                .Select(x => x.Name)
+                .ToValueSet();
+            
+            if (types.TryGetVariable(this.VariablePath, out var varType)) {
+                if (varType.InnerType is SingularUnionType otherUnion) {
+                    Debug.Assert(this.UnionType == otherUnion.UnionType);
+
+                    mems = otherUnion.MemberNames;
+                }
+            }
+
+            // Narrow the possible members based on our predicate
+            mems = mems.Intersect(this.MemberNames);
+            
             var singType = new SingularUnionType {
                 UnionType = this.UnionType,
                 UnionSignature = this.UnionSignature,
-                MemberNames = this.MemberNames
+                MemberNames = mems
             };
 
             return types.WithValue(this.VariablePath, new PointerType(singType));

@@ -33,6 +33,6 @@ _Word test(_Region* _return_region, Option x) {
         return 0;
     } 
 
-    return (((x.data).value) + 6);
+    return (((x.data).value) + 1);
 }
 
