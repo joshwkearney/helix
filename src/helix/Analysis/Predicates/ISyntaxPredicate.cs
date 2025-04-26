@@ -1,9 +1,8 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Parsing;
-using Helix.Syntax;
 
 namespace Helix.Analysis.Predicates {
-    public abstract class ISyntaxPredicate : IEquatable<ISyntaxPredicate> {
+    public abstract record ISyntaxPredicate : IEquatable<ISyntaxPredicate> {
         public static ISyntaxPredicate Empty { get; } = new EmptyPredicate();
 
         public abstract ISyntaxPredicate Negate();
@@ -23,13 +22,9 @@ namespace Helix.Analysis.Predicates {
             return left.Or(right);
         }
 
-        public virtual IReadOnlyList<IParseSyntax> ApplyToTypes(TokenLocation loc, TypeFrame types) {
-            return Array.Empty<IParseSyntax>();
+        public virtual TypeFrame ApplyToTypes(TypeFrame types) {
+            return types;
         }
-
-        public abstract override bool Equals(object other);
-
-        public abstract override int GetHashCode();
 
         public abstract bool Equals(ISyntaxPredicate other);
     }

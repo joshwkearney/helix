@@ -1,10 +1,9 @@
 ﻿using Helix.Analysis.TypeChecking;
 using Helix.Collections;
 using Helix.Parsing;
-using Helix.Syntax;
 
 namespace Helix.Analysis.Predicates {
-    public class PredicateTerm : ISyntaxPredicate {
+    public record PredicateTerm : ISyntaxPredicate {
         public ValueSet<PredicatePolynomial> Operands { get; }
 
         public PredicateTerm() {
@@ -65,29 +64,15 @@ namespace Helix.Analysis.Predicates {
             return this.And(new PredicatePolynomial(other));
         }
 
-        public override IReadOnlyList<IParseSyntax> ApplyToTypes(TokenLocation loc, TypeFrame types) {
+        public override TypeFrame ApplyToTypes(TypeFrame types) {
+            if (this.Operands.Count == 0) {
+                return types;
+            }
+            
             return this.Operands
-                .SelectMany(x => x.ApplyToTypes(loc, types))
-                .ToArray();
+                .Select(x => x.ApplyToTypes(types))
+                .Aggregate((x, y) => x.CombineValuesWith(y));
         }
-
-        public override bool Equals(ISyntaxPredicate other) {
-            if (other is PredicateTerm term) {
-                return this.Operands == term.Operands;
-            }
-
-            return false;
-        }
-
-        public override bool Equals(object other) {
-            if (other is PredicateTerm term) {
-                return this.Operands == term.Operands;
-            }
-
-            return false;
-        }
-
-        public override int GetHashCode() => this.Operands.GetHashCode();
 
         public override string ToString() {
             return string.Join(" and ", this.Operands);

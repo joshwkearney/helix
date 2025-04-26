@@ -32,6 +32,9 @@ public record IfParseSyntax : IParseSyntax {
 
         var ifTrueTypes = types.WithScope("$if_aff");
         var ifFalseTypes = types.WithScope("$if_neg");
+
+        ifTrueTypes = condPredicate.ApplyToTypes(ifTrueTypes);
+        ifFalseTypes = condPredicate.Negate().ApplyToTypes(ifFalseTypes);
         
         (var checkedIfTrue, ifTrueTypes) = this.Affirmative.CheckTypes(ifTrueTypes);
         

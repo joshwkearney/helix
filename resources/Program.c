@@ -13,24 +13,26 @@ extern void _region_destroy(_Region* region);
 extern void* _region_malloc(_Region* region, int size);
 static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth < r2->depth ? r1 : r2;  }
 
-_Word test(_Region* _return_region, _Word limit);
+typedef union Option_$Union Option_$Union;
+typedef struct Option Option;
+_Word test(_Region* _return_region, Option x);
 
-_Word test(_Region* _return_region, _Word limit) {
-    _Word i = 0;
+union Option_$Union {
+    int none;
+    _Word value;
+};
 
-    /* Line 4: Loop */
-    while (1) {
-        /* Line 5: If statement */
-        if ((i < limit)) { 
-            /* Line 6: Assignment statement */
-            i = (i + 1);
+struct Option {
+    int tag;
+    Option_$Union data;
+};
 
-            continue;
-        } 
+_Word test(_Region* _return_region, Option x) {
+    /* Line 7: If statement */
+    if (((x.tag) == 0)) { 
+        return 0;
+    } 
 
-        break;
-    }
-
-    return 99;
+    return (((x.data).value) + 6);
 }
 

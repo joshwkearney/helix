@@ -49,7 +49,7 @@ namespace Helix.Features.Primitives.ParseSyntax {
             if (left.ReturnType.IsBool(types) && right.ReturnType.IsBool(types)) {
                 return this.CheckBoolExpresion(left, right, types);
             }
-            else if (left.ReturnType.IsWord(types) && right.ReturnType.IsWord(types)) {
+            else if (left.ReturnType.IsWord(types) || right.ReturnType.IsWord(types)) {
                 return this.CheckIntExpresion(left, right, types);
             }
             else {
@@ -69,8 +69,8 @@ namespace Helix.Features.Primitives.ParseSyntax {
                 return this.EvaluateIntExpression(singLeft.Value, singRight.Value, types);
             }
 
-            left = left.UnifyFrom(right, types);
-            right = right.UnifyFrom(left, types);
+            left = left.UnifyTo(PrimitiveType.Word, types);
+            right = right.UnifyTo(PrimitiveType.Word, types);
 
             var result = new BinarySyntax() {
                 Location = this.Location,

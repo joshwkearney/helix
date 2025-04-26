@@ -14,8 +14,8 @@ namespace Helix.Features.Structs.Syntax {
         public required TokenLocation Location { get; init; }
 
         public required HelixType ReturnType { get; init; }
-        
-        public required bool AlwaysJumps { get; init; }
+
+        public bool AlwaysJumps => this.Operand.AlwaysJumps;
 
         public ISyntax ToLValue(TypeFrame types) {
             var target = this.Operand.ToLValue(types);
@@ -25,7 +25,6 @@ namespace Helix.Features.Structs.Syntax {
                 Operand = target,
                 MemberName = this.MemberName,
                 ReturnType = this.ReturnType,
-                AlwaysJumps = this.AlwaysJumps
             };
 
             return result;

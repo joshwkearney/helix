@@ -51,9 +51,10 @@ public record IsParseSyntax : IParseSyntax {
         }
 
         var predicate = new IsUnionMemberPredicate {
-            TargetPath = path,
+            VariablePath = path,
             MemberNames = new[] { this.MemberName }.ToValueSet(),
-            UnionSignature = unionSig
+            UnionSignature = unionSig,
+            UnionType = varSig.InnerType
         };
 
         var returnType = new PredicateBool(predicate);

@@ -113,7 +113,7 @@ namespace Helix.Analysis.TypeChecking {
             else if (first is SingularWordType) {
                 return TryUnifyFromSingularInt(second, types);
             }
-            else if (first is SingularBoolType) {
+            else if (first is SingularBoolType || first is PredicateBool) {
                 return TryUnifyFromSingularBool(second, types);
             }
             else if (first is PointerType pointerType) {
@@ -124,6 +124,33 @@ namespace Helix.Analysis.TypeChecking {
             }
             else if (first is NominalType nom) {
                 return TryUnifyFromNominalType(nom, second, types);
+            }
+            else if (first is SingularUnionType union) {
+                return TryUnifyFromSingularUnion(union, second, types);
+            }
+
+            return UnificationResult.None;
+        }
+        
+        private static UnificationResult TryUnifyFromSingularUnion(SingularUnionType type, HelixType second, TypeFrame types) {
+            if (type.UnionSignature == second) {
+                return UnificationResult.Pun(second);
+            }
+            else if (type.MemberNames.Count == 1) {
+                var memName = type.MemberNames.First();
+                var memType = type.UnionSignature.Members.First(x => x.Name == memName).Type;
+
+                if (memType.CanUnifyTo(second, types)) {
+                    return new UnificationResult {
+                        Kind = UnificationKind.Convert,
+                        Unifier = (syntax, types) => new UnionMemberAccessSyntax {
+                            Location = syntax.Location,
+                            MemberName = memName,
+                            Operand = syntax,
+                            ReturnType = memType
+                        }
+                    };
+                }
             }
 
             return UnificationResult.None;

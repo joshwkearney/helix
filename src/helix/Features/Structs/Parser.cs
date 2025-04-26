@@ -25,12 +25,11 @@ namespace Helix.Parsing {
             this.Advance(TokenKind.OpenBrace);
 
             while (!this.Peek(TokenKind.CloseBrace)) {
-                var memStart = this.Advance(TokenKind.VarKeyword);
                 var memName = this.Advance(TokenKind.Identifier);
                 this.Advance(TokenKind.AsKeyword);
 
                 var memType = this.TopExpression();
-                var memLoc = memStart.Location.Span(memType.Location);
+                var memLoc = memName.Location.Span(memType.Location);
 
                 this.Advance(TokenKind.Semicolon);
                 mems.Add(new ParseStructMember {

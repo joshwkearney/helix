@@ -25,8 +25,7 @@ public record MemberAccessParseSyntax : IParseSyntax {
                     Location = this.Location,
                     Operand = operand,
                     MemberName = "count",
-                    ReturnType = PrimitiveType.Word,
-                    AlwaysJumps = operand.AlwaysJumps
+                    ReturnType = PrimitiveType.Word
                 };
 
                 return new TypeCheckResult(result, types);
@@ -46,8 +45,7 @@ public record MemberAccessParseSyntax : IParseSyntax {
                     Location = this.Location,
                     Operand = operand,
                     MemberName = this.MemberName,
-                    ReturnType = field.Type,
-                    AlwaysJumps = operand.AlwaysJumps
+                    ReturnType = field.Type
                 };
 
                 return new TypeCheckResult(result, types);

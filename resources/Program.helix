@@ -1,30 +1,12 @@
-﻿func test(limit as word) as word {
-    var i = 0;
-
-	while true {
-	    if i < limit {
-	        i += 1;  
-	        continue;
-	    }
-	    
-	    break;
-	}
-
-	return 99;
+﻿union Option {
+    none as void;
+    value as word;
 }
 
-c_ptr(byte)
-
-&word -> borrowed &word
-
-borrow word[]
-borrow &word
-borrow 
-
-func test(borrow array as &word) {
-    unsafe {
-        var x = *(array + 7);
+func test(x as Option) as word {
+    if (x is none) {
+        return 0;
     }
+    
+    return x + 6;
 }
-
-&f as (func(word, word) as word);

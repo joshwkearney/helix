@@ -3,38 +3,26 @@ using Helix.Analysis.Predicates;
 using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Collections;
-using Helix.Features.Unions.ParseSyntax;
 using Helix.Parsing;
-using Helix.Syntax;
 
 namespace Helix.Features.Unions {
-    public class IsUnionMemberPredicate : SyntaxPredicateLeaf {
-        public required IdentifierPath TargetPath { get; init; }
-
-        public required ValueSet<string> MemberNames { get; init; }
-
+    public record IsUnionMemberPredicate : SyntaxPredicateLeaf {
+        public required IdentifierPath VariablePath { get; init; }
+        
+        public required HelixType UnionType { get; init; }
+        
         public required UnionType UnionSignature { get; init; }
 
-        public override IReadOnlyList<IParseSyntax> ApplyToTypes(TokenLocation loc, TypeFrame types) {
-            if (this.MemberNames.Count != 1) {
-                return Array.Empty<IParseSyntax>();
-            }
-
-            var memName = this.MemberNames.First();
-            var member = this.UnionSignature.Members.First(x => x.Name == memName);
-
-            if (!types.TryGetVariable(this.TargetPath, out var varSig)) {
-                throw new Exception();
-            }
-
-            var inject = new FlowVarParseSyntax {
-                Location = loc,
-                UnionMember = member,
-                ShadowedPath = this.TargetPath,
-                ShadowedType = varSig
+        public required ValueSet<string> MemberNames { get; init; }
+        
+        public override TypeFrame ApplyToTypes(TypeFrame types) {
+            var singType = new SingularUnionType {
+                UnionType = this.UnionType,
+                UnionSignature = this.UnionSignature,
+                MemberNames = this.MemberNames
             };
 
-            return [inject];
+            return types.WithValue(this.VariablePath, new PointerType(singType));
         }
 
         public override bool TryOrWith(ISyntaxPredicate pred, out ISyntaxPredicate result) {
@@ -43,14 +31,15 @@ namespace Helix.Features.Unions {
                 return false;
             }
 
-            if (other.TargetPath != this.TargetPath || other.UnionSignature != this.UnionSignature) {
+            if (other.VariablePath != this.VariablePath || other.UnionSignature != this.UnionSignature) {
                 result = null;
                 return false;
             }
 
             result = new IsUnionMemberPredicate {
-                TargetPath = this.TargetPath,
+                VariablePath = this.VariablePath,
                 UnionSignature = this.UnionSignature,
+                UnionType = this.UnionType,
                 MemberNames = this.MemberNames.Union(other.MemberNames)
             };
 
@@ -63,7 +52,7 @@ namespace Helix.Features.Unions {
                 return false;
             }
 
-            if (other.TargetPath != this.TargetPath || other.UnionSignature != this.UnionSignature) {
+            if (other.VariablePath != this.VariablePath || other.UnionSignature != this.UnionSignature) {
                 result = null;
                 return false;
             }
@@ -76,8 +65,9 @@ namespace Helix.Features.Unions {
             }
             
             result = new IsUnionMemberPredicate {
-                TargetPath = this.TargetPath,
+                VariablePath = this.VariablePath,
                 UnionSignature = this.UnionSignature,
+                UnionType = this.UnionType,
                 MemberNames = overlap
             };
 
@@ -86,8 +76,9 @@ namespace Helix.Features.Unions {
 
         public override ISyntaxPredicate Negate() {
             var result = new IsUnionMemberPredicate {
-                TargetPath = this.TargetPath,
+                VariablePath = this.VariablePath,
                 UnionSignature = this.UnionSignature,
+                UnionType = this.UnionType,
                 MemberNames = this.UnionSignature.Members
                     .Select(x => x.Name)
                     .ToValueSet()
@@ -96,37 +87,13 @@ namespace Helix.Features.Unions {
 
             return result;
         }
-
-        public override bool Equals(object other) {
-            if (other is ISyntaxPredicate pred) {
-                return this.Equals(pred);
-            }
-
-            return false;
-        }
-
-        public override int GetHashCode() {
-            return this.TargetPath.GetHashCode()
-                + 11 * this.UnionSignature.GetHashCode()
-                + 13 * this.MemberNames.GetHashCode();
-        }
-
-        public override bool Equals(ISyntaxPredicate other) {
-            if (other is not IsUnionMemberPredicate pred) {
-                return false;
-            }
-
-            return this.MemberNames == pred.MemberNames
-                && this.TargetPath == pred.TargetPath
-                && this.UnionSignature == pred.UnionSignature;
-        }
-
+        
         public override string ToString() {
             if (this.MemberNames.Count == 1) {
-                return this.TargetPath.Segments.Last() + $" is {this.MemberNames.First()}";
+                return this.VariablePath.Segments.Last() + $" is {this.MemberNames.First()}";
             }
             else {
-                return this.TargetPath.Segments.Last() + " is { " + string.Join("; ", this.MemberNames) + " }";
+                return this.VariablePath.Segments.Last() + " is { " + string.Join("; ", this.MemberNames) + " }";
             }
         }
     }
