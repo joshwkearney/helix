@@ -247,7 +247,8 @@ namespace Helix.Analysis.TypeChecking {
                 Unifier = (syntax, t) => {
                     var newStruct = new NewStructParseSyntax {
                         Location = syntax.Location,
-                        Signature = sig,
+                        StructSignature = sig,
+                        StructType = structType
                     };
                     
                     var block = new BlockSyntax {
@@ -277,7 +278,8 @@ namespace Helix.Analysis.TypeChecking {
                     
                     var newUnion = new NewUnionSyntax {
                         Location = syntax.Location,
-                        Signature = sig,
+                        UnionSignature = sig,
+                        UnionType = unionType,
                         Name = sig.Members[0].Name,
                         Value = value,
                         AlwaysJumps = false

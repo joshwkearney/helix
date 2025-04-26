@@ -53,3 +53,17 @@ func test2(z as &word) as word {
     
     return x + 2;
 }
+
+union Option {
+    none as void;
+    value as word;
+}
+
+func test(x as Option) as word {
+    if x is none {
+        return 0;
+    }
+    
+    return x + 1;
+}
+

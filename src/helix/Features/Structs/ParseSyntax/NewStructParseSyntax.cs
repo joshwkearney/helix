@@ -10,8 +10,10 @@ namespace Helix.Features.Structs.ParseSyntax;
 public class NewStructParseSyntax : IParseSyntax {
     public required TokenLocation Location { get; init; }
         
-    public required StructType Signature { get; init; }
-
+    public required StructType StructSignature { get; init; }
+    
+    public required HelixType StructType { get; init; }
+    
     public IReadOnlyList<string> Names { get; init; } = [];
 
     public IReadOnlyList<IParseSyntax> Values { get; init; } = [];
@@ -28,7 +30,7 @@ public class NewStructParseSyntax : IParseSyntax {
             if (this.Names[i] != null) {
                 names[i] = this.Names[i]!;
 
-                var index = this.Signature.Members
+                var index = this.StructSignature.Members
                     .Select((x, i) => new { Index = i, Value = x.Name })
                     .Where(x => x.Value == this.Names[i])
                     .Select(x => x.Index)
@@ -39,15 +41,15 @@ public class NewStructParseSyntax : IParseSyntax {
             }
 
             // Make sure we don't have too many arguments
-            if (missingCounter >= this.Signature.Members.Count) {
+            if (missingCounter >= this.StructSignature.Members.Count) {
                 throw new TypeException(
                     this.Location,
                     "Invalid Initialization",
                     "This initializer has provided too many "
-                  + $"arguments for the type '{this.Signature}'");
+                  + $"arguments for the type '{this.StructSignature}'");
             }
 
-            names[i] = this.Signature.Members[missingCounter++].Name;
+            names[i] = this.StructSignature.Members[missingCounter++].Name;
         }
 
         var dups = names
@@ -66,7 +68,7 @@ public class NewStructParseSyntax : IParseSyntax {
 
         var undefinedFields = names
             .Select(x => x)
-            .Except(this.Signature.Members.Select(x => x.Name))
+            .Except(this.StructSignature.Members.Select(x => x.Name))
             .ToArray();
 
         // Make sure that all members are defined in the struct
@@ -75,13 +77,13 @@ public class NewStructParseSyntax : IParseSyntax {
                 this.Location,
                 "Invalid Struct Initialization",
                 $"The member '{undefinedFields.First()}' does not exist in the "
-              + $"struct type '{this.Signature}'");
+              + $"struct type '{this.StructSignature}'");
         }
 
-        var absentFields = this.Signature.Members
+        var absentFields = this.StructSignature.Members
             .Select(x => x.Name)
             .Except(names)
-            .Select(x => this.Signature.Members.First(y => x == y.Name))
+            .Select(x => this.StructSignature.Members.First(y => x == y.Name))
             .ToArray();
 
         var requiredAbsentFields = absentFields
@@ -102,11 +104,11 @@ public class NewStructParseSyntax : IParseSyntax {
             .Zip(this.Values)
             .ToDictionary(x => x.First, x => x.Second);
 
-        var allNames = this.Signature.Members.Select(x => x.Name).ToArray();
+        var allNames = this.StructSignature.Members.Select(x => x.Name).ToArray();
         var allValues = new List<ISyntax>();
 
         // Unify the arguments to the correct type
-        foreach (var mem in this.Signature.Members) {
+        foreach (var mem in this.StructSignature.Members) {
             if (!presentFields.TryGetValue(mem.Name, out var value)) {
                 value = new VoidLiteral {
                     Location = this.Location
@@ -121,7 +123,8 @@ public class NewStructParseSyntax : IParseSyntax {
 
         var result = new NewStructSyntax {
             Location = this.Location,
-            Signature = this.Signature,
+            StructSignature = this.StructSignature,
+            StructType = this.StructType,
             Names = allNames,
             Values = allValues,
             AlwaysJumps = allValues.Any(x => x.AlwaysJumps)

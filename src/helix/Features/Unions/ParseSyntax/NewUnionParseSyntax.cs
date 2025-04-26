@@ -10,7 +10,9 @@ namespace Helix.Features.Unions.ParseSyntax;
 public class NewUnionParseSyntax : IParseSyntax {
     public required TokenLocation Location { get; init; }
 
-    public required UnionType Signature { get; init; }
+    public required UnionType UnionSignature { get; init; }
+    
+    public required HelixType UnionType { get; init; }
 
     public IReadOnlyList<string> Names { get; init; } = [];
 
@@ -28,19 +30,19 @@ public class NewUnionParseSyntax : IParseSyntax {
 
         string name;
         if (this.Names.Count == 0 || this.Names[0] == null) {
-            name = this.Signature.Members[0].Name;
+            name = this.UnionSignature.Members[0].Name;
         }
         else {
             name = this.Names[0];
         }
 
-        var mem = this.Signature.Members.FirstOrDefault(x => x.Name == name);
+        var mem = this.UnionSignature.Members.FirstOrDefault(x => x.Name == name);
         if (mem == null) {
             throw new TypeException(
                 this.Location,
                 "Invalid Union Initialization",
                 $"The member '{name}' does not exist in the "
-              + $"union type '{this.Signature}'");
+              + $"union type '{this.UnionSignature}'");
         }
 
         ISyntax value;
@@ -65,7 +67,8 @@ public class NewUnionParseSyntax : IParseSyntax {
 
         var result = new NewUnionSyntax {
             Location = this.Location,
-            Signature = this.Signature,
+            UnionSignature = this.UnionSignature,
+            UnionType = this.UnionType,
             Name = name,
             Value = value,
             AlwaysJumps = value.AlwaysJumps

@@ -77,7 +77,8 @@ namespace Helix.Features.Primitives.ParseSyntax {
             else if (type.AsStruct(types).TryGetValue(out var structSig)) {
                 var result = new NewStructParseSyntax {
                     Location = this.Location,
-                    Signature = structSig,
+                    StructSignature = structSig,
+                    StructType = type,
                     Names = this.Names,
                     Values = this.Values
                 };
@@ -87,7 +88,8 @@ namespace Helix.Features.Primitives.ParseSyntax {
             else if (type.AsUnion(types).TryGetValue(out var unionSig)) {
                 var result = new NewUnionParseSyntax {
                     Location = this.Location,
-                    Signature = unionSig,
+                    UnionSignature = unionSig,
+                    UnionType = type,
                     Names = this.Names,
                     Values = this.Values
                 };

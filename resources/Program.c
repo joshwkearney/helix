@@ -15,6 +15,7 @@ static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth 
 
 typedef union Option_$Union Option_$Union;
 typedef struct Option Option;
+typedef struct Point Point;
 _Word test(_Region* _return_region, Option x);
 
 union Option_$Union {
@@ -27,12 +28,14 @@ struct Option {
     Option_$Union data;
 };
 
-_Word test(_Region* _return_region, Option x) {
-    /* Line 7: If statement */
-    if (((x.tag) == 0)) { 
-        return 0;
-    } 
+struct Point {
+    _Word x;
+    _Word y;
+};
 
-    return (((x.data).value) + 1);
+_Word test(_Region* _return_region, Option x) {
+    Point p = (Point){ .x= 5, .y= 6 };
+
+    return 5;
 }
 

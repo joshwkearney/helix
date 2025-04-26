@@ -9,7 +9,9 @@ namespace Helix.Features.Structs.Syntax {
     public class NewStructSyntax : ISyntax {
         public required TokenLocation Location { get; init; }
         
-        public required StructType Signature { get; init; }
+        public required StructType StructSignature { get; init; }
+        
+        public required HelixType StructType { get; init; }
         
         public required IReadOnlyList<string> Names { get; init; }
         
@@ -17,7 +19,7 @@ namespace Helix.Features.Structs.Syntax {
         
         public required bool AlwaysJumps { get; init; }
 
-        public HelixType ReturnType => this.Signature;
+        public HelixType ReturnType => this.StructType;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var memValues = this.Values
@@ -29,7 +31,7 @@ namespace Helix.Features.Structs.Syntax {
             }
 
             return new CCompoundExpression() {
-                Type = writer.ConvertType(this.Signature, types),
+                Type = writer.ConvertType(this.StructType, types),
                 MemberNames = this.Names,
                 Arguments = memValues,
             };

@@ -3,10 +3,13 @@
     value as word;
 }
 
+struct Point {
+    x as word;
+    y as word;
+}
+
 func test(x as Option) as word {
-    if x is none {
-        return 0;
-    }
+    var p = new Point { 5, 6 };
     
-    return x + 1;
+    return 5;
 }
