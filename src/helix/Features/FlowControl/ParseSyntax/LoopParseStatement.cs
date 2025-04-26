@@ -12,17 +12,70 @@ public record LoopParseStatement : IParseSyntax {
     public bool IsPure => false;
 
     public TypeCheckResult CheckTypes(TypeFrame types) {
-        types = types.WithScope("$loop");
-        (var body, types) = this.Body.CheckTypes(types);
-        var doesBreak = !types.BreakFrames.IsEmpty;
-        types = types.PopScope().ClearLoopFrames();
+        ISyntax body;
+        bool alwaysJumps = true;
+        
+        while (true) {
+            // Push a new context for our loop body
+            types = types.WithScope("$loop");
+            
+            (body, var loopTypes) = this.TypeCheckLoopBody(types);
+            
+            // If there aren't any continue frames, this loop never loops so we can be done
+            if (loopTypes.ContinueFrames.IsEmpty) {
+                break;
+            }
+            
+            // If we have continuation frames, we need to combine them into one
+            // frame that represents the state of our types after any loop iteration
+            var continueTypes = loopTypes.ContinueFrames.Aggregate((x, y) => x.CombineSignaturesWith(y));
+
+            // If that frame doesn't match our starting frame, we type-checked with types that
+            // are too specific and we need to combine them and do this again
+            if (!types.DoSignaturesMatchWith(continueTypes)) {
+                types = types
+                    .CombineSignaturesWith(continueTypes)
+                    .PopScope()
+                    .PopLoopFrames();
+                
+                continue;
+            }
+            
+            // If we don't have any break frames, that means the loop is either infinite or it
+            // returns from the function without going to the next statement after the loop.
+            // In this case, we can be done
+            if (loopTypes.BreakFrames.IsEmpty) {
+                break;
+            }
+            
+            // If our continue types do match the initial frame, then we need to combine all of
+            // the break types to create the frame for after the loop
+            var breakTypes = loopTypes.BreakFrames.Aggregate((x, y) => x.CombineSignaturesWith(y));
+
+            types = breakTypes.PopScope().PopLoopFrames();
+            alwaysJumps = false;
+            
+            break;
+        }
 
         var result = new LoopStatement {
             Location = this.Location,
             Body = body,
-            AlwaysJumps = !doesBreak
+            AlwaysJumps = alwaysJumps
         };
 
         return new TypeCheckResult(result, types);
+    }
+
+    private (ISyntax body, TypeFrame types) TypeCheckLoopBody(TypeFrame initalTypes) {
+        // Actually typecheck the loop body
+        var (body, loopTypes) = this.Body.CheckTypes(initalTypes);
+
+        // If the body itself doesn't jump, then add its types as an implicit continue frame
+        if (!body.AlwaysJumps) {
+            loopTypes = loopTypes.WithContinueFrame(loopTypes);
+        }
+
+        return (body, loopTypes);
     }
 }

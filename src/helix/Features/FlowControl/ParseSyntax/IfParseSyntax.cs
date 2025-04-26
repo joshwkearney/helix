@@ -38,7 +38,7 @@ public record IfParseSyntax : IParseSyntax {
             .OrElse(() => new VoidLiteral { Location = this.Location })
             .CheckTypes(ifFalseTypes);
 
-        ifTrueTypes = ifFalseTypes.PopScope();
+        ifTrueTypes = ifTrueTypes.PopScope();
         ifFalseTypes = ifFalseTypes.PopScope();
         
         checkedIfTrue = checkedIfTrue.UnifyFrom(checkedIfFalse, types);
@@ -60,6 +60,13 @@ public record IfParseSyntax : IParseSyntax {
             // If both branches jump, leave types alone because none of the context propagates
         }
 
+        // We want to track break and continue context from both branches
+        types = types
+            .CombineBreakFramesWith(ifTrueTypes)
+            .CombineBreakFramesWith(ifFalseTypes)
+            .CombineContinueFramesWith(ifTrueTypes)
+            .CombineContinueFramesWith(ifFalseTypes);
+        
         var result = new IfSyntax {
             Location = this.Location,
             Condition = cond,

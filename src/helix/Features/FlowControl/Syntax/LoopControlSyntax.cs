@@ -17,7 +17,16 @@ namespace Helix.Features.FlowControl {
 
         public bool IsPure => false;
 
-        public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
+        public TypeCheckResult CheckTypes(TypeFrame types) {
+            if (this.Kind == LoopControlKind.Break) {
+                types = types.WithBreakFrame(types);
+            }
+            else {
+                types = types.WithContinueFrame(types);
+            }
+
+            return new TypeCheckResult(this, types);
+        }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (this.Kind == LoopControlKind.Break) {

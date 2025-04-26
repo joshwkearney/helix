@@ -7,13 +7,12 @@ struct Test {
 	var x as word;
 };
 
-func test() as word {
-	var a = 45;
-	var b = &a;
-	
-	if b* > a then {
-	    return 0;
+func test(var limit as word) as word {
+    var i = 0;
+
+	while i < limit {
+	    i += 1;
 	};
 
-	return a + 7;
+	return i;
 };

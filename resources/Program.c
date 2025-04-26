@@ -15,8 +15,7 @@ static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth 
 
 typedef struct Point Point;
 typedef struct Test Test;
-typedef struct _Word_$Pointer _Word_$Pointer;
-_Word test(_Region* _return_region);
+_Word test(_Region* _return_region, _Word limit);
 
 struct Point {
     _Word x;
@@ -27,22 +26,21 @@ struct Test {
     _Word x;
 };
 
-struct _Word_$Pointer {
-    _Word* data;
-    _Region* region;
-};
+_Word test(_Region* _return_region, _Word limit) {
+    _Word i = 0;
 
-_Word test(_Region* _return_region) {
-    _Word a = 45;
+    /* Line 13: Loop */
+    while (1) {
+        /* Line 13: If statement */
+        if (!(i < limit)) { 
+            break;
+        } 
 
-    _Word_$Pointer b = (_Word_$Pointer){ (&a) };
+        /* Line 14: Assignment statement */
+        i = (i + 1);
+    }
 
-    /* Line 14: If statement */
-    if ((a > a)) { 
-        return 0;
-    } 
-
-    return (a + 7);
+    return i;
 
     return 0;
 }

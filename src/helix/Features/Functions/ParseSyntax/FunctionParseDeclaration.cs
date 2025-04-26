@@ -44,7 +44,7 @@ public record FunctionParseDeclaration : IDeclaration {
         types = types.WithScope(this.signature.Name);
 
         // Declare parameters
-        FunctionsHelper.DeclareParameters(sig, path, types);
+        types = FunctionsHelper.DeclareParameters(sig, path, types);
             
         // Check types
         var body = this.body;

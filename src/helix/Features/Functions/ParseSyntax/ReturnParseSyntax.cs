@@ -19,7 +19,7 @@ namespace Helix.Features.Functions {
 
             (var operand, types) = this.Operand.CheckTypes(types);
             operand = operand.UnifyTo(sig.ReturnType, types);
-
+            
             var result = new ReturnSyntax {
                 Location = this.Location,
                 Operand = operand

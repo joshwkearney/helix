@@ -137,7 +137,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.ContinueFrames.Add(types));
         }
         
-        public TypeFrame ClearLoopFrames() {
+        public TypeFrame PopLoopFrames() {
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
@@ -180,6 +180,42 @@ namespace Helix.Analysis.TypeChecking {
                 sigs,
                 this.BreakFrames,
                 this.ContinueFrames);
+        }
+
+        public TypeFrame CombineBreakFramesWith(TypeFrame other) {
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                this.NominalSignatures,
+                this.BreakFrames.Union(other.BreakFrames),
+                this.ContinueFrames);
+        }
+        
+        public TypeFrame CombineContinueFramesWith(TypeFrame other) {
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                this.NominalSignatures,
+                this.BreakFrames,
+                this.ContinueFrames.Union(other.ContinueFrames));
+        }
+
+        public bool DoSignaturesMatchWith(TypeFrame other) {
+            if (this.NominalSignatures.Count != other.NominalSignatures.Count) {
+                return false;
+            }
+
+            foreach (var (key, value) in this.NominalSignatures) {
+                if (!other.NominalSignatures.TryGetValue(key, out var otherValue)) {
+                    return false;
+                }
+
+                if (value != otherValue) {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
