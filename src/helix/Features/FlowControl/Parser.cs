@@ -109,7 +109,7 @@ namespace Helix.Parsing {
 
             var endIndex = this.TopExpression();
 
-            startIndex = new AsParseSyntax {
+            /*startIndex = new AsParseSyntax {
                 Location = startIndex.Location,
                 Operand = startIndex,
                 TypeSyntax = new VariableAccessParseSyntax {
@@ -125,14 +125,14 @@ namespace Helix.Parsing {
                     Location = endIndex.Location,
                     VariableName = "word"
                 }
-            };
+            };*/
 
             var counterName = id.Value;
 
             var counterDecl = new VarParseStatement {
                 Location = startTok.Location,
                 VariableNames = [counterName],
-                VariableTypes = new Option<IParseSyntax>[] { Option.None },
+                VariableTypes = [Option.None],
                 Assignment = startIndex
             };
 

@@ -1,10 +1,10 @@
 struct Point {
-	var x as word;
-	var y as Test;
+	x as word;
+	y as Test;
 }
 
 struct Test {
-	var x as word;
+	x as word;
 }
 
 func fib(x as word) as word {    
@@ -67,3 +67,12 @@ func test(x as Option) as word {
     return x + 1;
 }
 
+func test() as word {
+    var sum = 0;
+    
+    for i = 0 until 10 {
+        sum += i;
+    }
+    
+    return sum;
+}

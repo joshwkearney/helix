@@ -13,29 +13,27 @@ extern void _region_destroy(_Region* region);
 extern void* _region_malloc(_Region* region, int size);
 static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth < r2->depth ? r1 : r2;  }
 
-typedef union Option_$Union Option_$Union;
-typedef struct Option Option;
-typedef struct Point Point;
-_Word test(_Region* _return_region, Option x);
+_Word test(_Region* _return_region);
 
-union Option_$Union {
-    int none;
-    _Word value;
-};
+_Word test(_Region* _return_region) {
+    _Word sum = 0;
 
-struct Option {
-    int tag;
-    Option_$Union data;
-};
+    _Word i = 0;
 
-struct Point {
-    _Word x;
-    _Word y;
-};
+    /* Line 4: Loop */
+    while (1) {
+        /* Line 4: If statement */
+        if ((i >= 10)) { 
+            break;
+        } 
 
-_Word test(_Region* _return_region, Option x) {
-    Point p = (Point){ .x= 5, .y= 6 };
+        /* Line 5: Assignment statement */
+        sum = (sum + i);
 
-    return 5;
+        /* Line 4: Assignment statement */
+        i = (i + 1);
+    }
+
+    return sum;
 }
 
