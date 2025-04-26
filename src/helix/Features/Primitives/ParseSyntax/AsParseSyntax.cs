@@ -18,7 +18,7 @@ namespace Helix.Features.Primitives.ParseSyntax {
             if (!this.TypeSyntax.AsType(types).TryGetValue(out var targetType)) {
                 throw TypeException.ExpectedTypeExpression(this.TypeSyntax.Location);
             }
-
+            
             arg = arg.UnifyTo(targetType, types);
             
             return new TypeCheckResult(arg, types);

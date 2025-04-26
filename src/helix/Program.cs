@@ -13,4 +13,4 @@ catch (HelixException ex) {
     Console.WriteLine(ex.Message);
 }
 
-Console.Read();
+//Console.Read();

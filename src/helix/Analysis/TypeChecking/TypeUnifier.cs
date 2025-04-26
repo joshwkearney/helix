@@ -43,6 +43,10 @@ namespace Helix.Analysis.TypeChecking {
         public static bool CanUnifyTo(this HelixType type1, HelixType type2, TypeFrame types) {
             return TryUnify(type1, type2, types).Kind.IsSubsetOf(UnificationKind.Convert);
         }
+        
+        public static bool CanPunTo(this HelixType type1, HelixType type2, TypeFrame types) {
+            return TryUnify(type1, type2, types).Kind.IsSubsetOf(UnificationKind.Pun);
+        }
 
         public static bool CanUnifyFrom(this HelixType type1, HelixType type2, TypeFrame types, out HelixType resultType) {
             if (type2.CanUnifyTo(type1, types)) {
@@ -68,6 +72,10 @@ namespace Helix.Analysis.TypeChecking {
 
         public static bool CanUnifyTo(this ISyntax fromParse, HelixType toType, TypeFrame types) {
             return fromParse.ReturnType.CanUnifyTo(toType, types);
+        }
+        
+        public static bool CanPunTo(this ISyntax fromParse, HelixType toType, TypeFrame types) {
+            return fromParse.ReturnType.CanPunTo(toType, types);
         }
 
         public static ISyntax UnifyTo(this ISyntax fromParse, HelixType toType, TypeFrame types) {

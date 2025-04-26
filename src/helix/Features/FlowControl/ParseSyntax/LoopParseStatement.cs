@@ -37,12 +37,12 @@ public record LoopParseStatement : IParseSyntax {
 
                 // If we have continuation frames, we need to combine them into one
                 // frame that represents the state of our types after any loop iteration
-                var continueTypes = loopTypes.ContinueFrames.Aggregate((x, y) => x.CombineSignaturesWith(y));
+                var continueTypes = loopTypes.ContinueFrames.Aggregate((x, y) => x.CombineValuesWith(y));
 
                 // If that frame doesn't match our starting frame, we type-checked with types that
                 // are too specific and we need to combine them and do this again
-                if (!types.DoSignaturesMatchWith(continueTypes)) {
-                    types = types.CombineSignaturesWith(continueTypes);
+                if (!types.DoValuesMatchWith(continueTypes)) {
+                    types = types.CombineValuesWith(continueTypes);
                     continue;
                 }
 
@@ -56,7 +56,7 @@ public record LoopParseStatement : IParseSyntax {
 
                 // If our continue types do match the initial frame, then we need to combine all of
                 // the break types to create the frame for after the loop
-                types = loopTypes.BreakFrames.Aggregate((x, y) => x.CombineSignaturesWith(y));
+                types = loopTypes.BreakFrames.Aggregate((x, y) => x.CombineValuesWith(y));
                 break;
             }
             finally {

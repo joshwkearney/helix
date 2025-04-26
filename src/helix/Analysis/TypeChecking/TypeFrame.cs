@@ -18,32 +18,42 @@ namespace Helix.Analysis.TypeChecking {
         
         public ImmutableDictionary<IdentifierPath, HelixType> Signatures { get; }
         
+        public ImmutableDictionary<IdentifierPath, HelixType> Values { get; }
+        
         public ImmutableHashSet<TypeFrame> BreakFrames { get; }
         
         public ImmutableHashSet<TypeFrame> ContinueFrames { get; }
+        
+        public ImmutableHashSet<IdentifierPath> OpaqueVariables { get; }
         
         public TypeFrame() {
             this.Scope = new IdentifierPath();
             
             this.Declarations = ImmutableDictionary<IdentifierPath, NominalType>.Empty;
             this.Signatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
+            this.Values = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
             
             this.BreakFrames = ImmutableHashSet<TypeFrame>.Empty;
             this.ContinueFrames = ImmutableHashSet<TypeFrame>.Empty;
+            this.OpaqueVariables = ImmutableHashSet<IdentifierPath>.Empty;
         }
 
         private TypeFrame(
             IdentifierPath scope,
             ImmutableDictionary<IdentifierPath, NominalType> decls, 
             ImmutableDictionary<IdentifierPath, HelixType> sigs, 
+            ImmutableDictionary<IdentifierPath, HelixType> values, 
             ImmutableHashSet<TypeFrame> breakFrames,
-            ImmutableHashSet<TypeFrame> continueFrames) {
+            ImmutableHashSet<TypeFrame> continueFrames,
+            ImmutableHashSet<IdentifierPath> opaqueVars) {
             
             this.Scope = scope;
             this.Declarations = decls;
             this.Signatures = sigs;
+            this.Values = values;
             this.BreakFrames = breakFrames;
             this.ContinueFrames = continueFrames;
+            this.OpaqueVariables = opaqueVars;
         }
 
         public TypeFrame WithScope(string newSegment) {
@@ -51,8 +61,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope.Append(newSegment), 
                 this.Declarations, 
                 this.Signatures,
+                this.Values,
                 this.BreakFrames,
-                this.ContinueFrames);
+                this.ContinueFrames,
+                this.OpaqueVariables);
         }
 
         public TypeFrame PopScope() {
@@ -62,8 +74,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope.Pop(),
                 decls, 
                 this.Signatures,
+                this.Values,
                 this.BreakFrames,
-                this.ContinueFrames);
+                this.ContinueFrames,
+                this.OpaqueVariables);
         }
 
         public TypeFrame WithDeclaration(IdentifierPath path, NominalType type) {
@@ -77,8 +91,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope,
                 decls, 
                 this.Signatures,
+                this.Values,
                 this.BreakFrames,
-                this.ContinueFrames);
+                this.ContinueFrames,
+                this.OpaqueVariables);
         }
         
         public TypeFrame WithSignature(IdentifierPath path, HelixType sig) {
@@ -86,14 +102,46 @@ namespace Helix.Analysis.TypeChecking {
                 throw new InvalidOperationException();
             }
             
-            var sigs = this.Signatures.SetItem(path, sig);
+            if (this.Signatures.ContainsKey(path)) {
+                throw new InvalidOperationException($"This type frame already contains a signature at the path '{path}'");
+            }
+            
+            var sigs = this.Signatures.Add(path, sig);
 
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
                 sigs,
+                this.Values,
                 this.BreakFrames,
-                this.ContinueFrames);
+                this.ContinueFrames,
+                this.OpaqueVariables);
+        }
+        
+        public TypeFrame WithValue(IdentifierPath path, HelixType sig) {
+            if (this.OpaqueVariables.Contains(path)) {
+                return this;
+            }
+            
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                this.Signatures,
+                this.Values.SetItem(path, sig),
+                this.BreakFrames,
+                this.ContinueFrames,
+                this.OpaqueVariables);
+        }
+        
+        public TypeFrame PopValue(IdentifierPath path) {
+            return new TypeFrame(
+                this.Scope, 
+                this.Declarations, 
+                this.Signatures,
+                this.Values.Remove(path),
+                this.BreakFrames,
+                this.ContinueFrames,
+                this.OpaqueVariables.Add(path));
         }
         
         public TypeFrame WithBreakFrame(TypeFrame types) {
@@ -101,8 +149,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
+                this.Values,
                 this.BreakFrames.Add(types),
-                this.ContinueFrames);
+                this.ContinueFrames,
+                this.OpaqueVariables);
         }
         
         public TypeFrame WithContinueFrame(TypeFrame types) {
@@ -110,8 +160,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
+                this.Values,
                 this.BreakFrames,
-                this.ContinueFrames.Add(types));
+                this.ContinueFrames.Add(types),
+                this.OpaqueVariables);
         }
         
         public TypeFrame PopLoopFrames() {
@@ -119,71 +171,73 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
+                this.Values,
                 this.BreakFrames.Clear(),
-                this.ContinueFrames.Clear());
+                this.ContinueFrames.Clear(),
+                this.OpaqueVariables);
         }
         
         public string GetVariableName() {
             return "$t_" + this.tempCounter++;
         }
 
-        public TypeFrame CombineSignaturesWith(TypeFrame other) {
-            var sigs = this.Signatures;
-            var keys = this.Signatures.Keys.Union(other.Signatures.Keys);
+        public TypeFrame CombineValuesWith(TypeFrame other) {
+            var values = this.Values;
+            var keys = this.Values.Keys.Union(other.Values.Keys);
+            var opaque = this.OpaqueVariables.Union(other.OpaqueVariables);
 
             foreach (var key in keys) {
-                if (!this.Declarations.ContainsKey(key)) {
-                    sigs = sigs.SetItem(key, other.Signatures[key]);
+                if (opaque.Contains(key)) {
+                    values = values.Remove(key);
+                    continue;
+                }
+                else if (!this.Declarations.ContainsKey(key)) {
+                    values = values.SetItem(key, other.Values[key]);
                     continue;
                 }
                 else if (!other.Declarations.ContainsKey(key)) {
-                    sigs = sigs.SetItem(key, this.Signatures[key]);
+                    values = values.SetItem(key, this.Values[key]);
                     continue;
                 }
                 
-                var first = this.Signatures[key];
-                var second = other.Signatures[key];
+                var first = this.Values[key];
+                var second = other.Values[key];
 
                 if (!first.CanUnifyFrom(second, this, out var result)) {
                     throw new InvalidCastException();
                 }
                 
-                sigs = sigs.SetItem(key, result);
+                values = values.SetItem(key, result);
             }
 
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
-                sigs,
+                this.Signatures,
+                values,
                 this.BreakFrames,
-                this.ContinueFrames);
+                this.ContinueFrames,
+                opaque);
         }
 
-        public TypeFrame CombineBreakFramesWith(TypeFrame other) {
+        public TypeFrame CombineLoopFramesWith(TypeFrame other) {
             return new TypeFrame(
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
+                this.Values,
                 this.BreakFrames.Union(other.BreakFrames),
-                this.ContinueFrames);
-        }
-        
-        public TypeFrame CombineContinueFramesWith(TypeFrame other) {
-            return new TypeFrame(
-                this.Scope, 
-                this.Declarations, 
-                this.Signatures,
-                this.BreakFrames,
-                this.ContinueFrames.Union(other.ContinueFrames));
+                this.ContinueFrames.Union(other.ContinueFrames),
+                this.OpaqueVariables);
         }
 
-        public bool DoSignaturesMatchWith(TypeFrame other) {
-            if (this.Signatures.Count != other.Signatures.Count) {
+        public bool DoValuesMatchWith(TypeFrame other) {
+            if (this.Values.Count != other.Values.Count) {
                 return false;
             }
 
-            foreach (var (key, value) in this.Signatures) {
-                if (!other.Signatures.TryGetValue(key, out var otherValue)) {
+            foreach (var (key, value) in this.Values) {
+                if (!other.Values.TryGetValue(key, out var otherValue)) {
                     return false;
                 }
 

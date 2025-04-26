@@ -24,7 +24,7 @@ namespace Helix.Analysis.Types {
         }
 
         public override string ToString() {
-            return this.InnerType + "*";
+            return "&" + this.InnerType;
         }
     }
 }

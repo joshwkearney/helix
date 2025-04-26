@@ -23,7 +23,7 @@ public record DereferenceParseSyntax : IParseSyntax {
             var access = new VariableAccessSyntax {
                 Location = this.Location,
                 VariablePath = nom.Path,
-                VariableSignature = sig,
+                InnerType = sig.InnerType,
                 IsLValue = false
             };
 

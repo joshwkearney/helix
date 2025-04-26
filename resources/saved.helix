@@ -1,0 +1,55 @@
+struct Point {
+	var x as word;
+	var y as Test;
+}
+
+struct Test {
+	var x as word;
+}
+
+func fib(x as word) as word {    
+    return if x <= 1
+        then x
+        else fib(x - 1) + fib(x - 2);
+}
+
+func fib2(x as word) as word {
+    if x <= 1 {
+        return x;
+    }
+        
+    return fib(x - 1) + fib(x - 2);
+}
+
+
+func test(limit as word) as word {
+    var i = 0;
+
+	while true {
+	    if i < limit {
+	        i += 1;  
+	        continue;
+	    }
+	    
+	    return if i < 5 then 0 else 8;
+	}
+
+	return i;
+}
+
+func comptime() as word {
+    var x = 78;
+    
+    return x + 7;
+}
+
+func test2(z as &word) as word {
+    var x = 45;
+    
+    if *z > 2 {
+        var y = &x;
+        //return x + 1;
+    }
+    
+    return x + 2;
+}

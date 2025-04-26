@@ -21,23 +21,26 @@ public record AssignmentParseStatement : IParseSyntax {
             
         // We have to be able to write into the left hand side
         left = left.ToLValue(types);
-
-        var innerType = left.ReturnType
+        
+        var innerSignature = left.ReturnType
             .AsVariable(types)
             .GetValue()
             .InnerType
             .GetSignature(types);
+
+        HelixType returnType;
         
-        // The assigned type needs to match the left hand side
-        right = right.UnifyTo(innerType, types);
+        if (right.CanPunTo(innerSignature, types)) {
+            returnType = right.ReturnType;
+        }
+        else {
+            returnType = innerSignature;
+            right = right.UnifyTo(innerSignature, types);
+        }
         
-        // If we're assigning a local variable, we need to flush the type
-        // signature so it's not out of date with this assignment
-        
-        // TODO: Instead of writing the signature type, write the assigned type if
-        // this variable hasn't had its address taken
+        // If we're assigning a local variable, we need to update our stored value
         if (left.ReturnType is NominalType nom) {
-            types = types.WithSignature(nom.Path, new PointerType(innerType));
+            types = types.WithValue(nom.Path, new PointerType(returnType));
         }
         
         var result = new AssignmentStatement {

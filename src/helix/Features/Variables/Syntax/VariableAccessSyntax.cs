@@ -11,7 +11,7 @@ namespace Helix.Features.Variables.Syntax;
 public record VariableAccessSyntax : ISyntax {
     public required TokenLocation Location { get; init; }
 
-    public required PointerType VariableSignature { get; init; }
+    public required HelixType InnerType { get; init; }
 
     public required IdentifierPath VariablePath { get; init; }
         
@@ -25,7 +25,7 @@ public record VariableAccessSyntax : ISyntax {
                 return new NominalType(this.VariablePath, NominalTypeKind.Variable);
             }
             else {
-                return this.VariableSignature.InnerType;
+                return this.InnerType;
             }
         }
     }

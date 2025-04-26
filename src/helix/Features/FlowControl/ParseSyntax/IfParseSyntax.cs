@@ -47,7 +47,7 @@ public record IfParseSyntax : IParseSyntax {
 
         if (!checkedIfTrue.AlwaysJumps && !checkedIfFalse.AlwaysJumps) {
             // If neither branch jumps, we have to combine the signatures
-            types = ifTrueTypes.CombineSignaturesWith(ifFalseTypes);
+            types = ifTrueTypes.CombineValuesWith(ifFalseTypes);
         }
         else if (!checkedIfTrue.AlwaysJumps && checkedIfFalse.AlwaysJumps) {
             // If the first branch doesn't jump but the second does, take the first types
@@ -63,10 +63,8 @@ public record IfParseSyntax : IParseSyntax {
 
         // We want to track break and continue context from both branches
         types = types
-            .CombineBreakFramesWith(ifTrueTypes)
-            .CombineBreakFramesWith(ifFalseTypes)
-            .CombineContinueFramesWith(ifTrueTypes)
-            .CombineContinueFramesWith(ifFalseTypes);
+            .CombineLoopFramesWith(ifTrueTypes)
+            .CombineLoopFramesWith(ifFalseTypes);
         
         var result = new IfSyntax {
             Location = this.Location,
