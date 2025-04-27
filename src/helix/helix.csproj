@@ -9,8 +9,4 @@
     <!-- <GenerateDocumentationFile>true</GenerateDocumentationFile>  -->
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\Variables\IR\" />
-  </ItemGroup>
-
 </Project>

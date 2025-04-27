@@ -8,18 +8,24 @@ public class IRWriter {
     private List<IOp> ops = [];
     private int tempCounter = 1;
 
-    public Immediate GetVariable(string name) {
+    public Immediate GetName(string name) {
         if (!this.variableVersions.TryGetValue(name, out var version)) {
             this.variableVersions[name] = version = 1;
         }
 
-        var result = name + "%" + this.variableVersions[name];
+        string result;
+        if (this.variableVersions[name] == 1) {
+            result = name;
+        }
+        else {
+            result = name + "%" + this.variableVersions[name];
+        }
         
         this.variableVersions[name]++;
         return new Immediate.Name(result);
     }
 
-    public Immediate GetVariable() {
+    public Immediate GetName() {
         var result = "%" + this.tempCounter;
 
         this.tempCounter++;
@@ -35,7 +41,13 @@ public class IRWriter {
             this.variableVersions[name] = version = 1;
         }
 
-        var result = name + "%" + this.blockVersions[name];
+        string result;
+        if (this.blockVersions[name] == 1) {
+            result = name;
+        }
+        else {
+            result = name + "%" + this.blockVersions[name];
+        }
         
         this.blockVersions[name]++;
         return result;
@@ -48,5 +60,9 @@ public class IRWriter {
         });
 
         this.ops = [];
+    }
+
+    public override string ToString() {
+        return string.Join(Environment.NewLine, this.ops);
     }
 }

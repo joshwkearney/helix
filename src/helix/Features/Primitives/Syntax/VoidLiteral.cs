@@ -24,6 +24,6 @@ namespace Helix.Features.Primitives.Syntax {
             return new CIntLiteral(0);
         }
 
-        public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName) => new Immediate.Void();
+        public Immediate GenerateIR(IRWriter writer, IRFrame context) => new Immediate.Void();
     }
 }

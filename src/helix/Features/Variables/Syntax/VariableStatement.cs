@@ -5,15 +5,18 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.IRGeneration;
 using Helix.Parsing;
+using Helix.Parsing.IR;
 using Helix.Syntax;
 
 namespace Helix.Features.Variables.Syntax {
-    public record VarStatement : ISyntax {
+    public record VariableStatement : ISyntax {
         public required TokenLocation Location { get; init; }
 
         public required ISyntax Assignment { get; init; }
         
         public required IdentifierPath Path { get; init; }
+        
+        public required PointerType VariableSignature { get; init; }
         
         public required bool AlwaysJumps { get; init; }
         
@@ -23,11 +26,36 @@ namespace Helix.Features.Variables.Syntax {
             return new NominalType(this.Path, NominalTypeKind.Variable);
         }
 
-        public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName = null) {
-            var name = writer.GetVariable(this.Path.Segments.Last());
-            context.SetVariable(this.Path, name);
-            
-            return this.Assignment.GenerateIR(writer, context, name);
+        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+            if (context.AllocatedVariables.Contains(this.Path)) {
+                var name = writer.GetName(this.Path.Segments.Last());
+                writer.WriteOp(new AllocateOp {
+                    ReturnType = this.VariableSignature,
+                    ReturnValue = name
+                });
+                
+                var assign = this.Assignment.GenerateIR(writer, context);
+                writer.WriteOp(new StoreReferenceOp {
+                    Reference = name,
+                    Value = assign
+                });
+
+                context.SetVariable(this.Path, name);
+                return new Immediate.Void();
+            }
+            else {
+                var name = writer.GetName(this.Path.Segments.Last());
+                var assign = this.Assignment.GenerateIR(writer, context);
+                
+                writer.WriteOp(new AliasOp {
+                    ReturnType = this.Assignment.ReturnType,
+                    NewValue = name,
+                    Value = assign
+                });
+                
+                context.SetVariable(this.Path, name);
+                return new Immediate.Void();
+            }
         }
         
         public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {

@@ -24,9 +24,9 @@ public record UnaryNotSyntax : ISyntax {
         };
     }
 
-    public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName = null) {
+    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
         var operand = this.Operand.GenerateIR(writer, context);
-        var name = returnName ?? writer.GetVariable();
+        var name = writer.GetName();
         
         writer.WriteOp(new UnaryOp {
             Operation = UnaryOperatorKind.Not,

@@ -30,10 +30,10 @@ public record BinarySyntax : ISyntax {
         };
     }
 
-    public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName = null) {
+    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
         var left = this.Left.GenerateIR(writer, context);
         var right = this.Right.GenerateIR(writer, context);
-        var name = returnName ?? writer.GetVariable();
+        var name = writer.GetName();
 
         writer.WriteOp(new BinaryOp {
             Left = left,

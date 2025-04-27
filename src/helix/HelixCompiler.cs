@@ -1,6 +1,7 @@
 ﻿using Helix.Parsing;
 using Helix.Generation;
 using Helix.Analysis.TypeChecking;
+using Helix.IRGeneration;
 
 namespace Helix {
     public class HelixCompiler {
@@ -32,14 +33,23 @@ namespace Helix {
                 foreach (var stat in parseStats) {
                     types = stat.DeclareTypes(types);
                 }
-                
-                var writer = new CWriter(this.header);
+
+                var writer = new IRWriter();
 
                 foreach (var parseStat in parseStats) {
-                    var (stat, statTypes) = parseStat.CheckTypes(types);
+                    (var stat, types) = parseStat.CheckTypes(types);
+                    var context = new IRFrame(types.AllocatedVariables);
                     
-                    stat.GenerateCode(statTypes, writer);
+                    stat.GenerateIR(writer, context);
                 }
+                
+                // var writer = new CWriter(this.header);
+                //
+                // foreach (var parseStat in parseStats) {
+                //     var (stat, statTypes) = parseStat.CheckTypes(types);
+                //     
+                //     stat.GenerateCode(statTypes, writer);
+                // }
 
                 return writer.ToString();
             }

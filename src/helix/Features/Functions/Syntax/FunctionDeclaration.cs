@@ -3,6 +3,7 @@ using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
 using Helix.Syntax;
 
@@ -28,6 +29,17 @@ namespace Helix.Features.Functions.Syntax {
             throw new InvalidOperationException();
         }
 
+        public void GenerateIR(IRWriter writer, IRFrame context) {
+            foreach (var par in this.Signature.Parameters) {
+                var name = writer.GetName(par.Name);
+                var path = this.Path.Append(par.Name);
+                
+                context.SetVariable(path, name);
+            }
+            
+            this.Body.GenerateIR(writer, context);
+        }
+        
         public void GenerateCode(TypeFrame types, ICWriter writer) {
             writer.ResetTempNames();
 

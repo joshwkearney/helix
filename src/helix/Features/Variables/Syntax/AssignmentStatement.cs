@@ -3,7 +3,9 @@ using Helix.Analysis.Types;
 using Helix.Features.Primitives;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
+using Helix.Parsing.IR;
 using Helix.Syntax;
 
 namespace Helix.Features.Variables.Syntax {
@@ -17,6 +19,57 @@ namespace Helix.Features.Variables.Syntax {
         public required bool AlwaysJumps { get; init; }
         
         public HelixType ReturnType => PrimitiveType.Void;
+        
+        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+            if (this.Left is ILValue.Local local) {
+                var assign = this.Right.GenerateIR(writer, context);
+                
+                if (context.AllocatedVariables.Contains(local.VariablePath)) {
+                    // We need to store into this variable as a reference   
+                    writer.WriteOp(new StoreReferenceOp {
+                        Reference = context.GetVariable(local.VariablePath),
+                        Value = assign
+                    });
+                }
+                else {
+                    // Emit a temporary assignment that will be removed in the SSA pass
+                    writer.WriteOp(new AssignmentOp {
+                        Variable = context.GetVariable(local.VariablePath),
+                        Value = assign
+                    });
+                }
+            }
+            else if (this.Left is ILValue.Dereference deref) {
+                // We need to store into the reference given by the lvalue
+                var reference = deref.Operand.GenerateIR(writer, context);
+                var assign = this.Right.GenerateIR(writer, context);
+                
+                writer.WriteOp(new StoreReferenceOp {
+                    Reference = reference,
+                    Value = assign
+                });
+            }
+            else if (this.Left is ILValue.ArrayIndex arrayIndex) {
+                // We need to store into an array
+                var array = arrayIndex.Operand.GenerateIR(writer, context);
+                var index = arrayIndex.Index.GenerateIR(writer, context);
+                var assign = this.Right.GenerateIR(writer, context);
+                
+                writer.WriteOp(new StoreArrayOp {
+                    Array = array,
+                    Index = index,
+                    Value = assign
+                });
+            }
+            else if (this.Left is ILValue.StructMemberAccess structAccess) {
+                throw new NotImplementedException();
+            }
+            else {
+                throw new InvalidOperationException();
+            }
+
+            return new Immediate.Void();
+        }
         
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = this.GenerateLValue(this.Left, types, writer);

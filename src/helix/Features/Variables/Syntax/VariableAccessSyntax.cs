@@ -3,7 +3,9 @@ using Helix.Analysis.TypeChecking;
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
+using Helix.Parsing.IR;
 using Helix.Syntax;
 
 namespace Helix.Features.Variables.Syntax;
@@ -18,7 +20,25 @@ public record VariableAccessSyntax : ISyntax {
     public bool AlwaysJumps => false;
     
     public ILValue ToLValue(TypeFrame types) {
-        return new ILValue.Local(this.VariablePath, types.Signatures[this.VariablePath]);
+        return new ILValue.Local(this.VariablePath, new NominalType(this.VariablePath, NominalTypeKind.Variable));
+    }
+    
+    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+        if (context.AllocatedVariables.Contains(this.VariablePath)) {
+            // If this variable is opaque, it is storing a reference and we need to load from it
+            var temp = writer.GetName();
+
+            writer.WriteOp(new LoadReferenceOp {
+                Operand = context.GetVariable(this.VariablePath),
+                ReturnType = this.ReturnType,
+                ReturnValue = temp
+            });
+
+            return temp;
+        }
+        else {
+            return context.GetVariable(this.VariablePath);
+        }
     }
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

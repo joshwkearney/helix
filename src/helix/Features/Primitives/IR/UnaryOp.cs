@@ -13,6 +13,6 @@ public record UnaryOp : IOp {
     public Immediate ReturnValue { get; init; }
 
     public override string ToString() {
-        return IOp.FormatOp("UnaryOp", $"{this.ReturnValue} as {this.ReturnType} = {this.Operation} {this.Operand}");
+        return IOp.FormatOp("unary_op", $"var {this.ReturnValue} = {this.Operation} {this.Operand}");
     }
 }

@@ -24,7 +24,7 @@ namespace Helix.Analysis.TypeChecking {
         
         public ImmutableHashSet<TypeFrame> ContinueFrames { get; }
         
-        public ImmutableHashSet<IdentifierPath> OpaqueVariables { get; }
+        public ImmutableHashSet<IdentifierPath> AllocatedVariables { get; }
         
         public TypeFrame() {
             this.Scope = new IdentifierPath();
@@ -35,7 +35,7 @@ namespace Helix.Analysis.TypeChecking {
             
             this.BreakFrames = ImmutableHashSet<TypeFrame>.Empty;
             this.ContinueFrames = ImmutableHashSet<TypeFrame>.Empty;
-            this.OpaqueVariables = ImmutableHashSet<IdentifierPath>.Empty;
+            this.AllocatedVariables = ImmutableHashSet<IdentifierPath>.Empty;
         }
 
         private TypeFrame(
@@ -45,7 +45,7 @@ namespace Helix.Analysis.TypeChecking {
             ImmutableDictionary<IdentifierPath, HelixType> values, 
             ImmutableHashSet<TypeFrame> breakFrames,
             ImmutableHashSet<TypeFrame> continueFrames,
-            ImmutableHashSet<IdentifierPath> opaqueVars) {
+            ImmutableHashSet<IdentifierPath> allocatedVars) {
             
             this.Scope = scope;
             this.Declarations = decls;
@@ -53,7 +53,7 @@ namespace Helix.Analysis.TypeChecking {
             this.Values = values;
             this.BreakFrames = breakFrames;
             this.ContinueFrames = continueFrames;
-            this.OpaqueVariables = opaqueVars;
+            this.AllocatedVariables = allocatedVars;
         }
 
         public TypeFrame WithScope(string newSegment) {
@@ -64,7 +64,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values,
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
 
         public TypeFrame PopScope() {
@@ -77,7 +77,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values,
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
 
         public TypeFrame WithDeclaration(IdentifierPath path, NominalType type) {
@@ -94,7 +94,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values,
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
         
         public TypeFrame WithSignature(IdentifierPath path, HelixType sig) {
@@ -115,11 +115,11 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values,
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
         
         public TypeFrame WithValue(IdentifierPath path, HelixType sig) {
-            if (this.OpaqueVariables.Contains(path)) {
+            if (this.AllocatedVariables.Contains(path)) {
                 return this;
             }
             
@@ -130,7 +130,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values.SetItem(path, sig),
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
         
         public TypeFrame PopValue(IdentifierPath path) {
@@ -141,7 +141,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values.Remove(path),
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.OpaqueVariables.Add(path));
+                this.AllocatedVariables.Add(path));
         }
         
         public TypeFrame WithBreakFrame(TypeFrame types) {
@@ -152,7 +152,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values,
                 this.BreakFrames.Add(types),
                 this.ContinueFrames,
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
         
         public TypeFrame WithContinueFrame(TypeFrame types) {
@@ -163,7 +163,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values,
                 this.BreakFrames,
                 this.ContinueFrames.Add(types),
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
         
         public TypeFrame PopLoopFrames() {
@@ -174,7 +174,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values,
                 this.BreakFrames.Clear(),
                 this.ContinueFrames.Clear(),
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
         
         public string GetVariableName() {
@@ -184,7 +184,7 @@ namespace Helix.Analysis.TypeChecking {
         public TypeFrame CombineValuesWith(TypeFrame other) {
             var values = this.Values;
             var keys = this.Values.Keys.Union(other.Values.Keys);
-            var opaque = this.OpaqueVariables.Union(other.OpaqueVariables);
+            var opaque = this.AllocatedVariables.Union(other.AllocatedVariables);
 
             foreach (var key in keys) {
                 if (opaque.Contains(key)) {
@@ -228,7 +228,7 @@ namespace Helix.Analysis.TypeChecking {
                 this.Values,
                 this.BreakFrames.Union(other.BreakFrames),
                 this.ContinueFrames.Union(other.ContinueFrames),
-                this.OpaqueVariables);
+                this.AllocatedVariables);
         }
 
         public bool DoValuesMatchWith(TypeFrame other) {

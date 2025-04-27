@@ -8,7 +8,7 @@ public interface ILValue {
     
     public record Local(IdentifierPath VariablePath, HelixType ReturnType) : ILValue {
     }
-
+    
     public record Dereference(ISyntax Operand) : ILValue {
         public HelixType ReturnType => this.Operand.ReturnType;
     }

@@ -39,7 +39,7 @@ public record AssignmentParseStatement : IParseSyntax {
         }
         
         // If we're assigning a local variable, we need to update our stored value
-        if (left.ReturnType is NominalType nom) {
+        if (lValue.ReturnType is NominalType nom) {
             types = types.WithValue(nom.Path, new PointerType(returnType));
         }
         

@@ -1,6 +1,7 @@
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
 using Helix.Syntax;
 
@@ -15,6 +16,10 @@ public class TypeAdapterSyntax : ISyntax {
     
     public TokenLocation Location => this.Operand.Location;
 
+    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+        return this.Operand.GenerateIR(writer, context);
+    }
+    
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         return this.Operand.GenerateCode(types, writer);
     }

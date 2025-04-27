@@ -1,10 +1,6 @@
-﻿struct Point {
-    x as word;
-    y as word;
-}
-
-func test() {
-    var p = [0, 1, 2];
+﻿func test(thing as word) {
+    var x = 7 + thing;
+    var z = &x;    
     
-    p[2] = 7;
+    *(z as &word) = *z;
 }

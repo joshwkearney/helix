@@ -80,23 +80,7 @@ namespace Helix.Generation.Syntax {
         public BinaryOperationKind? Operation { get; init; } = null;
 
         public string WriteToC() {
-            var op = this.Operation switch {
-                BinaryOperationKind.Add => "+",
-                BinaryOperationKind.And => "&",
-                BinaryOperationKind.EqualTo => "==",
-                BinaryOperationKind.GreaterThan => ">",
-                BinaryOperationKind.GreaterThanOrEqualTo => ">=",
-                BinaryOperationKind.LessThan => "<",
-                BinaryOperationKind.LessThanOrEqualTo => "<=",
-                BinaryOperationKind.Multiply => "*",
-                BinaryOperationKind.NotEqualTo => "!=",
-                BinaryOperationKind.Or => "|",
-                BinaryOperationKind.Subtract => "-",
-                BinaryOperationKind.Xor => "^",
-                BinaryOperationKind.Modulo => "%",
-                BinaryOperationKind.FloorDivide => "/",
-                _ => throw new Exception()
-            };
+            var op = this.Operation!.Value.GetSymbol();
 
             return "(" + this.Left!.WriteToC() + " " + op + " " + this.Right!.WriteToC() + ")";
         }

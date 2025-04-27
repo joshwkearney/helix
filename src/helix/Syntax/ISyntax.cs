@@ -16,7 +16,7 @@ public interface ISyntax {
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer);
 
-    public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName = null) {
+    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
         throw new NotImplementedException();
     }
 

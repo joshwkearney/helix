@@ -33,7 +33,7 @@ public partial class Parser {
         var assign = this.TopExpression();
         var loc = startLok.Span(assign.Location);
 
-        return new VarParseStatement {
+        return new VariableParseStatement {
             Location = loc,
             VariableNames = names,
             VariableTypes = types,

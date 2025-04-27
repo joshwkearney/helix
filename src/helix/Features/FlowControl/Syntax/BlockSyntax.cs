@@ -3,6 +3,7 @@ using Helix.Analysis.Types;
 using Helix.Features.Primitives.Syntax;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
 using Helix.Syntax;
 
@@ -37,6 +38,12 @@ public record BlockSyntax : ISyntax {
     public required bool AlwaysJumps { get; init; }
 
     public HelixType ReturnType => this.Second.ReturnType;
+    
+    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+        this.First.GenerateIR(writer, context);
+
+        return this.Second.GenerateIR(writer, context);
+    }
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         this.First.GenerateCode(types, writer);

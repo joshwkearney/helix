@@ -1,0 +1,18 @@
+using Helix.Analysis.Types;
+using Helix.IRGeneration;
+
+namespace Helix.Parsing.IR;
+
+public record GetMemberOp : IOp {
+    public required Immediate Operand { get; init; }
+    
+    public required string MemberName { get; init; }
+    
+    public required Immediate ReturnValue { get; init; }
+    
+    public required HelixType ReturnType { get; init; }
+
+    public override string ToString() {
+        return IOp.FormatOp("mem_get", $"var {this.ReturnValue} = {this.Operand}.{this.MemberName}");
+    }
+}

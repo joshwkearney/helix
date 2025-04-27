@@ -28,6 +28,6 @@ namespace Helix.Features.Primitives.Syntax {
             return new CIntLiteral(this.Value ? 1 : 0);
         }
 
-        public Immediate GenerateIR(IRWriter writer, IRFrame context, Immediate? returnName) => new Immediate.Bool(this.Value);
+        public Immediate GenerateIR(IRWriter writer, IRFrame context) => new Immediate.Bool(this.Value);
     }
 }

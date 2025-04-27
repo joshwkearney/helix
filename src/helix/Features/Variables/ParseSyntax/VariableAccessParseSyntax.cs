@@ -30,14 +30,6 @@ namespace Helix.Features.Variables.ParseSyntax {
                 throw TypeException.VariableUndefined(this.Location, this.VariableName);
             }
 
-            if (path == new IdentifierPath("void")) {
-                var result = new VoidLiteral {
-                    Location = this.Location
-                };
-
-                return new TypeCheckResult(result, types);
-            }
-
             // See if we are accessing a variable
             if (types.TryGetVariable(path, out var type)) {
                 var result = new VariableAccessSyntax {
