@@ -25,7 +25,7 @@ public interface ISyntax {
     /// a location where values can be stored. LValues return and generate 
     /// pointer types.  This is done so as to not rely on C's lvalue semantics.
     /// </summary>
-    public ISyntax ToLValue(TypeFrame types) {
+    public ILValue ToLValue(TypeFrame types) {
         throw TypeException.LValueRequired(this.Location);
     }
 }

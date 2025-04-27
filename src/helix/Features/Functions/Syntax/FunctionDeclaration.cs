@@ -41,10 +41,6 @@ namespace Helix.Features.Functions.Syntax {
                     Type = writer.ConvertType(x.Type, types),
                     Name = writer.GetVariableName(this.Path.Append(x.Name))
                 })
-                .Prepend(new CParameter() {
-                    Name = "_return_region",
-                    Type = new CNamedType("_Region*")
-                })
                 .ToArray();
 
             var funcName = writer.GetVariableName(this.Path);

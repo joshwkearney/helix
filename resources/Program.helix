@@ -1,9 +1,10 @@
-﻿func test() {
-    var i = 0;
+﻿struct Point {
+    x as word;
+    y as word;
+}
+
+func test() {
+    var p = [0, 1, 2];
     
-    while i < 15 {
-        i += 1;    
-    }   
-    
-    return i;
+    p[2] = 7;
 }

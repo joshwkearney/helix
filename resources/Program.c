@@ -2,38 +2,30 @@
 #define inline __inline
 #endif
 
-typedef signed long long _Word;
+typedef signed long long WORD;
+typedef struct Point Point;
+typedef struct WORD_$Array WORD_$Array;
+void test();
 
-typedef struct _Region {
-	unsigned int depth;
-} _Region;
+struct Point {
+    WORD x;
+    WORD y;
+};
 
-extern _Region* _region_create();
-extern void _region_destroy(_Region* region);
-extern void* _region_malloc(_Region* region, int size);
-static inline _Region* _region_min(_Region* r1, _Region* r2) { return r1->depth < r2->depth ? r1 : r2;  }
+struct WORD_$Array {
+    WORD* data;
+    _Region* region;
+    WORD count;
+};
 
-_Word test(_Region* _return_region);
+void test() {
+    /* Line 7: Array literal */
+    WORD $A[] = { 0, 1, 2 };
+    WORD_$Array $B = (WORD_$Array){ $A, _return_region };
 
-_Word test(_Region* _return_region) {
-    _Word sum = 0;
+    WORD_$Array p = $B;
 
-    _Word i = 0;
-
-    /* Line 4: Loop */
-    while (1) {
-        /* Line 4: If statement */
-        if ((i >= 10)) { 
-            break;
-        } 
-
-        /* Line 5: Assignment statement */
-        sum = (sum + i);
-
-        /* Line 4: Assignment statement */
-        i = (i + 1);
-    }
-
-    return sum;
+    /* Line 9: Assignment statement */
+    (*(p + 2)) = 7;
 }
 

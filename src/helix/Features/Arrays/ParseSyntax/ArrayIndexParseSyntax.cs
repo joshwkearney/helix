@@ -27,20 +27,12 @@ namespace Helix.Features.Arrays.ParseSyntax {
                     this.Operand.Location, 
                     operand.ReturnType);
             }
-
-            var adapter = new ArrayToPointerSyntax {
+            
+            var result = new ArrayIndexSyntax {
                 ArraySignature = arrayType,
                 Operand = operand,
                 Index = index,
-                AlwaysJumps = operand.AlwaysJumps || index.AlwaysJumps
-            };
-
-            var result = new DereferenceSyntax {
-                Location = adapter.Location,
-                Operand = adapter,
-                OperandSignature = new PointerType(arrayType.InnerType),
-                IsLValue = false,
-                AlwaysJumps = adapter.AlwaysJumps
+                AlwaysJumps = operand.AlwaysJumps && index.AlwaysJumps
             };
 
             return new TypeCheckResult(result, types);

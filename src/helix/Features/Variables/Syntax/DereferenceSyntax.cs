@@ -14,37 +14,24 @@ namespace Helix.Features.Variables.Syntax {
         
         public required PointerType OperandSignature { get; init; }
         
-        public required bool IsLValue { get; init; }
-
         public required bool AlwaysJumps { get; init; }
 
-        public HelixType ReturnType {
-            get {
-                if (this.IsLValue) {
-                    return this.OperandSignature;
-                }
-                else {
-                    return this.OperandSignature.InnerType;
-                }
-            }
-        }
+        public HelixType ReturnType => this.OperandSignature.InnerType;
 
-        public ISyntax ToLValue(TypeFrame types) {
-            return this with {
-                IsLValue = true
-            };
+        public ILValue ToLValue(TypeFrame types) {
+            return new ILValue.Dereference(this.Operand);
         }
         
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = this.Operand.GenerateCode(types, writer);
 
-            if (this.IsLValue) {
-                return new CMemberAccess() {
-                    Target = target,
-                    MemberName = "data"
-                };
-            }
-            else {
+            // if (this.IsLValue) {
+            //     return new CMemberAccess() {
+            //         Target = target,
+            //         MemberName = "data"
+            //     };
+            // }
+            // else {
                 var pointerType = this.Operand.AssertIsPointer(types);
                 var tempName = writer.GetVariableName();
                 var tempType = writer.ConvertType(pointerType.InnerType, types);
@@ -68,7 +55,7 @@ namespace Helix.Features.Variables.Syntax {
                 //writer.VariableKinds[this.tempPath] = CVariableKind.Local;
 
                 return new CVariableLiteral(tempName);
-            }
+            //}
         }
     }
 }

@@ -43,8 +43,7 @@ namespace Helix.Features.Variables.ParseSyntax {
                 var result = new VariableAccessSyntax {
                     Location = this.Location,
                     VariablePath = path,
-                    InnerType = type.InnerType,
-                    IsLValue = false
+                    ReturnType = type.InnerType
                 };
 
                 return new TypeCheckResult(result, types);

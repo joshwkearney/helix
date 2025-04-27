@@ -10,43 +10,22 @@ namespace Helix.Features.Variables.Syntax;
 
 public record VariableAccessSyntax : ISyntax {
     public required TokenLocation Location { get; init; }
-
-    public required HelixType InnerType { get; init; }
-
+    
     public required IdentifierPath VariablePath { get; init; }
-        
-    public required bool IsLValue { get; init; }
-
+    
+    public required HelixType ReturnType { get; init; }
+    
     public bool AlwaysJumps => false;
-
-    public HelixType ReturnType {
-        get {
-            if (this.IsLValue) {
-                return new NominalType(this.VariablePath, NominalTypeKind.Variable);
-            }
-            else {
-                return this.InnerType;
-            }
-        }
-    }
-
-    public ISyntax ToLValue(TypeFrame types) {
-        return this with {
-            IsLValue = true
-        };
+    
+    public ILValue ToLValue(TypeFrame types) {
+        return new ILValue.Local(this.VariablePath, types.Signatures[this.VariablePath]);
     }
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         ICSyntax result = new CVariableLiteral(writer.GetVariableName(this.VariablePath));
 
         if (writer.VariableKinds[this.VariablePath] == CVariableKind.Allocated) {
-            result = new CPointerDereference() {
-                Target = result
-            };
-        }
-
-        if (this.IsLValue) {
-            result = new CAddressOf() {
+            result = new CPointerDereference {
                 Target = result
             };
         }

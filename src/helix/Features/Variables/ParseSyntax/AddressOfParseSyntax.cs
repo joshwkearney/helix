@@ -21,11 +21,10 @@ public class AddressOfParseSyntax : IParseSyntax {
 
     public TypeCheckResult CheckTypes(TypeFrame types) {
         (var operand, types) = this.Operand.CheckTypes(types);
-        operand = operand.ToLValue(types);
         
         // Make sure we're taking the address of a local variable
         if (operand.ReturnType is not NominalType nominal || nominal.Kind != NominalTypeKind.Variable) {
-            throw new InvalidOperationException();
+            throw TypeException.ExpectedVariableType(this.Operand.Location, operand.ReturnType);
         }
         
         // We need to flush this variable's signature because its value can now be set through an alias

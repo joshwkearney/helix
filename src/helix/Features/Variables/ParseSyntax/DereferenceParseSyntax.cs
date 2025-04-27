@@ -23,8 +23,7 @@ public record DereferenceParseSyntax : IParseSyntax {
             var access = new VariableAccessSyntax {
                 Location = this.Location,
                 VariablePath = nom.Path,
-                InnerType = sig.InnerType,
-                IsLValue = false
+                ReturnType = sig.InnerType
             };
 
             return new TypeCheckResult(access, types);
@@ -36,7 +35,6 @@ public record DereferenceParseSyntax : IParseSyntax {
             Location = this.Location,
             Operand = operand,
             OperandSignature = pointerType,
-            IsLValue = false,
             AlwaysJumps = operand.AlwaysJumps
         };
 

@@ -20,9 +20,9 @@ public record AssignmentParseStatement : IParseSyntax {
         (var right, types) = this.Right.CheckTypes(types);
             
         // We have to be able to write into the left hand side
-        left = left.ToLValue(types);
+        var lValue = left.ToLValue(types);
         
-        var innerSignature = left.ReturnType
+        var innerSignature = lValue.ReturnType
             .AsVariable(types)
             .GetValue()
             .InnerType
@@ -45,7 +45,7 @@ public record AssignmentParseStatement : IParseSyntax {
         
         var result = new AssignmentStatement {
             Location = this.Location,
-            Left = left,
+            Left = lValue,
             Right = right,
             AlwaysJumps = left.AlwaysJumps || right.AlwaysJumps
         };

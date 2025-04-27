@@ -17,17 +17,10 @@ namespace Helix.Features.Structs.Syntax {
 
         public bool AlwaysJumps => this.Operand.AlwaysJumps;
 
-        public ISyntax ToLValue(TypeFrame types) {
+        public ILValue ToLValue(TypeFrame types) {
             var target = this.Operand.ToLValue(types);
 
-            var result = new MemberAccessLValue {
-                Location = this.Location,
-                Operand = target,
-                MemberName = this.MemberName,
-                ReturnType = this.ReturnType,
-            };
-
-            return result;
+            return new ILValue.StructMemberAccess(target, this.MemberName, new PointerType(this.ReturnType));
         }
         
         public virtual ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
