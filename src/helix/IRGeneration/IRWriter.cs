@@ -1,12 +1,25 @@
+using System.Diagnostics;
+
 namespace Helix.IRGeneration;
 
 public class IRWriter {
     private readonly Dictionary<string, int> variableVersions = [];
     private readonly Dictionary<string, int> blockVersions = [];
-    private readonly List<Block> blocks = [];
-    
-    private List<IOp> ops = [];
+    private readonly Dictionary<string, Block> blocks = [];
+
+    private Block? currentBlock = null;
+    private int blockIndex = 0;
     private int tempCounter = 1;
+
+    public Block CurrentBlock {
+        get {
+            Debug.Assert(this.currentBlock != null);
+            
+            return this.currentBlock;
+        }
+    }
+
+    public Dictionary<string, Block> Blocks => this.blocks;
 
     public Immediate GetName(string name) {
         if (!this.variableVersions.TryGetValue(name, out var version)) {
@@ -14,11 +27,11 @@ public class IRWriter {
         }
 
         string result;
-        if (this.variableVersions[name] == 1) {
+        if (version == 1) {
             result = name;
         }
         else {
-            result = name + "%" + this.variableVersions[name];
+            result = name + "$" + version;
         }
         
         this.variableVersions[name]++;
@@ -26,43 +39,39 @@ public class IRWriter {
     }
 
     public Immediate GetName() {
-        var result = "%" + this.tempCounter;
+        var result = "$" + this.tempCounter;
 
         this.tempCounter++;
         return new Immediate.Name(result);
     }
 
-    public void WriteOp(IOp op) {
-        this.ops.Add(op);
-    }
-
     public string GetBlockName(string name) {
         if (!this.blockVersions.TryGetValue(name, out var version)) {
-            this.variableVersions[name] = version = 1;
+            this.blockVersions[name] = version = 1;
         }
 
         string result;
-        if (this.blockVersions[name] == 1) {
+        if (version == 1) {
             result = name;
         }
         else {
-            result = name + "%" + this.blockVersions[name];
+            result = name + "$" + version;
         }
         
         this.blockVersions[name]++;
         return result;
     }
 
-    public void PopBlock(string name) {
-        this.blocks.Add(new Block {
-            Name = name,
-            Ops = this.ops
-        });
+    public void PushBlock(string name) {
+        Debug.Assert(this.currentBlock == null);
 
-        this.ops = [];
+        this.currentBlock = new Block(name, this.blockIndex++);
     }
 
-    public override string ToString() {
-        return string.Join(Environment.NewLine, this.ops);
+    public void PopBlock() {
+        Debug.Assert(this.currentBlock != null);
+
+        this.blocks.Add(this.CurrentBlock.Name, this.currentBlock);
+        this.currentBlock = null;
     }
 }

@@ -23,7 +23,8 @@ namespace Helix.Features.Functions.ParseSyntax {
             
             var result = new ReturnSyntax {
                 Location = this.Location,
-                Operand = operand
+                Operand = operand,
+                FunctionSignature = sig
             };
 
             return new TypeCheckResult(result, types);

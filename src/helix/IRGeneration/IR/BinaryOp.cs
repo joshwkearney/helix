@@ -15,6 +15,6 @@ public record BinaryOp : IOp {
     public Immediate ReturnValue { get; init; }
 
     public override string ToString() {
-        return IOp.FormatOp("binary_op", $"var {this.ReturnValue} = {this.Left} {this.Operation.GetSymbol()} {this.Right}");
+        return IOp.FormatOp("binary_op", $"let {this.ReturnValue} = {this.Left} {this.Operation.GetSymbol()} {this.Right}");
     }
 }

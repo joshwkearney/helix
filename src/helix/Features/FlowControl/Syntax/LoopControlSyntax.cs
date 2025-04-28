@@ -2,7 +2,9 @@
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
+using Helix.Parsing.IR;
 using Helix.Syntax;
 
 namespace Helix.Features.FlowControl.Syntax {
@@ -26,6 +28,21 @@ namespace Helix.Features.FlowControl.Syntax {
             }
 
             return new TypeCheckResult(this, types);
+        }
+
+        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+            if (this.Kind == LoopControlKind.Break) {
+                writer.CurrentBlock.Terminate(new JumpOp {
+                    BlockName = context.BreakBlock!
+                });
+            }
+            else {
+                writer.CurrentBlock.Terminate(new JumpOp {
+                    BlockName = context.ContinueBlock!
+                });
+            }
+
+            return new Immediate.Void();
         }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

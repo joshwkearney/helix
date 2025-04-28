@@ -26,15 +26,15 @@ namespace Helix.Features.Variables.Syntax {
                 
                 if (context.AllocatedVariables.Contains(local.VariablePath)) {
                     // We need to store into this variable as a reference   
-                    writer.WriteOp(new StoreReferenceOp {
+                    writer.CurrentBlock.Add(new StoreReferenceOp {
                         Reference = context.GetVariable(local.VariablePath),
                         Value = assign
                     });
                 }
                 else {
                     // Emit a temporary assignment that will be removed in the SSA pass
-                    writer.WriteOp(new AssignmentOp {
-                        Variable = context.GetVariable(local.VariablePath),
+                    writer.CurrentBlock.Add(new AssignLocalOp {
+                        LocalName = context.GetVariable(local.VariablePath),
                         Value = assign
                     });
                 }
@@ -44,7 +44,7 @@ namespace Helix.Features.Variables.Syntax {
                 var reference = deref.Operand.GenerateIR(writer, context);
                 var assign = this.Right.GenerateIR(writer, context);
                 
-                writer.WriteOp(new StoreReferenceOp {
+                writer.CurrentBlock.Add(new StoreReferenceOp {
                     Reference = reference,
                     Value = assign
                 });
@@ -55,7 +55,7 @@ namespace Helix.Features.Variables.Syntax {
                 var index = arrayIndex.Index.GenerateIR(writer, context);
                 var assign = this.Right.GenerateIR(writer, context);
                 
-                writer.WriteOp(new StoreArrayOp {
+                writer.CurrentBlock.Add(new StoreArrayOp {
                     Array = array,
                     Index = index,
                     Value = assign

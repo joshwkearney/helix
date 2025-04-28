@@ -28,7 +28,7 @@ public record UnaryNotSyntax : ISyntax {
         var operand = this.Operand.GenerateIR(writer, context);
         var name = writer.GetName();
         
-        writer.WriteOp(new UnaryOp {
+        writer.CurrentBlock.Add(new UnaryOp {
             Operation = UnaryOperatorKind.Not,
             Operand = operand,
             ReturnValue = name,

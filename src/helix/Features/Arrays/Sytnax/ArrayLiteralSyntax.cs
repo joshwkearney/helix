@@ -2,7 +2,9 @@
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
+using Helix.Parsing.IR;
 using Helix.Syntax;
 
 namespace Helix.Features.Arrays.Sytnax {
@@ -16,6 +18,32 @@ namespace Helix.Features.Arrays.Sytnax {
         public required bool AlwaysJumps { get; init; }
 
         public HelixType ReturnType => this.ArraySignature;
+        
+        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+            // We need to evaluate all the arguments first
+            var args = this.Arguments
+                .Select(x => x.GenerateIR(writer, context))
+                .ToList();
+            
+            var temp = writer.GetName();
+
+            writer.CurrentBlock.Add(new AllocateArrayOp {
+                InnerType = this.ArraySignature.InnerType,
+                Length = new Immediate.Word(this.Arguments.Count),
+                ReturnValue = temp
+            });
+            
+            // Now we can write our args to the array
+            for (int i = 0; i < this.Arguments.Count; i++) {
+                writer.CurrentBlock.Add(new StoreArrayOp {
+                    Array = temp,
+                    Value = args[i],
+                    Index = new Immediate.Word(i)
+                });
+            }
+
+            return temp;
+        }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             writer.WriteComment($"Line {this.Location.Line}: Array literal");

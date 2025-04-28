@@ -15,6 +15,6 @@ public record SetMemberOp : IOp {
     public required HelixType ReturnType { get; init; }
 
     public override string ToString() {
-        return IOp.FormatOp("mem_set", $"var {this.ReturnValue} = {this.Operand} with {{ {this.MemberName} = {this.MemberValue} }}");
+        return IOp.FormatOp("mem_set", $"let {this.ReturnValue} = {this.Operand} with {{ {this.MemberName} = {this.MemberValue} }}");
     }
 }

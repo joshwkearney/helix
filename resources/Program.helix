@@ -1,6 +1,9 @@
-﻿func test(thing as word) {
-    var x = 7 + thing;
-    var z = &x;    
+﻿func test() as word {
+    var sum = 0;
     
-    *(z as &word) = *z;
+    for i = 0 until 10 {
+        sum += i;
+    }
+    
+    return sum;
 }

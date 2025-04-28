@@ -42,6 +42,9 @@ namespace Helix {
                     
                     stat.GenerateIR(writer, context);
                 }
+
+                var simplifier = new IRSimplifier();
+                var blocks = simplifier.Simplify(writer.Blocks);
                 
                 // var writer = new CWriter(this.header);
                 //
@@ -51,7 +54,19 @@ namespace Helix {
                 //     stat.GenerateCode(statTypes, writer);
                 // }
 
-                return writer.ToString();
+                var str = "";
+
+                foreach (var block in blocks.Values.OrderBy(x => x.Index)) {
+                    str += block.Name + ":" + Environment.NewLine;
+
+                    foreach (var op in block.Instructions) {
+                        str += "    " + op + Environment.NewLine;
+                    }
+                    
+                    str += Environment.NewLine;
+                }
+
+                return str;
             }
             catch (HelixException ex) {
                 var newMessage = ex.CreateConsoleMessage(input);

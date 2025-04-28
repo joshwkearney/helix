@@ -5,6 +5,7 @@ using Helix.Generation;
 using Helix.Generation.Syntax;
 using Helix.IRGeneration;
 using Helix.Parsing;
+using Helix.Parsing.IR;
 using Helix.Syntax;
 
 namespace Helix.Features.Functions.Syntax {
@@ -30,6 +31,21 @@ namespace Helix.Features.Functions.Syntax {
         }
 
         public void GenerateIR(IRWriter writer, IRFrame context) {
+            var startBlock = writer.GetBlockName("function_start");
+            var endBlock = writer.GetBlockName("function_end");
+            var returnLocal = writer.GetName();
+            
+            writer.PushBlock(startBlock);
+            context.PushFunction(endBlock, returnLocal);
+
+            // Declare a variable for the return value if we don't return void
+            if (this.Signature.ReturnType != PrimitiveType.Void) {
+                writer.CurrentBlock.Add(new CreateLocalOp {
+                    LocalName = returnLocal,
+                    ReturnType = this.Signature.ReturnType
+                });
+            }
+
             foreach (var par in this.Signature.Parameters) {
                 var name = writer.GetName(par.Name);
                 var path = this.Path.Append(par.Name);
@@ -38,6 +54,30 @@ namespace Helix.Features.Functions.Syntax {
             }
             
             this.Body.GenerateIR(writer, context);
+
+            // If this is a void function without a return statement, insert a goto at the end
+            if (!writer.CurrentBlock.IsTerminated) {
+                writer.CurrentBlock.Terminate(new JumpOp {
+                    BlockName = endBlock
+                });
+            }
+            
+            writer.PopBlock();
+            writer.PushBlock(endBlock);
+
+            if (this.Signature.ReturnType == PrimitiveType.Void) {
+                writer.CurrentBlock.Terminate(new ReturnOp {
+                    ReturnValue = new Immediate.Void()
+                });
+            }
+            else {
+                writer.CurrentBlock.Terminate(new ReturnOp {
+                    ReturnValue = returnLocal
+                });
+            }
+
+            writer.PopBlock();
+            context.PopFunction();
         }
         
         public void GenerateCode(TypeFrame types, ICWriter writer) {

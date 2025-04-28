@@ -16,8 +16,6 @@ namespace Helix.Features.Variables.Syntax {
         
         public required IdentifierPath VariablePath { get; init; }
         
-        public required HelixType VariableSignature { get; init; }
-
         public required bool AlwaysJumps { get; init; }
         
         public Immediate GenerateIR(IRWriter writer, IRFrame context) {

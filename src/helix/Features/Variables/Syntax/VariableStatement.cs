@@ -29,13 +29,13 @@ namespace Helix.Features.Variables.Syntax {
         public Immediate GenerateIR(IRWriter writer, IRFrame context) {
             if (context.AllocatedVariables.Contains(this.Path)) {
                 var name = writer.GetName(this.Path.Segments.Last());
-                writer.WriteOp(new AllocateOp {
+                writer.CurrentBlock.Add(new AllocateOp {
                     ReturnType = this.VariableSignature,
                     ReturnValue = name
                 });
                 
                 var assign = this.Assignment.GenerateIR(writer, context);
-                writer.WriteOp(new StoreReferenceOp {
+                writer.CurrentBlock.Add(new StoreReferenceOp {
                     Reference = name,
                     Value = assign
                 });
@@ -47,9 +47,13 @@ namespace Helix.Features.Variables.Syntax {
                 var name = writer.GetName(this.Path.Segments.Last());
                 var assign = this.Assignment.GenerateIR(writer, context);
                 
-                writer.WriteOp(new AliasOp {
+                writer.CurrentBlock.Add(new CreateLocalOp {
                     ReturnType = this.Assignment.ReturnType,
-                    NewValue = name,
+                    LocalName = name
+                });
+                
+                writer.CurrentBlock.Add(new AssignLocalOp {
+                    LocalName = name,
                     Value = assign
                 });
                 

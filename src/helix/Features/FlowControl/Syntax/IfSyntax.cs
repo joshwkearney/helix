@@ -2,7 +2,9 @@
 using Helix.Analysis.Types;
 using Helix.Generation;
 using Helix.Generation.Syntax;
+using Helix.IRGeneration;
 using Helix.Parsing;
+using Helix.Parsing.IR;
 using Helix.Syntax;
 
 namespace Helix.Features.FlowControl.Syntax {
@@ -18,6 +20,76 @@ namespace Helix.Features.FlowControl.Syntax {
         public required HelixType ReturnType { get; init; }
         
         public required bool AlwaysJumps { get; init; }
+
+        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+            var trueBranchName = writer.GetBlockName("if_true");
+            var falseBranchName = writer.GetBlockName("if_false");
+            var continueBranchName = writer.GetBlockName("if_after");
+            var cond = this.Condition.GenerateIR(writer, context);
+            var resultName = writer.GetName();
+
+            // If we're returning an expression value with this if statement, we
+            // need a result variable
+            if (this.ReturnType != PrimitiveType.Void) {
+                writer.CurrentBlock.Add(new CreateLocalOp {
+                    LocalName = resultName, 
+                    ReturnType = this.ReturnType
+                });
+            }
+            
+            // Write out our conditional jump
+            writer.CurrentBlock.Terminate(new JumpConditionalOp {
+                Condition = cond,
+                TrueBlockName = trueBranchName,
+                FalseBlockName = falseBranchName
+            });
+            
+            writer.PopBlock();
+            writer.PushBlock(trueBranchName);
+
+            var affirm = this.Affirmative.GenerateIR(writer, context);
+
+            if (this.ReturnType != PrimitiveType.Void) {
+                writer.CurrentBlock.Add(new AssignLocalOp {
+                    LocalName = resultName,
+                    Value = affirm
+                });
+            }
+            
+            if (!writer.CurrentBlock.IsTerminated) {
+                writer.CurrentBlock.Terminate(new JumpOp {
+                    BlockName = continueBranchName
+                });
+            }
+
+            writer.PopBlock();
+            writer.PushBlock(falseBranchName);
+            
+            var neg = this.Negative.GenerateIR(writer, context);
+
+            if (this.ReturnType != PrimitiveType.Void) {
+                writer.CurrentBlock.Add(new AssignLocalOp {
+                    LocalName = resultName,
+                    Value = neg
+                });
+            }
+
+            if (!writer.CurrentBlock.IsTerminated) {
+                writer.CurrentBlock.Terminate(new JumpOp {
+                    BlockName = continueBranchName
+                });
+            }
+
+            writer.PopBlock();
+            writer.PushBlock(continueBranchName);
+
+            if (this.ReturnType == PrimitiveType.Void) {
+                return new Immediate.Void();
+            }
+            else {
+                return resultName;
+            }
+        }
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var affirmList = new List<ICStatement>();

@@ -36,8 +36,7 @@ public class AddressOfParseSyntax : IParseSyntax {
             Location = this.Location,
             ReturnType = local.ReturnType,
             AlwaysJumps = operand.AlwaysJumps,
-            VariablePath = local.VariablePath,
-            VariableSignature = types.Signatures[local.VariablePath]
+            VariablePath = local.VariablePath
         };
 
         return new TypeCheckResult(result, types);

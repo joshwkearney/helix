@@ -76,3 +76,12 @@ func test() as word {
     
     return sum;
 }
+
+func test(thing as word) as word {
+    if thing > 10 {
+        return 11;
+    }
+    else {
+        return 12;
+    }
+}

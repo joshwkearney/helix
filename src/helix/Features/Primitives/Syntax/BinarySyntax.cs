@@ -35,7 +35,7 @@ public record BinarySyntax : ISyntax {
         var right = this.Right.GenerateIR(writer, context);
         var name = writer.GetName();
 
-        writer.WriteOp(new BinaryOp {
+        writer.CurrentBlock.Add(new BinaryOp {
             Left = left,
             Right = right,
             Operation = this.Operator,

@@ -27,7 +27,7 @@ namespace Helix.Features.Variables.Syntax {
         public Immediate GenerateIR(IRWriter writer, IRFrame context) {
             var temp = writer.GetName();
         
-            writer.WriteOp(new LoadReferenceOp {
+            writer.CurrentBlock.Add(new LoadReferenceOp {
                 Operand = this.Operand.GenerateIR(writer, context),
                 ReturnType = this.ReturnType,
                 ReturnValue = temp

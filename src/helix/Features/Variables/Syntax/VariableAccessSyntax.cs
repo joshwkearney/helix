@@ -28,7 +28,7 @@ public record VariableAccessSyntax : ISyntax {
             // If this variable is opaque, it is storing a reference and we need to load from it
             var temp = writer.GetName();
 
-            writer.WriteOp(new LoadReferenceOp {
+            writer.CurrentBlock.Add(new LoadReferenceOp {
                 Operand = context.GetVariable(this.VariablePath),
                 ReturnType = this.ReturnType,
                 ReturnValue = temp
