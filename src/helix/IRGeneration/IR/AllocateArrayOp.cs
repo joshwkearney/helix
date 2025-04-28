@@ -11,6 +11,6 @@ public record AllocateArrayOp : IOp {
     public required Immediate Length { get; init; }
 
     public override string ToString() {
-        return IOp.FormatOp("ref_malloc", $"let {this.ReturnValue} = malloc({this.Length} * &{this.InnerType})");
+        return IOp.FormatOp("array_malloc", $"let {this.ReturnValue} = malloc({this.Length} * &{this.InnerType})");
     }
 }
