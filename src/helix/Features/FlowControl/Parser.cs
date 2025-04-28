@@ -109,16 +109,17 @@ namespace Helix.Parsing {
 
             var endIndex = this.TopExpression();
 
-            /*startIndex = new AsParseSyntax {
+            startIndex = new BinaryParseSyntax {
                 Location = startIndex.Location,
-                Operand = startIndex,
-                TypeSyntax = new VariableAccessParseSyntax {
+                Left = startIndex,
+                Right = new WordLiteral {
                     Location = startIndex.Location,
-                    VariableName = "word"
-                }
+                    Value = 1
+                },
+                Operator = BinaryOperationKind.Subtract
             };
             
-            endIndex = new AsParseSyntax {
+            /*endIndex = new AsParseSyntax {
                 Location = endIndex.Location,
                 Operand = endIndex,
                 TypeSyntax = new VariableAccessParseSyntax {
@@ -156,7 +157,7 @@ namespace Helix.Parsing {
             };
 
             var totalBlock = new List<IParseSyntax> { counterDeclaration };
-            var loopBlock = new List<IParseSyntax>();
+            var loopBlock = new List<IParseSyntax> { counterInc };
             var loc = startTok.Location.Span(endIndex.Location);
 
             var test = new IfParseSyntax {
@@ -187,7 +188,6 @@ namespace Helix.Parsing {
             this.isInLoop.Pop();
 
             loopBlock.Add(body);
-            loopBlock.Add(counterInc);
 
             var loop = new LoopParseStatement {
                 Location = loc,

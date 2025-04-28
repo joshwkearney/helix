@@ -34,11 +34,11 @@ namespace Helix.Features.Primitives.ParseSyntax {
 
         public required TokenLocation Location { get; init; }
         
-        public IParseSyntax Left { get; init; }
+        public required IParseSyntax Left { get; init; }
         
-        public IParseSyntax Right { get; init; }
+        public required IParseSyntax Right { get; init; }
         
-        public BinaryOperationKind Operator { get; init; }
+        public required BinaryOperationKind Operator { get; init; }
         
         public bool IsPure => this.Left.IsPure && this.Right.IsPure;
         
