@@ -1,5 +1,5 @@
-using Helix.Analysis;
-using Helix.Analysis.Types;
+using Helix.TypeChecking;
+using Helix.Types;
 
 namespace Helix.Syntax;
 
@@ -9,11 +9,11 @@ public interface ILValue {
     public record Local(IdentifierPath VariablePath, HelixType ReturnType) : ILValue {
     }
     
-    public record Dereference(ISyntax Operand) : ILValue {
+    public record Dereference(ITypedTree Operand) : ILValue {
         public HelixType ReturnType => this.Operand.ReturnType;
     }
 
-    public record ArrayIndex(ISyntax Operand, ISyntax Index, HelixType ReturnType) : ILValue {
+    public record ArrayIndex(ITypedTree Operand, ITypedTree Index, HelixType ReturnType) : ILValue {
     }
 
     public record StructMemberAccess(ILValue Parent, string MemberName, HelixType ReturnType) : ILValue {

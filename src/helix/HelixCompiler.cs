@@ -1,7 +1,6 @@
-﻿using Helix.Parsing;
-using Helix.Generation;
-using Helix.Analysis.TypeChecking;
-using Helix.IRGeneration;
+﻿using Helix.FlowAnalysis;
+using Helix.Parsing;
+using Helix.TypeChecking;
 
 namespace Helix {
     public class HelixCompiler {

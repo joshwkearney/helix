@@ -1,7 +1,7 @@
-﻿using Helix.Analysis.TypeChecking;
-using Helix.Generation;
-using Helix.IRGeneration;
+﻿using Helix.CodeGeneration;
+using Helix.FlowAnalysis;
 using Helix.Parsing;
+using Helix.TypeChecking;
 
 namespace Helix.Syntax {
     public interface IDeclaration {
