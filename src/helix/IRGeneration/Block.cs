@@ -47,6 +47,7 @@ public class Block {
 
     public Block(string name, int index) {
         this.Name = name;
+        this.Index = index;
     }
 
     public void Terminate(ITerminalOp op) {

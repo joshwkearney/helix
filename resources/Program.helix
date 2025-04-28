@@ -1,9 +1,14 @@
 ﻿func test() as word {
     var sum = 0;
+    var i = 1;
     
-    for i = 1 to 10 {
+    while true {
+        if i > 10 {
+            break;
+        }
+        
         sum += i;
-        continue;
+        i += 1;
     }
     
     return sum;

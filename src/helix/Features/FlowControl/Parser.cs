@@ -129,7 +129,7 @@ namespace Helix.Parsing {
 
             var counterName = id.Value;
 
-            var counterDecl = new VariableParseStatement {
+            var counterDeclaration = new VariableParseStatement {
                 Location = startTok.Location,
                 VariableNames = [counterName],
                 VariableTypes = [Option.None],
@@ -155,7 +155,7 @@ namespace Helix.Parsing {
                 }
             };
 
-            var totalBlock = new List<IParseSyntax> { counterDecl };
+            var totalBlock = new List<IParseSyntax> { counterDeclaration };
             var loopBlock = new List<IParseSyntax>();
             var loc = startTok.Location.Span(endIndex.Location);
 

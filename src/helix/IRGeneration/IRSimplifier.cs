@@ -35,8 +35,8 @@ public class IRSimplifier {
             
             // Remove the block and check our successors again so we can remove them
             // too
-            this.RemoveBlock(name, blocks, predecessors);
             toVisit.EnqueueRange(blocks[name].Successors);
+            this.RemoveBlock(name, blocks, predecessors);
         }
     }
 
