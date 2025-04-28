@@ -70,7 +70,7 @@ namespace Helix.Analysis.Types {
         }
 
         private HelixType GetValue(TypeFrame types) {
-            if (types.Values.TryGetValue(this.Path, out var value)) {
+            if (types.Refinements.TryGetValue(this.Path, out var value)) {
                 return value;
             }
             else {

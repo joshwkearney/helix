@@ -246,5 +246,12 @@ namespace Helix.Analysis.TypeChecking {
                 "Analysis Exception: Incorrect Signature on union member",
                 $"The method '{methodName}' on union member '{memberName}' does not match the signature defined on the union type '{union}'");
         }
+        
+        public static TypeException NoReturn(TokenLocation loc, string functionName) {
+            return new TypeException(
+                loc,
+                "Analysis Exception: Function does not return a value",
+                $"The function '{functionName}' does not return a value on all code paths.");
+        }
     }
 }

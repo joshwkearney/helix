@@ -38,7 +38,7 @@ namespace Helix {
 
                 foreach (var parseStat in parseStats) {
                     (var stat, types) = parseStat.CheckTypes(types);
-                    var context = new IRFrame(types.AllocatedVariables);
+                    var context = new IRFrame(types.OpaqueVariables);
                     
                     stat.GenerateIR(writer, context);
                 }

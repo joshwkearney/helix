@@ -53,7 +53,7 @@ public record FunctionParseDeclaration : IDeclaration {
         
         // Make sure we always return a value
         if (sig.ReturnType != PrimitiveType.Void && !checkedBody.AlwaysJumps) {
-            throw new InvalidOperationException("Function does not return a value");
+            throw TypeException.NoReturn(this.signature.Location, this.signature.Name);
         }
 
         var result = new FunctionDeclaration {

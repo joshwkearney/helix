@@ -14,46 +14,66 @@ namespace Helix.Analysis.TypeChecking {
 
         public IdentifierPath Scope { get; }
 
+        /// <summary>
+        /// A list of nominal types that represent all the named values in a program.
+        /// Declarations include structs, unions, functions, and variables, and they
+        /// all have their own nominal type for referring to them.
+        /// </summary>
         public ImmutableDictionary<IdentifierPath, NominalType> Declarations { get; }
         
+        // TODO: Why are signatures the same as types? Shouldn't this be a separate 
+        // concept?
+        /// <summary>
+        /// Each nominal type requires a signature to provide its semantics
+        /// </summary>
         public ImmutableDictionary<IdentifierPath, HelixType> Signatures { get; }
         
-        public ImmutableDictionary<IdentifierPath, HelixType> Values { get; }
+        /// <summary>
+        /// Refinements are more specific types that have been determined from context
+        /// for a local variable. Refinements must always be bit-compatible with their
+        /// signature type, and can be destroyed by assignments and the address of
+        /// operator. Refinements are created by flow typing in if statements.
+        /// </summary>
+        public ImmutableDictionary<IdentifierPath, HelixType> Refinements { get; }
         
         public ImmutableHashSet<TypeFrame> BreakFrames { get; }
         
         public ImmutableHashSet<TypeFrame> ContinueFrames { get; }
         
-        public ImmutableHashSet<IdentifierPath> AllocatedVariables { get; }
+        /// <summary>
+        /// These variables might have their value changed through a pointer, and are
+        /// therefore ineligible for type refinements.
+        /// </summary>
+        public ImmutableHashSet<IdentifierPath> OpaqueVariables { get; }
         
         public TypeFrame() {
             this.Scope = new IdentifierPath();
             
             this.Declarations = ImmutableDictionary<IdentifierPath, NominalType>.Empty;
             this.Signatures = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
-            this.Values = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
+            this.Refinements = ImmutableDictionary<IdentifierPath, HelixType>.Empty;
             
             this.BreakFrames = ImmutableHashSet<TypeFrame>.Empty;
             this.ContinueFrames = ImmutableHashSet<TypeFrame>.Empty;
-            this.AllocatedVariables = ImmutableHashSet<IdentifierPath>.Empty;
+            this.OpaqueVariables = ImmutableHashSet<IdentifierPath>.Empty;
         }
 
         private TypeFrame(
             IdentifierPath scope,
             ImmutableDictionary<IdentifierPath, NominalType> decls, 
             ImmutableDictionary<IdentifierPath, HelixType> sigs, 
-            ImmutableDictionary<IdentifierPath, HelixType> values, 
+            ImmutableDictionary<IdentifierPath, HelixType> refinements, 
             ImmutableHashSet<TypeFrame> breakFrames,
             ImmutableHashSet<TypeFrame> continueFrames,
-            ImmutableHashSet<IdentifierPath> allocatedVars) {
+            ImmutableHashSet<IdentifierPath> opaqueVars) {
             
             this.Scope = scope;
             this.Declarations = decls;
             this.Signatures = sigs;
-            this.Values = values;
+            this.Refinements = refinements;
             this.BreakFrames = breakFrames;
             this.ContinueFrames = continueFrames;
-            this.AllocatedVariables = allocatedVars;
+            this.OpaqueVariables = opaqueVars;
         }
 
         public TypeFrame WithScope(string newSegment) {
@@ -61,10 +81,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope.Append(newSegment), 
                 this.Declarations, 
                 this.Signatures,
-                this.Values,
+                this.Refinements,
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
 
         public TypeFrame PopScope() {
@@ -74,10 +94,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope.Pop(),
                 decls, 
                 this.Signatures,
-                this.Values,
+                this.Refinements,
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
 
         public TypeFrame WithDeclaration(IdentifierPath path, NominalType type) {
@@ -91,10 +111,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope,
                 decls, 
                 this.Signatures,
-                this.Values,
+                this.Refinements,
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
         
         public TypeFrame WithSignature(IdentifierPath path, HelixType sig) {
@@ -112,14 +132,14 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 sigs,
-                this.Values,
+                this.Refinements,
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
         
         public TypeFrame WithValue(IdentifierPath path, HelixType sig) {
-            if (this.AllocatedVariables.Contains(path)) {
+            if (this.OpaqueVariables.Contains(path)) {
                 return this;
             }
             
@@ -127,10 +147,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
-                this.Values.SetItem(path, sig),
+                this.Refinements.SetItem(path, sig),
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
         
         public TypeFrame PopValue(IdentifierPath path) {
@@ -138,10 +158,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
-                this.Values.Remove(path),
+                this.Refinements.Remove(path),
                 this.BreakFrames,
                 this.ContinueFrames,
-                this.AllocatedVariables.Add(path));
+                this.OpaqueVariables.Add(path));
         }
         
         public TypeFrame WithBreakFrame(TypeFrame types) {
@@ -149,10 +169,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
-                this.Values,
+                this.Refinements,
                 this.BreakFrames.Add(types),
                 this.ContinueFrames,
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
         
         public TypeFrame WithContinueFrame(TypeFrame types) {
@@ -160,10 +180,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
-                this.Values,
+                this.Refinements,
                 this.BreakFrames,
                 this.ContinueFrames.Add(types),
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
         
         public TypeFrame PopLoopFrames() {
@@ -171,10 +191,10 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
-                this.Values,
+                this.Refinements,
                 this.BreakFrames.Clear(),
                 this.ContinueFrames.Clear(),
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
         
         public string GetVariableName() {
@@ -182,9 +202,9 @@ namespace Helix.Analysis.TypeChecking {
         }
 
         public TypeFrame CombineValuesWith(TypeFrame other) {
-            var values = this.Values;
-            var keys = this.Values.Keys.Union(other.Values.Keys);
-            var opaque = this.AllocatedVariables.Union(other.AllocatedVariables);
+            var values = this.Refinements;
+            var keys = this.Refinements.Keys.Union(other.Refinements.Keys);
+            var opaque = this.OpaqueVariables.Union(other.OpaqueVariables);
 
             foreach (var key in keys) {
                 if (opaque.Contains(key)) {
@@ -192,16 +212,16 @@ namespace Helix.Analysis.TypeChecking {
                     continue;
                 }
                 else if (!this.Declarations.ContainsKey(key)) {
-                    values = values.SetItem(key, other.Values[key]);
+                    values = values.SetItem(key, other.Refinements[key]);
                     continue;
                 }
                 else if (!other.Declarations.ContainsKey(key)) {
-                    values = values.SetItem(key, this.Values[key]);
+                    values = values.SetItem(key, this.Refinements[key]);
                     continue;
                 }
                 
-                var first = this.Values[key];
-                var second = other.Values[key];
+                var first = this.Refinements[key];
+                var second = other.Refinements[key];
 
                 if (!first.CanUnifyFrom(second, this, out var result)) {
                     throw new InvalidCastException();
@@ -225,19 +245,19 @@ namespace Helix.Analysis.TypeChecking {
                 this.Scope, 
                 this.Declarations, 
                 this.Signatures,
-                this.Values,
+                this.Refinements,
                 this.BreakFrames.Union(other.BreakFrames),
                 this.ContinueFrames.Union(other.ContinueFrames),
-                this.AllocatedVariables);
+                this.OpaqueVariables);
         }
 
         public bool DoValuesMatchWith(TypeFrame other) {
-            if (this.Values.Count != other.Values.Count) {
+            if (this.Refinements.Count != other.Refinements.Count) {
                 return false;
             }
 
-            foreach (var (key, value) in this.Values) {
-                if (!other.Values.TryGetValue(key, out var otherValue)) {
+            foreach (var (key, value) in this.Refinements) {
+                if (!other.Refinements.TryGetValue(key, out var otherValue)) {
                     return false;
                 }
 
