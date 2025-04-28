@@ -7,13 +7,17 @@ function_start:
     jump            | goto loop
 
 loop:
-    local_assign    | sum = 1
-    jump            | goto loop_after
+    binary_op       | let $2 = i > 10
+    jump_cond       | goto loop_after if $2 else goto if_after
+
+if_after:
+    binary_op       | let $4 = sum + i
+    local_assign    | sum = $4
+    binary_op       | let $5 = i + 1
+    local_assign    | i = $5
+    jump            | goto loop
 
 loop_after:
     local_assign    | $1 = sum
-    jump            | goto function_end
-
-function_end:
     return          | return $1
 
