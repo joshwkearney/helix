@@ -23,7 +23,35 @@ public record IfParseSyntax : IParseSyntax {
         (var cond, types) = this.Condition.CheckTypes(types);
         var condPredicate = ISyntaxPredicate.Empty;
 
-        // TODO: This isn't used
+        var neg = this.Negative.OrElse(() => new VoidLiteral {
+            Location = this.Location
+        });
+        
+        // If the condition is a constant, only type check one of our branches 
+        if (cond.ReturnType is SingularBoolType sing) {
+            ISyntax next;
+            
+            if (sing.Value) {
+                (next, types) = this.Affirmative.CheckTypes(types);
+            }
+            else {
+                (next, types) = neg.CheckTypes(types);
+            }
+            
+            // We have to put the condition in a block in case it has side effects.
+            // If it doesn't, no big deal it will get removed later in dead code
+            // elimination
+            var block = new BlockSyntax {
+                Location = cond.Location.Span(next.Location),
+                AlwaysJumps = cond.AlwaysJumps || next.AlwaysJumps,
+                First = cond,
+                Second = next
+            };
+
+            return new TypeCheckResult(block, types);
+        }
+        
+        // Make sure to apply any predicates from the condition
         if (cond.ReturnType is PredicateBool predBool) {
             condPredicate = predBool.Predicate;
         }
@@ -37,10 +65,7 @@ public record IfParseSyntax : IParseSyntax {
         ifFalseTypes = condPredicate.Negate().ApplyToTypes(ifFalseTypes);
         
         (var checkedIfTrue, ifTrueTypes) = this.Affirmative.CheckTypes(ifTrueTypes);
-        
-        (var checkedIfFalse, ifFalseTypes) = this.Negative
-            .OrElse(() => new VoidLiteral { Location = this.Location })
-            .CheckTypes(ifFalseTypes);
+        (var checkedIfFalse, ifFalseTypes) = neg.CheckTypes(ifFalseTypes);
 
         ifTrueTypes = ifTrueTypes.PopScope();
         ifFalseTypes = ifFalseTypes.PopScope();

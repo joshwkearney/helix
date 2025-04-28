@@ -1,8 +1,9 @@
 ﻿func test() as word {
     var sum = 0;
     
-    for i = 0 until 10 {
+    for i = 1 until 10 {
         sum += i;
+        break;
     }
     
     return sum;

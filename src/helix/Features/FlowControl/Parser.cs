@@ -181,8 +181,10 @@ namespace Helix.Parsing {
                 this.Advance(TokenKind.Yields);
             }
 
+            this.isInLoop.Push(true);
             var body = this.TopExpression();
             loc = loc.Span(body.Location);
+            this.isInLoop.Pop();
 
             loopBlock.Add(body);
             loopBlock.Add(counterInc);
