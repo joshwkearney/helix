@@ -4,22 +4,20 @@ namespace Helix.TypeChecking;
 
 public class IdentifierPath : IEquatable<IdentifierPath> {
     private readonly int hashCode;
-    private readonly ImmutableList<string> segments;
+    private readonly ImmutableList<string>? segments;
 
-    public ImmutableList<string> Segments {
-        get => this.segments ?? ImmutableList<string>.Empty;
-    }
+    public ImmutableList<string> Segments => this.segments ?? ImmutableList<string>.Empty;
 
-    public bool IsEmpty => !this.segments.Any();
+    public bool IsEmpty => this.segments?.IsEmpty ?? true;
 
     public IdentifierPath(params string[] segments) : this((IEnumerable<string>)segments) { }
 
     public IdentifierPath(IEnumerable<string> segments) {
         this.segments = segments.ToImmutableList();
-        this.hashCode = segments.Aggregate(13, (x, y) => x + 7 * y.GetHashCode());
+        this.hashCode = this.segments.Aggregate(13, (x, y) => x + 7 * y.GetHashCode());
     }
 
-    public IdentifierPath() : this(Array.Empty<string>()) { }
+    public IdentifierPath() : this([]) { }
 
     public IdentifierPath Append(string segment) {
         return new IdentifierPath(this.Segments.Add(segment));
@@ -47,7 +45,11 @@ public class IdentifierPath : IEquatable<IdentifierPath> {
             .Aggregate(true, (x, y) => x && y);
     }
 
-    public bool Equals(IdentifierPath other) {
+    public bool Equals(IdentifierPath? other) {
+        if (other is null) {
+            return false;
+        }
+        
         return this.Segments.SequenceEqual(other.Segments);
     }
 
@@ -59,15 +61,7 @@ public class IdentifierPath : IEquatable<IdentifierPath> {
         return string.Join("/", this.segments);
     }
 
-    public string ToCName() {
-        if (this.segments == null) {
-            return "";
-        }
-
-        return string.Join('$', this.segments);
-    }
-
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
         if (obj is IdentifierPath path) {
             return this.Equals(path);
         }

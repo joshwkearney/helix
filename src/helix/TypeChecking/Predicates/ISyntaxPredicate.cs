@@ -24,5 +24,7 @@ public abstract record ISyntaxPredicate : IEquatable<ISyntaxPredicate> {
         return types;
     }
 
-    public abstract bool Equals(ISyntaxPredicate other);
+    public abstract bool Equals(ISyntaxPredicate? other);
+    
+    public abstract override int GetHashCode();
 }

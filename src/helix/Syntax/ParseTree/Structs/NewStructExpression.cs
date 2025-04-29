@@ -14,7 +14,7 @@ public class NewStructExpression : IParseExpression {
     
     public required HelixType StructType { get; init; }
     
-    public IReadOnlyList<string> Names { get; init; } = [];
+    public IReadOnlyList<string?> Names { get; init; } = [];
 
     public IReadOnlyList<IParseExpression> Values { get; init; } = [];
     

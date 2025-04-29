@@ -14,7 +14,7 @@ public class ValueSet<T> : IEquatable<ValueSet<T>>, IEnumerable<T>, IReadOnlySet
     public ValueSet(IEnumerable<T> values) : this(values.ToImmutableHashSet()) { }
 
     public ValueSet(IImmutableSet<T> values)
-        : this(values, values.Aggregate(982451653, (x, y) => x + y.GetHashCode())) { }
+        : this(values, values.Aggregate(982451653, (x, y) => x + y?.GetHashCode() ?? 0)) { }
 
     private ValueSet(IImmutableSet<T> values, int hash) {
         this.items = values;
@@ -23,17 +23,17 @@ public class ValueSet<T> : IEquatable<ValueSet<T>>, IEnumerable<T>, IReadOnlySet
 
     public int Count => this.items.Count;
 
-    public ValueSet<T> Add(T item) => new(this.items.Add(item), this.hashCode + item.GetHashCode());
+    public ValueSet<T> Add(T item) => new(this.items.Add(item), this.hashCode + item?.GetHashCode() ?? 0);
 
-    public ValueSet<T> Remove(T item) => new(this.items.Remove(item), this.hashCode - item.GetHashCode());
+    public ValueSet<T> Remove(T item) => new(this.items.Remove(item), this.hashCode - item?.GetHashCode() ?? 0);
 
-    public ValueSet<T> Except(IEnumerable<T> items) => new(this.items.Except(items));
+    public ValueSet<T> Except(IEnumerable<T> values) => new(this.items.Except(values));
 
-    public ValueSet<T> SymmetricExcept(IEnumerable<T> items) => new(this.items.SymmetricExcept(items));
+    public ValueSet<T> SymmetricExcept(IEnumerable<T> values) => new(this.items.SymmetricExcept(values));
 
-    public ValueSet<T> Union(IEnumerable<T> items) => new(this.items.Union(items));
+    public ValueSet<T> Union(IEnumerable<T> values) => new(this.items.Union(values));
 
-    public ValueSet<T> Intersect(IEnumerable<T> items) => new(this.items.Intersect(items));
+    public ValueSet<T> Intersect(IEnumerable<T> values) => new(this.items.Intersect(values));
 
     public ValueSet<T> Clear() => new();
 
@@ -73,7 +73,7 @@ public class ValueSet<T> : IEquatable<ValueSet<T>>, IEnumerable<T>, IReadOnlySet
 
     public override int GetHashCode() => this.hashCode;
 
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
         if (obj is ValueSet<T> other) {
             return this.Equals(other);
         }
@@ -81,13 +81,16 @@ public class ValueSet<T> : IEquatable<ValueSet<T>>, IEnumerable<T>, IReadOnlySet
         return false;
     }
 
-    public bool Equals(ValueSet<T> other) {
+    public bool Equals(ValueSet<T>? other) {
+        if (other is null) {
+            return false;
+        }
+        
         if (this.hashCode != other.hashCode) {
             return false;
         }
-        else {
-            return this.items.SetEquals(other.items);
-        }
+            
+        return this.items.SetEquals(other.items);
     }
 
     public static bool operator ==(ValueSet<T> list1, ValueSet<T> list2) {

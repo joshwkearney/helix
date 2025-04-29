@@ -1004,11 +1004,11 @@ public class Parser {
             };
         }
 
-        var names = new List<string>();
+        var names = new List<string?>();
         var values = new List<IParseExpression>();
 
         while (!this.Peek(TokenKind.CloseBrace)) {
-            string name = null;
+            string? name = null;
 
             if (this.Peek(TokenKind.Identifier)) {
                 name = this.Advance(TokenKind.Identifier).Value;

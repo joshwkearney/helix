@@ -3,9 +3,9 @@
 namespace Helix.CodeGeneration.Syntax;
 
 public readonly record struct CParameter() {
-    public ICSyntax Type { get; init; } = null;
+    public ICSyntax? Type { get; init; } = null;
 
-    public string Name { get; init; } = null;
+    public string? Name { get; init; } = null;
 }
 
 public record CFunctionDeclaration() : ICStatement {
@@ -13,16 +13,14 @@ public record CFunctionDeclaration() : ICStatement {
 
     public ICSyntax ReturnType { get; init; } = new CNamedType("void");
 
-    public string Name { get; init; } = null;
+    public string? Name { get; init; } = null;
 
     public bool IsStatic { get; init; } = false;
 
     public IReadOnlyList<CParameter> Parameters { get; init; } = Array.Empty<CParameter>();
 
     public IReadOnlyList<ICStatement> Body {
-        init {
-            this.body = Option.Some(value);
-        }
+        init => this.body = Option.Some(value);
     }
 
     public void WriteToC(int indentLevel, StringBuilder sb) {

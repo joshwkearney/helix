@@ -2,7 +2,7 @@
 
 namespace Helix.Collections;
 
-public class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> {
+public class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : notnull {
     private readonly IDictionary<TKey, TValue> inner;
     private readonly Func<TKey, TValue> valueFactory;
 

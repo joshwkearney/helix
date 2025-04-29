@@ -5,7 +5,7 @@ namespace Helix.Collections;
 public static class CollectionExtensions {
     public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
         this IDictionary<TKey, TValue> dict, 
-        Func<TKey, TValue> valueFactory) {
+        Func<TKey, TValue> valueFactory) where TKey : notnull {
 
         return new DefaultDictionary<TKey, TValue>(dict, valueFactory);
     }

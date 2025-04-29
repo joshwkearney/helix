@@ -13,7 +13,7 @@ public class NewExpression : IParseExpression {
         
     public required IParseExpression TypeExpression { get; init; }
 
-    public IReadOnlyList<string> Names { get; init; } = [];
+    public IReadOnlyList<string?> Names { get; init; } = [];
 
     public IReadOnlyList<IParseExpression> Values { get; init; } = [];
         
