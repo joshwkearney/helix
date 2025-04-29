@@ -1,46 +1,46 @@
-﻿namespace Helix.Parsing {
-    public enum TokenKind {
-        OpenParenthesis, CloseParenthesis,
-        OpenBrace, CloseBrace,
-        OpenBracket, CloseBracket,
+﻿namespace Helix.Parsing;
 
-        Comma, Colon, Dot, Semicolon,
-        Star, Plus, Minus, Modulo, Divide, Caret, Ampersand,
+public enum TokenKind {
+    OpenParenthesis, CloseParenthesis,
+    OpenBrace, CloseBrace,
+    OpenBracket, CloseBracket,
 
-        Not, Equals, NotEquals, 
-        LessThan, GreaterThan, LessThanOrEqualTo, GreaterThanOrEqualTo,
+    Comma, Colon, Dot, Semicolon,
+    Star, Plus, Minus, Modulo, Divide, Caret, Ampersand,
 
-        VarKeyword, Assignment, 
-        PlusAssignment, MinusAssignment, StarAssignment, DivideAssignment, ModuloAssignment,
-        FunctionKeyword, ExternKeyword, Yields,
+    Not, Equals, NotEquals, 
+    LessThan, GreaterThan, LessThanOrEqualTo, GreaterThanOrEqualTo,
 
-        WordKeyword, VoidKeyword, BoolKeyword, AsKeyword, IsKeyword,
+    VarKeyword, Assignment, 
+    PlusAssignment, MinusAssignment, StarAssignment, DivideAssignment, ModuloAssignment,
+    FunctionKeyword, ExternKeyword, Yields,
 
-        IfKeyword, ThenKeyword, ElseKeyword, 
-        WhileKeyword, ForKeyword, DoKeyword, ToKeyword, UntilKeyword,
-        BreakKeyword, ContinueKeyword, ReturnKeyword,
-        StructKeyword, UnionKeyword, NewKeyword,
+    WordKeyword, VoidKeyword, BoolKeyword, AsKeyword, IsKeyword,
 
-        TrueKeyword, FalseKeyword, AndKeyword, OrKeyword, XorKeyword,
+    IfKeyword, ThenKeyword, ElseKeyword, 
+    WhileKeyword, ForKeyword, DoKeyword, ToKeyword, UntilKeyword,
+    BreakKeyword, ContinueKeyword, ReturnKeyword,
+    StructKeyword, UnionKeyword, NewKeyword,
 
-        Identifier, Whitespace, WordLiteral, BoolLiteral, EOF
+    TrueKeyword, FalseKeyword, AndKeyword, OrKeyword, XorKeyword,
+
+    Identifier, Whitespace, WordLiteral, BoolLiteral, EOF
+}
+
+public record struct Token {
+    public TokenLocation Location { get; }
+
+    public TokenKind Kind { get; }
+
+    public string Value { get; }
+
+    public Token(TokenKind kind, TokenLocation location, string payload) {
+        this.Kind = kind;
+        this.Location = location;
+        this.Value = payload;
     }
 
-    public record struct Token {
-        public TokenLocation Location { get; }
-
-        public TokenKind Kind { get; }
-
-        public string Value { get; }
-
-        public Token(TokenKind kind, TokenLocation location, string payload) {
-            this.Kind = kind;
-            this.Location = location;
-            this.Value = payload;
-        }
-
-        public override string ToString() {
-            return $"Token(Value= {this.Value}, Location= {this.Location.StartIndex})";
-        }
+    public override string ToString() {
+        return $"Token(Value= {this.Value}, Location= {this.Location.StartIndex})";
     }
 }

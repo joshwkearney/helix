@@ -4,44 +4,44 @@ using Helix.Syntax.TypedTree.Functions;
 using Helix.TypeChecking;
 using Helix.Types;
 
-namespace Helix.Syntax.ParseTree.Functions {
-    public record ReturnStatement : IParseStatement {
-        public required TokenLocation Location { get; init; }
-        
-        public required IParseExpression Operand { get; init; }
-        
-        public bool IsPure => false;
+namespace Helix.Syntax.ParseTree.Functions;
 
-        public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
-            if (!this.TryGetCurrentFunction(types, out var sig)) {
-                throw new InvalidOperationException();
-            }
+public record ReturnStatement : IParseStatement {
+    public required TokenLocation Location { get; init; }
+        
+    public required IParseExpression Operand { get; init; }
+        
+    public bool IsPure => false;
 
-            (var operand, types) = this.Operand.CheckTypes(types);
-            operand = operand.UnifyTo(sig.ReturnType, types);
+    public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
+        if (!this.TryGetCurrentFunction(types, out var sig)) {
+            throw new InvalidOperationException();
+        }
+
+        (var operand, types) = this.Operand.CheckTypes(types);
+        operand = operand.UnifyTo(sig.ReturnType, types);
             
-            var result = new TypedReturnStatement {
-                Location = this.Location,
-                Operand = operand,
-                FunctionSignature = sig
-            };
+        var result = new TypedReturnStatement {
+            Location = this.Location,
+            Operand = operand,
+            FunctionSignature = sig
+        };
 
-            return new(result, types);
-        }
+        return new(result, types);
+    }
         
-        private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {
-            var path = types.Scope;
+    private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {
+        var path = types.Scope;
 
-            while (!path.IsEmpty) {
-                if (types.TryGetFunction(path, out func)) {
-                    return true;
-                }
-
-                path = path.Pop();
+        while (!path.IsEmpty) {
+            if (types.TryGetFunction(path, out func)) {
+                return true;
             }
 
-            func = null;
-            return false;
+            path = path.Pop();
         }
+
+        func = null;
+        return false;
     }
 }

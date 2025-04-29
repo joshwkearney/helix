@@ -37,7 +37,7 @@ public record VariableStatement : IParseStatement {
 
         types = types.WithDeclaration(path, new NominalType(path, NominalTypeKind.Variable));
         types = types.WithSignature(path, sig);
-        types = types.WithValue(path, new PointerType(assign.ReturnType));
+        types = types.WithRefinement(path, new PointerType(assign.ReturnType));
 
         var result = new TypedTree.Variables.TypedVariableStatement {
             Location = this.Location,

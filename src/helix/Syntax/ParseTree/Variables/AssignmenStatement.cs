@@ -40,7 +40,7 @@ public record AssignmenStatement : IParseStatement {
         
         // If we're assigning a local variable, we need to update our stored value
         if (lValue.ReturnType is NominalType nom) {
-            types = types.WithValue(nom.Path, new PointerType(returnType));
+            types = types.WithRefinement(nom.Path, new PointerType(returnType));
         }
         
         var result = new TypedAssignmentStatement {

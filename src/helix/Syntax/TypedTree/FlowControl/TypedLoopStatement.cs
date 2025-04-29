@@ -6,60 +6,60 @@ using Helix.Syntax.IR;
 using Helix.TypeChecking;
 using Helix.Types;
 
-namespace Helix.Syntax.TypedTree.FlowControl {
-    public record TypedLoopStatement : ITypedStatement {
-        public required TokenLocation Location { get; init; }
+namespace Helix.Syntax.TypedTree.FlowControl;
 
-        public required ITypedStatement Body { get; init; }
+public record TypedLoopStatement : ITypedStatement {
+    public required TokenLocation Location { get; init; }
+
+    public required ITypedStatement Body { get; init; }
         
-        public required bool AlwaysJumps { get; init; }
+    public required bool AlwaysJumps { get; init; }
         
-        public HelixType ReturnType => PrimitiveType.Void;
+    public HelixType ReturnType => PrimitiveType.Void;
         
-        public void GenerateIR(IRWriter writer, IRFrame context) {
-            var loopBlock = writer.GetBlockName("loop");
-            var afterBlock = writer.GetBlockName("loop_after");
+    public void GenerateIR(IRWriter writer, IRFrame context) {
+        var loopBlock = writer.GetBlockName("loop");
+        var afterBlock = writer.GetBlockName("loop_after");
             
+        writer.CurrentBlock.Terminate(new JumpOp {
+            BlockName = loopBlock
+        });
+            
+        writer.PopBlock();
+        writer.PushBlock(loopBlock);
+        context.PushLoop(afterBlock, loopBlock);
+            
+        this.Body.GenerateIR(writer, context);
+
+        if (!writer.CurrentBlock.IsTerminated) {
             writer.CurrentBlock.Terminate(new JumpOp {
                 BlockName = loopBlock
             });
-            
-            writer.PopBlock();
-            writer.PushBlock(loopBlock);
-            context.PushLoop(afterBlock, loopBlock);
-            
-            this.Body.GenerateIR(writer, context);
-
-            if (!writer.CurrentBlock.IsTerminated) {
-                writer.CurrentBlock.Terminate(new JumpOp {
-                    BlockName = loopBlock
-                });
-            }
-
-            writer.PopBlock();
-            writer.PushBlock(afterBlock);
-            context.PopLoop();
         }
 
-        public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            var bodyStats = new List<ICStatement>();
-            var bodyWriter = new CStatementWriter(writer, bodyStats);
+        writer.PopBlock();
+        writer.PushBlock(afterBlock);
+        context.PopLoop();
+    }
 
-            this.Body.GenerateCode(types, bodyWriter);
+    public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
+        var bodyStats = new List<ICStatement>();
+        var bodyWriter = new CStatementWriter(writer, bodyStats);
 
-            if (bodyStats.Any() && bodyStats.Last().IsEmpty) {
-                bodyStats.RemoveAt(bodyStats.Count - 1);
-            }
+        this.Body.GenerateCode(types, bodyWriter);
 
-            var stat = new CWhile {
-                Condition = new CIntLiteral(1),
-                Body = bodyStats
-            };
-
-            writer.WriteEmptyLine();
-            writer.WriteComment($"Line {this.Location.Line}: Loop");
-            writer.WriteStatement(stat);
-            writer.WriteEmptyLine();
+        if (bodyStats.Any() && bodyStats.Last().IsEmpty) {
+            bodyStats.RemoveAt(bodyStats.Count - 1);
         }
+
+        var stat = new CWhile {
+            Condition = new CIntLiteral(1),
+            Body = bodyStats
+        };
+
+        writer.WriteEmptyLine();
+        writer.WriteComment($"Line {this.Location.Line}: Loop");
+        writer.WriteStatement(stat);
+        writer.WriteEmptyLine();
     }
 }

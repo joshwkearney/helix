@@ -7,49 +7,49 @@ using Helix.Syntax.ParseTree;
 using Helix.TypeChecking;
 using Helix.Types;
 
-namespace Helix.Syntax.TypedTree.FlowControl {
-    public record LoopControlStatement : IParseStatement, ITypedStatement {
-        public required LoopControlKind Kind { get; init; }
+namespace Helix.Syntax.TypedTree.FlowControl;
 
-        public required TokenLocation Location { get; init; }
+public record LoopControlStatement : IParseStatement, ITypedStatement {
+    public required LoopControlKind Kind { get; init; }
 
-        public bool AlwaysJumps => true;
+    public required TokenLocation Location { get; init; }
 
-        public HelixType ReturnType => PrimitiveType.Void;
+    public bool AlwaysJumps => true;
 
-        public bool IsPure => false;
+    public HelixType ReturnType => PrimitiveType.Void;
 
-        public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
-            if (this.Kind == LoopControlKind.Break) {
-                types = types.WithBreakFrame(types);
-            }
-            else {
-                types = types.WithContinueFrame(types);
-            }
+    public bool IsPure => false;
 
-            return new(this, types);
+    public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
+        if (this.Kind == LoopControlKind.Break) {
+            types = types.WithBreakFrame(types);
+        }
+        else {
+            types = types.WithContinueFrame(types);
         }
 
-        public void GenerateIR(IRWriter writer, IRFrame context) {
-            if (this.Kind == LoopControlKind.Break) {
-                writer.CurrentBlock.Terminate(new JumpOp {
-                    BlockName = context.BreakBlock!
-                });
-            }
-            else {
-                writer.CurrentBlock.Terminate(new JumpOp {
-                    BlockName = context.ContinueBlock!
-                });
-            }
-        }
+        return new(this, types);
+    }
 
-        public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            if (this.Kind == LoopControlKind.Break) {
-                writer.WriteStatement(new CBreak());
-            }
-            else {
-                writer.WriteStatement(new CContinue());
-            }
+    public void GenerateIR(IRWriter writer, IRFrame context) {
+        if (this.Kind == LoopControlKind.Break) {
+            writer.CurrentBlock.Terminate(new JumpOp {
+                BlockName = context.BreakBlock!
+            });
+        }
+        else {
+            writer.CurrentBlock.Terminate(new JumpOp {
+                BlockName = context.ContinueBlock!
+            });
+        }
+    }
+
+    public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
+        if (this.Kind == LoopControlKind.Break) {
+            writer.WriteStatement(new CBreak());
+        }
+        else {
+            writer.WriteStatement(new CContinue());
         }
     }
 }

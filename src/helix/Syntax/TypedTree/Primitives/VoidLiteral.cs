@@ -6,24 +6,24 @@ using Helix.Syntax.ParseTree;
 using Helix.TypeChecking;
 using Helix.Types;
 
-namespace Helix.Syntax.TypedTree.Primitives {
-    public record VoidLiteral : IParseExpression, ITypedExpression {
-        public required TokenLocation Location { get; init; }
+namespace Helix.Syntax.TypedTree.Primitives;
 
-        public bool AlwaysJumps => false;
+public record VoidLiteral : IParseExpression, ITypedExpression {
+    public required TokenLocation Location { get; init; }
 
-        public HelixType ReturnType => PrimitiveType.Void;
+    public bool AlwaysJumps => false;
 
-        public bool IsPure => true;
+    public HelixType ReturnType => PrimitiveType.Void;
 
-        public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
+    public bool IsPure => true;
 
-        public TypeCheckResult<ITypedExpression> CheckTypes(TypeFrame types) => new(this, types);
+    public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-            return new CIntLiteral(0);
-        }
+    public TypeCheckResult<ITypedExpression> CheckTypes(TypeFrame types) => new(this, types);
 
-        public Immediate GenerateIR(IRWriter writer, IRFrame context) => new Immediate.Void();
+    public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
+        return new CIntLiteral(0);
     }
+
+    public Immediate GenerateIR(IRWriter writer, IRFrame context) => new Immediate.Void();
 }

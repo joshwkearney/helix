@@ -1,30 +1,30 @@
 ﻿using Helix.TypeChecking;
 
-namespace Helix.Types {
-    public record PointerType : HelixType {
-        public HelixType InnerType { get; }
+namespace Helix.Types;
 
-        public PointerType(HelixType innerType) {
-            this.InnerType = innerType;
-        }
+public record PointerType : HelixType {
+    public HelixType InnerType { get; }
 
-        public override PassingSemantics GetSemantics(TypeFrame types) {
-            return PassingSemantics.ReferenceType;
-        }
+    public PointerType(HelixType innerType) {
+        this.InnerType = innerType;
+    }
 
-        public override HelixType GetSignature(TypeFrame types) {
-            return new PointerType(this.InnerType.GetSignature(types));
-        }
+    public override PassingSemantics GetSemantics(TypeFrame types) {
+        return PassingSemantics.ReferenceType;
+    }
 
-        public override Option<PointerType> AsVariable(TypeFrame types) => this;
+    public override HelixType GetSignature(TypeFrame types) {
+        return new PointerType(this.InnerType.GetSignature(types));
+    }
 
-        public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame frame) {
-            yield return this;
-            yield return this.InnerType;
-        }
+    public override Option<PointerType> AsVariable(TypeFrame types) => this;
 
-        public override string ToString() {
-            return "&" + this.InnerType;
-        }
+    public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame frame) {
+        yield return this;
+        yield return this.InnerType;
+    }
+
+    public override string ToString() {
+        return "&" + this.InnerType;
     }
 }

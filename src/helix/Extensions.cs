@@ -1,23 +1,23 @@
-﻿namespace Helix {
-    public static class Extensions {
-        public static int IndexOf<T>(this IEnumerable<T> list, Func<T, bool> selector) {
-            int i = 0;
+﻿namespace Helix;
 
-            foreach (var item in list) { 
-                if (selector(item)) {
-                    return i;
-                }
+public static class Extensions {
+    public static int IndexOf<T>(this IEnumerable<T> list, Func<T, bool> selector) {
+        int i = 0;
 
-                i++;
+        foreach (var item in list) { 
+            if (selector(item)) {
+                return i;
             }
 
-            return -1;
+            i++;
         }
 
-        public static void EnqueueRange<T>(this Queue<T> queue, IEnumerable<T> items) {
-            foreach (var item in items) {
-                queue.Enqueue(item);
-            }
+        return -1;
+    }
+
+    public static void EnqueueRange<T>(this Queue<T> queue, IEnumerable<T> items) {
+        foreach (var item in items) {
+            queue.Enqueue(item);
         }
     }
 }

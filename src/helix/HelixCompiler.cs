@@ -2,77 +2,77 @@
 using Helix.Parsing;
 using Helix.TypeChecking;
 
-namespace Helix {
-    public class HelixCompiler {
-        private readonly string header;
-        private readonly string input;
+namespace Helix;
 
-        public HelixCompiler(string header, string input) {          
-            this.header = header;
-            this.input = input;
-        }
+public class HelixCompiler {
+    private readonly string header;
+    private readonly string input;
 
-        public string Compile() {
-            var input = this.input
-                .Replace("\r\n", "\n")
-                .Replace('\r', '\n')
-                .Replace("\t", "    ");
+    public HelixCompiler(string header, string input) {          
+        this.header = header;
+        this.input = input;
+    }
 
-            try {
-                // ToList() is after each step so lazy evaluation doesn't mess
-                // up the order of the steps
-                var parser = new Parser(input);
-                var types = new TypeFrame();
-                var parseStats = parser.Parse();
+    public string Compile() {
+        var input = this.input
+            .Replace("\r\n", "\n")
+            .Replace('\r', '\n')
+            .Replace("\t", "    ");
 
-                foreach (var stat in parseStats) {
-                    types = stat.DeclareNames(types);
-                }
+        try {
+            // ToList() is after each step so lazy evaluation doesn't mess
+            // up the order of the steps
+            var parser = new Parser(input);
+            var types = new TypeFrame();
+            var parseStats = parser.Parse();
 
-                foreach (var stat in parseStats) {
-                    types = stat.DeclareTypes(types);
-                }
+            foreach (var stat in parseStats) {
+                types = stat.DeclareNames(types);
+            }
 
-                var writer = new IRWriter();
+            foreach (var stat in parseStats) {
+                types = stat.DeclareTypes(types);
+            }
 
-                foreach (var parseStat in parseStats) {
-                    (var stat, types) = parseStat.CheckTypes(types);
-                    var context = new IRFrame(types.OpaqueVariables);
+            var writer = new IRWriter();
+
+            foreach (var parseStat in parseStats) {
+                (var stat, types) = parseStat.CheckTypes(types);
+                var context = new IRFrame(types.OpaqueVariables);
                     
-                    stat.GenerateIR(writer, context);
-                }
+                stat.GenerateIR(writer, context);
+            }
 
-                var simplifier = new IRSimplifier();
-                var blocks = simplifier.Simplify(writer.Blocks);
+            var simplifier = new IRSimplifier();
+            var blocks = simplifier.Simplify(writer.Blocks);
                 
-                // var writer = new CWriter(this.header);
-                //
-                // foreach (var parseStat in parseStats) {
-                //     var (stat, statTypes) = parseStat.CheckTypes(types);
-                //     
-                //     stat.GenerateCode(statTypes, writer);
-                // }
+            // var writer = new CWriter(this.header);
+            //
+            // foreach (var parseStat in parseStats) {
+            //     var (stat, statTypes) = parseStat.CheckTypes(types);
+            //     
+            //     stat.GenerateCode(statTypes, writer);
+            // }
 
-                var str = "";
+            var str = "";
 
-                foreach (var block in blocks.Values.OrderBy(x => x.Index)) {
-                    str += block.Name + ":" + Environment.NewLine;
+            foreach (var block in blocks.Values.OrderBy(x => x.Index)) {
+                str += block.Name + ":" + Environment.NewLine;
 
-                    foreach (var op in block.Instructions) {
-                        str += "    " + op + Environment.NewLine;
-                    }
-                    
-                    str += Environment.NewLine;
+                foreach (var op in block.Instructions) {
+                    str += "    " + op + Environment.NewLine;
                 }
-
-                return str;
+                    
+                str += Environment.NewLine;
             }
-            catch (HelixException ex) {
-                var newMessage = ex.CreateConsoleMessage(input);
-                var newEx = new HelixException(ex.Location, ex.Title, newMessage);
 
-                throw newEx;
-            }
+            return str;
+        }
+        catch (HelixException ex) {
+            var newMessage = ex.CreateConsoleMessage(input);
+            var newEx = new HelixException(ex.Location, ex.Title, newMessage);
+
+            throw newEx;
         }
     }
 }

@@ -1,33 +1,33 @@
 ﻿using Helix.TypeChecking;
 
-namespace Helix.Types {
-    public record FunctionType : HelixType {
-        public HelixType ReturnType { get; }
+namespace Helix.Types;
 
-        public IReadOnlyList<FunctionParameter> Parameters { get; }
+public record FunctionType : HelixType {
+    public HelixType ReturnType { get; }
 
-        public FunctionType(HelixType returnType, IReadOnlyList<FunctionParameter> pars) {
-            this.ReturnType = returnType;
-            this.Parameters = pars;
-        }
+    public IReadOnlyList<FunctionParameter> Parameters { get; }
 
-        public override PassingSemantics GetSemantics(TypeFrame types) {
-            return PassingSemantics.ReferenceType;
-        }
-
-        public override HelixType GetSignature(TypeFrame types) => this;
-
-        public override Option<FunctionType> AsFunction(TypeFrame types) => this;
+    public FunctionType(HelixType returnType, IReadOnlyList<FunctionParameter> pars) {
+        this.ReturnType = returnType;
+        this.Parameters = pars;
     }
 
-    public record FunctionParameter {
-        public string Name { get; }
+    public override PassingSemantics GetSemantics(TypeFrame types) {
+        return PassingSemantics.ReferenceType;
+    }
 
-        public HelixType Type { get; }
+    public override HelixType GetSignature(TypeFrame types) => this;
 
-        public FunctionParameter(string name, HelixType type) {
-            this.Name = name;
-            this.Type = type;
-        }
+    public override Option<FunctionType> AsFunction(TypeFrame types) => this;
+}
+
+public record FunctionParameter {
+    public string Name { get; }
+
+    public HelixType Type { get; }
+
+    public FunctionParameter(string name, HelixType type) {
+        this.Name = name;
+        this.Type = type;
     }
 }
