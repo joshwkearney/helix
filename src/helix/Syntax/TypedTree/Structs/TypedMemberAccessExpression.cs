@@ -18,7 +18,7 @@ public record TypedMemberAccessExpression : ITypedExpression {
     public ILValue ToLValue(TypeFrame types) {
         var target = this.Operand.ToLValue(types);
 
-        return new ILValue.StructMemberAccess(target, this.MemberName, new PointerType(this.ReturnType));
+        return new ILValue.StructMemberAccess(target, this.MemberName, this.ReturnType);
     }
         
     public virtual ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

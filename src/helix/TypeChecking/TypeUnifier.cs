@@ -115,7 +115,7 @@ public static class TypeUnifier {
         else if (first is SingularBoolType || first is PredicateBool) {
             return TryUnifyFromSingularBool(second, types);
         }
-        else if (first is PointerType pointerType) {
+        else if (first is ReferenceType pointerType) {
             return TryUnifyFromPointer(pointerType, second, types);
         }
         else if (first is ArrayType arrayType) {
@@ -156,14 +156,8 @@ public static class TypeUnifier {
     }
 
     private static UnificationResult TryUnifyFromNominalType(NominalType type, HelixType second, TypeFrame types) {
-        if (type.Kind == NominalTypeKind.Variable) {
-            var typeSig = type.AsVariable(types).GetValue();
-
-            if (second is PointerType secondPtr) {
-                if (TryUnify(typeSig.InnerType, secondPtr.InnerType, types).Kind == UnificationKind.Pun) {
-                    return UnificationResult.Pun(second);
-                }
-            }
+        if (types.TryGetVariable(type.Path, out var refinement)) {
+            return TryUnify(refinement, second, types);
         }
 
         return UnificationResult.None;
@@ -181,8 +175,8 @@ public static class TypeUnifier {
         return UnificationResult.None;
     }
 
-    private static UnificationResult TryUnifyFromPointer(PointerType pointer1, HelixType second, TypeFrame types) {
-        if (second is PointerType pointer2) {
+    private static UnificationResult TryUnifyFromPointer(ReferenceType pointer1, HelixType second, TypeFrame types) {
+        if (second is ReferenceType pointer2) {
             var innerCompatibility = TryUnify(pointer1.InnerType, pointer2.InnerType, types).Kind;
 
             if (innerCompatibility == UnificationKind.Pun) {

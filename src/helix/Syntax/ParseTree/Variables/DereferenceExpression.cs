@@ -15,18 +15,18 @@ public record DereferenceExpression : IParseExpression {
         (var operand, types) = this.Operand.CheckTypes(types);
             
         if (operand.ReturnType is NominalType nom && nom.Kind == NominalTypeKind.Variable) {
-            var sig = nom.AsVariable(types).GetValue();
+            if (types.TryGetVariable(nom.Path, out var refinement)) {
+                var access = new TypedVariableAccessExpression {
+                    Location = this.Location,
+                    VariablePath = nom.Path,
+                    ReturnType = refinement
+                };
 
-            var access = new TypedVariableAccessExpression {
-                Location = this.Location,
-                VariablePath = nom.Path,
-                ReturnType = sig.InnerType
-            };
-
-            return new TypeCheckResult<ITypedExpression>(access, types);
+                return new TypeCheckResult<ITypedExpression>(access, types);
+            }
         }
 
-        var pointerType = operand.AssertIsPointer(types);
+        var pointerType = operand.AssertIsReference(types);
 
         var result = new TypedDereferenceExpression {
             Location = this.Location,

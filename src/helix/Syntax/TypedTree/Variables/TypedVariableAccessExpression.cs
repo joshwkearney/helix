@@ -14,9 +14,7 @@ public record TypedVariableAccessExpression : ITypedExpression {
     public required IdentifierPath VariablePath { get; init; }
     
     public required HelixType ReturnType { get; init; }
-    
-    public bool AlwaysJumps => false;
-    
+
     public ILValue ToLValue(TypeFrame types) {
         return new ILValue.Local(this.VariablePath, new NominalType(this.VariablePath, NominalTypeKind.Variable));
     }

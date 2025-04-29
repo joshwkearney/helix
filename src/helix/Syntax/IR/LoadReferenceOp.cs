@@ -11,6 +11,6 @@ public record LoadReferenceOp : IOp {
     public required HelixType ReturnType { get; init; }
 
     public override string ToString() {
-        return IOp.FormatOp("ref_load", $"let {this.ReturnValue} <- {this.Operand}");
+        return IOp.FormatOp("ref_load", $"let {this.ReturnValue} <- [ {this.Operand} ]");
     }
 }

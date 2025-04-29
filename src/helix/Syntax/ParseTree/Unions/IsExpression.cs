@@ -36,7 +36,7 @@ public record IsExpression : IParseExpression {
         }
 
         // Make sure we have a variable pointing to a union
-        if (!varSig.InnerType.AsUnion(types).TryGetValue(out var unionSig)) {
+        if (!varSig.AsUnion(types).TryGetValue(out var unionSig)) {
             throw TypeException.ExpectedUnionType(this.Operand.Location);
         }
 
@@ -52,7 +52,7 @@ public record IsExpression : IParseExpression {
             VariablePath = path,
             MemberNames = new[] { this.MemberName }.ToValueSet(),
             UnionSignature = unionSig,
-            UnionType = varSig.InnerType
+            UnionType = varSig
         };
 
         var returnType = new PredicateBool(predicate);

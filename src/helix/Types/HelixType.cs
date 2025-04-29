@@ -51,9 +51,7 @@ public abstract record HelixType {
     public bool IsValueType(TypeFrame types) {
         return this.GetSemantics(types) == PassingSemantics.ValueType;
     }
-
-    public virtual Option<PointerType> AsVariable(TypeFrame types) => Option.None;
-
+    
     public virtual Option<FunctionType> AsFunction(TypeFrame types) => Option.None;
 
     public virtual Option<StructType> AsStruct(TypeFrame types) => Option.None;
@@ -61,6 +59,8 @@ public abstract record HelixType {
     public virtual Option<UnionType> AsUnion(TypeFrame types) => Option.None;
 
     public virtual Option<ArrayType> AsArray(TypeFrame types) => Option.None;
+    
+    public virtual Option<ReferenceType> AsReference(TypeFrame types) => Option.None;
 
     public virtual bool IsBool(TypeFrame types) => false;
 

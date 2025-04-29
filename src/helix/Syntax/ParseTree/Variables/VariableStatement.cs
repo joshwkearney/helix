@@ -1,5 +1,6 @@
 using Helix.Parsing;
 using Helix.Syntax.TypedTree;
+using Helix.Syntax.TypedTree.Variables;
 using Helix.TypeChecking;
 using Helix.Types;
 
@@ -33,13 +34,13 @@ public record VariableStatement : IParseStatement {
         }
 
         var path = types.Scope.Append(this.VariableName);
-        var sig = new PointerType(assign.ReturnType.GetSignature(types));
+        var sig = assign.ReturnType.GetSignature(types);
 
         types = types.WithDeclaration(path, new NominalType(path, NominalTypeKind.Variable));
         types = types.WithSignature(path, sig);
-        types = types.WithRefinement(path, new PointerType(assign.ReturnType));
+        types = types.WithRefinement(path, assign.ReturnType);
 
-        var result = new TypedTree.Variables.TypedVariableStatement {
+        var result = new TypedVariableStatement {
             Location = this.Location,
             Path = path,
             Assignment = assign,

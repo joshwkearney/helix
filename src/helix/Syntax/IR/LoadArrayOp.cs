@@ -13,6 +13,6 @@ public record LoadArrayOp : IOp {
     public required HelixType ReturnType { get; init; }
 
     public override string ToString() {
-        return IOp.FormatOp("array_load", $"let {this.ReturnValue} <- {this.Array}[{this.Index}]");
+        return IOp.FormatOp("array_load", $"let {this.ReturnValue} <- [ {this.Array}[{this.Index}] ]");
     }
 }

@@ -50,7 +50,7 @@ public class ForLoopStatement : IParseStatement {
             VariableName = counterName
         };
 
-        var counterIncrement = new AssignmenStatement {
+        var counterIncrement = new AssignmentStatement {
             Location = this.StartValue.Location,
             Left = counterAccess,
             Right = new BinaryExpression {

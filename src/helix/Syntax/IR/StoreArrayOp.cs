@@ -10,6 +10,6 @@ public record StoreArrayOp : IOp {
     public required Immediate Index { get; init; }
     
     public override string ToString() {
-        return IOp.FormatOp("array_store", $"{this.Value} -> {this.Array}[{this.Index}]");
+        return IOp.FormatOp("array_store", $"{this.Value} -> [ {this.Array}[{this.Index}] ]");
     }
 }

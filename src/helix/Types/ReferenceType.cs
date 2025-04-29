@@ -2,10 +2,10 @@
 
 namespace Helix.Types;
 
-public record PointerType : HelixType {
+public record ReferenceType : HelixType {
     public HelixType InnerType { get; }
 
-    public PointerType(HelixType innerType) {
+    public ReferenceType(HelixType innerType) {
         this.InnerType = innerType;
     }
 
@@ -14,10 +14,10 @@ public record PointerType : HelixType {
     }
 
     public override HelixType GetSignature(TypeFrame types) {
-        return new PointerType(this.InnerType.GetSignature(types));
+        return new ReferenceType(this.InnerType.GetSignature(types));
     }
 
-    public override Option<PointerType> AsVariable(TypeFrame types) => this;
+    public override Option<ReferenceType> AsReference(TypeFrame types) => this;
 
     public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame frame) {
         yield return this;

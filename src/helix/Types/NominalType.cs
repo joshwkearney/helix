@@ -19,7 +19,7 @@ public record NominalType : HelixType {
     }
 
     public override PassingSemantics GetSemantics(TypeFrame types) {
-        return this.GetValue(types).GetSemantics(types);
+        return this.GetRefinement(types).GetSemantics(types);
     }
 
     public override HelixType GetSignature(TypeFrame types) {
@@ -29,48 +29,49 @@ public record NominalType : HelixType {
     public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame types) {
         yield return this;
 
-        foreach (var access in this.GetValue(types).GetAccessibleTypes(types)) {
+        foreach (var access in this.GetRefinement(types).GetAccessibleTypes(types)) {
             yield return access;
         }
     }
 
     public override Option<ITypedExpression> ToSyntax(TokenLocation loc, TypeFrame types) {
-        return this.GetValue(types).ToSyntax(loc, types);
+        return this.GetRefinement(types).ToSyntax(loc, types);
     }
 
     public override string ToString() {
         return this.Path.Segments.Last();
     }
 
-    public override Option<PointerType> AsVariable(TypeFrame types) {
-        return this.GetValue(types).AsVariable(types);
-    }
-
     public override Option<FunctionType> AsFunction(TypeFrame types) {
-        return this.GetValue(types).AsFunction(types);
+        return this.GetRefinement(types).AsFunction(types);
     }
 
     public override Option<StructType> AsStruct(TypeFrame types) {
-        return this.GetValue(types).AsStruct(types);
+        return this.GetRefinement(types).AsStruct(types);
     }
 
     public override Option<UnionType> AsUnion(TypeFrame types) {
-        return this.GetValue(types).AsUnion(types);
+        return this.GetRefinement(types).AsUnion(types);
     }
 
     public override Option<ArrayType> AsArray(TypeFrame types) {
-        return this.GetValue(types).AsArray(types);
+        return this.GetRefinement(types).AsArray(types);
     }
 
+    public override Option<ReferenceType> AsReference(TypeFrame types) {
+        return this.GetRefinement(types).AsReference(types);
+    }
+
+
     public override bool IsBool(TypeFrame types) {
-        return this.GetValue(types).IsBool(types);
+        return this.GetRefinement(types).IsBool(types);
     }
 
     public override bool IsWord(TypeFrame types) {
-        return this.GetValue(types).IsWord(types);
+        return this.GetRefinement(types).IsWord(types);
     }
 
-    private HelixType GetValue(TypeFrame types) {
+    private HelixType GetRefinement(TypeFrame types) {
         if (types.Refinements.TryGetValue(this.Path, out var value)) {
             return value;
         }

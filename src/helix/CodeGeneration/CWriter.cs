@@ -123,12 +123,12 @@ public class CWriter : ICWriter {
         else if (type == PrimitiveType.Void) {
             return new CNamedType("int");
         }
-        else if (type is PointerType type2) {
-            return new CNamedType(this.GeneratePointerType(type2, types));
+        else if (type is ReferenceType type2) {
+            return new CNamedType(this.GenerateReferenceType(type2, types));
         }
         else if (type is NominalType named) {
-            if (named.AsVariable(types).TryGetValue(out var varSig)) {
-                return ConvertType(varSig, types);
+            if (named.Kind == NominalTypeKind.Variable) {
+                return ConvertType(named.GetSignature(types), types);
             }
                 
             if (this.pathNames.TryGetValue(named.Path, out var cname)) {
@@ -196,8 +196,8 @@ public class CWriter : ICWriter {
         return name;
     }
 
-    private string GeneratePointerType(PointerType pointerType, TypeFrame types) {
-        var inner = this.ConvertType(pointerType.InnerType, types);
+    private string GenerateReferenceType(ReferenceType referenceType, TypeFrame types) {
+        var inner = this.ConvertType(referenceType.InnerType, types);
         var innerName = inner.WriteToC();
 
         if (this.pointerNames.TryGetValue(innerName, out var name)) {

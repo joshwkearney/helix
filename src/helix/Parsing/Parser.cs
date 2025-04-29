@@ -425,7 +425,7 @@ public class Parser {
             var assign = this.TopExpression();
             var loc = start.Location.Span(assign.Location);
 
-            var result = new AssignmenStatement {
+            var result = new AssignmentStatement {
                 Location = loc,
                 Left = start,
                 Right = assign
@@ -468,7 +468,7 @@ public class Parser {
                 Operator = op
             };
 
-            var stat = new AssignmenStatement {
+            var stat = new AssignmentStatement {
                 Location = loc,
                 Left = start,
                 Right = assign

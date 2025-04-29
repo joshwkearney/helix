@@ -18,8 +18,8 @@ public record IsUnionMemberPredicate : SyntaxPredicateLeaf {
             .Select(x => x.Name)
             .ToValueSet();
             
-        if (types.TryGetVariable(this.VariablePath, out var varType)) {
-            if (varType.InnerType is SingularUnionType otherUnion) {
+        if (types.TryGetVariable(this.VariablePath, out var innerType)) {
+            if (innerType is SingularUnionType otherUnion) {
                 Debug.Assert(this.UnionType == otherUnion.UnionType);
 
                 mems = otherUnion.MemberNames;
@@ -35,7 +35,7 @@ public record IsUnionMemberPredicate : SyntaxPredicateLeaf {
             MemberNames = mems
         };
 
-        return types.WithRefinement(this.VariablePath, new PointerType(singType));
+        return types.WithRefinement(this.VariablePath, new ReferenceType(singType));
     }
 
     public override bool TryOrWith(ISyntaxPredicate pred, out ISyntaxPredicate result) {

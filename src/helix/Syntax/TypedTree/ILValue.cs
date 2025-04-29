@@ -9,8 +9,7 @@ public interface ILValue {
     public record Local(IdentifierPath VariablePath, HelixType ReturnType) : ILValue {
     }
     
-    public record Dereference(ITypedExpression Operand) : ILValue {
-        public HelixType ReturnType => this.Operand.ReturnType;
+    public record Dereference(ITypedExpression Operand, HelixType ReturnType) : ILValue {
     }
 
     public record ArrayIndex(ITypedExpression Operand, ITypedExpression Index, HelixType ReturnType) : ILValue {

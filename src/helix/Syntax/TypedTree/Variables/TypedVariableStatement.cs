@@ -14,12 +14,10 @@ public record TypedVariableStatement : ITypedStatement {
     public required ITypedExpression Assignment { get; init; }
         
     public required IdentifierPath Path { get; init; }
-        
-    public required PointerType VariableSignature { get; init; }
-
+    
+    public required HelixType VariableSignature { get; init; }
+    
     public bool AlwaysJumps => false;
-        
-    public HelixType ReturnType => PrimitiveType.Void;
 
     public Option<HelixType> AsType(TypeFrame types) {
         return new NominalType(this.Path, NominalTypeKind.Variable);
@@ -28,7 +26,7 @@ public record TypedVariableStatement : ITypedStatement {
     public void GenerateIR(IRWriter writer, IRFrame context) {
         if (context.AllocatedVariables.Contains(this.Path)) {
             var name = writer.GetName(this.Path.Segments.Last());
-            writer.CurrentBlock.Add(new AllocateOp {
+            writer.CurrentBlock.Add(new AllocateReferenceOp {
                 ReturnType = this.VariableSignature,
                 ReturnValue = name
             });

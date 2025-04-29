@@ -14,7 +14,7 @@ public class AddressOfExpression : IParseExpression {
     public Option<HelixType> AsType(TypeFrame types) {
         return this.Operand
             .AsType(types)
-            .Select(HelixType (x) => new PointerType(x));
+            .Select(HelixType (x) => new ReferenceType(x));
     }
 
     public TypeCheckResult<ITypedExpression> CheckTypes(TypeFrame types) {

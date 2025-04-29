@@ -11,8 +11,6 @@ public record VariableAccessExpression : IParseExpression {
     public required TokenLocation Location { get; init; }
         
     public required string VariableName { get; init; }
-        
-    public bool IsPure => true;
 
     public Option<HelixType> AsType(TypeFrame types) {
         // If we're pointing at a type then return it
@@ -30,11 +28,11 @@ public record VariableAccessExpression : IParseExpression {
         }
 
         // See if we are accessing a variable
-        if (types.TryGetVariable(path, out var type)) {
+        if (types.TryGetVariable(path, out var refinement)) {
             var result = new TypedVariableAccessExpression {
                 Location = this.Location,
                 VariablePath = path,
-                ReturnType = type.InnerType
+                ReturnType = refinement
             };
 
             return new TypeCheckResult<ITypedExpression>(result, types);

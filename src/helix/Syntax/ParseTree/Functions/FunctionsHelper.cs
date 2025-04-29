@@ -35,7 +35,7 @@ public static class FunctionsHelper {
             var parsePar = sig.Parameters[i];
             var parPath = path.Append(parsePar.Name);
             var parType = sig.Parameters[i].Type;
-            var parSig = new PointerType(parType);
+            var parSig = new ReferenceType(parType);
 
             // TODO: Have another type for a variable?
             types = types.WithDeclaration(parPath, new NominalType(parPath, NominalTypeKind.Variable));

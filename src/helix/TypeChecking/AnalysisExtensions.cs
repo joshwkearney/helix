@@ -1,4 +1,5 @@
-﻿using Helix.Syntax.TypedTree;
+﻿using System.Diagnostics.CodeAnalysis;
+using Helix.Syntax.TypedTree;
 using Helix.Types;
 
 namespace Helix.TypeChecking;
@@ -11,7 +12,7 @@ public static class AnalysisExtensions {
                 return true;
             }
 
-            if (scope.Segments.Any()) {
+            if (!scope.Segments.IsEmpty) {
                 scope = scope.Pop();
             }
             else {
@@ -29,7 +30,7 @@ public static class AnalysisExtensions {
             $"Compiler error: The path '{name}' does not contain a value.");
     }
 
-    public static bool TryResolveName(this TypeFrame types, IdentifierPath scope, string name, out NominalType value) {
+    public static bool TryResolveName(this TypeFrame types, IdentifierPath scope, string name, [NotNullWhen(true)] out NominalType? value) {
         if (!types.TryResolvePath(scope, name, out var path)) {
             value = null;
             return false;
@@ -50,21 +51,26 @@ public static class AnalysisExtensions {
             .TryGetValue(out type);
     }
 
-    public static PointerType AssertIsPointer(this ITypedExpression parse, TypeFrame types) {
+    public static ReferenceType AssertIsReference(this ITypedExpression parse, TypeFrame types) {
         var type = parse.ReturnType;
 
-        if (!type.AsVariable(types).TryGetValue(out var pointer)) {
+        if (!type.AsReference(types).TryGetValue(out var pointer)) {
             throw TypeException.ExpectedVariableType(parse.Location, type);
         }
 
         return pointer;
     }
 
-    public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, out PointerType type) {
-        return types.Declarations
-            .GetValueOrNone(path)
-            .SelectMany(x => x.AsVariable(types))
-            .TryGetValue(out type);
+    public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, [NotNullWhen(true)] out HelixType? refinement) {
+        if (types.Refinements.TryGetValue(path, out refinement)) {
+            return true;
+        }
+
+        if (types.Signatures.TryGetValue(path, out refinement)) {
+            return true;
+        }
+
+        return false;
     }
         
     public static IEnumerable<KeyValuePair<IdentifierPath, HelixType>> GetMembers(this HelixType type, TypeFrame types) {

@@ -20,7 +20,7 @@ public record TypedArrayIndexExpression : ITypedExpression {
     public HelixType ReturnType => this.ArraySignature.InnerType;
 
     public ILValue ToLValue(TypeFrame types) {
-        return new ILValue.ArrayIndex(this.Operand, this.Index, new PointerType(this.ArraySignature.InnerType));
+        return new ILValue.ArrayIndex(this.Operand, this.Index, this.ArraySignature.InnerType);
     }
         
     public Immediate GenerateIR(IRWriter writer, IRFrame context) {
