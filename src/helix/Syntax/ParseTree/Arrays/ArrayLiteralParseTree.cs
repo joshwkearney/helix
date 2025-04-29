@@ -10,12 +10,10 @@ public record ArrayLiteralParseTree : IParseTree {
     public required TokenLocation Location { get; init; }
         
     public required IReadOnlyList<IParseTree> Arguments { get; init; }
-        
-    public bool IsPure => this.Arguments.All(x => x.IsPure);
-
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         if (this.Arguments.Count == 0) {
-            return new TypeCheckResult(new VoidLiteral { Location = this.Location }, types);
+            return new TypeCheckResult<ITypedTree>(new VoidLiteral { Location = this.Location }, types);
         }
 
         var args = new ITypedTree[this.Arguments.Count];
@@ -45,10 +43,9 @@ public record ArrayLiteralParseTree : IParseTree {
         var result = new ArrayLiteralTypedTree {
             Location = this.Location,
             Arguments = args,
-            ArraySignature = new ArrayType(totalType),
-            AlwaysJumps = args.Any(x => x.AlwaysJumps)
+            ArraySignature = new ArrayType(totalType)
         };
 
-        return new TypeCheckResult(result, types);
+        return new TypeCheckResult<ITypedTree>(result, types);
     }
 }

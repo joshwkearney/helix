@@ -3,10 +3,7 @@ using Helix.Syntax;
 using Helix.Types;
 
 namespace Helix.TypeChecking {
-    public record struct TypeCheckResult(ITypedTree TypedTree, TypeFrame Types) {
-    }
-    
-    public record struct DeclarationTypeCheckResult(IDeclaration Syntax, TypeFrame Types) {
+    public record struct TypeCheckResult<T>(T Result, TypeFrame Types) {
     }
     
     public class TypeFrame {
@@ -201,7 +198,7 @@ namespace Helix.TypeChecking {
             return "$t_" + this.tempCounter++;
         }
 
-        public TypeFrame CombineValuesWith(TypeFrame other) {
+        public TypeFrame CombineRefinementsWith(TypeFrame other) {
             var values = this.Refinements;
             var keys = this.Refinements.Keys.Union(other.Refinements.Keys);
             var opaque = this.OpaqueVariables.Union(other.OpaqueVariables);

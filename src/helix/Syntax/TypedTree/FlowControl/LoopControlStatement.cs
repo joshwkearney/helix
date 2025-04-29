@@ -7,7 +7,7 @@ using Helix.TypeChecking;
 using Helix.Types;
 
 namespace Helix.Syntax.TypedTree.FlowControl {
-    public record LoopControlTree : IParseTree, ITypedTree {
+    public record LoopControlStatement : IParseStatement, ITypedStatement {
         public required LoopControlKind Kind { get; init; }
 
         public required TokenLocation Location { get; init; }
@@ -18,7 +18,7 @@ namespace Helix.Syntax.TypedTree.FlowControl {
 
         public bool IsPure => false;
 
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
             if (this.Kind == LoopControlKind.Break) {
                 types = types.WithBreakFrame(types);
             }
@@ -26,10 +26,10 @@ namespace Helix.Syntax.TypedTree.FlowControl {
                 types = types.WithContinueFrame(types);
             }
 
-            return new TypeCheckResult(this, types);
+            return new(this, types);
         }
 
-        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+        public void GenerateIR(IRWriter writer, IRFrame context) {
             if (this.Kind == LoopControlKind.Break) {
                 writer.CurrentBlock.Terminate(new JumpOp {
                     BlockName = context.BreakBlock!
@@ -40,19 +40,15 @@ namespace Helix.Syntax.TypedTree.FlowControl {
                     BlockName = context.ContinueBlock!
                 });
             }
-
-            return new Immediate.Void();
         }
 
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
+        public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
             if (this.Kind == LoopControlKind.Break) {
                 writer.WriteStatement(new CBreak());
             }
             else {
                 writer.WriteStatement(new CContinue());
             }
-
-            return new CIntLiteral(0);
         }
     }
 }

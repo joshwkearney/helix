@@ -29,7 +29,7 @@ public record StructParseDeclaration : IDeclaration {
         return types.WithSignature(path, sig);
     }
 
-    public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
+    public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types) {
         var path = types.Scope.Append(this.Signature.Name);
         var named = new NominalType(path, NominalTypeKind.Struct);
         var sig = named.AsStruct(types).GetValue();

@@ -7,9 +7,7 @@ namespace Helix.Syntax.ParseTree.Arrays {
         public required TokenLocation Location { get; init; }
         
         public required IParseTree Operand { get; init; }
-
-        public bool IsPure => this.Operand.IsPure;
-
+        
         Option<HelixType> IParseTree.AsType(TypeFrame types) {
             return this.Operand
                 .AsType(types)
@@ -17,7 +15,7 @@ namespace Helix.Syntax.ParseTree.Arrays {
                 .Select(x => (HelixType)x);
         }
 
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
     }

@@ -8,7 +8,7 @@ using Helix.Types;
 
 namespace Helix.Syntax.TypedTree.Functions;
 
-public record ReturnTypedTree : ITypedTree {
+public record ReturnTypedStatement : ITypedStatement {
     public required TokenLocation Location { get; init; }
 
     public required ITypedTree Operand { get; init; }
@@ -19,26 +19,24 @@ public record ReturnTypedTree : ITypedTree {
         
     public HelixType ReturnType => PrimitiveType.Void;
 
-    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+    public void GenerateIR(IRWriter writer, IRFrame context) {
         if (this.FunctionSignature.ReturnType != PrimitiveType.Void) {
+            var value = this.Operand.GenerateIR(writer, context);
+            
             writer.CurrentBlock.Add(new AssignLocalOp {
-                LocalName = context.ReturnLocal!,
-                Value = this.Operand.GenerateIR(writer, context)
+                LocalName = context.ReturnLocal,
+                Value = value
             });
         }
         
         writer.CurrentBlock.Terminate(new JumpOp {
-            BlockName = context.ReturnBlock!
+            BlockName = context.ReturnBlock
         });
-
-        return new Immediate.Void();
     }
 
-    public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-        writer.WriteStatement(new CReturn() {
+    public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
+        writer.WriteStatement(new CReturn {
             Target = this.Operand.GenerateCode(types, writer)
         });
-
-        return new CIntLiteral(0);
     }
 }

@@ -39,9 +39,7 @@ namespace Helix.Syntax.ParseTree.Primitives {
         
         public required BinaryOperationKind Operator { get; init; }
         
-        public bool IsPure => this.Left.IsPure && this.Right.IsPure;
-        
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
             (var left, types) = this.Left.CheckTypes(types);
             (var right, types) = this.Right.CheckTypes(types);
 
@@ -56,7 +54,7 @@ namespace Helix.Syntax.ParseTree.Primitives {
             }
         }
 
-        private TypeCheckResult CheckIntExpresion(ITypedTree left, ITypedTree right, TypeFrame types) {
+        private TypeCheckResult<ITypedTree> CheckIntExpresion(ITypedTree left, ITypedTree right, TypeFrame types) {
             if (!intOperations.TryGetValue(this.Operator, out var returnType)) {
                 throw TypeException.UnexpectedType(this.Left.Location, left.ReturnType);
             }
@@ -71,19 +69,18 @@ namespace Helix.Syntax.ParseTree.Primitives {
             left = left.UnifyTo(PrimitiveType.Word, types);
             right = right.UnifyTo(PrimitiveType.Word, types);
 
-            var result = new BinaryTypedTree() {
+            var result = new BinaryTypedTree {
                 Location = this.Location,
                 Left = left,
                 Right = right,
                 Operator = this.Operator,
                 ReturnType = returnType,
-                AlwaysJumps = left.AlwaysJumps || right.AlwaysJumps
             };
             
-            return new TypeCheckResult(result, types);
+            return new TypeCheckResult<ITypedTree>(result, types);
         }
 
-        private TypeCheckResult EvaluateIntExpression(long int1, long int2, TypeFrame types) {
+        private TypeCheckResult<ITypedTree> EvaluateIntExpression(long int1, long int2, TypeFrame types) {
             HelixType returnType;
 
             switch (this.Operator) {
@@ -132,10 +129,10 @@ namespace Helix.Syntax.ParseTree.Primitives {
 
             var result = returnType.ToSyntax(this.Location, types).GetValue();
             
-            return new TypeCheckResult(result, types);
+            return new TypeCheckResult<ITypedTree>(result, types);
         }
 
-        private TypeCheckResult CheckBoolExpresion(ITypedTree left, ITypedTree right, TypeFrame types) {
+        private TypeCheckResult<ITypedTree> CheckBoolExpresion(ITypedTree left, ITypedTree right, TypeFrame types) {
             var leftType = left.ReturnType;
             var rightType = right.ReturnType;
 
@@ -175,14 +172,13 @@ namespace Helix.Syntax.ParseTree.Primitives {
                 Left = left,
                 Right = right,
                 Operator = this.Operator,
-                ReturnType = returnType,
-                AlwaysJumps = left.AlwaysJumps || right.AlwaysJumps
+                ReturnType = returnType
             };
             
-            return new TypeCheckResult(result, types);
+            return new TypeCheckResult<ITypedTree>(result, types);
         }
 
-        private TypeCheckResult EvaluateBoolExpression(bool b1, bool b2, ISyntaxPredicate pred, TypeFrame types) {
+        private TypeCheckResult<ITypedTree> EvaluateBoolExpression(bool b1, bool b2, ISyntaxPredicate pred, TypeFrame types) {
             bool value;
 
             switch (this.Operator) {
@@ -206,7 +202,7 @@ namespace Helix.Syntax.ParseTree.Primitives {
             var returnType = new SingularBoolType(value, pred);
             var result = returnType.ToSyntax(this.Location, types).GetValue();
             
-            return new TypeCheckResult(result, types);
+            return new TypeCheckResult<ITypedTree>(result, types);
         }
     }
 }

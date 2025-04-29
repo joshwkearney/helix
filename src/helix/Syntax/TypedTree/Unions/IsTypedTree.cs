@@ -27,9 +27,9 @@ namespace Helix.Syntax.TypedTree.Unions {
                 .Select(x => x.Name)
                 .IndexOf(x => x == this.MemberName);
 
-            return new CBinaryExpression() {
+            return new CBinaryExpression {
                 Operation = BinaryOperationKind.EqualTo,
-                Left = new CMemberAccess() {
+                Left = new CMemberAccess {
                     Target = new CVariableLiteral(varName),
                     MemberName = "tag"
                 },

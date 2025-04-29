@@ -20,7 +20,7 @@ namespace Helix.Syntax.TypedTree.Functions {
             throw new InvalidOperationException();
         }
 
-        public DeclarationTypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
+        public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types) => new(this, types);
 
         public void GenerateCode(TypeFrame types, ICWriter writer) {
             var returnType = this.Signature.ReturnType == PrimitiveType.Void
@@ -29,11 +29,11 @@ namespace Helix.Syntax.TypedTree.Functions {
 
             var pars = this.Signature
                 .Parameters
-                .Select((x, i) => new CParameter() {
+                .Select((x, i) => new CParameter {
                     Type = writer.ConvertType(x.Type, types),
                     Name = writer.GetVariableName(this.Path.Append(x.Name))
                 })
-                .Prepend(new CParameter() {
+                .Prepend(new CParameter {
                     Name = "_region",
                     Type = new CNamedType("int")
                 })
@@ -41,7 +41,7 @@ namespace Helix.Syntax.TypedTree.Functions {
 
             var funcName = writer.GetVariableName(this.Path);
 
-            var forwardDecl = new CFunctionDeclaration() {
+            var forwardDecl = new CFunctionDeclaration {
                 ReturnType = returnType,
                 Name = funcName,
                 Parameters = pars

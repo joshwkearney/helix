@@ -1,60 +1,41 @@
 ﻿using Helix.Parsing;
 using Helix.Syntax.TypedTree.FlowControl;
-using Helix.Syntax.TypedTree.Primitives;
 using Helix.TypeChecking;
 
 namespace Helix.Syntax.ParseTree.FlowControl {
-    public record BlockParseTree : IParseTree {
-        public static IParseTree FromMany(TokenLocation loc, IReadOnlyList<IParseTree> stats) {
-            if (stats.Count == 0) {
-                return new VoidLiteral { Location = loc };
-            }
-            else if (stats.Count == 1) {
-                return stats[0];
-            }
-            else {
-                return stats
-                    .Reverse()
-                    .Aggregate((x, y) => new BlockParseTree {
-                        Location = y.Location.Span(x.Location),
-                        First = y,
-                        Second = x
-                    });
-            }
-        }
-
+    public record BlockParseTree : IParseStatement {
         public required TokenLocation Location { get; init; }
         
-        public required IParseTree First { get; init; }
+        public required IReadOnlyList<IParseStatement> Statements { get; init; }
         
-        public required IParseTree Second { get; init; }
+        public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
+            var stats = new List<ITypedStatement>();
+            
+            foreach (var stat in this.Statements) {
+                (var checkedStat, types) = stat.CheckTypes(types);
+                stats.Add(checkedStat);
+                
+                // We need to make a new scope for the next statement
+                types = types.WithScope("$block");
 
-        public bool IsPure => this.First.IsPure && this.Second.IsPure;
-        
-        public TypeCheckResult CheckTypes(TypeFrame types) {
-            // Check the first statement
-            (var first, types) = this.First.CheckTypes(types);
-
-            // Skip the second statement if the first one returns
-            if (first.AlwaysJumps) {
-                return new TypeCheckResult(first, types);
+                // Skip the second statement if the first one returns
+                if (checkedStat.AlwaysJumps) {
+                    break;
+                }
             }
 
-            // Deepen the scope because the predicate might want to shadow variables
-            // and it will need a new path to do so
-            types = types.WithScope("$block");
-            (var second, types) = this.Second.CheckTypes(types);
-            types = types.PopScope();
+            // Pop all our new scopes
+            for (int i = 0; i < stats.Count; i++) {
+                types = types.PopScope();
+            }
             
             var result = new BlockTypedTree {
                 Location = this.Location,
-                First = first,
-                Second = second,
-                AlwaysJumps = first.AlwaysJumps || second.AlwaysJumps
+                Statements = stats,
+                AlwaysJumps = stats.Any(x => x.AlwaysJumps)
             };
 
-            return new TypeCheckResult(result, types);
+            return new(result, types);
         }
     }
-
 }

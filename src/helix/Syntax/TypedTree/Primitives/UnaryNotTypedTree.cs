@@ -15,10 +15,8 @@ public record UnaryNotTypedTree : ITypedTree {
     
     public required ITypedTree Operand { get; init; }
     
-    public required bool AlwaysJumps { get; init; }
-
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-        return new CNot() {
+        return new CNot {
             Target = this.Operand.GenerateCode(types, writer)
         };
     }

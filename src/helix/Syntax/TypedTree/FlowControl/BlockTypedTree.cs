@@ -8,45 +8,22 @@ using Helix.Types;
 
 namespace Helix.Syntax.TypedTree.FlowControl;
 
-public record BlockTypedTree : ITypedTree {
-    public static ITypedTree FromMany(TokenLocation loc, IReadOnlyList<ITypedTree> stats) {
-        if (stats.Count == 0) {
-            return new VoidLiteral { Location = loc };
-        }
-        else if (stats.Count == 1) {
-            return stats[0];
-        }
-        else {
-            return stats
-                .Reverse()
-                .Aggregate((x, y) => new BlockTypedTree() {
-                    Location = y.Location.Span(x.Location),
-                    First = y,
-                    Second = x,
-                    AlwaysJumps = y.AlwaysJumps || x.AlwaysJumps
-                });
-        }
-    }
-
+public record BlockTypedTree : ITypedStatement {
     public required TokenLocation Location { get; init; }
 
-    public required ITypedTree First { get; init; }
-        
-    public required ITypedTree Second { get; init; }
+    public required IReadOnlyList<ITypedStatement> Statements { get; init; }
     
     public required bool AlwaysJumps { get; init; }
-
-    public HelixType ReturnType => this.Second.ReturnType;
     
-    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
-        this.First.GenerateIR(writer, context);
-
-        return this.Second.GenerateIR(writer, context);
+    public void GenerateIR(IRWriter writer, IRFrame context) {
+        foreach (var stat in this.Statements) {
+            stat.GenerateIR(writer, context);
+        }
     }
 
-    public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-        this.First.GenerateCode(types, writer);
-            
-        return this.Second.GenerateCode(types, writer);
+    public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
+        foreach (var stat in this.Statements) {
+            stat.GenerateCode(types, writer);
+        }
     }
 }

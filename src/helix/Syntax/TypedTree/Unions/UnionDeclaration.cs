@@ -22,40 +22,40 @@ namespace Helix.Syntax.TypedTree.Unions {
 
         public TypeFrame DeclareTypes(TypeFrame types) => types;
 
-        public DeclarationTypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
+        public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types) => new(this, types);
 
         public void GenerateCode(TypeFrame types, ICWriter writer) { 
             var structName = writer.GetVariableName(this.path);
             var unionName = writer.GetVariableName(this.path) + "_$Union";
 
-            var unionPrototype = new CAggregateDeclaration() {
+            var unionPrototype = new CAggregateDeclaration {
                 Name = unionName,
                 IsUnion = true
             };
 
-            var unionDeclaration = new CAggregateDeclaration() {
+            var unionDeclaration = new CAggregateDeclaration {
                 Name = unionName,
                 IsUnion = true,
                 Members = this.signature.Members
-                    .Select(x => new CParameter() {
+                    .Select(x => new CParameter {
                         Type = writer.ConvertType(x.Type, types),
                         Name = x.Name
                     })
                     .ToArray(),
             };
 
-            var structPrototype = new CAggregateDeclaration() {
+            var structPrototype = new CAggregateDeclaration {
                 Name = structName
             };
 
-            var structDeclaration = new CAggregateDeclaration() {
+            var structDeclaration = new CAggregateDeclaration {
                 Name = structName,
                 Members = new[] {
-                    new CParameter() {
+                    new CParameter {
                         Name = "tag",
                         Type = new CNamedType("int")
                     },
-                    new CParameter() {
+                    new CParameter {
                         Name = "data",
                         Type = new CNamedType(unionName)
                     }

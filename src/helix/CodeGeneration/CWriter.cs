@@ -164,25 +164,25 @@ namespace Helix.CodeGeneration {
 
             name += "_$Array";
 
-            var decl = new CAggregateDeclaration() {
+            var decl = new CAggregateDeclaration {
                 Name = name,
                 Members = new[] { 
-                    new CParameter() {
+                    new CParameter {
                         Name = "data",
                         Type = new CPointerType(inner)
                     },
-                    new CParameter() {
+                    new CParameter {
                         Name = "region",
                         Type = new CNamedType("_Region*")
                     },
-                    new CParameter() {
+                    new CParameter {
                         Name = "count",
                         Type = this.ConvertType(PrimitiveType.Word, types)
                     }
                 }
             };
 
-            var forwardDecl = new CAggregateDeclaration() {
+            var forwardDecl = new CAggregateDeclaration {
                 Name = name
             };
 
@@ -213,21 +213,21 @@ namespace Helix.CodeGeneration {
 
             name += "_$Pointer";
 
-            var decl = new CAggregateDeclaration() {
+            var decl = new CAggregateDeclaration {
                 Name = name,
                 Members = new[] {
-                    new CParameter() {
+                    new CParameter {
                         Name = "data",
                         Type = new CPointerType(inner)
                     },
-                    new CParameter() {
+                    new CParameter {
                         Name = "region",
                         Type = new CNamedType("_Region*")
                     }
                 }
             };
 
-            var forwardDecl = new CAggregateDeclaration() {
+            var forwardDecl = new CAggregateDeclaration {
                 Name = name
             };
 

@@ -17,7 +17,7 @@ namespace Helix.Syntax.TypedTree.Primitives {
 
         public Option<HelixType> AsType(TypeFrame types) => PrimitiveType.Void;
 
-        public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) => new(this, types);
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(0);

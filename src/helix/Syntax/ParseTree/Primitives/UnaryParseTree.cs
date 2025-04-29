@@ -11,9 +11,7 @@ namespace Helix.Syntax.ParseTree.Primitives {
         
         public required IParseTree Operand { get; init; }
         
-        public bool IsPure => this.Operand.IsPure;
-
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
             if (this.Operator == UnaryOperatorKind.Plus || this.Operator == UnaryOperatorKind.Minus) {
                 var left = new WordLiteral {
                     Location = this.Location,
@@ -49,10 +47,9 @@ namespace Helix.Syntax.ParseTree.Primitives {
                     Location = this.Location,
                     Operand = arg,
                     ReturnType = returnType,
-                    AlwaysJumps = arg.AlwaysJumps
                 };
 
-                return new TypeCheckResult(result, types);
+                return new TypeCheckResult<ITypedTree>(result, types);
             }
             else {
                 throw new Exception("Unexpected unary operator kind");

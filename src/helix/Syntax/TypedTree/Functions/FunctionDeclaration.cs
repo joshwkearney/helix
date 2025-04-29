@@ -10,7 +10,7 @@ namespace Helix.Syntax.TypedTree.Functions {
     public record FunctionDeclaration : IDeclaration {
         public TokenLocation Location { get; init; }
         
-        public required ITypedTree Body { get; init; }
+        public required ITypedStatement Body { get; init; }
 
         public required FunctionType Signature { get; init; }
 
@@ -24,7 +24,7 @@ namespace Helix.Syntax.TypedTree.Functions {
             throw new InvalidOperationException();
         }
 
-        public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
+        public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types) {
             throw new InvalidOperationException();
         }
 
@@ -87,7 +87,7 @@ namespace Helix.Syntax.TypedTree.Functions {
 
             var pars = this.Signature
                 .Parameters
-                .Select((x, i) => new CParameter() { 
+                .Select((x, i) => new CParameter { 
                     Type = writer.ConvertType(x.Type, types),
                     Name = writer.GetVariableName(this.Path.Append(x.Name))
                 })
@@ -107,21 +107,21 @@ namespace Helix.Syntax.TypedTree.Functions {
             }
 
             // Generate the body
-            var retExpr = this.Body.GenerateCode(types, bodyWriter);
+            this.Body.GenerateCode(types, bodyWriter);
 
             // If the body ends with an empty line, trim it
             if (body.Any() && body.Last().IsEmpty) {
                 body = body.SkipLast(1).ToList();
             }
 
-            var decl = new CFunctionDeclaration() {
+            var decl = new CFunctionDeclaration {
                 ReturnType = returnType,
                 Name = funcName,
                 Parameters = pars,
                 Body = body
             };
 
-            var forwardDecl = new CFunctionDeclaration() {
+            var forwardDecl = new CFunctionDeclaration {
                 ReturnType = returnType,
                 Name = funcName,
                 Parameters = pars

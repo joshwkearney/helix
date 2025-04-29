@@ -5,7 +5,7 @@ using Helix.Types;
 
 namespace Helix.Syntax.ParseTree.Variables;
 
-public record AssignmentParseStatement : IParseTree {
+public record AssignmentParseStatement : IParseStatement {
     public required TokenLocation Location { get; init; }
         
     public required IParseTree Left { get; init; }
@@ -14,7 +14,7 @@ public record AssignmentParseStatement : IParseTree {
         
     public bool IsPure => false;
 
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
         (var left, types) = this.Left.CheckTypes(types);
         (var right, types) = this.Right.CheckTypes(types);
             
@@ -46,9 +46,8 @@ public record AssignmentParseStatement : IParseTree {
             Location = this.Location,
             Left = lValue,
             Right = right,
-            AlwaysJumps = left.AlwaysJumps || right.AlwaysJumps
         };
 
-        return new TypeCheckResult(result, types);
+        return new(result, types);
     }
 }

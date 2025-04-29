@@ -16,10 +16,8 @@ public class NewUnionParseTree : IParseTree {
     public IReadOnlyList<string> Names { get; init; } = [];
 
     public IReadOnlyList<IParseTree> Values { get; init; } = [];
-        
-    public bool IsPure => this.Values.All(x => x.IsPure);
-        
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         if (this.Names.Count > 1 || this.Values.Count > 1) {
             throw new TypeException(
                 this.Location,
@@ -70,9 +68,8 @@ public class NewUnionParseTree : IParseTree {
             UnionType = this.UnionType,
             Name = name,
             Value = value,
-            AlwaysJumps = value.AlwaysJumps
         };
                 
-        return new TypeCheckResult(result, types);
+        return new TypeCheckResult<ITypedTree>(result, types);
     }
 }

@@ -14,8 +14,6 @@ namespace Helix.Syntax.TypedTree.Variables {
         
         public required PointerType OperandSignature { get; init; }
         
-        public required bool AlwaysJumps { get; init; }
-
         public HelixType ReturnType => this.OperandSignature.InnerType;
 
         public ILValue ToLValue(TypeFrame types) {
@@ -43,11 +41,11 @@ namespace Helix.Syntax.TypedTree.Variables {
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Pointer dereference");
             
-            writer.WriteStatement(new CVariableDeclaration() {
+            writer.WriteStatement(new CVariableDeclaration {
                 Name = tempName,
                 Type = tempType,
-                Assignment = new CPointerDereference() {
-                    Target = new CMemberAccess() {
+                Assignment = new CPointerDereference {
+                    Target = new CMemberAccess {
                         Target = target,
                         MemberName = "data",
                         IsPointerAccess = false

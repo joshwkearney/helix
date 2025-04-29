@@ -4,15 +4,15 @@ using Helix.TypeChecking;
 
 namespace Helix.Syntax.ParseTree.FlowControl;
 
-public record LoopParseStatement : IParseTree {
+public record LoopParseStatement : IParseStatement {
     public required TokenLocation Location { get; init; }
 
-    public required IParseTree Body { get; init; }
+    public required IParseStatement Body { get; init; }
         
     public bool IsPure => false;
 
-    public TypeCheckResult CheckTypes(TypeFrame types) {
-        ITypedTree body;
+    public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
+        ITypedStatement body;
         bool alwaysJumps = false;
         
         while (true) {
@@ -36,12 +36,12 @@ public record LoopParseStatement : IParseTree {
 
                 // If we have continuation frames, we need to combine them into one
                 // frame that represents the state of our types after any loop iteration
-                var continueTypes = loopTypes.ContinueFrames.Aggregate((x, y) => x.CombineValuesWith(y));
+                var continueTypes = loopTypes.ContinueFrames.Aggregate((x, y) => x.CombineRefinementsWith(y));
 
                 // If that frame doesn't match our starting frame, we type-checked with types that
                 // are too specific and we need to combine them and do this again
                 if (!types.DoValuesMatchWith(continueTypes)) {
-                    types = types.CombineValuesWith(continueTypes);
+                    types = types.CombineRefinementsWith(continueTypes);
                     continue;
                 }
 
@@ -55,7 +55,7 @@ public record LoopParseStatement : IParseTree {
 
                 // If our continue types do match the initial frame, then we need to combine all of
                 // the break types to create the frame for after the loop
-                types = loopTypes.BreakFrames.Aggregate((x, y) => x.CombineValuesWith(y));
+                types = loopTypes.BreakFrames.Aggregate((x, y) => x.CombineRefinementsWith(y));
                 break;
             }
             finally {
@@ -69,10 +69,10 @@ public record LoopParseStatement : IParseTree {
             AlwaysJumps = alwaysJumps
         };
 
-        return new TypeCheckResult(result, types);
+        return new(result, types);
     }
 
-    private (ITypedTree body, TypeFrame types) TypeCheckLoopBody(TypeFrame initalTypes) {
+    private (ITypedStatement body, TypeFrame types) TypeCheckLoopBody(TypeFrame initalTypes) {
         // Actually typecheck the loop body
         var (body, loopTypes) = this.Body.CheckTypes(initalTypes);
 

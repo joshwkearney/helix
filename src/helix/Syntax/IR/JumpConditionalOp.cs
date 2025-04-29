@@ -15,7 +15,7 @@ public record JumpConditionalOp : IOp, ITerminalOp {
     public string[] Successors => [this.TrueBlockName, this.FalseBlockName];
 
     public override string ToString() {
-        return IOp.FormatOp("jump_cond", $"goto {this.TrueBlockName} if {this.Condition} else goto {this.FalseBlockName}");
+        return IOp.FormatOp("jump_cond", $"goto {this.TrueBlockName} or {this.FalseBlockName} if {this.Condition}");
     }
 
     public ITerminalOp RenameBlocks(IReadOnlyDictionary<string, string> newNames) {

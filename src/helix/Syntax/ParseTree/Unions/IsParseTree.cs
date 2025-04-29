@@ -14,10 +14,8 @@ public record IsParseTree : IParseTree {
     public required IParseTree Operand { get; init; }
 
     public required string MemberName { get; init; }
-
-    public bool IsPure => this.Operand.IsPure;
-        
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         // TODO: Why can't we use this on arbitrary expressions???
         if (this.Operand is not VariableAccessParseTree access) {
             throw new TypeException(
@@ -66,6 +64,6 @@ public record IsParseTree : IParseTree {
             ReturnType = returnType
         };
 
-        return new TypeCheckResult(result, types);
+        return new TypeCheckResult<ITypedTree>(result, types);
     }
 }

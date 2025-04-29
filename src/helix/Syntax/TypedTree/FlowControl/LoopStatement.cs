@@ -7,16 +7,16 @@ using Helix.TypeChecking;
 using Helix.Types;
 
 namespace Helix.Syntax.TypedTree.FlowControl {
-    public record LoopStatement : ITypedTree {
+    public record LoopStatement : ITypedStatement {
         public required TokenLocation Location { get; init; }
 
-        public required ITypedTree Body { get; init; }
+        public required ITypedStatement Body { get; init; }
         
         public required bool AlwaysJumps { get; init; }
         
         public HelixType ReturnType => PrimitiveType.Void;
         
-        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+        public void GenerateIR(IRWriter writer, IRFrame context) {
             var loopBlock = writer.GetBlockName("loop");
             var afterBlock = writer.GetBlockName("loop_after");
             
@@ -39,11 +39,9 @@ namespace Helix.Syntax.TypedTree.FlowControl {
             writer.PopBlock();
             writer.PushBlock(afterBlock);
             context.PopLoop();
-
-            return new Immediate.Void();
         }
 
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
+        public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var bodyStats = new List<ICStatement>();
             var bodyWriter = new CStatementWriter(writer, bodyStats);
 
@@ -62,8 +60,6 @@ namespace Helix.Syntax.TypedTree.FlowControl {
             writer.WriteComment($"Line {this.Location.Line}: Loop");
             writer.WriteStatement(stat);
             writer.WriteEmptyLine();
-
-            return new CIntLiteral(0);
         }
     }
 }

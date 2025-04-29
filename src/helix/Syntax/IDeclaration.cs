@@ -11,7 +11,7 @@ namespace Helix.Syntax {
 
         public TypeFrame DeclareTypes(TypeFrame types);
 
-        public DeclarationTypeCheckResult CheckTypes(TypeFrame types);
+        public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types);
 
         public void GenerateIR(IRWriter writer, IRFrame context) {
             throw new InvalidOperationException();

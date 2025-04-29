@@ -7,18 +7,16 @@ using Helix.TypeChecking;
 using Helix.Types;
 
 namespace Helix.Syntax.TypedTree.Variables {
-    public record AssignmentStatement : ITypedTree {
+    public record AssignmentStatement : ITypedStatement {
         public required TokenLocation Location { get; init; }
         
         public required ILValue Left { get; init; }
         
         public required ITypedTree Right { get; init; }
+
+        public bool AlwaysJumps => false;
         
-        public required bool AlwaysJumps { get; init; }
-        
-        public HelixType ReturnType => PrimitiveType.Void;
-        
-        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+        public void GenerateIR(IRWriter writer, IRFrame context) {
             if (this.Left is ILValue.Local local) {
                 var assign = this.Right.GenerateIR(writer, context);
                 
@@ -65,24 +63,21 @@ namespace Helix.Syntax.TypedTree.Variables {
             else {
                 throw new InvalidOperationException();
             }
-
-            return new Immediate.Void();
         }
         
-        public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
+        public void GenerateCode(TypeFrame types, ICStatementWriter writer) {
             var target = this.GenerateLValue(this.Left, types, writer);
             var assign = this.Right.GenerateCode(types, writer);
 
             writer.WriteEmptyLine();
             writer.WriteComment($"Line {this.Location.Line}: Assignment statement");
 
-            writer.WriteStatement(new CAssignment() {
+            writer.WriteStatement(new CAssignment {
                 Left = target,
                 Right = assign
             });
 
             writer.WriteEmptyLine();
-            return new CIntLiteral(0);
         }
 
         private ICSyntax GenerateLValue(ILValue lvalue, TypeFrame types, ICStatementWriter writer) {

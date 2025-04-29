@@ -21,7 +21,7 @@ namespace Helix.Syntax.ParseTree.Variables {
             return Option.None;
         }
 
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
             // Make sure this name exists
             if (!types.TryResolvePath(types.Scope, this.VariableName, out var path)) {
                 throw TypeException.VariableUndefined(this.Location, this.VariableName);
@@ -35,7 +35,7 @@ namespace Helix.Syntax.ParseTree.Variables {
                     ReturnType = type.InnerType
                 };
 
-                return new TypeCheckResult(result, types);
+                return new TypeCheckResult<ITypedTree>(result, types);
             }
 
             // See if we are accessing a function
@@ -45,7 +45,7 @@ namespace Helix.Syntax.ParseTree.Variables {
                     FunctionPath = path
                 };
 
-                return new TypeCheckResult(result, types);
+                return new TypeCheckResult<ITypedTree>(result, types);
             }
 
             throw TypeException.VariableUndefined(this.Location, this.VariableName);

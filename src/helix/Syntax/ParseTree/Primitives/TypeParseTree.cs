@@ -13,7 +13,7 @@ public class TypeParseTree : IParseTree {
 
     public Option<HelixType> AsType(TypeFrame types) => this.Type;
     
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         throw new InvalidOperationException();
     }
 }

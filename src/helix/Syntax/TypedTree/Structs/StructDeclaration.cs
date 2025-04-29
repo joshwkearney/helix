@@ -16,23 +16,23 @@ namespace Helix.Syntax.TypedTree.Structs {
 
         public TypeFrame DeclareTypes(TypeFrame types) => types;
 
-        public DeclarationTypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
+        public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types) => new(this, types);
 
         public void GenerateCode(TypeFrame types, ICWriter writer) {
             var name = writer.GetVariableName(this.Path);
 
             var mems = this.Signature.Members
-                .Select(x => new CParameter() {
+                .Select(x => new CParameter {
                     Type = writer.ConvertType(x.Type, types),
                     Name = x.Name
                 })
                 .ToArray();
 
-            var prototype = new CAggregateDeclaration() {
+            var prototype = new CAggregateDeclaration {
                 Name = name
             };
 
-            var fullDeclaration = new CAggregateDeclaration() {
+            var fullDeclaration = new CAggregateDeclaration {
                 Name = name,
                 Members = mems
             };

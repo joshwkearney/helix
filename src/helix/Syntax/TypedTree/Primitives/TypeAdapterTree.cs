@@ -12,8 +12,6 @@ public class TypeAdapterTree : ITypedTree {
     
     public required HelixType ReturnType { get; init; }
     
-    public required bool AlwaysJumps { get; init; }
-    
     public TokenLocation Location => this.Operand.Location;
 
     public Immediate GenerateIR(IRWriter writer, IRFrame context) {

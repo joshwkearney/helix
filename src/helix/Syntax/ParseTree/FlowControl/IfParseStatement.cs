@@ -1,22 +1,21 @@
 using Helix.Parsing;
 using Helix.Syntax.TypedTree.FlowControl;
-using Helix.Syntax.TypedTree.Primitives;
 using Helix.TypeChecking;
 using Helix.TypeChecking.Predicates;
 using Helix.Types;
 
 namespace Helix.Syntax.ParseTree.FlowControl;
 
-public record IfParseTree : IParseTree {
+public record IfParseStatement : IParseStatement {
     public required TokenLocation Location { get; init; }
         
     public required IParseTree Condition { get; init; }
         
-    public required IParseTree Affirmative { get; init; }
+    public required IParseStatement Affirmative { get; init; }
 
-    public required IParseTree Negative { get; init; }
+    public required IParseStatement Negative { get; init; }
     
-    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
+    public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
         (var cond, types) = this.Condition.CheckTypes(types);
         var condPredicate = ISyntaxPredicate.Empty;
         
@@ -29,12 +28,18 @@ public record IfParseTree : IParseTree {
             // We have to put the condition in a block in case it has side effects.
             // If it doesn't, no big deal it will get removed later in dead code
             // elimination
-            var block = new CompoundTypedTree {
-                First = cond,
-                Second = next
+            var block = new BlockTypedTree {
+                Location = cond.Location.Span(next.Location),
+                AlwaysJumps = next.AlwaysJumps,
+                Statements = [
+                    new ExpressionStatement {
+                        Expression = cond
+                    },
+                    next
+                ]
             };
 
-            return new TypeCheckResult<ITypedTree>(block, types);
+            return new TypeCheckResult<ITypedStatement>(block, types);
         }
         
         // Make sure to apply any predicates from the condition
@@ -52,22 +57,34 @@ public record IfParseTree : IParseTree {
 
         ifTrueTypes = ifTrueTypes.PopScope();
         ifFalseTypes = ifFalseTypes.PopScope();
-        
-        checkedIfTrue = checkedIfTrue.UnifyFrom(checkedIfFalse, types);
-        checkedIfFalse = checkedIfFalse.UnifyFrom(checkedIfTrue, types);
 
-        // If expression won't early return, so we need to combine the types
-        // from each branch
-        types = ifTrueTypes.CombineRefinementsWith(ifFalseTypes)
+        if (!checkedIfTrue.AlwaysJumps && !checkedIfFalse.AlwaysJumps) {
+            // If neither branch jumps, we have to combine the signatures
+            types = ifTrueTypes.CombineRefinementsWith(ifFalseTypes);
+        }
+        else if (!checkedIfTrue.AlwaysJumps && checkedIfFalse.AlwaysJumps) {
+            // If the first branch doesn't jump but the second does, take the first types
+            types = ifTrueTypes;
+        }
+        else if (checkedIfTrue.AlwaysJumps && !checkedIfFalse.AlwaysJumps) {
+            // If the first branch jumps but not the second does, take the second types
+            types = ifFalseTypes;
+        }
+        else {
+            // If both branches jump, leave types alone because none of the context propagates
+        }
+
+        // We want to track break and continue context from both branches
+        types = types
             .CombineLoopFramesWith(ifTrueTypes)
             .CombineLoopFramesWith(ifFalseTypes);
         
-        var result = new IfTypedTree {
+        var result = new IfTypedStatement {
             Location = this.Location,
             Condition = cond,
             Affirmative = checkedIfTrue,
             Negative = checkedIfFalse,
-            ReturnType = checkedIfTrue.ReturnType
+            AlwaysJumps = checkedIfTrue.AlwaysJumps && checkedIfFalse.AlwaysJumps
         };
         
         return new(result, types);

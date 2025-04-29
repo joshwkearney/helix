@@ -1,13 +1,18 @@
 function_start:
-    array_malloc    | let $2 = malloc(7 * &word)
-    array_store     | 4 -> $2[0]
-    array_store     | 5 -> $2[1]
-    array_store     | 5 -> $2[2]
-    array_store     | 3 -> $2[3]
-    array_store     | 4 -> $2[4]
-    array_store     | 5 -> $2[5]
-    array_store     | 8 -> $2[6]
-    local_create    | var x
-    local_assign    | x = $2
-    return          | return void
+    local_create    | var $1
+    binary_op       | let $2 = x < 15
+    local_create    | var $3
+    jump_cond       | goto if_true or if_false if $2
+
+if_true:
+    local_assign    | $3 = 89
+    jump            | goto if_after
+
+if_false:
+    local_assign    | $3 = 15
+    jump            | goto if_after
+
+if_after:
+    local_assign    | $1 = $3
+    return          | return $1
 

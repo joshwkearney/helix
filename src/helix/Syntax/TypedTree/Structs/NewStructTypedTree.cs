@@ -16,8 +16,6 @@ namespace Helix.Syntax.TypedTree.Structs {
         
         public required IReadOnlyList<ITypedTree> Values { get; init; }
         
-        public required bool AlwaysJumps { get; init; }
-
         public HelixType ReturnType => this.StructType;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
@@ -29,7 +27,7 @@ namespace Helix.Syntax.TypedTree.Structs {
                 memValues = [new CIntLiteral(0)];
             }
 
-            return new CCompoundExpression() {
+            return new CCompoundExpression {
                 Type = writer.ConvertType(this.StructType, types),
                 MemberNames = this.Names,
                 Arguments = memValues,

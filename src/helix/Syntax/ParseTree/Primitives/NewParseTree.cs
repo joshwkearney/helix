@@ -14,10 +14,8 @@ namespace Helix.Syntax.ParseTree.Primitives {
         public IReadOnlyList<string> Names { get; init; } = [];
 
         public IReadOnlyList<IParseTree> Values { get; init; } = [];
-
-        public bool IsPure => this.TypeTree.IsPure && this.Values.All(x => x.IsPure);
-
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
             // Make sure our type is actually a type
             if (!this.TypeTree.AsType(types).TryGetValue(out var type)) {
                 throw TypeException.ExpectedTypeExpression(this.TypeTree.Location);              

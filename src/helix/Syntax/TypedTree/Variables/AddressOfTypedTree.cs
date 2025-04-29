@@ -13,8 +13,6 @@ namespace Helix.Syntax.TypedTree.Variables {
         
         public required IdentifierPath VariablePath { get; init; }
         
-        public required bool AlwaysJumps { get; init; }
-        
         public Immediate GenerateIR(IRWriter writer, IRFrame context) {
             // If we're taking the address of a local, it's already been promoted to heap allocated and
             // the variable is actually storing a reference. We can just return that

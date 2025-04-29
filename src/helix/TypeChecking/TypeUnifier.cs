@@ -10,23 +10,22 @@ namespace Helix.TypeChecking {
         private delegate ITypedTree Unifier(ITypedTree tree, TypeFrame frame);
 
         private readonly struct UnificationResult {
-            public static UnificationResult None { get; } = new UnificationResult() {
+            public static UnificationResult None { get; } = new UnificationResult {
                 Kind = UnificationKind.None,
                 Unifier = null
             };
 
-            public static UnificationResult Identity { get; } = new UnificationResult() {
+            public static UnificationResult Identity { get; } = new UnificationResult {
                 Kind = UnificationKind.Pun,
                 Unifier = (s, t) => s
             };
 
             public static UnificationResult Pun(HelixType adaptedType) {
-                return new UnificationResult() {
+                return new UnificationResult {
                     Kind = UnificationKind.Pun,
                     Unifier = (s, t) => new TypeAdapterTree {
                         Operand = s,
                         ReturnType = adaptedType,
-                        AlwaysJumps = s.AlwaysJumps
                     }
                 };
             }
@@ -242,7 +241,7 @@ namespace Helix.TypeChecking {
                 return UnificationResult.None;
             }
 
-            return new UnificationResult() {
+            return new UnificationResult {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
                     var newStruct = new NewStructParseTree {
@@ -251,13 +250,11 @@ namespace Helix.TypeChecking {
                         StructType = structType
                     };
                     
-                    var block = new BlockTypedTree {
-                        Location = syntax.Location,
+                    var block = new CompoundTypedTree {
                         First = syntax,
                         
                         // TODO: Don't be lazy and construct a new struct synatx without type checking
-                        Second = newStruct.CheckTypes(types).TypedTree,
-                        AlwaysJumps = syntax.AlwaysJumps
+                        Second = newStruct.CheckTypes(types).Result,
                     };
 
                     return block;
@@ -270,7 +267,7 @@ namespace Helix.TypeChecking {
                 return UnificationResult.None;
             }
 
-            return new UnificationResult() {
+            return new UnificationResult {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, types) => {
                     var type = sig.Members[0].Type;
@@ -282,14 +279,11 @@ namespace Helix.TypeChecking {
                         UnionType = unionType,
                         Name = sig.Members[0].Name,
                         Value = value,
-                        AlwaysJumps = false
                     };
 
-                    var block = new BlockTypedTree {
-                        Location = syntax.Location,
+                    var block = new CompoundTypedTree {
                         First = syntax,
                         Second = newUnion,
-                        AlwaysJumps = syntax.AlwaysJumps
                     };
 
                     return block;

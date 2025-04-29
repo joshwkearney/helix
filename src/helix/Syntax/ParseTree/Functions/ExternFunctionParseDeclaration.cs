@@ -26,7 +26,7 @@ public record ExternFunctionParseDeclaration : IDeclaration {
         return types.WithSignature(path, sig);
     }
 
-    public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
+    public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types) {
         var path = types.Scope.Append(this.Signature.Name);
         var sig = new NominalType(path, NominalTypeKind.Function).AsFunction(types).GetValue();
 

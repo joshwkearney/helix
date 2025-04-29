@@ -21,7 +21,7 @@ namespace Helix.Syntax.TypedTree.Primitives {
             return new SingularWordType(this.Value);
         }
 
-        public TypeCheckResult CheckTypes(TypeFrame types) => new(this, types);
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) => new(this, types);
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value);

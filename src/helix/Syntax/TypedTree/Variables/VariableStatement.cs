@@ -7,7 +7,7 @@ using Helix.TypeChecking;
 using Helix.Types;
 
 namespace Helix.Syntax.TypedTree.Variables {
-    public record VariableStatement : ITypedTree {
+    public record VariableStatement : ITypedStatement {
         public required TokenLocation Location { get; init; }
 
         public required ITypedTree Assignment { get; init; }
@@ -15,8 +15,8 @@ namespace Helix.Syntax.TypedTree.Variables {
         public required IdentifierPath Path { get; init; }
         
         public required PointerType VariableSignature { get; init; }
-        
-        public required bool AlwaysJumps { get; init; }
+
+        public bool AlwaysJumps => false;
         
         public HelixType ReturnType => PrimitiveType.Void;
 
@@ -24,7 +24,7 @@ namespace Helix.Syntax.TypedTree.Variables {
             return new NominalType(this.Path, NominalTypeKind.Variable);
         }
 
-        public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+        public void GenerateIR(IRWriter writer, IRFrame context) {
             if (context.AllocatedVariables.Contains(this.Path)) {
                 var name = writer.GetName(this.Path.Segments.Last());
                 writer.CurrentBlock.Add(new AllocateOp {
@@ -39,7 +39,6 @@ namespace Helix.Syntax.TypedTree.Variables {
                 });
 
                 context.SetVariable(this.Path, name);
-                return new Immediate.Void();
             }
             else {
                 var name = writer.GetName(this.Path.Segments.Last());
@@ -56,15 +55,13 @@ namespace Helix.Syntax.TypedTree.Variables {
                 });
                 
                 context.SetVariable(this.Path, name);
-                return new Immediate.Void();
             }
         }
         
-        public ICSyntax GenerateCode(TypeFrame flow, ICStatementWriter writer) {
+        public void GenerateCode(TypeFrame flow, ICStatementWriter writer) {
             var assign = this.Assignment.GenerateCode(flow, writer);
             
             this.GenerateStackAllocation(assign, flow, writer);
-            return new CIntLiteral(0);
         }
 
         private void GenerateStackAllocation(ICSyntax assign, TypeFrame types, ICStatementWriter writer) {
@@ -72,7 +69,7 @@ namespace Helix.Syntax.TypedTree.Variables {
             var assignType = this.Assignment.ReturnType;
             var cReturnType = writer.ConvertType(assignType, types);
 
-            var stat = new CVariableDeclaration() {
+            var stat = new CVariableDeclaration {
                 Type = cReturnType,
                 Name = name,
                 Assignment = Option.Some(assign)
@@ -89,17 +86,17 @@ namespace Helix.Syntax.TypedTree.Variables {
             var assignType = this.Assignment.ReturnType;
             var cReturnType = writer.ConvertType(assignType, types);
 
-            writer.WriteStatement(new CVariableDeclaration() {
+            writer.WriteStatement(new CVariableDeclaration {
                 Name = name,
                 Type = new CPointerType(cReturnType),
-                Assignment = new CRegionAllocExpression() {
+                Assignment = new CRegionAllocExpression {
                     Type = cReturnType,
                     Lifetime = allocLifetime
                 }
             });
 
-            var assignmentDecl = new CAssignment() {
-                Left = new CPointerDereference() {
+            var assignmentDecl = new CAssignment {
+                Left = new CPointerDereference {
                     Target = new CVariableLiteral(name)
                 },
                 Right = assign

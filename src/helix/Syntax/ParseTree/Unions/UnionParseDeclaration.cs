@@ -35,7 +35,7 @@ public record UnionParseDeclaration : IDeclaration {
         return types.WithSignature(path, unionSig);
     }
 
-    public DeclarationTypeCheckResult CheckTypes(TypeFrame types) {
+    public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types) {
         var path = types.Scope.Append(this.signature.Name);
         var sig = this.signature.ResolveNames(types);
         var unionSig = new UnionType(sig.Members);

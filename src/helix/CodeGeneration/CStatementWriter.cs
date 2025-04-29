@@ -22,7 +22,7 @@ namespace Helix.CodeGeneration {
         }
 
         public ICStatementWriter WriteStatement(ICSyntax syntax) {
-            return this.WriteStatement(new CSyntaxStatement() {
+            return this.WriteStatement(new CSyntaxStatement {
                 Value = syntax
             });
         }
@@ -30,7 +30,7 @@ namespace Helix.CodeGeneration {
         public ICSyntax WriteImpureExpression(ICSyntax type, ICSyntax expr) {
             var name = this.GetVariableName();
 
-            var stat = new CVariableDeclaration() {
+            var stat = new CVariableDeclaration {
                 Type = type,
                 Name = name,
                 Assignment = Option.Some(expr)

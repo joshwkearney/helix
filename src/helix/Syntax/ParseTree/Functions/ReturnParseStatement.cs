@@ -4,14 +4,14 @@ using Helix.TypeChecking;
 using Helix.Types;
 
 namespace Helix.Syntax.ParseTree.Functions {
-    public record ReturnParseTree : IParseTree {
+    public record ReturnParseStatement : IParseStatement {
         public required TokenLocation Location { get; init; }
         
         public required IParseTree Operand { get; init; }
         
         public bool IsPure => false;
 
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
             if (!this.TryGetCurrentFunction(types, out var sig)) {
                 throw new InvalidOperationException();
             }
@@ -19,13 +19,13 @@ namespace Helix.Syntax.ParseTree.Functions {
             (var operand, types) = this.Operand.CheckTypes(types);
             operand = operand.UnifyTo(sig.ReturnType, types);
             
-            var result = new ReturnTypedTree {
+            var result = new ReturnTypedStatement {
                 Location = this.Location,
                 Operand = operand,
                 FunctionSignature = sig
             };
 
-            return new TypeCheckResult(result, types);
+            return new(result, types);
         }
         
         private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {

@@ -14,7 +14,7 @@ public record InvokeParseTree : IParseTree {
         
     public bool IsPure => false;
         
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         (var operand, types) = this.Operand.CheckTypes(types);
 
         // TODO: Support invoking non-nominal functions
@@ -46,9 +46,8 @@ public record InvokeParseTree : IParseTree {
             FunctionSignature = sig,
             FunctionPath = named.Path,
             Arguments = newArgs,
-            AlwaysJumps = newArgs.Any(x => x.AlwaysJumps)
         };
 
-        return new TypeCheckResult(result, types);            
+        return new TypeCheckResult<ITypedTree>(result, types);            
     }
 }

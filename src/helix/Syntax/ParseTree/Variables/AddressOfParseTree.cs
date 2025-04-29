@@ -9,8 +9,6 @@ public class AddressOfParseTree : IParseTree {
     public required TokenLocation Location { get; init; }
         
     public required IParseTree Operand { get; init; }
-        
-    public bool IsPure => this.Operand.IsPure;
     
     public Option<HelixType> AsType(TypeFrame types) {
         return this.Operand
@@ -18,7 +16,7 @@ public class AddressOfParseTree : IParseTree {
             .Select(HelixType (x) => new PointerType(x));
     }
 
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         (var operand, types) = this.Operand.CheckTypes(types);
 
         var lvalue = operand.ToLValue(types);
@@ -34,10 +32,9 @@ public class AddressOfParseTree : IParseTree {
         var result = new AddressOfTypedTree {
             Location = this.Location,
             ReturnType = local.ReturnType,
-            AlwaysJumps = operand.AlwaysJumps,
             VariablePath = local.VariablePath
         };
 
-        return new TypeCheckResult(result, types);
+        return new TypeCheckResult<ITypedTree>(result, types);
     }
 }

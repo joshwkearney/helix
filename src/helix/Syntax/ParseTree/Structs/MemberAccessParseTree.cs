@@ -11,10 +11,8 @@ public record MemberAccessParseTree : IParseTree {
     public required string MemberName { get; init; }
 
     public required TokenLocation Location { get; init; }
-        
-    public bool IsPure => this.Operand.IsPure;
-        
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         (var operand, types) = this.Operand.CheckTypes(types);
 
         // Handle getting the count of an array
@@ -27,7 +25,7 @@ public record MemberAccessParseTree : IParseTree {
                     ReturnType = PrimitiveType.Word
                 };
 
-                return new TypeCheckResult(result, types);
+                return new TypeCheckResult<ITypedTree>(result, types);
             }
         }
 
@@ -47,7 +45,7 @@ public record MemberAccessParseTree : IParseTree {
                     ReturnType = field.Type
                 };
 
-                return new TypeCheckResult(result, types);
+                return new TypeCheckResult<ITypedTree>(result, types);
             }               
         }
 

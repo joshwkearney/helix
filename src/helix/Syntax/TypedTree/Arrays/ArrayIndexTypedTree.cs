@@ -14,8 +14,6 @@ namespace Helix.Syntax.TypedTree.Arrays {
         
         public required ITypedTree Index { get; init; }
         
-        public required bool AlwaysJumps { get; init; }
-        
         public TokenLocation Location => this.Operand.Location;
 
         public HelixType ReturnType => this.ArraySignature.InnerType;

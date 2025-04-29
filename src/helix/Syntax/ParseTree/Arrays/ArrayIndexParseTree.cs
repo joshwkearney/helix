@@ -10,10 +10,8 @@ namespace Helix.Syntax.ParseTree.Arrays {
         public required IParseTree Operand { get; init; }
         
         public required IParseTree Index { get; init; }
-
-        public bool IsPure => this.Operand.IsPure && this.Index.IsPure;
         
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
             (var operand, types) = this.Operand.CheckTypes(types);
             (var index, types) = this.Index.CheckTypes(types);
                 
@@ -29,11 +27,10 @@ namespace Helix.Syntax.ParseTree.Arrays {
             var result = new ArrayIndexTypedTree {
                 ArraySignature = arrayType,
                 Operand = operand,
-                Index = index,
-                AlwaysJumps = operand.AlwaysJumps && index.AlwaysJumps
+                Index = index
             };
 
-            return new TypeCheckResult(result, types);
+            return new TypeCheckResult<ITypedTree>(result, types);
         }
     }
 }

@@ -12,8 +12,6 @@ public interface ITypedTree {
 
     public HelixType ReturnType { get; }
     
-    public bool AlwaysJumps { get; }
-
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer);
 
     public Immediate GenerateIR(IRWriter writer, IRFrame context) {

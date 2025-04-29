@@ -11,18 +11,16 @@ namespace Helix.Syntax.TypedTree.Primitives;
 public record BinaryTypedTree : ITypedTree {
     public required TokenLocation Location { get; init; }
 
-    public ITypedTree Left { get; init; }
+    public required ITypedTree Left { get; init; }
         
-    public ITypedTree Right { get; init; }
+    public required ITypedTree Right { get; init; }
         
     public BinaryOperationKind Operator { get; init; }
 
     public required HelixType ReturnType { get; init; }
     
-    public required bool AlwaysJumps { get; init; }
-
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
-        return new CBinaryExpression() {
+        return new CBinaryExpression {
             Left = this.Left.GenerateCode(types, writer),
             Right = this.Right.GenerateCode(types, writer),
             Operation = this.Operator

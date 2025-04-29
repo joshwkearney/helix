@@ -14,8 +14,6 @@ namespace Helix.Syntax.TypedTree.Arrays {
         
         public required ArrayType ArraySignature { get; init; }
         
-        public required bool AlwaysJumps { get; init; }
-
         public HelixType ReturnType => this.ArraySignature;
         
         public Immediate GenerateIR(IRWriter writer, IRFrame context) {
@@ -118,10 +116,10 @@ namespace Helix.Syntax.TypedTree.Arrays {
                 Elements = args
             };
 
-            var assign = new CVariableDeclaration() {
+            var assign = new CVariableDeclaration {
                 Type = cArrayType,
                 Name = tempName,
-                Assignment = new CCompoundExpression() {
+                Assignment = new CCompoundExpression {
                     Type = cArrayType,
                     Arguments = new[] {
                             new CVariableLiteral(backingName),

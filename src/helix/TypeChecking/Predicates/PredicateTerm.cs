@@ -69,7 +69,7 @@ namespace Helix.TypeChecking.Predicates {
             
             return this.Operands
                 .Select(x => x.ApplyToTypes(types))
-                .Aggregate((x, y) => x.CombineValuesWith(y));
+                .Aggregate((x, y) => x.CombineRefinementsWith(y));
         }
 
         public override string ToString() {

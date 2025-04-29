@@ -13,8 +13,6 @@ namespace Helix.Syntax.TypedTree.Unions {
         public required TokenLocation Location { get; init; }
 
         public required HelixType ReturnType { get; init; }
-
-        public bool AlwaysJumps => Operand.AlwaysJumps;
         
         public virtual ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CMemberAccess {

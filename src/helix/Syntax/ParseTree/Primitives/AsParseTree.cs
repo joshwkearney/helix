@@ -8,10 +8,8 @@ namespace Helix.Syntax.ParseTree.Primitives {
         public required IParseTree Operand { get; init; }
 
         public required IParseTree TypeTree { get; init; }
-
-        public bool IsPure => this.Operand.IsPure && this.TypeTree.IsPure;
-
-        public TypeCheckResult CheckTypes(TypeFrame types) {
+        
+        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
             (var arg, types) = this.Operand.CheckTypes(types);
 
             if (!this.TypeTree.AsType(types).TryGetValue(out var targetType)) {
@@ -20,7 +18,7 @@ namespace Helix.Syntax.ParseTree.Primitives {
             
             arg = arg.UnifyTo(targetType, types);
             
-            return new TypeCheckResult(arg, types);
+            return new TypeCheckResult<ITypedTree>(arg, types);
         }
     }
 }

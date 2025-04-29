@@ -16,10 +16,8 @@ public class NewStructParseTree : IParseTree {
     public IReadOnlyList<string> Names { get; init; } = [];
 
     public IReadOnlyList<IParseTree> Values { get; init; } = [];
-        
-    public bool IsPure => this.Values.All(x => x.IsPure);
-
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         var names = new string[this.Names.Count];
         int missingCounter = 0;
 
@@ -126,9 +124,8 @@ public class NewStructParseTree : IParseTree {
             StructType = this.StructType,
             Names = allNames,
             Values = allValues,
-            AlwaysJumps = allValues.Any(x => x.AlwaysJumps)
         };
 
-        return new TypeCheckResult(result, types);
+        return new TypeCheckResult<ITypedTree>(result, types);
     }
 }

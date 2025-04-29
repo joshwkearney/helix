@@ -17,8 +17,6 @@ namespace Helix.Syntax.TypedTree.Unions {
         
         public required ITypedTree Value { get; init; }
         
-        public required bool AlwaysJumps { get; init; }
-
         public HelixType ReturnType => this.UnionType;
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
@@ -28,12 +26,12 @@ namespace Helix.Syntax.TypedTree.Unions {
             var unionUnionType = new CNamedType(unionStructType.WriteToC() + "_$Union");
             var index = this.UnionSignature.Members.IndexOf(x => x.Name == this.Name);
 
-            return new CCompoundExpression() {
+            return new CCompoundExpression {
                 Type = unionStructType,
                 MemberNames = new[] { "tag", "data" },
                 Arguments = new ICSyntax[] { 
                     new CIntLiteral(index),
-                    new CCompoundExpression() {
+                    new CCompoundExpression {
                         MemberNames = new[] { this.Name },
                         Arguments = new[] { value }
                     }

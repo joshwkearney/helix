@@ -7,7 +7,7 @@ using Helix.Types;
 
 namespace Helix.Syntax.ParseTree.Variables;
 
-public record VariableParseStatement : IParseTree {
+public record VariableParseStatement : IParseStatement {
     public required TokenLocation Location { get; init; }
         
     public required IReadOnlyList<string> VariableNames { get; init; }
@@ -18,7 +18,7 @@ public record VariableParseStatement : IParseTree {
         
     public bool IsPure => false;
         
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    public TypeCheckResult<ITypedStatement> CheckTypes(TypeFrame types) {
         // Type check the assignment value
         (var assign, types) = this.Assignment.CheckTypes(types);
         
@@ -53,14 +53,13 @@ public record VariableParseStatement : IParseTree {
             Location = this.Location,
             Path = path,
             Assignment = assign,
-            AlwaysJumps = assign.AlwaysJumps,
             VariableSignature = sig
         };
 
-        return new TypeCheckResult(result, types);
+        return new(result, types);
     }
         
-    private TypeCheckResult Destructure(HelixType assignType, TypeFrame types) {
+    private TypeCheckResult<ITypedStatement> Destructure(HelixType assignType, TypeFrame types) {
         if (!assignType.AsStruct(types).TryGetValue(out var sig)) {
             throw new TypeException(
                 this.Location,
@@ -83,7 +82,7 @@ public record VariableParseStatement : IParseTree {
             VariableTypes = [Option.None]
         };
 
-        var stats = new List<IParseTree>() { tempStat };
+        var stats = new List<IParseStatement> { tempStat };
 
         for (int i = 0; i < sig.Members.Count; i++) {
             var literal = new VariableAccessParseTree {
@@ -107,8 +106,11 @@ public record VariableParseStatement : IParseTree {
             stats.Add(assign);
         }
 
-        return BlockParseTree
-            .FromMany(this.Location, stats)
-            .CheckTypes(types);
+        var result = new BlockParseTree {
+            Location = this.Location,
+            Statements = stats
+        };
+
+        return result.CheckTypes(types);
     }
 }

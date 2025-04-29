@@ -9,10 +9,8 @@ public record DereferenceParseTree : IParseTree {
     public required TokenLocation Location { get; init; }
         
     public required IParseTree Operand { get; init; }
-        
-    public bool IsPure => this.Operand.IsPure;
-
-    public TypeCheckResult CheckTypes(TypeFrame types) {
+    
+    public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) {
         (var operand, types) = this.Operand.CheckTypes(types);
             
         if (operand.ReturnType is NominalType nom && nom.Kind == NominalTypeKind.Variable) {
@@ -24,7 +22,7 @@ public record DereferenceParseTree : IParseTree {
                 ReturnType = sig.InnerType
             };
 
-            return new TypeCheckResult(access, types);
+            return new TypeCheckResult<ITypedTree>(access, types);
         }
 
         var pointerType = operand.AssertIsPointer(types);
@@ -32,10 +30,9 @@ public record DereferenceParseTree : IParseTree {
         var result = new DereferenceTypedTree {
             Location = this.Location,
             Operand = operand,
-            OperandSignature = pointerType,
-            AlwaysJumps = operand.AlwaysJumps
+            OperandSignature = pointerType
         };
 
-        return new TypeCheckResult(result, types);
+        return new TypeCheckResult<ITypedTree>(result, types);
     }
 }

@@ -1,3 +1,5 @@
-﻿func test() {
-    var x = [4,5,5,3,4,5,8];
+﻿func test(x as word) as word {
+    return if x < 15
+        then 89
+        else 15;
 }

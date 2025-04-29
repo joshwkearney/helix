@@ -13,9 +13,7 @@ namespace Helix.Syntax.TypedTree.Structs {
         public required TokenLocation Location { get; init; }
 
         public required HelixType ReturnType { get; init; }
-
-        public bool AlwaysJumps => this.Operand.AlwaysJumps;
-
+        
         public ILValue ToLValue(TypeFrame types) {
             var target = this.Operand.ToLValue(types);
 
