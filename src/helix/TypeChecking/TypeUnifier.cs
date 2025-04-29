@@ -1,13 +1,12 @@
-﻿using Helix.Syntax;
-using Helix.Syntax.ParseTree.Structs;
-using Helix.Syntax.TypedTree.FlowControl;
+﻿using Helix.Syntax.ParseTree.Structs;
+using Helix.Syntax.TypedTree;
 using Helix.Syntax.TypedTree.Primitives;
 using Helix.Syntax.TypedTree.Unions;
 using Helix.Types;
 
 namespace Helix.TypeChecking {
     public static class TypeUnifier {
-        private delegate ITypedTree Unifier(ITypedTree tree, TypeFrame frame);
+        private delegate ITypedExpression Unifier(ITypedExpression expression, TypeFrame frame);
 
         private readonly struct UnificationResult {
             public static UnificationResult None { get; } = new UnificationResult {
@@ -23,7 +22,7 @@ namespace Helix.TypeChecking {
             public static UnificationResult Pun(HelixType adaptedType) {
                 return new UnificationResult {
                     Kind = UnificationKind.Pun,
-                    Unifier = (s, t) => new TypeAdapterTree {
+                    Unifier = (s, t) => new TypeAdapterExpression {
                         Operand = s,
                         ReturnType = adaptedType,
                     }
@@ -69,15 +68,15 @@ namespace Helix.TypeChecking {
             return false;
         }
 
-        public static bool CanUnifyTo(this ITypedTree fromParse, HelixType toType, TypeFrame types) {
+        public static bool CanUnifyTo(this ITypedExpression fromParse, HelixType toType, TypeFrame types) {
             return fromParse.ReturnType.CanUnifyTo(toType, types);
         }
         
-        public static bool CanPunTo(this ITypedTree fromParse, HelixType toType, TypeFrame types) {
+        public static bool CanPunTo(this ITypedExpression fromParse, HelixType toType, TypeFrame types) {
             return fromParse.ReturnType.CanPunTo(toType, types);
         }
 
-        public static ITypedTree UnifyTo(this ITypedTree fromParse, HelixType toType, TypeFrame types) {
+        public static ITypedExpression UnifyTo(this ITypedExpression fromParse, HelixType toType, TypeFrame types) {
             var fromType = fromParse.ReturnType;
 
             if (!fromType.CanUnifyTo(toType, types)) {
@@ -87,7 +86,7 @@ namespace Helix.TypeChecking {
             return TryUnify(fromType, toType, types).Unifier(fromParse, types);
         }
 
-        public static ITypedTree UnifyFrom(this ITypedTree syntax1, ITypedTree syntax2, TypeFrame types) {
+        public static ITypedExpression UnifyFrom(this ITypedExpression syntax1, ITypedExpression syntax2, TypeFrame types) {
             var type1 = syntax1.ReturnType;
             var type2 = syntax2.ReturnType;
 
@@ -142,7 +141,7 @@ namespace Helix.TypeChecking {
                 if (memType.CanUnifyTo(second, types)) {
                     return new UnificationResult {
                         Kind = UnificationKind.Convert,
-                        Unifier = (syntax, types) => new UnionMemberAccessTypedTree {
+                        Unifier = (syntax, types) => new TypedUnionMemberAccessExpression {
                             Location = syntax.Location,
                             MemberName = memName,
                             Operand = syntax,
@@ -244,13 +243,13 @@ namespace Helix.TypeChecking {
             return new UnificationResult {
                 Kind = UnificationKind.Convert,
                 Unifier = (syntax, t) => {
-                    var newStruct = new NewStructParseTree {
+                    var newStruct = new NewStructExpression {
                         Location = syntax.Location,
                         StructSignature = sig,
                         StructType = structType
                     };
                     
-                    var block = new CompoundTypedTree {
+                    var block = new TypedCompoundExpression {
                         First = syntax,
                         
                         // TODO: Don't be lazy and construct a new struct synatx without type checking
@@ -273,7 +272,7 @@ namespace Helix.TypeChecking {
                     var type = sig.Members[0].Type;
                     var value = new VoidLiteral { Location = syntax.Location }.UnifyTo(type, types);
                     
-                    var newUnion = new NewUnionTypedTree {
+                    var newUnion = new TypedNewUnionExpression {
                         Location = syntax.Location,
                         UnionSignature = sig,
                         UnionType = unionType,
@@ -281,7 +280,7 @@ namespace Helix.TypeChecking {
                         Value = value,
                     };
 
-                    var block = new CompoundTypedTree {
+                    var block = new TypedCompoundExpression {
                         First = syntax,
                         Second = newUnion,
                     };

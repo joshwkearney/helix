@@ -1,5 +1,5 @@
 ﻿using Helix.Parsing;
-using Helix.Syntax;
+using Helix.Syntax.TypedTree;
 using Helix.TypeChecking;
 
 namespace Helix.Types {
@@ -33,7 +33,7 @@ namespace Helix.Types {
             }
         }
 
-        public override Option<ITypedTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+        public override Option<ITypedExpression> ToSyntax(TokenLocation loc, TypeFrame types) {
             return this.GetValue(types).ToSyntax(loc, types);
         }
 

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using Helix.Syntax;
 using Helix.Types;
 
 namespace Helix.TypeChecking {

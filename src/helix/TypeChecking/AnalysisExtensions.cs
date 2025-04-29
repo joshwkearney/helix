@@ -1,4 +1,4 @@
-﻿using Helix.Syntax;
+﻿using Helix.Syntax.TypedTree;
 using Helix.Types;
 
 namespace Helix.TypeChecking {
@@ -49,7 +49,7 @@ namespace Helix.TypeChecking {
                 .TryGetValue(out type);
         }
 
-        public static PointerType AssertIsPointer(this ITypedTree parse, TypeFrame types) {
+        public static PointerType AssertIsPointer(this ITypedExpression parse, TypeFrame types) {
             var type = parse.ReturnType;
 
             if (!type.AsVariable(types).TryGetValue(out var pointer)) {

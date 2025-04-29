@@ -14,11 +14,11 @@ namespace Helix.Syntax {
         public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types);
 
         public void GenerateIR(IRWriter writer, IRFrame context) {
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
         }
         
         public void GenerateCode(TypeFrame types, ICWriter writer) {
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
         }
     }
 }

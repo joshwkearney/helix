@@ -2,11 +2,12 @@
 using Helix.CodeGeneration.Syntax;
 using Helix.FlowAnalysis;
 using Helix.Parsing;
+using Helix.Syntax.ParseTree;
 using Helix.TypeChecking;
 using Helix.Types;
 
 namespace Helix.Syntax.TypedTree.Primitives {
-    public record WordLiteral : IParseTree, ITypedTree {
+    public record WordLiteral : IParseExpression, ITypedExpression {
         public required TokenLocation Location { get; init; }
         
         public required long Value { get; init; }
@@ -21,7 +22,7 @@ namespace Helix.Syntax.TypedTree.Primitives {
             return new SingularWordType(this.Value);
         }
 
-        public TypeCheckResult<ITypedTree> CheckTypes(TypeFrame types) => new(this, types);
+        public TypeCheckResult<ITypedExpression> CheckTypes(TypeFrame types) => new(this, types);
 
         public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
             return new CIntLiteral(this.Value);

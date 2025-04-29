@@ -1,5 +1,5 @@
 ﻿using Helix.Parsing;
-using Helix.Syntax;
+using Helix.Syntax.TypedTree;
 using Helix.Syntax.TypedTree.Primitives;
 using Helix.TypeChecking;
 using Helix.TypeChecking.Predicates;
@@ -28,7 +28,7 @@ namespace Helix.Types {
             this.Value = value;
         }
 
-        public override Option<ITypedTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+        public override Option<ITypedExpression> ToSyntax(TokenLocation loc, TypeFrame types) {
             return new BoolLiteral {
                 Location = loc, 
                 Value = this.Value

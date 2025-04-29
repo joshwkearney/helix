@@ -3,6 +3,7 @@ using Helix.CodeGeneration.Syntax;
 using Helix.FlowAnalysis;
 using Helix.Parsing;
 using Helix.Syntax.IR;
+using Helix.Syntax.ParseTree;
 using Helix.TypeChecking;
 using Helix.Types;
 

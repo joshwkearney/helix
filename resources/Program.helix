@@ -1,5 +1,14 @@
-﻿func test(x as word) as word {
-    return if x < 15
-        then 89
-        else 15;
+﻿struct Point {
+    x as word;
+    y as word;
+}
+
+func test(x as word) as word {
+    var sum = 1;
+    
+    for i = 1 to 10 {
+        sum += i;
+    }
+    
+    return sum;
 }

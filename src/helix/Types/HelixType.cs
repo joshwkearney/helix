@@ -1,5 +1,5 @@
 ﻿using Helix.Parsing;
-using Helix.Syntax;
+using Helix.Syntax.TypedTree;
 using Helix.TypeChecking;
 
 namespace Helix.Types {
@@ -39,7 +39,7 @@ namespace Helix.Types {
 
         public abstract HelixType GetSignature(TypeFrame types);
         
-        public virtual Option<ITypedTree> ToSyntax(TokenLocation loc, TypeFrame types) {
+        public virtual Option<ITypedExpression> ToSyntax(TokenLocation loc, TypeFrame types) {
             return Option.None;
         }
 

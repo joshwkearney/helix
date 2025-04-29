@@ -11,6 +11,8 @@ using Helix.Syntax.ParseTree.Variables;
 using Helix.Syntax.TypedTree.FlowControl;
 using Helix.Syntax.TypedTree.Primitives;
 using Helix.Types;
+using ExpressionStatement = Helix.Syntax.ParseTree.FlowControl.ExpressionStatement;
+using LoopStatement = Helix.Syntax.ParseTree.FlowControl.LoopStatement;
 
 namespace Helix.Parsing {
     public class Parser {
@@ -109,7 +111,7 @@ namespace Helix.Parsing {
         }
 
         var end = this.Advance(TokenKind.CloseParenthesis);
-        var returnType = new VoidLiteral { Location = end.Location} as IParseTree;
+        var returnType = new VoidLiteral { Location = end.Location} as IParseExpression;
 
         if (this.TryAdvance(TokenKind.AsKeyword)) {
             returnType = this.TopExpression();
@@ -131,7 +133,7 @@ namespace Helix.Parsing {
             var sig = this.FunctionSignature();
             var body = this.Block();      
 
-            return new FunctionParseDeclaration(
+            return new FunctionDeclaration(
                 sig.Location.Span(body.Location), 
                 sig,
                 body);
@@ -143,7 +145,7 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.Semicolon);
             var loc = start.Location.Span(end.Location);
 
-            return new ExternFunctionParseDeclaration {
+            return new ExternFunctionDeclaration {
                 Location = loc,
                 Signature = sig
             };
@@ -180,7 +182,7 @@ namespace Helix.Parsing {
                 Members = mems
             };
 
-            return new StructParseDeclaration {
+            return new StructDeclaration {
                 Location = loc,
                 Signature = sig
             };
@@ -218,10 +220,10 @@ namespace Helix.Parsing {
                 Name = name
             };
 
-            return new UnionParseDeclaration(loc, sig);
+            return new UnionDeclaration(loc, sig);
         }
 
-        /* Statement Parsing */
+        /** Statement Parsing **/
         private IParseStatement Statement() {
             IParseStatement result;
 
@@ -265,7 +267,7 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBrace);
             var loc = start.Location.Span(end.Location);
 
-            return new BlockParseTree {
+            return new BlockStatement {
                 Location = loc,
                 Statements = stats
             };
@@ -279,9 +281,9 @@ namespace Helix.Parsing {
             var body = this.Block();
             this.isInLoop.Pop();
             
-            var test = new IfParseStatement {
+            var test = new IfStatement {
                 Location = cond.Location,
-                Condition = new UnaryParseTree {
+                Condition = new UnaryExpression {
                     Location = cond.Location,
                     Operand = cond,
                     Operator = UnaryOperatorKind.Not
@@ -290,7 +292,7 @@ namespace Helix.Parsing {
                     Location = cond.Location,
                     Kind = LoopControlKind.Break
                 },
-                Negative = new BlockParseTree {
+                Negative = new BlockStatement {
                     Location = cond.Location,
                     Statements = []
                 }
@@ -303,9 +305,9 @@ namespace Helix.Parsing {
 
             var loc = start.Location.Span(body.Location);
 
-            var loop = new LoopParseStatement {
+            var loop = new LoopStatement {
                 Location = loc,
-                Body = new BlockParseTree {
+                Body = new BlockStatement {
                     Location = loc,
                     Statements = newBlock
                 }
@@ -357,99 +359,19 @@ namespace Helix.Parsing {
 
             var endIndex = this.TopExpression();
 
-            startIndex = new BinaryParseTree {
-                Location = startIndex.Location,
-                Left = startIndex,
-                Right = new WordLiteral {
-                    Location = startIndex.Location,
-                    Value = 1
-                },
-                Operator = BinaryOperationKind.Subtract
-            };
-            
-            /*endIndex = new AsParseSyntax {
-                Location = endIndex.Location,
-                Operand = endIndex,
-                TypeSyntax = new VariableAccessParseSyntax {
-                    Location = endIndex.Location,
-                    VariableName = "word"
-                }
-            };*/
-
-            var counterName = id.Value;
-
-            var counterDeclaration = new VariableParseStatement {
-                Location = startTok.Location,
-                VariableNames = [counterName],
-                VariableTypes = [Option.None],
-                Assignment = startIndex
-            };
-
-            var counterAccess = new VariableAccessParseTree {
-                Location = startTok.Location,
-                VariableName = counterName
-            };
-
-            var counterInc = new AssignmentParseStatement {
-                Location = startTok.Location,
-                Left = counterAccess,
-                Right = new BinaryParseTree {
-                    Location = startTok.Location,
-                    Left = counterAccess,
-                    Right = new WordLiteral {
-                        Location = startTok.Location,
-                        Value = 1
-                    },
-                    Operator = BinaryOperationKind.Add
-                }
-            };
-
-            var totalBlock = new List<IParseStatement> { counterDeclaration };
-            var loopBlock = new List<IParseStatement> { counterInc };
-            var loc = startTok.Location.Span(endIndex.Location);
-
-            var test = new IfParseStatement {
-                Location = loc,
-                Condition = new BinaryParseTree {
-                    Location = loc,
-                    Left = counterAccess,
-                    Right = endIndex,
-                    Operator = inclusive
-                        ? BinaryOperationKind.GreaterThan
-                        : BinaryOperationKind.GreaterThanOrEqualTo
-                },
-                Affirmative = new LoopControlStatement {
-                    Location = loc,
-                    Kind = LoopControlKind.Break
-                },
-                Negative = new BlockParseTree {
-                    Location = loc,
-                    Statements = []
-                }
-            };
-
-            loopBlock.Add(test);
-
             this.isInLoop.Push(true);
             var body = this.Block();
             this.isInLoop.Pop();
 
-            loopBlock.Add(body);
-            loc = loc.Span(body.Location);
+            var loc = startTok.Location.Span(body.Location);
 
-            var loop = new LoopParseStatement {
+            return new ForLoopStatement {
                 Location = loc,
-                Body = new BlockParseTree {
-                    Location = loc,
-                    Statements = loopBlock
-                }
-            };
-
-            totalBlock.Add(loop);
-
-            return new BlockParseTree {
-                Location = loc,
-                Statements = totalBlock
+                VariableToken = id,
+                StartValue = startIndex,
+                EndValue = endIndex,
+                IsInclusive = inclusive,
+                Body = body
             };
         }
         
@@ -462,7 +384,7 @@ namespace Helix.Parsing {
                 var neg = this.Block();
                 var loc = start.Location.Span(neg.Location);
 
-                return new IfParseStatement {
+                return new IfStatement {
                     Location = loc,
                     Condition = cond,
                     Affirmative = affirm,
@@ -472,11 +394,11 @@ namespace Helix.Parsing {
             else {
                 var loc = start.Location.Span(affirm.Location);
 
-                return new IfParseStatement {
+                return new IfStatement {
                     Location = loc,
                     Condition = cond,
                     Affirmative = affirm,
-                    Negative = new BlockParseTree {
+                    Negative = new BlockStatement {
                         Location = loc,
                         Statements = []
                     }
@@ -489,7 +411,7 @@ namespace Helix.Parsing {
             var arg = this.TopExpression();
             var last = this.Advance(TokenKind.Semicolon);
 
-            return new ReturnParseStatement {
+            return new ReturnStatement {
                 Location = start.Location.Span(last.Location),
                 Operand = arg
             };
@@ -502,7 +424,7 @@ namespace Helix.Parsing {
                 var assign = this.TopExpression();
                 var loc = start.Location.Span(assign.Location);
 
-                var result = new AssignmentParseStatement {
+                var result = new AssignmenStatement {
                     Location = loc,
                     Left = start,
                     Right = assign
@@ -530,7 +452,7 @@ namespace Helix.Parsing {
                     op = BinaryOperationKind.Modulo;
                 }
                 else {
-                    return new ExpressionParseStatement {
+                    return new ExpressionStatement {
                         Expression = start
                     };
                 }
@@ -538,14 +460,14 @@ namespace Helix.Parsing {
                 var second = this.TopExpression();
                 var loc = start.Location.Span(second.Location);
 
-                var assign = new BinaryParseTree {
+                var assign = new BinaryExpression {
                     Location = loc,
                     Left = start,
                     Right = second,
                     Operator = op
                 };
 
-                var stat = new AssignmentParseStatement {
+                var stat = new AssignmenStatement {
                     Location = loc,
                     Left = start,
                     Right = assign
@@ -558,14 +480,14 @@ namespace Helix.Parsing {
         private IParseStatement VariableStatement() {
             var startLok = this.Advance(TokenKind.VarKeyword).Location;
             var names = new List<string>();
-            var types = new List<Option<IParseTree>>();
+            var types = new List<Option<IParseExpression>>();
 
             while (true) {
                 var name = this.Advance(TokenKind.Identifier).Value;
                 names.Add(name);
 
                 if (this.TryAdvance(TokenKind.AsKeyword)) {
-                    types.Add(Option.Some<IParseTree>(this.TopExpression()));
+                    types.Add(Option.Some(this.TopExpression()));
                 }
                 else {
                     types.Add(Option.None);
@@ -583,23 +505,33 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.Semicolon);
             var loc = startLok.Span(end.Location);
 
-            return new VariableParseStatement {
-                Location = loc,
-                VariableNames = names,
-                VariableTypes = types,
-                Assignment = assign
-            };
+            if (names.Count == 1) {
+                return new VariableStatement {
+                    Location = loc,
+                    VariableName = names[0],
+                    VariableType = types[0],
+                    Assignment = assign
+                };
+            }
+            else {
+                return new MultiVariableStatement {
+                    Location = loc,
+                    VariableNames = names,
+                    VariableTypes = types,
+                    Assignment = assign
+                };
+            }
         }
 
         
         /** Expression Parsing **/
-        private IParseTree TopExpression() => this.BinaryExpression();
+        private IParseExpression TopExpression() => this.BinaryExpression();
 
-        private IParseTree BinaryExpression() => this.OrExpression();
+        private IParseExpression BinaryExpression() => this.OrExpression();
 
-        private IParseTree PrefixExpression() => this.AsExpression();     
+        private IParseExpression PrefixExpression() => this.AsExpression();     
 
-        private IParseTree SuffixExpression() {
+        private IParseExpression SuffixExpression() {
             var first = this.Atom();
 
             while (this.Peek(TokenKind.OpenParenthesis) 
@@ -623,7 +555,7 @@ namespace Helix.Parsing {
             return first;
         }        
 
-        private IParseTree Atom() {
+        private IParseExpression Atom() {
             if (this.Peek(TokenKind.Identifier)) {
                 return this.VariableAccess();
             }
@@ -645,7 +577,7 @@ namespace Helix.Parsing {
             else if (this.Peek(TokenKind.WordKeyword)) {
                 var tok = this.Advance(TokenKind.WordKeyword);
 
-                return new TypeParseTree {
+                return new TypeExpression {
                     Location = tok.Location,
                     Type = PrimitiveType.Word
                 };
@@ -653,7 +585,7 @@ namespace Helix.Parsing {
             else if (this.Peek(TokenKind.BoolKeyword)) {
                 var tok = this.Advance(TokenKind.BoolKeyword);
 
-                return new TypeParseTree {
+                return new TypeExpression {
                     Location = tok.Location,
                     Type = PrimitiveType.Bool
                 };
@@ -671,7 +603,7 @@ namespace Helix.Parsing {
             }
         }        
         
-        private IParseTree IfExpression() {
+        private IParseExpression IfExpression() {
             var start = this.Advance(TokenKind.IfKeyword);
             var cond = this.TopExpression();
 
@@ -682,7 +614,7 @@ namespace Helix.Parsing {
                 var neg = this.TopExpression();
                 var loc = start.Location.Span(neg.Location);
 
-                return new IfParseTree {
+                return new IfExpression {
                     Location = loc,
                     Condition = cond,
                     Affirmative = affirm,
@@ -692,7 +624,7 @@ namespace Helix.Parsing {
             else {
                 var loc = start.Location.Span(affirm.Location);
 
-                return new IfParseTree {
+                return new IfExpression {
                     Location = loc,
                     Condition = cond,
                     Affirmative = affirm,
@@ -703,7 +635,7 @@ namespace Helix.Parsing {
             }
         }
 
-        private IParseTree ParenExpression() {
+        private IParseExpression ParenExpression() {
             this.Advance(TokenKind.OpenParenthesis);
             var result = this.TopExpression();
             this.Advance(TokenKind.CloseParenthesis);
@@ -711,14 +643,14 @@ namespace Helix.Parsing {
             return result;
         }
         
-        public IParseTree ArrayExpression(IParseTree start) {
+        public IParseExpression ArrayExpression(IParseExpression start) {
             this.Advance(TokenKind.OpenBracket);
 
             if (this.Peek(TokenKind.CloseBracket)) {
                 var end = this.Advance(TokenKind.CloseBracket);
                 var loc = start.Location.Span(end.Location);
 
-                return new ArrayTypeParseTree {
+                return new ArrayTypeExpression {
                     Location = loc,
                     Operand = start
                 };
@@ -728,7 +660,7 @@ namespace Helix.Parsing {
                 var end = this.Advance(TokenKind.CloseBracket);
                 var loc = start.Location.Span(end.Location);
 
-                return new ArrayIndexParseTree {
+                return new ArrayIndexExpression {
                     Location = loc,
                     Operand = start,
                     Index = index
@@ -736,9 +668,9 @@ namespace Helix.Parsing {
             }            
         }
     
-        private IParseTree ArrayLiteral() {
+        private IParseExpression ArrayLiteral() {
             var start = this.Advance(TokenKind.OpenBracket);
-            var args = new List<IParseTree>();
+            var args = new List<IParseExpression>();
 
             while (!this.Peek(TokenKind.CloseBracket)) {
                 args.Add(this.TopExpression());
@@ -751,16 +683,16 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBracket);
             var loc = start.Location.Span(end.Location);
 
-            return new ArrayLiteralParseTree {
+            return new ArrayLiteral {
                 Location = loc,
                 Arguments = args
             };
         }
         
-        private IParseTree InvokeExpression(IParseTree first) {
+        private IParseExpression InvokeExpression(IParseExpression first) {
             this.Advance(TokenKind.OpenParenthesis);
 
-            var args = new List<IParseTree>();
+            var args = new List<IParseExpression>();
 
             while (!this.Peek(TokenKind.CloseParenthesis)) {
                 args.Add(this.TopExpression());
@@ -773,14 +705,14 @@ namespace Helix.Parsing {
             var last = this.Advance(TokenKind.CloseParenthesis);
             var loc = first.Location.Span(last.Location);
 
-            return new InvokeParseTree {
+            return new InvokeExpression {
                 Location = loc,
                 Operand = first,
                 Arguments = args
             };
         }
         
-        private IParseTree UnaryExpression() {
+        private IParseExpression UnaryExpression() {
             var hasOperator = this.Peek(TokenKind.Minus)
                            || this.Peek(TokenKind.Plus)
                            || this.Peek(TokenKind.Not)
@@ -800,13 +732,13 @@ namespace Helix.Parsing {
                     op = UnaryOperatorKind.Minus;
                 }
                 else if (tokOp.Kind == TokenKind.Ampersand) {
-                    return new AddressOfParseTree {
+                    return new AddressOfExpression {
                         Location = loc,
                         Operand = first
                     };
                 }
                 else if (tokOp.Kind == TokenKind.Star) {
-                    return new DereferenceParseTree {
+                    return new DereferenceExpression {
                         Location = loc,
                         Operand = first
                     };
@@ -815,7 +747,7 @@ namespace Helix.Parsing {
                     throw new Exception("Unexpected unary operator");
                 }
 
-                return new UnaryParseTree {
+                return new UnaryExpression {
                     Location = loc,
                     Operand = first,
                     Operator = op
@@ -825,7 +757,7 @@ namespace Helix.Parsing {
             return this.SuffixExpression();
         }
         
-        private IParseTree WordLiteral() {
+        private IParseExpression WordLiteral() {
             var tok = this.Advance(TokenKind.WordLiteral);
             var num = long.Parse((string)tok.Value);
 
@@ -835,7 +767,7 @@ namespace Helix.Parsing {
             };
         }
         
-        private IParseTree VoidLiteral() {
+        private IParseExpression VoidLiteral() {
             var tok = this.Advance(TokenKind.VoidKeyword);
 
             return new VoidLiteral {
@@ -843,7 +775,7 @@ namespace Helix.Parsing {
             };
         }
         
-        private IParseTree BoolLiteral() {
+        private IParseExpression BoolLiteral() {
             var start = this.Advance(TokenKind.BoolLiteral);
             var value = bool.Parse((string)start.Value);
 
@@ -853,7 +785,7 @@ namespace Helix.Parsing {
             };
         }
         
-        private IParseTree AsExpression() {
+        private IParseExpression AsExpression() {
             var first = this.UnaryExpression();
 
             while (this.Peek(TokenKind.AsKeyword) || this.Peek(TokenKind.IsKeyword)) {
@@ -861,17 +793,17 @@ namespace Helix.Parsing {
                     var target = this.TopExpression();
                     var loc = first.Location.Span(target.Location);
 
-                    first = new AsParseTree {
+                    first = new AsExpression {
                         Location = loc,
                         Operand = first,
-                        TypeTree = target
+                        TypeExpression = target
                     };
                 }
                 else {
                     this.Advance(TokenKind.IsKeyword);
                     var nameTok = this.Advance(TokenKind.Identifier);
 
-                    first = new IsParseTree {
+                    first = new IsExpression {
                         Location = first.Location.Span(nameTok.Location),
                         Operand = first,
                         MemberName = nameTok.Value
@@ -882,7 +814,7 @@ namespace Helix.Parsing {
             return first;
         }
         
-        private IParseTree OrExpression() {
+        private IParseExpression OrExpression() {
             var first = this.XorExpression();
 
             while (this.TryAdvance(TokenKind.OrKeyword)) {
@@ -891,7 +823,7 @@ namespace Helix.Parsing {
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    first = new IfParseTree {
+                    first = new IfExpression {
                         Location = loc,
                         Condition = first,
                         Affirmative = new BoolLiteral {
@@ -902,7 +834,7 @@ namespace Helix.Parsing {
                     };
                 }
                 else {
-                    first = new BinaryParseTree {
+                    first = new BinaryExpression {
                         Location = loc,
                         Left = first,
                         Right = second,
@@ -914,14 +846,14 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private IParseTree XorExpression() {
+        private IParseExpression XorExpression() {
             var first = this.AndExpression();
 
             while (this.TryAdvance(TokenKind.XorKeyword)) {
                 var second = this.AndExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree {
+                first = new BinaryExpression {
                     Location = loc,
                     Left = first,
                     Right = second,
@@ -932,7 +864,7 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private IParseTree AndExpression() {
+        private IParseExpression AndExpression() {
             var first = this.ComparisonExpression();
 
             while (this.TryAdvance(TokenKind.AndKeyword)) {
@@ -941,9 +873,9 @@ namespace Helix.Parsing {
                 var loc = first.Location.Span(second.Location);
 
                 if (branching) {
-                    first = new IfParseTree {
+                    first = new IfExpression {
                         Location = loc,
-                        Condition = new UnaryParseTree {
+                        Condition = new UnaryExpression {
                             Location = loc,
                             Operand = first,
                             Operator = UnaryOperatorKind.Not
@@ -956,7 +888,7 @@ namespace Helix.Parsing {
                     };
                 }
                 else {
-                    first = new BinaryParseTree {
+                    first = new BinaryExpression {
                         Location = loc,
                         Left = first,
                         Right = second,
@@ -968,7 +900,7 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private IParseTree ComparisonExpression() {
+        private IParseExpression ComparisonExpression() {
             var first = this.AddExpression();
             var comparators = new Dictionary<TokenKind, BinaryOperationKind> {
                 { TokenKind.Equals, BinaryOperationKind.EqualTo }, { TokenKind.NotEquals, BinaryOperationKind.NotEqualTo },
@@ -992,7 +924,7 @@ namespace Helix.Parsing {
                 var second = this.AddExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree {
+                first = new BinaryExpression {
                     Location = loc,
                     Left = first,
                     Right = second,
@@ -1003,7 +935,7 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private IParseTree AddExpression() {
+        private IParseExpression AddExpression() {
             var first = this.MultiplyExpression();
 
             while (true) {
@@ -1016,7 +948,7 @@ namespace Helix.Parsing {
                 var second = this.MultiplyExpression();
                 var loc = first.Location.Span(second.Location);
 
-                first = new BinaryParseTree {
+                first = new BinaryExpression {
                     Location = loc,
                     Left = first,
                     Right = second,
@@ -1027,7 +959,7 @@ namespace Helix.Parsing {
             return first;
         }
 
-        private IParseTree MultiplyExpression() {
+        private IParseExpression MultiplyExpression() {
             var first = this.PrefixExpression();
 
             while (true) {
@@ -1048,7 +980,7 @@ namespace Helix.Parsing {
                 var second = this.PrefixExpression();
                 var loc = first.Location.Span(second.Location);
                 
-                first = new BinaryParseTree {
+                first = new BinaryExpression {
                     Location = loc,
                     Left = first,
                     Right = second,
@@ -1059,20 +991,20 @@ namespace Helix.Parsing {
             return first;
         }
         
-        private IParseTree NewExpression() {
+        private IParseExpression NewExpression() {
             var start = this.Advance(TokenKind.NewKeyword).Location;
             var targetType = this.TopExpression();
             var loc = start.Span(targetType.Location);
 
             if (!this.TryAdvance(TokenKind.OpenBrace)) {
-                return new NewParseTree {
+                return new NewExpression {
                     Location = loc,
-                    TypeTree = targetType
+                    TypeExpression = targetType
                 };
             }
 
             var names = new List<string>();
-            var values = new List<IParseTree>();
+            var values = new List<IParseExpression>();
 
             while (!this.Peek(TokenKind.CloseBrace)) {
                 string name = null;
@@ -1095,31 +1027,31 @@ namespace Helix.Parsing {
             var end = this.Advance(TokenKind.CloseBrace);
             loc = start.Span(end.Location);
 
-            return new NewParseTree {
+            return new NewExpression {
                 Location = loc,
-                TypeTree = targetType,
+                TypeExpression = targetType,
                 Names = names,
                 Values = values
             };
         }
         
-        private IParseTree MemberAccessExpression(IParseTree first) {
+        private IParseExpression MemberAccessExpression(IParseExpression first) {
             this.Advance(TokenKind.Dot);
 
             var tok = this.Advance(TokenKind.Identifier);
             var loc = first.Location.Span(tok.Location);
 
-            return new MemberAccessParseTree {
+            return new MemberAccessExpression {
                 Location = loc,
                 Operand = first,
                 MemberName = tok.Value
             };
         }
         
-        private IParseTree VariableAccess() {
+        private IParseExpression VariableAccess() {
             var tok = this.Advance(TokenKind.Identifier);
 
-            return new VariableAccessParseTree {
+            return new VariableAccessExpression {
                 Location = tok.Location,
                 VariableName = tok.Value
             };

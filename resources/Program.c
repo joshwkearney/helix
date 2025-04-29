@@ -1,18 +1,23 @@
 function_start:
     local_create    | var $1
-    binary_op       | let $2 = x < 15
-    local_create    | var $3
-    jump_cond       | goto if_true or if_false if $2
+    local_create    | var sum
+    local_assign    | sum = 1
+    local_create    | var i
+    local_assign    | i = 0
+    jump            | goto loop
 
-if_true:
-    local_assign    | $3 = 89
-    jump            | goto if_after
-
-if_false:
-    local_assign    | $3 = 15
-    jump            | goto if_after
+loop:
+    binary_op       | let $2 = i + 1
+    local_assign    | i = $2
+    binary_op       | let $3 = i > 10
+    jump_cond       | goto loop_after or if_after if $3
 
 if_after:
-    local_assign    | $1 = $3
+    binary_op       | let $4 = sum + i
+    local_assign    | sum = $4
+    jump            | goto loop
+
+loop_after:
+    local_assign    | $1 = sum
     return          | return $1
 

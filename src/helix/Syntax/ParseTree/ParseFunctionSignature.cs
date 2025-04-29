@@ -8,7 +8,7 @@ namespace Helix.Syntax.ParseTree {
         
         public required string Name { get; init; }
 
-        public required IParseTree ReturnType { get; init; }
+        public required IParseExpression ReturnType { get; init; }
         
         public required IReadOnlyList<ParseFunctionParameter> Parameters { get; init; }
 
