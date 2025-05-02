@@ -24,7 +24,7 @@ public record TypedIfStatement : ITypedStatement {
         var continueBranchName = writer.GetBlockName("if_after");
         var cond = this.Condition.GenerateIR(writer, context);
             
-        writer.CurrentBlock.Terminate(new JumpConditionalOp {
+        writer.CurrentBlock.Terminate(new JumpConditionalInstruction {
             Condition = cond,
             TrueBlockName = trueBranchName,
             FalseBlockName = falseBranchName
@@ -36,7 +36,7 @@ public record TypedIfStatement : ITypedStatement {
         this.Affirmative.GenerateIR(writer, context);
             
         if (!writer.CurrentBlock.IsTerminated) {
-            writer.CurrentBlock.Terminate(new JumpOp {
+            writer.CurrentBlock.Terminate(new JumpInstruction {
                 BlockName = continueBranchName
             });
         }
@@ -47,7 +47,7 @@ public record TypedIfStatement : ITypedStatement {
         this.Negative.GenerateIR(writer, context);
 
         if (!writer.CurrentBlock.IsTerminated) {
-            writer.CurrentBlock.Terminate(new JumpOp {
+            writer.CurrentBlock.Terminate(new JumpInstruction {
                 BlockName = continueBranchName
             });
         }

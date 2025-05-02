@@ -24,7 +24,7 @@ public record TypedDereferenceExpression : ITypedExpression {
     public Immediate GenerateIR(IRWriter writer, IRFrame context) {
         var temp = writer.GetName();
         
-        writer.CurrentBlock.Add(new LoadReferenceOp {
+        writer.CurrentBlock.Add(new LoadInstruction {
             Operand = this.Operand.GenerateIR(writer, context),
             ReturnType = this.ReturnType,
             ReturnValue = temp

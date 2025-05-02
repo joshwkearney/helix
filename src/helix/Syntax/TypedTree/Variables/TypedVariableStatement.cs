@@ -19,20 +19,16 @@ public record TypedVariableStatement : ITypedStatement {
     
     public bool AlwaysJumps => false;
 
-    public Option<HelixType> AsType(TypeFrame types) {
-        return new NominalType(this.Path, NominalTypeKind.Variable);
-    }
-
     public void GenerateIR(IRWriter writer, IRFrame context) {
         if (context.AllocatedVariables.Contains(this.Path)) {
             var name = writer.GetName(this.Path.Segments.Last());
-            writer.CurrentBlock.Add(new AllocateReferenceOp {
-                ReturnType = this.VariableSignature,
+            writer.CurrentBlock.Add(new AllocateReferenceInstruction {
+                InnerType = this.VariableSignature,
                 ReturnValue = name
             });
                 
             var assign = this.Assignment.GenerateIR(writer, context);
-            writer.CurrentBlock.Add(new StoreReferenceOp {
+            writer.CurrentBlock.Add(new StoreInstruction {
                 Reference = name,
                 Value = assign
             });
@@ -43,12 +39,12 @@ public record TypedVariableStatement : ITypedStatement {
             var name = writer.GetName(this.Path.Segments.Last());
             var assign = this.Assignment.GenerateIR(writer, context);
                 
-            writer.CurrentBlock.Add(new CreateLocalOp {
-                ReturnType = this.Assignment.ReturnType,
+            writer.CurrentBlock.Add(new CreateLocalInstruction {
+                ReturnType = this.VariableSignature,
                 LocalName = name
             });
                 
-            writer.CurrentBlock.Add(new AssignLocalOp {
+            writer.CurrentBlock.Add(new AssignLocalInstruction {
                 LocalName = name,
                 Value = assign
             });

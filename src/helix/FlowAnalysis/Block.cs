@@ -3,9 +3,9 @@ using System.Diagnostics;
 namespace Helix.FlowAnalysis;
 
 public class Block {
-    private List<IOp> phiNodes = [];
-    private List<IOp> ops = [];
-    private ITerminalOp? jump = null;
+    private List<IInstruction> phiNodes = [];
+    private List<IInstruction> ops = [];
+    private ITerminalInstruction? jump = null;
     
     public string Name { get; }
     
@@ -13,11 +13,11 @@ public class Block {
 
     public bool IsTerminated => this.jump != null;
 
-    public ITerminalOp? Terminal => this.jump;
+    public ITerminalInstruction? Terminal => this.jump;
 
     public bool IsEmpty => this.ops.Count == 0;
 
-    public IEnumerable<IOp> Instructions {
+    public IEnumerable<IInstruction> Instructions {
         get {
             foreach (var value in this.phiNodes) {
                 yield return value;
@@ -49,13 +49,13 @@ public class Block {
         this.Index = index;
     }
 
-    public void Terminate(ITerminalOp op) {
-        this.jump = op;
+    public void Terminate(ITerminalInstruction instruction) {
+        this.jump = instruction;
     }
 
-    public void Add(IOp op) {
-        Debug.Assert(op is not ITerminalOp);
+    public void Add(IInstruction instruction) {
+        Debug.Assert(instruction is not ITerminalInstruction);
         
-        this.ops.Add(op);
+        this.ops.Add(instruction);
     }
 }

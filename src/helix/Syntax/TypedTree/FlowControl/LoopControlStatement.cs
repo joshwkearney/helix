@@ -33,12 +33,12 @@ public record LoopControlStatement : IParseStatement, ITypedStatement {
 
     public void GenerateIR(IRWriter writer, IRFrame context) {
         if (this.Kind == LoopControlKind.Break) {
-            writer.CurrentBlock.Terminate(new JumpOp {
+            writer.CurrentBlock.Terminate(new JumpInstruction {
                 BlockName = context.BreakBlock!
             });
         }
         else {
-            writer.CurrentBlock.Terminate(new JumpOp {
+            writer.CurrentBlock.Terminate(new JumpInstruction {
                 BlockName = context.ContinueBlock!
             });
         }

@@ -3,7 +3,7 @@ using Helix.Types;
 
 namespace Helix.Syntax.IR;
 
-public record BinaryOp : IOp {
+public record BinaryInstruction : IInstruction {
     public Immediate Left { get; init; }
     
     public Immediate Right { get; init; }
@@ -15,6 +15,6 @@ public record BinaryOp : IOp {
     public Immediate ReturnValue { get; init; }
 
     public override string ToString() {
-        return IOp.FormatOp("binary_op", $"let {this.ReturnValue} = {this.Left} {this.Operation.GetSymbol()} {this.Right}");
+        return IInstruction.FormatOp("binary_op", $"let {this.ReturnValue} = {this.Left} {this.Operation.GetSymbol()} {this.Right}");
     }
 }

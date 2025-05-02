@@ -4,6 +4,7 @@ using Helix.FlowAnalysis;
 using Helix.Parsing;
 using Helix.Syntax.IR;
 using Helix.TypeChecking;
+using Helix.Types;
 
 namespace Helix.Syntax.TypedTree.Variables;
 
@@ -22,14 +23,14 @@ public record TypedAssignmentStatement : ITypedStatement {
                 
             if (context.AllocatedVariables.Contains(local.VariablePath)) {
                 // We need to store into this variable as a reference   
-                writer.CurrentBlock.Add(new StoreReferenceOp {
+                writer.CurrentBlock.Add(new StoreInstruction {
                     Reference = context.GetVariable(local.VariablePath),
                     Value = assign
                 });
             }
             else {
                 // Emit a temporary assignment that will be removed in the SSA pass
-                writer.CurrentBlock.Add(new AssignLocalOp {
+                writer.CurrentBlock.Add(new AssignLocalInstruction {
                     LocalName = context.GetVariable(local.VariablePath),
                     Value = assign
                 });
@@ -40,7 +41,7 @@ public record TypedAssignmentStatement : ITypedStatement {
             var reference = deref.Operand.GenerateIR(writer, context);
             var assign = this.Right.GenerateIR(writer, context);
                 
-            writer.CurrentBlock.Add(new StoreReferenceOp {
+            writer.CurrentBlock.Add(new StoreInstruction {
                 Reference = reference,
                 Value = assign
             });
@@ -50,10 +51,17 @@ public record TypedAssignmentStatement : ITypedStatement {
             var array = arrayIndex.Operand.GenerateIR(writer, context);
             var index = arrayIndex.Index.GenerateIR(writer, context);
             var assign = this.Right.GenerateIR(writer, context);
-                
-            writer.CurrentBlock.Add(new StoreArrayOp {
+            var temp = writer.GetName();
+            
+            writer.CurrentBlock.Add(new GetArrayOffsetInstruction() {
                 Array = array,
                 Index = index,
+                ReturnType = new ReferenceType(arrayIndex.ReturnType),
+                ReturnValue = temp
+            });
+                
+            writer.CurrentBlock.Add(new StoreInstruction() {
+                Reference = temp,
                 Value = assign
             });
         }

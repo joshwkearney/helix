@@ -3,7 +3,7 @@ using Helix.Types;
 
 namespace Helix.Syntax.IR;
 
-public record JumpOp : IOp, ITerminalOp {
+public record JumpInstruction : IInstruction, ITerminalInstruction {
     public required string BlockName { get; init; }
     
     public HelixType ReturnType => PrimitiveType.Void;
@@ -11,12 +11,12 @@ public record JumpOp : IOp, ITerminalOp {
     public string[] Successors => [this.BlockName];
 
     public override string ToString() {
-        return IOp.FormatOp("jump", $"goto {this.BlockName}");
+        return IInstruction.FormatOp("jump", $"goto {this.BlockName}");
     }
 
-    public ITerminalOp RenameBlocks(IReadOnlyDictionary<string, string> newNames) {
+    public ITerminalInstruction RenameBlocks(IReadOnlyDictionary<string, string> newNames) {
         if (newNames.TryGetValue(this.BlockName, out var newName)) {
-            return new JumpOp {
+            return new JumpInstruction {
                 BlockName = newName
             };
         }

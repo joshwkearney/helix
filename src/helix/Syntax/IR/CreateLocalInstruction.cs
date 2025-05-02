@@ -3,12 +3,12 @@ using Helix.Types;
 
 namespace Helix.Syntax.IR;
 
-public record CreateLocalOp : IOp {
+public record CreateLocalInstruction : IInstruction {
     public required HelixType ReturnType { get; init; }
     
     public required Immediate LocalName { get; init; }
     
     public override string ToString() {
-        return IOp.FormatOp("local_create", $"var {this.LocalName}");
+        return IInstruction.FormatOp("local_create", $"var {this.LocalName} as {this.ReturnType}");
     }
 }

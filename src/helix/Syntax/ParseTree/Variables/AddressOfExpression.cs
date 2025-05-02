@@ -32,7 +32,7 @@ public class AddressOfExpression : IParseExpression {
 
         var result = new TypedAddressOfExpression {
             Location = this.Location,
-            ReturnType = local.ReturnType,
+            ReturnType = new ReferenceType(local.ReturnType),
             VariablePath = local.VariablePath
         };
 

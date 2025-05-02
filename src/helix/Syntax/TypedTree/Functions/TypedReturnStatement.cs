@@ -23,13 +23,13 @@ public record TypedReturnStatement : ITypedStatement {
         if (this.FunctionSignature.ReturnType != PrimitiveType.Void) {
             var value = this.Operand.GenerateIR(writer, context);
             
-            writer.CurrentBlock.Add(new AssignLocalOp {
+            writer.CurrentBlock.Add(new AssignLocalInstruction {
                 LocalName = context.ReturnLocal,
                 Value = value
             });
         }
         
-        writer.CurrentBlock.Terminate(new JumpOp {
+        writer.CurrentBlock.Terminate(new JumpInstruction {
             BlockName = context.ReturnBlock
         });
     }

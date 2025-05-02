@@ -25,7 +25,7 @@ public record TypedUnaryExpression : ITypedExpression {
         var operand = this.Operand.GenerateIR(writer, context);
         var name = writer.GetName();
         
-        writer.CurrentBlock.Add(new UnaryOp {
+        writer.CurrentBlock.Add(new UnaryInstruction {
             Operation = UnaryOperatorKind.Not,
             Operand = operand,
             ReturnValue = name,

@@ -26,16 +26,23 @@ public record TypedArrayIndexExpression : ITypedExpression {
     public Immediate GenerateIR(IRWriter writer, IRFrame context) {
         var array = this.Operand.GenerateIR(writer, context);
         var index = this.Index.GenerateIR(writer, context);
-        var temp = writer.GetName();
-            
-        writer.CurrentBlock.Add(new LoadArrayOp {
+        var temp1 = writer.GetName();
+        var temp2 = writer.GetName();
+        
+        writer.CurrentBlock.Add(new GetArrayOffsetInstruction() {
             Array = array,
             Index = index,
-            ReturnValue = temp,
+            ReturnValue = temp1,
+            ReturnType = new ReferenceType(this.ReturnType),
+        });
+            
+        writer.CurrentBlock.Add(new LoadInstruction() {
+            Operand = temp1,
+            ReturnValue = temp2,
             ReturnType = this.ReturnType
         });
             
-        return temp;
+        return temp2;
     }
 
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {

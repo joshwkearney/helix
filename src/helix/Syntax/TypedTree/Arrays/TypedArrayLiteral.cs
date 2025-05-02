@@ -25,7 +25,7 @@ public record TypedArrayLiteral : ITypedExpression {
             
         var temp = writer.GetName();
 
-        writer.CurrentBlock.Add(new AllocateArrayOp {
+        writer.CurrentBlock.Add(new AllocateArrayInstruction {
             InnerType = this.ArraySignature.InnerType,
             Length = new Immediate.Word(this.Arguments.Count),
             ReturnValue = temp
@@ -33,10 +33,18 @@ public record TypedArrayLiteral : ITypedExpression {
             
         // Now we can write our args to the array
         for (int i = 0; i < this.Arguments.Count; i++) {
-            writer.CurrentBlock.Add(new StoreArrayOp {
+            var itemTemp = writer.GetName();
+            
+            writer.CurrentBlock.Add(new GetArrayOffsetInstruction() {
                 Array = temp,
-                Value = args[i],
-                Index = new Immediate.Word(i)
+                Index = new Immediate.Word(i),
+                ReturnValue = itemTemp,
+                ReturnType = new ReferenceType(this.ArraySignature.InnerType),
+            });
+            
+            writer.CurrentBlock.Add(new StoreInstruction() {
+                Reference = itemTemp,
+                Value =  args[i]
             });
         }
 

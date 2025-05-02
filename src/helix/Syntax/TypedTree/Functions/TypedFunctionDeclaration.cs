@@ -39,7 +39,7 @@ public record TypedFunctionDeclaration : IDeclaration {
 
         // Declare a variable for the return value if we don't return void
         if (this.Signature.ReturnType != PrimitiveType.Void) {
-            writer.CurrentBlock.Add(new CreateLocalOp {
+            writer.CurrentBlock.Add(new CreateLocalInstruction {
                 LocalName = returnLocal,
                 ReturnType = this.Signature.ReturnType
             });
@@ -56,7 +56,7 @@ public record TypedFunctionDeclaration : IDeclaration {
 
         // If this is a void function without a return statement, insert a goto at the end
         if (!writer.CurrentBlock.IsTerminated) {
-            writer.CurrentBlock.Terminate(new JumpOp {
+            writer.CurrentBlock.Terminate(new JumpInstruction {
                 BlockName = endBlock
             });
         }
@@ -65,12 +65,12 @@ public record TypedFunctionDeclaration : IDeclaration {
         writer.PushBlock(endBlock);
 
         if (this.Signature.ReturnType == PrimitiveType.Void) {
-            writer.CurrentBlock.Terminate(new ReturnOp {
+            writer.CurrentBlock.Terminate(new ReturnInstruction {
                 ReturnValue = new Immediate.Void()
             });
         }
         else {
-            writer.CurrentBlock.Terminate(new ReturnOp {
+            writer.CurrentBlock.Terminate(new ReturnInstruction {
                 ReturnValue = returnLocal
             });
         }

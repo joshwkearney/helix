@@ -9,4 +9,9 @@
     <!-- <GenerateDocumentationFile>true</GenerateDocumentationFile>  -->
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Syntax\IR\SetMemberOp.cs" />
+    <Compile Remove="Syntax\IR\StoreArrayOp.cs" />
+  </ItemGroup>
+
 </Project>

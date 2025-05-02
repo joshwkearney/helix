@@ -21,7 +21,7 @@ public record TypedLoopStatement : ITypedStatement {
         var loopBlock = writer.GetBlockName("loop");
         var afterBlock = writer.GetBlockName("loop_after");
             
-        writer.CurrentBlock.Terminate(new JumpOp {
+        writer.CurrentBlock.Terminate(new JumpInstruction {
             BlockName = loopBlock
         });
             
@@ -32,7 +32,7 @@ public record TypedLoopStatement : ITypedStatement {
         this.Body.GenerateIR(writer, context);
 
         if (!writer.CurrentBlock.IsTerminated) {
-            writer.CurrentBlock.Terminate(new JumpOp {
+            writer.CurrentBlock.Terminate(new JumpInstruction {
                 BlockName = loopBlock
             });
         }

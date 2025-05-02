@@ -3,12 +3,6 @@
     y as word;
 }
 
-func test(x as word) as word {
-    var sum = 1;
-    
-    for i = 1 to 10 {
-        sum += i;
-    }
-    
-    return sum;
+func test(x as word) {
+    var a = new Point { 4, 8 };
 }

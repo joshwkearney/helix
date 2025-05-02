@@ -1,6 +1,8 @@
 ﻿using Helix.CodeGeneration;
 using Helix.CodeGeneration.Syntax;
+using Helix.FlowAnalysis;
 using Helix.Parsing;
+using Helix.Syntax.IR;
 using Helix.TypeChecking;
 using Helix.Types;
 
@@ -19,6 +21,26 @@ public class TypedNewStructExpression : ITypedExpression {
         
     public HelixType ReturnType => this.StructType;
 
+    public Immediate GenerateIR(IRWriter writer, IRFrame context) {
+        var args = this.Values.Select(x => x.GenerateIR(writer, context)).ToArray();
+        var structName = writer.GetName();
+
+        writer.CurrentBlock.Add(new CreateLocalInstruction() {
+            LocalName = structName,
+            ReturnType = this.StructType
+        });
+        
+        foreach (var (name, value) in this.Names.Zip(args)) {
+            writer.CurrentBlock.Add(new AssignMemberOp() {
+                LocalName = structName,
+                MemberName = name,
+                Value = value
+            });
+        }
+
+        return structName;
+    }
+    
     public ICSyntax GenerateCode(TypeFrame types, ICStatementWriter writer) {
         var memValues = this.Values
             .Select(x => x.GenerateCode(types, writer))

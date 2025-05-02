@@ -32,7 +32,7 @@ public record TypedBinaryExpression : ITypedExpression {
         var right = this.Right.GenerateIR(writer, context);
         var name = writer.GetName();
 
-        writer.CurrentBlock.Add(new BinaryOp {
+        writer.CurrentBlock.Add(new BinaryInstruction {
             Left = left,
             Right = right,
             Operation = this.Operator,

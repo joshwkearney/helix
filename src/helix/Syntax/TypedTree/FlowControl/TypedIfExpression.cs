@@ -27,13 +27,13 @@ public record TypedIfExpression : ITypedExpression {
         var resultName = writer.GetName();
 
         // We need a result variable
-        writer.CurrentBlock.Add(new CreateLocalOp {
+        writer.CurrentBlock.Add(new CreateLocalInstruction {
             LocalName = resultName, 
             ReturnType = this.ReturnType
         });
             
         // Write out our conditional jump
-        writer.CurrentBlock.Terminate(new JumpConditionalOp {
+        writer.CurrentBlock.Terminate(new JumpConditionalInstruction {
             Condition = cond,
             TrueBlockName = trueBranchName,
             FalseBlockName = falseBranchName
@@ -44,13 +44,13 @@ public record TypedIfExpression : ITypedExpression {
 
         var affirm = this.Affirmative.GenerateIR(writer, context);
             
-        writer.CurrentBlock.Add(new AssignLocalOp {
+        writer.CurrentBlock.Add(new AssignLocalInstruction {
             LocalName = resultName,
             Value = affirm
         });
             
         // If expressions won't terminate
-        writer.CurrentBlock.Terminate(new JumpOp {
+        writer.CurrentBlock.Terminate(new JumpInstruction {
             BlockName = continueBranchName
         });
 
@@ -59,13 +59,13 @@ public record TypedIfExpression : ITypedExpression {
             
         var neg = this.Negative.GenerateIR(writer, context);
 
-        writer.CurrentBlock.Add(new AssignLocalOp {
+        writer.CurrentBlock.Add(new AssignLocalInstruction {
             LocalName = resultName,
             Value = neg
         });
 
         // If expressions won't terminate
-        writer.CurrentBlock.Terminate(new JumpOp {
+        writer.CurrentBlock.Terminate(new JumpInstruction {
             BlockName = continueBranchName
         });
 

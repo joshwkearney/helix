@@ -3,7 +3,7 @@ using Helix.Types;
 
 namespace Helix.Syntax.IR;
 
-public record ReturnOp : IOp, ITerminalOp {
+public record ReturnInstruction : IInstruction, ITerminalInstruction {
     public required Immediate ReturnValue { get; init; }
     
     public HelixType ReturnType => PrimitiveType.Void;
@@ -11,10 +11,10 @@ public record ReturnOp : IOp, ITerminalOp {
     public string[] Successors => [];
 
     public override string ToString() {
-        return IOp.FormatOp("return", $"return {this.ReturnValue}");
+        return IInstruction.FormatOp("return", $"return {this.ReturnValue}");
     }
 
-    public ITerminalOp RenameBlocks(IReadOnlyDictionary<string, string> newNames) {
+    public ITerminalInstruction RenameBlocks(IReadOnlyDictionary<string, string> newNames) {
         return this;
     }
 }
