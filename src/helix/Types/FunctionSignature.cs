@@ -2,23 +2,15 @@
 
 namespace Helix.Types;
 
-public record FunctionType : HelixType {
+public record FunctionSignature {
     public HelixType ReturnType { get; }
 
     public IReadOnlyList<FunctionParameter> Parameters { get; }
 
-    public FunctionType(HelixType returnType, IReadOnlyList<FunctionParameter> pars) {
+    public FunctionSignature(HelixType returnType, IReadOnlyList<FunctionParameter> pars) {
         this.ReturnType = returnType;
         this.Parameters = pars;
     }
-
-    public override PassingSemantics GetSemantics(TypeFrame types) {
-        return PassingSemantics.ReferenceType;
-    }
-
-    public override HelixType GetSignature(TypeFrame types) => this;
-
-    public override Option<FunctionType> AsFunction(TypeFrame types) => this;
 }
 
 public record FunctionParameter {

@@ -44,7 +44,7 @@ public static class AnalysisExtensions {
         return true;
     }
 
-    public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionType type) {
+    public static bool TryGetFunction(this TypeFrame types, IdentifierPath path, out FunctionSignature type) {
         return types.Declarations
             .GetValueOrNone(path)
             .SelectMany(x => x.AsFunction(types))
@@ -62,11 +62,7 @@ public static class AnalysisExtensions {
     }
 
     public static bool TryGetVariable(this TypeFrame types, IdentifierPath path, [NotNullWhen(true)] out HelixType? refinement) {
-        if (types.Refinements.TryGetValue(path, out refinement)) {
-            return true;
-        }
-
-        if (types.Signatures.TryGetValue(path, out refinement)) {
+        if (types.VariableRefinements.TryGetValue(path, out refinement)) {
             return true;
         }
 

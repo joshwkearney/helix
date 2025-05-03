@@ -14,16 +14,14 @@ public record TypedVariableStatement : ITypedStatement {
     public required ITypedExpression Assignment { get; init; }
         
     public required IdentifierPath Path { get; init; }
-    
-    public required HelixType VariableSignature { get; init; }
-    
+        
     public bool AlwaysJumps => false;
 
     public void GenerateIR(IRWriter writer, IRFrame context) {
         if (context.AllocatedVariables.Contains(this.Path)) {
             var name = writer.GetName(this.Path.Segments.Last());
             writer.CurrentBlock.Add(new AllocateReferenceInstruction {
-                InnerType = this.VariableSignature,
+                InnerType = this.Assignment.ReturnType,
                 ReturnValue = name
             });
                 
@@ -40,7 +38,7 @@ public record TypedVariableStatement : ITypedStatement {
             var assign = this.Assignment.GenerateIR(writer, context);
                 
             writer.CurrentBlock.Add(new CreateLocalInstruction {
-                ReturnType = this.VariableSignature,
+                ReturnType = this.Assignment.ReturnType,
                 LocalName = name
             });
                 

@@ -38,7 +38,7 @@ public class HelixCompiler {
 
             foreach (var parseStat in parseStats) {
                 (var stat, types) = parseStat.CheckTypes(types);
-                var context = new IRFrame(types.OpaqueVariables);
+                var context = new IRFrame(types.PromotedVariables);
                     
                 stat.GenerateIR(writer, context);
             }

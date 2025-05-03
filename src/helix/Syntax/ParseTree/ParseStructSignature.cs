@@ -11,7 +11,7 @@ public record ParseStructSignature {
 
     public required TokenLocation Location { get; init; }
         
-    public StructType ResolveNames(TypeFrame types) {
+    public StructSignature ResolveNames(TypeFrame types) {
         var mems = new List<StructMember>();
 
         foreach (var mem in this.Members) {
@@ -22,6 +22,6 @@ public record ParseStructSignature {
             mems.Add(new StructMember(mem.MemberName, type));
         }
 
-        return new StructType(mems);
+        return new StructSignature(mems);
     }
 }

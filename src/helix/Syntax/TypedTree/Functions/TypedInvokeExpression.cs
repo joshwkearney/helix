@@ -11,7 +11,7 @@ public record TypedInvokeExpression : ITypedExpression {
 
     public required IdentifierPath FunctionPath { get; init; }
 
-    public required FunctionType FunctionSignature { get; init; }
+    public required FunctionSignature FunctionSignature { get; init; }
         
     public required IReadOnlyList<ITypedExpression> Arguments { get; init; }
         

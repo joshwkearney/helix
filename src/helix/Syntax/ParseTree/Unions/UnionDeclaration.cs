@@ -29,7 +29,7 @@ public record UnionDeclaration : IDeclaration {
     public TypeFrame DeclareTypes(TypeFrame types) {
         var path = types.Scope.Append(this.signature.Name);
         var structSig = this.signature.ResolveNames(types);
-        var unionSig = new UnionType(structSig.Members);
+        var unionSig = new UnionSignature(structSig.Members);
 
         return types.WithSignature(path, unionSig);
     }
@@ -37,7 +37,7 @@ public record UnionDeclaration : IDeclaration {
     public TypeCheckResult<IDeclaration> CheckTypes(TypeFrame types) {
         var path = types.Scope.Append(this.signature.Name);
         var sig = this.signature.ResolveNames(types);
-        var unionSig = new UnionType(sig.Members);
+        var unionSig = new UnionSignature(sig.Members);
         var structType = new NominalType(path, NominalTypeKind.Union);
 
         var isRecursive = sig.Members

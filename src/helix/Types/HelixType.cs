@@ -38,7 +38,7 @@ public static class TypeExtensions {
 public abstract record HelixType { 
     public abstract PassingSemantics GetSemantics(TypeFrame types);
 
-    public abstract HelixType GetSignature(TypeFrame types);
+    public abstract HelixType GetSupertype(TypeFrame types);
         
     public virtual Option<ITypedExpression> ToSyntax(TokenLocation loc, TypeFrame types) {
         return Option.None;
@@ -52,11 +52,11 @@ public abstract record HelixType {
         return this.GetSemantics(types) == PassingSemantics.ValueType;
     }
     
-    public virtual Option<FunctionType> AsFunction(TypeFrame types) => Option.None;
+    public virtual Option<FunctionSignature> AsFunction(TypeFrame types) => Option.None;
 
-    public virtual Option<StructType> AsStruct(TypeFrame types) => Option.None;
+    public virtual Option<StructSignature> AsStruct(TypeFrame types) => Option.None;
 
-    public virtual Option<UnionType> AsUnion(TypeFrame types) => Option.None;
+    public virtual Option<UnionSignature> AsUnion(TypeFrame types) => Option.None;
 
     public virtual Option<ArrayType> AsArray(TypeFrame types) => Option.None;
     

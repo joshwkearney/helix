@@ -28,7 +28,7 @@ public class AddressOfExpression : IParseExpression {
         }
         
         // We need to flush this variable's signature because its value can now be set through an alias
-        types = types.PopValue(local.VariablePath);
+        types = types.WithVariablePromotion(local.VariablePath);
 
         var result = new TypedAddressOfExpression {
             Location = this.Location,

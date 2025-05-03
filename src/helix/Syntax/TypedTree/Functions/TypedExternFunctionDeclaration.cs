@@ -7,7 +7,7 @@ using Helix.Types;
 namespace Helix.Syntax.TypedTree.Functions;
 
 public record TypedExternFunctionDeclaration : IDeclaration {
-    public required FunctionType Signature { get; init; }
+    public required FunctionSignature Signature { get; init; }
 
     public required TokenLocation Location { get; init; }
 

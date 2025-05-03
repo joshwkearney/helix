@@ -13,10 +13,6 @@ public record ReferenceType : HelixType {
         return PassingSemantics.ReferenceType;
     }
 
-    public override HelixType GetSignature(TypeFrame types) {
-        return new ReferenceType(this.InnerType.GetSignature(types));
-    }
-
     public override Option<ReferenceType> AsReference(TypeFrame types) => this;
 
     public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame frame) {
@@ -26,5 +22,9 @@ public record ReferenceType : HelixType {
 
     public override string ToString() {
         return "&" + this.InnerType;
+    }
+
+    public override HelixType GetSupertype(TypeFrame types) {
+        return new ReferenceType(this.InnerType.GetSupertype(types));
     }
 }

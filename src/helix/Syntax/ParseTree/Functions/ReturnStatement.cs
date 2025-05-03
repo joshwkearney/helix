@@ -30,7 +30,7 @@ public record ReturnStatement : IParseStatement {
         return new(result, types);
     }
         
-    private bool TryGetCurrentFunction(TypeFrame types, out FunctionType func) {
+    private bool TryGetCurrentFunction(TypeFrame types, out FunctionSignature func) {
         var path = types.Scope;
 
         while (!path.IsEmpty) {

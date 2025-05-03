@@ -16,10 +16,6 @@ public record SingularWordType : HelixType {
         return PassingSemantics.ValueType;
     }
 
-    public override HelixType GetSignature(TypeFrame types) {
-        return PrimitiveType.Word;
-    }
-
     public override bool IsWord(TypeFrame types) => true;
 
     public override Option<ITypedExpression> ToSyntax(TokenLocation loc, TypeFrame types) {
@@ -30,4 +26,6 @@ public record SingularWordType : HelixType {
     }       
 
     public override string ToString() => this.Value.ToString();
+
+    public override HelixType GetSupertype(TypeFrame types) => PrimitiveType.Word;
 }

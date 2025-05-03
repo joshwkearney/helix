@@ -22,8 +22,6 @@ public record PrimitiveType : HelixType {
         return PassingSemantics.ValueType;
     }
 
-    public override HelixType GetSignature(TypeFrame types) => this;
-
     public override bool IsWord(TypeFrame types) => this.kind == PrimitiveTypeKind.Word;
         
     public override bool IsBool(TypeFrame types) => this.kind == PrimitiveTypeKind.Bool;
@@ -46,6 +44,8 @@ public record PrimitiveType : HelixType {
             _                       => throw new Exception("Unexpected primitive type kind"),
         };
     }
+
+    public override HelixType GetSupertype(TypeFrame types) => this;
 
     private enum PrimitiveTypeKind {
         Word = 11, 

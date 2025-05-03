@@ -9,7 +9,7 @@ public record IsUnionMemberPredicate : SyntaxPredicateLeaf {
         
     public required HelixType UnionType { get; init; }
         
-    public required UnionType UnionSignature { get; init; }
+    public required UnionSignature UnionSignature { get; init; }
 
     public required ValueSet<string> MemberNames { get; init; }
         
@@ -35,7 +35,7 @@ public record IsUnionMemberPredicate : SyntaxPredicateLeaf {
             MemberNames = mems
         };
 
-        return types.WithRefinement(this.VariablePath, new ReferenceType(singType));
+        return types.WithVariableRefinement(this.VariablePath, new ReferenceType(singType));
     }
 
     public override bool TryOrWith(ISyntaxPredicate pred, out ISyntaxPredicate result) {

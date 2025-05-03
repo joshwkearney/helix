@@ -13,7 +13,7 @@ public record TypedFunctionDeclaration : IDeclaration {
         
     public required ITypedStatement Body { get; init; }
 
-    public required FunctionType Signature { get; init; }
+    public required FunctionSignature Signature { get; init; }
 
     public required IdentifierPath Path { get; init; }
 

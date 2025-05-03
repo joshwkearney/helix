@@ -127,17 +127,18 @@ public class CWriter : ICWriter {
             return new CNamedType(this.GenerateReferenceType(type2, types));
         }
         else if (type is NominalType named) {
-            if (named.Kind == NominalTypeKind.Variable) {
-                return ConvertType(named.GetSignature(types), types);
-            }
-                
-            if (this.pathNames.TryGetValue(named.Path, out var cname)) {
-                return new CNamedType(cname);
-            }                   
+            //if (named.Kind == NominalTypeKind.Variable) {
+            //    return ConvertType(named.GetSignature(types), types);
+            //}
 
-            cname = this.pathNames[named.Path] = string.Join("$", named.Path.Segments);
+            //if (this.pathNames.TryGetValue(named.Path, out var cname)) {
+            //    return new CNamedType(cname);
+            //}                   
 
-            return new CNamedType(cname);
+            //cname = this.pathNames[named.Path] = string.Join("$", named.Path.Segments);
+
+            //return new CNamedType(cname);
+            throw new NotImplementedException();
         }
         else if (type is ArrayType array) {
             return new CNamedType(this.GenerateArrayType(array, types));

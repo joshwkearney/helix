@@ -57,11 +57,47 @@ public static class TypeUnifier {
             return true;
         }
 
-        var abstract1 = type1.GetSignature(types);
-        var abstract2 = type2.GetSignature(types);
+        var abstract1 = type1.GetSupertype(types);
+        var abstract2 = type2.GetSupertype(types);
 
-        if (abstract1 == abstract2) {
-            resultType = abstract1;
+        if (type1 != abstract1 && CanUnifyFrom(abstract1, type2, types, out resultType)) {
+            return true;
+        }
+
+        if (type2 != abstract2 && CanUnifyFrom(type1, abstract2, types, out resultType)) {
+            return true;
+        }
+
+        if (type1 != abstract1 && type2 != abstract2 && CanUnifyFrom(abstract1, abstract2, types, out resultType)) {
+            return true;
+        }
+
+        resultType = PrimitiveType.Void;
+        return false;
+    }
+
+    public static bool CanPunFrom(this HelixType type1, HelixType type2, TypeFrame types, out HelixType resultType) {
+        if (type2.CanPunTo(type1, types)) {
+            resultType = type1;
+            return true;
+        }
+        else if (type1.CanPunTo(type2, types)) {
+            resultType = type2;
+            return true;
+        }
+
+        var abstract1 = type1.GetSupertype(types);
+        var abstract2 = type2.GetSupertype(types);
+
+        if (type1 != abstract1 && CanPunFrom(abstract1, type2, types, out resultType)) {
+            return true;
+        }
+
+        if (type2 != abstract2 && CanPunFrom(type1, abstract2, types, out resultType)) {
+            return true;
+        }
+
+        if (type1 != abstract1 && type2 != abstract2 && CanPunFrom(abstract1, abstract2, types, out resultType)) {
             return true;
         }
 
@@ -132,10 +168,11 @@ public static class TypeUnifier {
     }
         
     private static UnificationResult TryUnifyFromSingularUnion(SingularUnionType type, HelixType second, TypeFrame types) {
-        if (type.UnionSignature == second) {
+        if (second.AsUnion(types).TryGetValue(out var otherUnion) && type.UnionSignature == otherUnion) {
             return UnificationResult.Pun(second);
         }
-        else if (type.MemberNames.Count == 1) {
+
+        if (type.MemberNames.Count == 1) {
             var memName = type.MemberNames.First();
             var memType = type.UnionSignature.Members.First(x => x.Name == memName).Type;
 
@@ -228,7 +265,7 @@ public static class TypeUnifier {
         return UnificationResult.None;
     }
 
-    private static UnificationResult TryUnifyVoidToStruct(HelixType structType, StructType sig, TypeFrame types) {
+    private static UnificationResult TryUnifyVoidToStruct(HelixType structType, StructSignature sig, TypeFrame types) {
         var memsConvertable = sig.Members.All(x => PrimitiveType.Void.CanUnifyTo(x.Type, types));
 
         if (!memsConvertable) {
@@ -256,7 +293,7 @@ public static class TypeUnifier {
         };
     }
 
-    private static UnificationResult TryUnifyVoidToUnion(HelixType unionType, UnionType sig, TypeFrame types) {
+    private static UnificationResult TryUnifyVoidToUnion(HelixType unionType, UnionSignature sig, TypeFrame types) {
         if (!PrimitiveType.Void.CanUnifyTo(sig.Members[0].Type, types)) {
             return UnificationResult.None;
         }

@@ -14,7 +14,7 @@ public record DereferenceExpression : IParseExpression {
     public TypeCheckResult<ITypedExpression> CheckTypes(TypeFrame types) {
         (var operand, types) = this.Operand.CheckTypes(types);
             
-        if (operand.ReturnType is NominalType nom && nom.Kind == NominalTypeKind.Variable) {
+        if (operand.ReturnType.AsReference(types).TryGetValue(out var refType) && refType.InnerType is NominalType nom && nom.Kind == NominalTypeKind.Variable) {
             if (types.TryGetVariable(nom.Path, out var refinement)) {
                 var access = new TypedVariableAccessExpression {
                     Location = this.Location,

@@ -7,12 +7,12 @@ using Helix.Types;
 namespace Helix.Syntax.TypedTree.Unions;
 
 public record TypedUnionDeclaration : IDeclaration {
-    private readonly UnionType signature;
+    private readonly UnionSignature signature;
     private readonly IdentifierPath path;
 
     public TokenLocation Location { get; }
 
-    public TypedUnionDeclaration(TokenLocation loc, UnionType sig, IdentifierPath path) {
+    public TypedUnionDeclaration(TokenLocation loc, UnionSignature sig, IdentifierPath path) {
         this.Location = loc;
         this.signature = sig;
         this.path = path;

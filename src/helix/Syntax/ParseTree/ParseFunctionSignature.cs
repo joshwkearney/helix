@@ -13,7 +13,7 @@ public record ParseFunctionSignature {
         
     public required IReadOnlyList<ParseFunctionParameter> Parameters { get; init; }
 
-    public FunctionType ResolveNames(TypeFrame types) {
+    public FunctionSignature ResolveNames(TypeFrame types) {
         var pars = new List<FunctionParameter>();
 
         if (!this.ReturnType.AsType(types).TryGetValue(out var retType)) {
@@ -28,6 +28,6 @@ public record ParseFunctionSignature {
             pars.Add(new FunctionParameter(par.Name, parType));
         }
 
-        return new FunctionType(retType, pars);
+        return new FunctionSignature(retType, pars);
     }
 }

@@ -15,7 +15,7 @@ public record TypedIsExpression : ITypedExpression {
 
     public required string MemberName { get; init; }
 
-    public required UnionType UnionSignature { get; init; }
+    public required UnionSignature UnionSignature { get; init; }
 
     public bool AlwaysJumps => false;
 

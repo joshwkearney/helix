@@ -19,21 +19,16 @@ public record AssignmentStatement : IParseStatement {
             
         // We have to be able to write into the left hand side
         var lValue = left.ToLValue(types);
-        var assignSignature = lValue.ReturnType.GetSignature(types);
 
-        HelixType assignType;
-        
-        if (right.CanPunTo(assignSignature, types)) {
-            assignType = right.ReturnType;
+        if (!right.ReturnType.CanPunFrom(lValue.ReturnType, types, out var assignType)) {
+            throw TypeException.UnexpectedType(right.Location, lValue.ReturnType, right.ReturnType);
         }
-        else {
-            assignType = assignSignature;
-            right = right.UnifyTo(assignSignature, types);
-        }
+
+        right = right.UnifyTo(assignType, types);
         
         // If we're assigning a local variable, we need to update our stored value
         if (lValue.ReturnType is NominalType nom) {
-            types = types.WithRefinement(nom.Path, assignType);
+            types = types.WithVariableRefinement(nom.Path, assignType);
         }
         
         var result = new TypedAssignmentStatement {

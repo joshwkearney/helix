@@ -11,7 +11,7 @@ public class TypedNewUnionExpression : ITypedExpression {
         
     public required HelixType UnionType { get; init; }
         
-    public required UnionType UnionSignature { get; init; }
+    public required UnionSignature UnionSignature { get; init; }
         
     public required string Name { get; init; }
         

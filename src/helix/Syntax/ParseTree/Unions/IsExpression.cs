@@ -44,7 +44,7 @@ public record IsExpression : IParseExpression {
         if (unionSig.Members.All(x => x.Name != this.MemberName)) {
             throw TypeException.MemberUndefined(
                 this.Location,
-                unionSig, 
+                varSig, 
                 this.MemberName);
         }
 

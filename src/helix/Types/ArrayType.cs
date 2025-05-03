@@ -22,7 +22,7 @@ public record ArrayType : HelixType {
         yield return this.InnerType;
     }
 
-    public override HelixType GetSignature(TypeFrame types) => this;
-
     public override Option<ArrayType> AsArray(TypeFrame types) => this;
+
+    public override HelixType GetSupertype(TypeFrame types) => this;
 }

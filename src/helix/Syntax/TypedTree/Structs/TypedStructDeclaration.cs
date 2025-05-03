@@ -10,7 +10,7 @@ namespace Helix.Syntax.TypedTree.Structs;
 public record TypedStructDeclaration : IDeclaration {
     public required TokenLocation Location { get; init; }
         
-    public required StructType Signature { get; init; }
+    public required StructSignature Signature { get; init; }
         
     public required IdentifierPath Path { get; init; }
 

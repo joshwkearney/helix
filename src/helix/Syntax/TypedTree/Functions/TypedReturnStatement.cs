@@ -13,7 +13,7 @@ public record TypedReturnStatement : ITypedStatement {
 
     public required ITypedExpression Operand { get; init; }
     
-    public required FunctionType FunctionSignature { get; init; }
+    public required FunctionSignature FunctionSignature { get; init; }
 
     public bool AlwaysJumps => true;
         

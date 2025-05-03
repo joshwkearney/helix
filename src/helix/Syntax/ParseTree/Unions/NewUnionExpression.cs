@@ -10,7 +10,7 @@ namespace Helix.Syntax.ParseTree.Unions;
 public class NewUnionExpression : IParseExpression {
     public required TokenLocation Location { get; init; }
 
-    public required UnionType UnionSignature { get; init; }
+    public required UnionSignature UnionSignature { get; init; }
     
     public required HelixType UnionType { get; init; }
 

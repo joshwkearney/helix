@@ -15,9 +15,9 @@ public record PredicateBool : HelixType {
 
     public override PassingSemantics GetSemantics(TypeFrame types) => PassingSemantics.ValueType;
 
-    public override HelixType GetSignature(TypeFrame types) => PrimitiveType.Bool;
-
     public override bool IsBool(TypeFrame types) => true;
+
+    public override HelixType GetSupertype(TypeFrame types) => PrimitiveType.Bool;
 }
 
 public record SingularBoolType : PredicateBool {

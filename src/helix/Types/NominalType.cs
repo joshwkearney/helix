@@ -19,64 +19,88 @@ public record NominalType : HelixType {
     }
 
     public override PassingSemantics GetSemantics(TypeFrame types) {
-        return this.GetRefinement(types).GetSemantics(types);
-    }
-
-    public override HelixType GetSignature(TypeFrame types) {
-        return types.Signatures[this.Path];
+        if (types.StructSignatures.TryGetValue(this.Path, out var structSig)) {
+            return structSig.GetSemantics(types);
+        }
+        else if (types.UnionSignatures.TryGetValue(this.Path, out var unionSig)) {
+            return unionSig.GetSemantics(types);
+        }
+        else if (types.FunctionSignatures.ContainsKey(this.Path)) {
+            return PassingSemantics.ReferenceType;
+        }
+        else if (types.VariableRefinements.TryGetValue(this.Path, out var refinement)) {
+            return refinement.GetSemantics(types);
+        }
+        else {
+            throw new InvalidOperationException();
+        }
     }
 
     public override IEnumerable<HelixType> GetAccessibleTypes(TypeFrame types) {
         yield return this;
 
-        foreach (var access in this.GetRefinement(types).GetAccessibleTypes(types)) {
-            yield return access;
+        if (types.StructSignatures.TryGetValue(this.Path, out var structSig)) {
+            foreach (var access in structSig.GetAccessibleTypes(types)) {
+                yield return access;
+            }
+        }
+        else if (types.UnionSignatures.TryGetValue(this.Path, out var unionSig)) {
+            foreach (var access in unionSig.GetAccessibleTypes(types)) {
+                yield return access;
+            }
+        }
+        else if (types.VariableRefinements.TryGetValue(this.Path, out var refinement)) {
+            foreach (var access in refinement.GetAccessibleTypes(types)) {
+                yield return access;
+            }
         }
     }
 
     public override Option<ITypedExpression> ToSyntax(TokenLocation loc, TypeFrame types) {
-        return this.GetRefinement(types).ToSyntax(loc, types);
+        return types.VariableRefinements.GetValueOrNone(this.Path).SelectMany(x => x.ToSyntax(loc, types));
     }
 
     public override string ToString() {
         return this.Path.Segments.Last();
     }
 
-    public override Option<FunctionType> AsFunction(TypeFrame types) {
-        return this.GetRefinement(types).AsFunction(types);
+    public override Option<FunctionSignature> AsFunction(TypeFrame types) {
+        return types.FunctionSignatures.GetValueOrNone(this.Path);
     }
 
-    public override Option<StructType> AsStruct(TypeFrame types) {
-        return this.GetRefinement(types).AsStruct(types);
+    public override Option<StructSignature> AsStruct(TypeFrame types) {
+        return types.StructSignatures.GetValueOrNone(this.Path);
     }
 
-    public override Option<UnionType> AsUnion(TypeFrame types) {
-        return this.GetRefinement(types).AsUnion(types);
+    public override Option<UnionSignature> AsUnion(TypeFrame types) {
+        return types.UnionSignatures.GetValueOrNone(this.Path);
     }
 
     public override Option<ArrayType> AsArray(TypeFrame types) {
-        return this.GetRefinement(types).AsArray(types);
+        return types.VariableRefinements.GetValueOrNone(this.Path).SelectMany(x => x.AsArray(types));
     }
 
     public override Option<ReferenceType> AsReference(TypeFrame types) {
-        return this.GetRefinement(types).AsReference(types);
+        return types.VariableRefinements.GetValueOrNone(this.Path).SelectMany(x => x.AsReference(types));
     }
 
-
     public override bool IsBool(TypeFrame types) {
-        return this.GetRefinement(types).IsBool(types);
+        return types.VariableRefinements
+            .GetValueOrNone(this.Path).Select(x => x.IsBool(types))
+            .OrElse(() => false);
     }
 
     public override bool IsWord(TypeFrame types) {
-        return this.GetRefinement(types).IsWord(types);
+        return types.VariableRefinements
+            .GetValueOrNone(this.Path).Select(x => x.IsWord(types))
+            .OrElse(() => false);
     }
 
-    private HelixType GetRefinement(TypeFrame types) {
-        if (types.Refinements.TryGetValue(this.Path, out var value)) {
-            return value;
+    public override HelixType GetSupertype(TypeFrame types) {
+        if (types.VariableRefinements.TryGetValue(this.Path, out var refinement)) {
+            return refinement;
         }
-        else {
-            return types.Signatures[this.Path];
-        }
+
+        return this;
     }
 }

@@ -3,6 +3,6 @@
     y as word;
 }
 
-func test(x as word) {
-    var a = new Point { 4, 8 };
+func test() {
+    var p = new Point { 1, 2 };
 }

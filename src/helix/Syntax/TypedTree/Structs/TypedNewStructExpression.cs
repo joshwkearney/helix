@@ -11,7 +11,7 @@ namespace Helix.Syntax.TypedTree.Structs;
 public class TypedNewStructExpression : ITypedExpression {
     public required TokenLocation Location { get; init; }
         
-    public required StructType StructSignature { get; init; }
+    public required StructSignature StructSignature { get; init; }
         
     public required HelixType StructType { get; init; }
         

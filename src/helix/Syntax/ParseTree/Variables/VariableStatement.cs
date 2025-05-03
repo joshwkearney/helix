@@ -34,17 +34,14 @@ public record VariableStatement : IParseStatement {
         }
 
         var path = types.Scope.Append(this.VariableName);
-        var sig = assign.ReturnType.GetSignature(types);
 
         types = types.WithDeclaration(path, new NominalType(path, NominalTypeKind.Variable));
-        types = types.WithSignature(path, sig);
-        types = types.WithRefinement(path, assign.ReturnType);
+        types = types.WithVariableRefinement(path, assign.ReturnType);
 
         var result = new TypedVariableStatement {
             Location = this.Location,
             Path = path,
-            Assignment = assign,
-            VariableSignature = sig
+            Assignment = assign
         };
 
         return new(result, types);

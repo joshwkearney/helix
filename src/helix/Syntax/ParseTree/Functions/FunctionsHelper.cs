@@ -30,7 +30,7 @@ public static class FunctionsHelper {
         return types.WithDeclaration(path, named);
     }
 
-    public static TypeFrame DeclareParameters(FunctionType sig, IdentifierPath path, TypeFrame types) {
+    public static TypeFrame DeclareParameters(FunctionSignature sig, IdentifierPath path, TypeFrame types) {
         for (int i = 0; i < sig.Parameters.Count; i++) {
             var parsePar = sig.Parameters[i];
             var parPath = path.Append(parsePar.Name);
@@ -39,7 +39,7 @@ public static class FunctionsHelper {
 
             // TODO: Have another type for a variable?
             types = types.WithDeclaration(parPath, new NominalType(parPath, NominalTypeKind.Variable));
-            types = types.WithSignature(parPath, parSig);
+            types = types.WithVariableRefinement(parPath, parType);
         }
 
         return types;
